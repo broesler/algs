@@ -11,6 +11,9 @@
 
 filename = "day02.txt"
 
+#------------------------------------------------------------------------------ 
+#        Part 1
+#------------------------------------------------------------------------------
 def hasn(s, n):
     """Determine if string has any characters repeated exactly n times."""
     d = dict()  # store letters seen
@@ -27,9 +30,7 @@ def hasn(s, n):
     else:
         return 0
 
-#------------------------------------------------------------------------------ 
-#        Part 1
-#------------------------------------------------------------------------------
+# Main loop
 has2_tot = 0
 has3_tot = 0
 
@@ -44,9 +45,25 @@ print(f"Checksum = {checksum:d}")
 #------------------------------------------------------------------------------ 
 #        Part 2
 #------------------------------------------------------------------------------
-with open(filename, 'r') as f:
-    lines = f.readlines()
+def idx_diff(s1, s2):
+    """Return indices where strings differ."""
+    return [i for i in range(len(s1)) if s1[i] != s2[i]]
 
+# Read lines from file
+with open(filename, 'r') as f:
+    lines = [x.rstrip() for x in f.readlines()]
+
+# Find 2 strings that differ by only one character in the same location
+for i, s1 in enumerate(lines):
+    for j in range(i+1, len(lines)):
+        s2 = lines[j]
+        idx = idx_diff(s1, s2)
+        if len(idx) == 1:
+            # Return similar characters
+            out = s1[:idx[0]] + s1[idx[0]+1:]
+            break
+
+print(f"Common chars = '{out}'")
 
 #==============================================================================
 #==============================================================================
