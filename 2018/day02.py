@@ -54,6 +54,7 @@ with open(filename, 'r') as f:
     lines = [x.rstrip() for x in f.readlines()]
 
 # Find 2 strings that differ by only one character in the same location
+# NOTE SLOW!! Could maybe sort this list first?
 for i, s1 in enumerate(lines):
     for j in range(i+1, len(lines)):
         s2 = lines[j]
@@ -62,6 +63,11 @@ for i, s1 in enumerate(lines):
             # Return similar characters
             out = s1[:idx[0]] + s1[idx[0]+1:]
             break
+    else:
+        # If inner loop didn't break
+        continue
+    # If inner loop breaks
+    break
 
 print(f"Common chars = '{out}'")
 
