@@ -49,25 +49,32 @@ def idx_diff(s1, s2):
     """Return indices where strings differ."""
     return [i for i in range(len(s1)) if s1[i] != s2[i]]
 
-# Read lines from file
+# def off_by_one(s1, s2):
+#     count = 0
+#     for i in range(len(s1)):
+#         if s1[i] != s2[i]:
+#             count += 1
+#             if count > 1:
+#                 return False
+#     if count == 1:
+
+
+# NOTE SLOW!! Could maybe sort this list first?
+def find_common_chars(lines):
+    """Find 2 strings that differ by only one character."""
+    for i, s1 in enumerate(lines):
+        # Only need to search after current string
+        for j in range(i+1, len(lines)):
+            s2 = lines[j]
+            idx = idx_diff(s1, s2)
+            if len(idx) == 1:
+                # Return similar characters
+                return s1[:idx[0]] + s1[idx[0]+1:]
+
 with open(filename, 'r') as f:
     lines = [x.rstrip() for x in f.readlines()]
 
-# Find 2 strings that differ by only one character in the same location
-# NOTE SLOW!! Could maybe sort this list first?
-for i, s1 in enumerate(lines):
-    for j in range(i+1, len(lines)):
-        s2 = lines[j]
-        idx = idx_diff(s1, s2)
-        if len(idx) == 1:
-            # Return similar characters
-            out = s1[:idx[0]] + s1[idx[0]+1:]
-            break
-    else:
-        # If inner loop didn't break
-        continue
-    # If inner loop breaks
-    break
+out = find_common_chars(lines)
 
 print(f"Common chars = '{out}'")
 
