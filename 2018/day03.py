@@ -47,11 +47,31 @@ with open(filename, 'r') as f:
 # TODO HUGE memory requirement if canvas gets big... need more clever algorithm
 canvas = np.zeros([max_x, max_y])
 for xy, wh in zip(xys, whs):
-    canvas[xy[0]:xy[0]+wh[0], xy[1]:xy[1]+wh[1]] += 1
+    rows = slice(xy[0], xy[0] + wh[0])
+    cols = slice(xy[1], xy[1] + wh[1])
+    canvas[rows, cols] += 1
 
+#------------------------------------------------------------------------------ 
+#        Part 1
+#------------------------------------------------------------------------------
 # How many square inches of fabric are within two or more claims?
 overlaps = np.int(np.sum(canvas > 1))
 print(f"Overlap = {overlaps:d} [in^2]")
+
+#------------------------------------------------------------------------------ 
+#        Part 2
+#------------------------------------------------------------------------------
+# What is the ID of the only claim that doesn't overlap?
+# Search canvas for range that is all ones
+the_one = -1
+for i, xy, wh in zip(ids, xys, whs):
+    rows = slice(xy[0], xy[0] + wh[0])
+    cols = slice(xy[1], xy[1] + wh[1])
+    if (canvas[rows, cols] == 1).all():
+        the_one = i
+        break
+
+print(f"The One ID = {the_one:d}")
 
 #==============================================================================
 #==============================================================================
