@@ -9,7 +9,12 @@
 """
 #==============================================================================
 
+import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+import seaborn as sns
+
 import re
 
 filename = "data/day03.txt"
@@ -73,5 +78,24 @@ for i, xy, wh in zip(ids, xys, whs):
 
 print(f"The One ID = {the_one:d}")
 
+# Fun plots
+from scipy.interpolate import griddata
+X, Y = np.meshgrid(np.arange(max_x), np.arange(max_y), indexing='ij')
+# grid_x, grid_y = np.meshgrid(np.linspace(0, max_x, 1000),
+#                              np.linspace(0, max_y, 1000),
+#                              indexing='ij')
+# points = np.vstack([np.ravel(X), np.ravel(Y)]).T
+# grid_z = griddata(points, np.ravel(canvas), (grid_x, grid_y), method='nearest')
+
+fig = plt.figure(1)
+fig.clf()
+ax = fig.add_subplot(111)
+# ax = fig.add_subplot(111, projection='3d')
+# ax.plot_surface(X, Y, canvas)
+# ax.plot_surface(grid_x, grid_y, grid_z)
+ax.imshow(canvas, cmap='viridis')
+# ax.imshow(grid_z)
+
+plt.show()
 #==============================================================================
 #==============================================================================
