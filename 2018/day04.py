@@ -9,14 +9,16 @@
 """
 #==============================================================================
 
+import re
+import datetime
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 import seaborn as sns
 
-import re
-import datetime
+from sklearn.neighbors.kde import KernelDensity
 
 PLOT_FLAG = True
 MIN_HR = 60
@@ -25,6 +27,10 @@ BIN_EDGES = np.arange(MIN_HR+1)
 # Parse '[YYYY-mm-dd HH:MM] Message' string
 pat1 = re.compile(r'\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2})\] (.+)')
 id_pat = re.compile(r'Guard #(\d+) .*')
+
+# kernel density estimator
+kde = KernelDensity(kernel='gaussian', bandwidth=5)
+xp = np.linspace(-1, 60, 1000).reshape(-1, 1)
 
 def parse_line(line):
     """Get info from a line of the log file."""
@@ -103,17 +109,42 @@ def find_laziest_guard(guards):
 
 def find_max_minute(guard):
     """Return minute where guard is asleep the most."""
-    return np.argmax(guard['hist'])
+    return guard['hist'].argmax()
+
+def find_sleepiest_guard(guards):
+    """Return id of guard with largest max value."""
+    max_minutes = 0
+    max_id = -1
+    for guard_id in guards.keys():
+        guard = guards[guard_id]
+        g_max = find_max_minute(guard)
+        if guard['hist'][g_max] > max_minutes:
+            max_minutes = guard['hist'][g_max]
+            max_id = guard_id
+    return max_id
 
 def plot_guard(guard_id, ax=None):
     """Plot guard's histogram of minutes asleep."""
     if not ax:
         ax = plt.gca()
     guard = guards[guard_id]
+
+    # Plot kernel density estimate
+    # data = invert_hist(BIN_EDGES, guard['hist']).reshape(-1, 1)
+    # if data.size:
+    #     kde.fit(data)
+    #     fx = np.exp(kde.score_samples(xp))
+    #     ax.plot(xp, fx, label=guard_id)
+
+    # Plot histogram
     ax.bar(BIN_EDGES[:-1], guard['hist'],
            align='edge', width=1, alpha=0.2,
            label=guard_id)
     return
+
+def invert_hist(bin_edges, hist):
+    """Get data back from histogram."""
+    return np.repeat(bin_edges[:-1], hist)
 
 #------------------------------------------------------------------------------ 
 #        Import data
@@ -129,10 +160,6 @@ with open(filename, 'r') as f:
 # Convert time column to actual timestamp
 # NOTE pd.to_datetime() fails because pandas can only represent (1677-2262),
 # see: <http://pandas-docs.github.io/pandas-docs-travis/timeseries.html#timeseries-timestamp-limits>
-# Steps: 
-#   * Convert column to datetime
-#   * Change year to 2012, i.e.
-#   * Use pandas to_datetime()
 
 df['time'] = df['time'].apply(lambda x: datetime.datetime.strptime(x, '%Y-%m-%d %H:%M'))
 
@@ -146,16 +173,23 @@ guards = gen_histograms(df)
 max_guard = find_laziest_guard(guards)
 max_minute = find_max_minute(guards[max_guard])
 
-print('Solution: {:d}'.format(max_guard * max_minute))
+print('Solution 1: {:d}'.format(max_guard * max_minute))
+
+max_guard = find_sleepiest_guard(guards)
+max_minute = find_max_minute(guards[max_guard])
+
+print('Solution 2: {:d}'.format(max_guard * max_minute))
 
 if PLOT_FLAG:
     fig = plt.figure(1)
+    fig.clf()
     ax = fig.add_subplot(111)
     ax.set_xlabel('minute')
     ax.set_ylabel('# asleep')
     for guard_id in guards.keys():
         plot_guard(guard_id, ax=ax)
     ax.legend()
+    plt.show()
 
 #==============================================================================
 #==============================================================================
