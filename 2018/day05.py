@@ -23,7 +23,7 @@ def my_hash(s):
 def reduce_polymer(data):
     """Perform reaction algorithm on polymer string."""
     pm = data  # initialize to input polymer
-    while True:
+    while len(pm) > 1:
         # React first pair until no changes are made
         reduced_pm = first_pair(pm)
         if my_hash(reduced_pm) == my_hash(pm):
