@@ -66,12 +66,34 @@ with open(filename, 'r') as file:
 
 # Reduce polymer string
 rp = reduce_polymer(data)
-print("Length = {:d}".format(len(rp)))  # Length = 11636
+print("(a) Length = {:d}".format(len(rp)))  # Length = 11636
 
 # OG:
 # 52.1 s ± 16.6 s per loop (mean ± std. dev. of 7 runs, 1 loop each)
 # Stack:
 # 65.4 ms ± 2.28 ms per loop (mean ± std. dev. of 7 runs, 10 loops each)
+
+#------------------------------------------------------------------------------ 
+#        Part 2
+#------------------------------------------------------------------------------
+import string 
+
+def remove_units(data, c):
+    """Remove all instances of c, case-insensitive, from data."""
+    return [x for x in data if ((x != c.lower()) and (x != c.upper()))]
+
+min_len = len(data)
+min_chr = -1
+for c in string.ascii_lowercase:
+    pm = remove_units(data, c)
+    rp = reduce_polymer(pm)
+    if len(rp) < min_len:
+        min_len = len(rp)
+        min_chr = c
+
+print('(b) Remove {}/{}, length = {:d}'\
+        .format(min_chr.upper(), min_chr, min_len))
+
 
 #==============================================================================
 #==============================================================================
