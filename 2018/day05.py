@@ -5,39 +5,44 @@
 #   Author: Bernie Roesler
 #
 """
-  Description:
+  Description: String reduction algorithm
 """
 #==============================================================================
 
-import hashlib
-# import pandas as pd
-# import numpy as np
-# import matplotlib.pyplot as plt
-# from matplotlib.gridspec import GridSpec
+class Stack():
+    """Implement a Stack data structure for O(n) string processing."""
+    def __init__(self):
+        self.items = []
 
-def my_hash(s):
-    """Hash a string using MD5 hash function."""
-    return hashlib.md5(s.encode('utf-8')).hexdigest()
+    def is_empty(self):
+        return not self.items
 
-# TODO this is an O(n^2) algorithm... reduce to O(n)!?
-def reduce_polymer(data):
+    def push(self, item):
+        return self.items.append(item)
+
+    def pop(self):
+        return self.items.pop()
+
+    def length(self):
+        return len(self.items)
+
+def reduce_polymer(polymer):
     """Perform reaction algorithm on polymer string."""
-    pm = data  # initialize to input polymer
-    while len(pm) > 1:
-        # React first pair until no changes are made
-        reduced_pm = first_pair(pm)
-        if my_hash(reduced_pm) == my_hash(pm):
-            return reduced_pm
-        else:
-            pm = reduced_pm
+    rp = Stack()  # initialize reduced polymer output
+    for mer in polymer:
+        if rp.is_empty():
+            rp.push(mer)
+            continue
 
-def first_pair(pm):
-    """React the first possible pair of mers, return the resulting polymer."""
-    for i, a in enumerate(pm[:-1]):
-        b = pm[i+1]
-        if is_react_pair(a, b):
-            return pm[:i] + pm[i+2:]
-    return pm  # no pairs found
+        # Pop the last seen mer off the stack
+        last = rp.pop()
+
+        # If they don't react, push them onto the stack
+        if not is_react_pair(mer, last):
+            rp.push(last)
+            rp.push(mer)
+
+    return rp.items
 
 def is_react_pair(a, b):
     """Determine if two mers should eliminate each other. If they are the same
@@ -50,19 +55,23 @@ def is_react_pair(a, b):
             return True
     return False
 
-#------------------------------------------------------------------------------ 
-#       Main 
+#------------------------------------------------------------------------------
+#       Main
 #------------------------------------------------------------------------------
 filename = 'data/input05.dat'
 
 with open(filename, 'r') as file:
     lines = [x.rstrip() for x in file.readlines()]
-    if len(lines) == 1:
-        data = lines[0]
-    
+    data = ''.join(lines)
+
 # Reduce polymer string
-# rp = reduce_polymer(data)
-# print("Length = {:d}".format(len(rp)))  # Length = 11636
+rp = reduce_polymer(data)
+print("Length = {:d}".format(len(rp)))  # Length = 11636
+
+# OG:
+# 52.1 s ± 16.6 s per loop (mean ± std. dev. of 7 runs, 1 loop each)
+# Stack:
+# 65.4 ms ± 2.28 ms per loop (mean ± std. dev. of 7 runs, 10 loops each)
 
 #==============================================================================
 #==============================================================================
