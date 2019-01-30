@@ -10,6 +10,11 @@
 #==============================================================================
 
 import re
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec
+import seaborn as sns
 
 pat = re.compile(r'(\d+), (\d+)')
 
@@ -24,5 +29,16 @@ filename = './data/input06.dat'
 with open(filename, 'r') as file:
     coords = [parse(x) for x in file.readlines()]
 
+# Brute force:
+#  1. create grid that is x% larger than max dimensions
+#  2. run k-NN (for k = 1) on the grid, where centroids are given
+#  3. count points labeled in each class
+#  4. take maximum count, excluding convex hull of centroids
+#
+
+# Plots
+x, y = list(zip(*coords))  # transpose to two lists
+plt.scatter(x, y)
+plt.show()
 #==============================================================================
 #==============================================================================
