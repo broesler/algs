@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 pat = re.compile(r'(\d+), (\d+)')
 
 class Point():
+    # TODO write doctests
     """Geometric point class."""
     def __init__(self, c=[], kind='cartesian'):
         """Create a Point object with given coordinates.
@@ -31,11 +32,7 @@ class Point():
         elif kind.lower() == 'polar':
             if len(c) != 2:
                 raise Exception('Polar only applicable to 2-D Points')
-            r = c[0]
-            theta = c[1]
-            self.c = self.pol2cart(r, theta)
-            self.r = r
-            self.theta = theta
+            self.c = self.pol2cart(c[0], c[1])
         # elif kind.lower() == 'spherical', etc.
         else:
             raise Exception(f'Invalid kind {kind}')
@@ -158,16 +155,16 @@ x, y, angles = np.array([(p.x, p.y, p.theta_deg) for p in coords]).T
 #------------------------------------------------------------------------------ 
 #        Plots
 #------------------------------------------------------------------------------
-fig = plt.figure(1)
-fig.clf()
+fig = plt.figure(1, clear=True)
 ax = fig.add_subplot(111)
-sc = ax.scatter(x, y, c=angles)
-# ax.scatter(x[:2], y[:2], marker='x', c='r', s=100)
+sc = ax.scatter(x, y, c=angles, vmin=0, vmax=90)
+# ax.scatter(x[:2], y[:2], marker='x', c='r', s=100)  # highlight points
 
-cbar = plt.colorbar(sc)
-cbar.ax.set_ylabel(r'$\theta$ [deg]')
+cb = plt.colorbar(sc)
+cb.ax.set_ylabel(r'$\theta$ [deg]')
 ax.set_xlabel(r'$x$')
 ax.set_ylabel(r'$y$')
+ax.grid()
 
 plt.show()
 #==============================================================================
