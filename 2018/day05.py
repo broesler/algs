@@ -9,22 +9,7 @@
 """
 #==============================================================================
 
-class Stack():
-    """Implement a Stack data structure for O(n) string processing."""
-    def __init__(self):
-        self.items = []
-
-    def is_empty(self):
-        return not self.items
-
-    def push(self, item):
-        return self.items.append(item)
-
-    def pop(self):
-        return self.items.pop()
-
-    def length(self):
-        return len(self.items)
+from stack import Stack
 
 def reduce_polymer(polymer):
     """Perform reaction algorithm on polymer string."""
