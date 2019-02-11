@@ -48,12 +48,12 @@ class Point():
     5.0
     >>> origin.dist(p, kind='manhattan')
     7.0
-    >>> p2 = Point((1, 1))
-    >>> p2.r - np.sqrt(2)
+    >>> q = Point((1, 1))
+    >>> q.r - np.sqrt(2)
     0.0
-    >>> p2.theta - np.pi/4
+    >>> q.theta - np.pi/4
     0.0
-    >>> p2.theta_deg
+    >>> q.theta_deg
     45.0
     """
 
@@ -117,9 +117,7 @@ class Point():
 
     @r.setter
     def r(self, val):
-        """Assumes theta held constant."""
-        theta = getattr(self, 'theta', 0)
-        self.c = pol2cart(val, theta)
+        self.c = pol2cart(val, self.theta)
 
     @property
     def theta(self): 
@@ -130,11 +128,9 @@ class Point():
 
     @theta.setter
     def theta(self, val):
-        """Assumes r held constant."""
         if (self.dims != 2) and (self.dims != 3):
             raise Exception('Property only applicable to 2-D and 3-D Points')
-        r = getattr(self, 'r', 1)
-        self.c = pol2cart(r, val)
+        self.c = pol2cart(self.r, val)
 
     @property
     def theta_deg(self):
@@ -144,23 +140,31 @@ class Point():
     #        Distance
     #--------------------------------------------------------------------------
     @staticmethod
-    def _pdist(c1, c2, p=2):
-        """p-norm distance for general p. Manhattan p = 1, Euclidean p = 2."""
-        return (np.sum(np.abs(c1 - c2)**p))**(1/p)
+    def _pdist(a, b, p=2):
+        """p-norm distance for general p. 
+
+        :param array-like a: vector of coordinates of point 1
+        :param array-like b: vector of coordinates of point 2
+        :param float p: p-norm value, typically integer. Manhattan p = 1,
+                        Euclidean p = 2.
+        :returns d: distance between two points
+        :rtype float:
+        """
+        return (np.sum(np.abs(a - b)**p))**(1/p)
 
     def _make_dist(self, p):
         """Make a p-norm distance function of 2 arguments with parameter p."""
         return lambda a, b: self._pdist(a, b, p=p)
 
-    def dist(self, p2, kind='euclidean'):
+    def dist(self, q, kind='euclidean'):
         """Calculate distance between self and second Point."""
-        if self.dims != p2.dims:
+        if self.dims != q.dims:
             raise Exception("Points must have same dimensionality! ({} != {})"\
-                            .format(self.dims, p2.dims))
+                            .format(self.dims, q.dims))
         kinds = {'manhattan': self._make_dist(1),
                  'euclidean': self._make_dist(2)}
         func = kinds.get(kind.lower(), lambda x, y: f'Invalid kind {x}')
-        return func(self.c, p2.c)
+        return func(self.c, q.c)
 
     #-------------------------------------------------------------------------- 
     #        Utilities
