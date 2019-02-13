@@ -17,8 +17,8 @@ from scipy import spatial
 from geometry import theta_deg
 
 # Load the file (the easy way!)
-filename = './data/test_input06_b.dat'
-# filename = './data/input06.dat'
+# filename = './data/test_input06_b.dat'
+filename = './data/input06.dat'
 coords = np.loadtxt(filename, delimiter=', ') #, max_rows=6)
 
 # Convenience arrays
@@ -42,14 +42,14 @@ mask = np.ones(n_classes, dtype=bool)
 mask[hull.vertices] = False
 
 # Use KDTree to efficiently calculate k-NN of grid points -> coords
-kdtree = spatial.KDTree(coords)
+kdtree = spatial.cKDTree(coords)
 
-grid_mult = 3
+grid_mult = 1
 
 xmin, xmax = np.min(x)-1, np.max(x)+1
 ymin, ymax = np.min(y)-1, np.max(y)+1
-cx = (xmax - xmin) / 2           # center
-cy = (ymax - ymin) / 2
+cx = (xmax - xmin) / 2 + xmin    # center coordinate
+cy = (ymax - ymin) / 2 + ymin
 w = grid_mult * (xmax - xmin)    # width/height
 h = grid_mult * (ymax - ymin)
 xmin, xmax = int(cx - w/2), int(cx + w/2)  # corners
@@ -74,12 +74,16 @@ ax = fig.add_subplot(111)
 
 # Categorized grid points
 sc = ax.scatter(grid[:, 0], grid[:, 1], s=20,
-                c=classes, cmap=plt.cm.get_cmap('Set2', n_classes),
+                c=classes, cmap=plt.cm.get_cmap('viridis', n_classes),
                 vmin=-0.5, vmax=n_classes-0.5)  # center labels
 cb = plt.colorbar(sc)
 
 # Data points
 ax.scatter(x, y, s=30, c='k', marker='x')
+
+# Convex hull
+ax.scatter(coords[hull.vertices, 0], coords[hull.vertices, 1],
+           s=30, marker='x', c='r')
 
 # sc = ax.scatter(x, y, c=angles, vmin=0, vmax=90)
 # cb = plt.colorbar(sc)
