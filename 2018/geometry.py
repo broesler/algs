@@ -11,9 +11,6 @@
 
 import numpy as np
 
-#------------------------------------------------------------------------------ 
-#        Utilities
-#------------------------------------------------------------------------------
 def rad2deg(theta):
     return (180 / np.pi) * theta
 
@@ -35,7 +32,8 @@ def theta_deg(x, y):
     return rad2deg(theta(x, y))
 
 def poly_area(pts, signed=False):
-    """Area of a simple 2D polygon.
+    """
+    Area of a simple 2D polygon.
     
     :param ndarray pts: shape (N, 2), array of polygon vertices, in order
     :param bool signed: if pts are CCW, area > 0, else area < 0.
@@ -49,6 +47,23 @@ def poly_area(pts, signed=False):
     area = 0.5 * (  np.dot(x, np.roll(y, 1)) 
                   - np.dot(y, np.roll(x, 1)))
     return area if signed else np.abs(area)
+
+class ConvexHull():
+    def __init__(self, points, kind='orthogonal'):
+        """Initialize convex hull with array of input points.
+
+        :param ndarray points: shape (N, 2), array of input points
+        """
+        if points.shape[1] != 2:
+            raise Exception('ConvexHull only supports 2D points!')
+        self.points = points
+        self.kind = kind
+
+    def vertices(self):
+        pass
+
+    def simplices(self):
+        pass
 
 #==============================================================================
 #==============================================================================

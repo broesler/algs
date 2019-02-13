@@ -17,9 +17,9 @@ from scipy import spatial
 from geometry import theta_deg
 
 # Load the file (the easy way!)
-# filename = './data/test_input06.dat'
-filename = './data/input06.dat'
-coords = np.loadtxt(filename, delimiter=', ', max_rows=6)
+filename = './data/test_input06_b.dat'
+# filename = './data/input06.dat'
+coords = np.loadtxt(filename, delimiter=', ') #, max_rows=6)
 
 # Convenience arrays
 x, y, angles = np.array([(p[0], p[1], theta_deg(p[1], p[0])) for p in coords]).T
@@ -44,11 +44,8 @@ mask[hull.vertices] = False
 # Use KDTree to efficiently calculate k-NN of grid points -> coords
 kdtree = spatial.KDTree(coords)
 
-grid_mult = 1
-converged = False
-i = 0
+grid_mult = 3
 
-# while not converged:
 xmin, xmax = np.min(x)-1, np.max(x)+1
 ymin, ymax = np.min(y)-1, np.max(y)+1
 cx = (xmax - xmin) / 2           # center
@@ -57,13 +54,15 @@ w = grid_mult * (xmax - xmin)    # width/height
 h = grid_mult * (ymax - ymin)
 xmin, xmax = int(cx - w/2), int(cx + w/2)  # corners
 ymin, ymax = int(cy - h/2), int(cy + h/2)
+
 xg, yg = np.mgrid[xmin:xmax, ymin:ymax]
 grid = np.vstack([xg.ravel(), yg.ravel()]).T
 
 dists, classes = kdtree.query(grid, k=1, p=1)  # 1 neighbor, Minkowski p = 1
 counts = np.bincount(classes, minlength=n_classes)
-areas = np.vstack([np.arange(n_classes+1), counts]).T
-out = np.max(areas[mask], axis=0)
+areas = np.vstack([np.arange(n_classes), counts]).T
+masked = areas[mask]
+out = masked[np.argmax(masked[:, 1])]  # tuple based on max area
 
 print(f"Point ID: {out[0]}, Area: {out[1]}")
 
@@ -75,24 +74,25 @@ ax = fig.add_subplot(111)
 
 # Categorized grid points
 sc = ax.scatter(grid[:, 0], grid[:, 1], s=20,
-                c=classes, cmap=plt.cm.get_cmap('Set1', n_classes),
+                c=classes, cmap=plt.cm.get_cmap('Set2', n_classes),
                 vmin=-0.5, vmax=n_classes-0.5)  # center labels
+cb = plt.colorbar(sc)
 
 # Data points
 ax.scatter(x, y, s=30, c='k', marker='x')
 
-# ax.scatter(x[:2], y[:2], marker='x', c='r', s=100)  # highlight points
-
-# ax.scatter(xg, yg, c='k', s=1, alpha=0.2)
 # sc = ax.scatter(x, y, c=angles, vmin=0, vmax=90)
-
-cb = plt.colorbar(sc)
+# cb = plt.colorbar(sc)
 # cb.ax.set_ylabel(r'$\theta$ [deg]')
+
+# ax.scatter(x[:2], y[:2], marker='x', c='r', s=100)  # highlight points
 
 ax.set_xlabel(r'$x$')
 ax.set_ylabel(r'$y$')
 ax.grid(zorder=0)
+ax.set_aspect('equal')
 
 plt.show()
+
 #==============================================================================
 #==============================================================================
