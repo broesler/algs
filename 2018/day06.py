@@ -58,7 +58,10 @@ cb = plt.colorbar(sc)
 cb.ax.set_ylabel(r'$\theta$ [deg]')
 ax.set_xlabel(r'$x$')
 ax.set_ylabel(r'$y$')
-ax.grid(zorder=0)
+ax.grid()
+ax.set_aspect('equal')
+ax.set_xlim(left=0)
+ax.set_ylim(bottom=0)
 
 plt.show()
 #==============================================================================
