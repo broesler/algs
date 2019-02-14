@@ -48,6 +48,13 @@ def poly_area(pts, signed=False):
                   - np.dot(y, np.roll(x, 1)))
     return area if signed else np.abs(area)
 
+def sort_by_x(points):
+    return points[np.argsort(points[:, 0])]
+
+def sort_by_y(points):
+    return points[np.argsort(points[:, 1])]
+
+
 class ConvexHull():
     def __init__(self, points, kind='orthogonal'):
         """Initialize convex hull with array of input points.
@@ -58,9 +65,14 @@ class ConvexHull():
             raise Exception('ConvexHull only supports 2D points!')
         self.points = points
         self.kind = kind
+        self.vertices = self._vertices()
 
-    def vertices(self):
-        pass
+    def _vertices(self):
+        vlist = list()
+        # sort points by x
+        pts = sort_by_x(self.points)
+        # get four corners, merge lists
+        return vlist
 
     def simplices(self):
         pass
