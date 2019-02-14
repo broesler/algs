@@ -44,7 +44,7 @@ mask[hull.vertices] = False
 # Use KDTree to efficiently calculate k-NN of grid points -> coords
 kdtree = spatial.cKDTree(coords)
 
-grid_mult = 1
+grid_mult = 2
 
 xmin, xmax = np.min(x)-1, np.max(x)+1
 ymin, ymax = np.min(y)-1, np.max(y)+1
@@ -80,6 +80,7 @@ cb = plt.colorbar(sc)
 
 # Data points
 ax.scatter(x, y, s=30, c='k', marker='x')
+ax.scatter(x[out[0]], y[out[0]], s=30, c='b', marker='o')
 
 # Convex hull
 ax.scatter(coords[hull.vertices, 0], coords[hull.vertices, 1],
