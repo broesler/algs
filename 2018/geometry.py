@@ -120,9 +120,8 @@ class ConvexHull():
     ----------
     points : (M, 2) ndarray 
         array of input points
-
     vertices : (N, 2) ndarray
-        Indices of points forming the vertices of the convex hull. For 2-D
+        Array of points forming the N vertices of the convex hull. For 2-D
         convex hulls, the vertices are in counterclockwise order.
 
     """
@@ -137,12 +136,38 @@ class ConvexHull():
     def _vertices(self):
         vlist = list()
         # TODO use only indices of points so we don't have to copy that array
-        pts = sort_by_xy(self.points)
+        pts = sort_by_xy(self.points)  # points sorted by x, then y
+
+        # Top left to top right
         upper_left = pts[pts[:, 0] == pts[0, 0]][-1]
         vlist.append(upper_left)
-        curr = vlist[-1]
+        curr = vlist[0]
         for p in pts:
             if p[1] > curr[1]:
+                vlist.append(p)
+                curr = vlist[-1]
+
+        # Top left to bottom right
+        curr = vlist[0]
+        for p in pts:
+            if p[1] < curr[1]:
+                vlist.append(p)
+                curr = vlist[-1]
+
+        # Top right to top left
+        upper_right = pts[pts[:, 0] == pts[-1, 0]][-1]
+        vlist.append(upper_right)
+        ur_idx = len(vlist)-1  # current end of list index
+        curr = vlist[-1]
+        for p in pts[::-1]:
+            if p[1] > curr[1]:
+                vlist.append(p)
+                curr = vlist[-1]
+
+        # Top right to bottom left
+        curr = vlist[ur_idx]
+        for p in pts[::-1]:
+            if p[1] < curr[1]:
                 vlist.append(p)
                 curr = vlist[-1]
 
