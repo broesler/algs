@@ -17,8 +17,9 @@ from scipy import spatial
 from geometry import theta_deg
 
 # Load the file (the easy way!)
+filename = './data/test_input06.dat'
 # filename = './data/test_input06_b.dat'
-filename = './data/input06.dat'
+# filename = './data/input06.dat'
 coords = np.loadtxt(filename, delimiter=', ') #, max_rows=6)
 
 # Convenience arrays
