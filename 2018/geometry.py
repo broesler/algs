@@ -134,41 +134,46 @@ class ConvexHull():
         self.vertices = self._vertices()
 
     def _vertices(self):
-        vlist = list()
-        # TODO use only indices of points so we don't have to copy that array
-        pts = sort_by_xy(self.points)  # points sorted by x, then y
+        vlist = list()  # list of indices
+        ind = argsort_by_xy(self.points)  # point indices sorted by x, then y
 
         # Top left to top right
-        upper_left = pts[pts[:, 0] == pts[0, 0]][-1]
+        # Get the index of the point with the largest y-value out of the points
+        # with the smallest x-value
+        upper_left = np.flatnonzero(   self.points[ind][:, 0] 
+                                    == self.points[ind][0, 0])[-1]
         vlist.append(upper_left)
         curr = vlist[0]
-        for p in pts:
-            if p[1] > curr[1]:
-                vlist.append(p)
+        for i in ind:
+            if self.points[i, 1] > self.points[curr, 1]:
+                vlist.append(i)
                 curr = vlist[-1]
 
         # Top left to bottom right
         curr = vlist[0]
-        for p in pts:
-            if p[1] < curr[1]:
-                vlist.append(p)
+        for i in ind:
+            if self.points[i, 1] < self.points[curr, 1]:
+                vlist.append(i)
                 curr = vlist[-1]
 
         # Top right to top left
-        upper_right = pts[pts[:, 0] == pts[-1, 0]][-1]
+        # Get the index of the point with the largest y-value out of the points
+        # with the largest x-value
+        upper_right = np.flatnonzero(   self.points[ind][:, 0] 
+                                     == self.points[ind][-1, 0])[-1]
         vlist.append(upper_right)
         ur_idx = len(vlist)-1  # current end of list index
         curr = vlist[-1]
-        for p in pts[::-1]:
-            if p[1] > curr[1]:
-                vlist.append(p)
+        for i in ind[::-1]:
+            if self.points[i, 1] > self.points[curr, 1]:
+                vlist.append(i)
                 curr = vlist[-1]
 
         # Top right to bottom left
         curr = vlist[ur_idx]
-        for p in pts[::-1]:
-            if p[1] < curr[1]:
-                vlist.append(p)
+        for i in ind[::-1]:
+            if self.points[i, 1] < self.points[curr, 1]:
+                vlist.append(i)
                 curr = vlist[-1]
 
         return np.asarray(vlist)

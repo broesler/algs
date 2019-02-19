@@ -14,16 +14,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import spatial
 
-from geometry import theta_deg
+import geometry as geom
 
 # Load the file (the easy way!)
-filename = './data/test_input06.dat'
+filename = './data/wiki_orthohull.dat'
+# filename = './data/test_input06.dat'
 # filename = './data/test_input06_b.dat'
 # filename = './data/input06.dat'
 coords = np.loadtxt(filename, delimiter=', ') #, max_rows=6)
 
 # Convenience arrays
-x, y, angles = np.array([(p[0], p[1], theta_deg(p[1], p[0])) for p in coords]).T
+x, y, angles = np.array([(p[0], p[1], geom.theta_deg(p[1], p[0])) for p in coords]).T
 
 # Algorithm:
 #   * compute Voronoi vertices (using Manhattan distance!!)
@@ -37,7 +38,8 @@ x, y, angles = np.array([(p[0], p[1], theta_deg(p[1], p[0])) for p in coords]).T
 #   * repeat with larger grid until convergence
 
 # Ignore convex hull points (guaranteed to have infinite areas
-hull = spatial.ConvexHull(coords)
+# hull = spatial.ConvexHull(coords)
+hull = geom.ConvexHull(coords, kind='orthogonal')
 n_classes = coords.shape[0]
 mask = np.ones(n_classes, dtype=bool)
 mask[hull.vertices] = False
@@ -45,7 +47,7 @@ mask[hull.vertices] = False
 # Use KDTree to efficiently calculate k-NN of grid points -> coords
 kdtree = spatial.cKDTree(coords)
 
-grid_mult = 2
+grid_mult = 1.2
 
 xmin, xmax = np.min(x)-1, np.max(x)+1
 ymin, ymax = np.min(y)-1, np.max(y)+1
@@ -81,7 +83,7 @@ cb = plt.colorbar(sc)
 
 # Data points
 ax.scatter(x, y, s=30, c='k', marker='x')
-ax.scatter(x[out[0]], y[out[0]], s=30, c='b', marker='o')
+ax.scatter(x[out[0]], y[out[0]], s=50, c='b', marker='o')
 
 # Convex hull
 ax.scatter(coords[hull.vertices, 0], coords[hull.vertices, 1],
