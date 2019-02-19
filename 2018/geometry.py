@@ -9,175 +9,203 @@
 """
 #==============================================================================
 
+import operator
 import numpy as np
 
-#------------------------------------------------------------------------------ 
-#        Utilities
-#------------------------------------------------------------------------------
+
 def rad2deg(theta):
     return (180 / np.pi) * theta
 
+
 def deg2rad(theta_deg):
     return (np.pi / 180) * theta_deg
+
 
 def pol2cart(r, theta):
     return np.array([r * np.cos(theta),
                      r * np.sin(theta)])
 
+
 def cart2pol(x, y):
     return np.array([(x**2 + y**2)**0.5,
                      np.arctan2(y, x)])
 
-#------------------------------------------------------------------------------ 
-#        Classes
-#------------------------------------------------------------------------------
-class Point():
-    """Geometric point class.
 
-    Examples
-    --------
-    >>> origin = Point((0, 0))
-    >>> origin.x, origin.y, origin.z
-    (0.0, 0.0, None)
-    >>> p = Point((3, 4))
-    >>> p.x, p.y
-    (3.0, 4.0)
-    >>> p.r
-    5.0
-    >>> origin.dist(p)  # default Euclidean
-    5.0
-    >>> origin.dist(p, kind='manhattan')
-    7.0
-    >>> q = Point((1, 1))
-    >>> q.r - np.sqrt(2)
-    0.0
-    >>> q.theta - np.pi/4
-    0.0
-    >>> q.theta_deg
-    45.0
+def theta(x, y):
+    return np.arctan2(y, x)
+
+
+def theta_deg(x, y):
+    return rad2deg(theta(x, y))
+
+
+def poly_area(pts, signed=False):
     """
+    Area of a simple 2D polygon.
+    
+    Parameters
+    ----------
+    pts : (M, 2) array_like 
+        array of M, 2-D polygon vertices, in order
+    signed : bool
+        if pts are CCW, area > 0, else area < 0.
 
-    def __init__(self, c=list(), kind='cartesian'):
-        """Create a Point object with given coordinates.
+    Returns
+    -------
+    area : float
+        area of polygon
+    """
+    if pts.shape[1] != 2:
+        raise Exception('poly_area only supports 2D points!')
 
-        :param array-like c: shape (n,), coordinate vector
-        :param str kind: 'cartesian', 'polar', etc. defines how input vector is
-            used to define shorthand attributes.
-        :returns: Point object
-        :rtype: Point
-        """
-        if kind.lower() == 'cartesian':
-            self.c = np.array([float(x) for x in c])
-        elif kind.lower() == 'polar':
-            if len(c) != 2:
-                raise Exception('Polar only applicable to 2-D Points')
-            self.c = pol2cart(c[0], c[1])
-        # elif kind.lower() == 'spherical', etc.
+    x, y = np.asarray(pts).T
+    area = 0.5 * (  np.dot(x, np.roll(y, 1)) 
+                  - np.dot(y, np.roll(x, 1)))
+    return area if signed else np.abs(area)
+
+
+def sort_by_x(points):
+    return points[np.argsort(points[:, 0])]
+
+
+def sort_by_y(points):
+    return points[np.argsort(points[:, 1])]
+
+
+def sort_by_xy(points, x_ascending=True, y_ascending=True):
+    """Sort array of points by x, then y."""
+    return points[argsort_by_xy(points)]
+
+
+def argsort_by_xy(points, x_ascending=True, y_ascending=True):
+    """Sort array of points by x, then y; return indices."""
+    _rev_x = None if x_ascending else -1
+
+    if x_ascending:
+        _rev_y = None if y_ascending else -1  # y works as expected
+    else:
+        _rev_y = -1 if y_ascending else None  # y role is reversed
+
+    rev_x = slice(None, None, _rev_x)
+    rev_y = slice(None, None, _rev_y)
+
+    # [rev_x] must go outside the final sort
+    return np.lexsort((points[:, 1][rev_y], points[:, 0]))[rev_x]
+
+
+#------------------------------------------------------------------------------ 
+#        Algorithm for Orthogonal Convex Hull
+#------------------------------------------------------------------------------
+# From <https://stackoverflow.com/questions/32496421/orthogonal-hull-algorithm>
+class ConvexHull():
+    """
+    Convex hull of array of input points.
+
+    Parameters
+    ----------
+    points : (M, 2) array_like 
+        array of input points
+    kind : str
+        'orthogonal' -- orthogonal convex hull
+        '' -- Euclidean convex hull
+
+    Attributes
+    ----------
+    points : (M, 2) ndarray 
+        array of input points
+    vertices : (N, 2) ndarray
+        Array of points forming the N vertices of the convex hull. For 2-D
+        convex hulls, the vertices are in counterclockwise order.
+
+    """
+    def __init__(self, points, kind=''):
+        self.points = np.asarray(points)
+        if self.points.shape[1] != 2:
+            raise Exception('ConvexHull only supports 2D points!')
+        self.points = np.asarray(points)
+        self.kind = kind
+        self.vertices = self._vertices()
+
+    def _ortho_search(self, x_ascending=True, y_ascending=True):
+        """Find orthogonal convex hull quadrant."""
+        ind = argsort_by_xy(self.points,
+                            x_ascending=x_ascending, y_ascending=y_ascending)
+        vlist = [ind[0]]  # start at corner extremum
+        curr = vlist[0]
+        op = operator.ge if y_ascending else operator.le
+        for i in ind:
+            if op(self.points[i, 1], self.points[curr, 1]):
+                vlist.append(i)
+                curr = i
+
+        return vlist
+
+    def _vertices(self):
+        vlist = list()
+        if self.kind == 'orthogonal':
+            # TODO return indices in CCW order. set() keeps unique list, but
+            # need to sort by CCW.
+            # TODO rewrite to "walk" around outside? _ortho_search could take
+            # a "start" index, and use a single sort with masked off array.
+            # Points would be kept in CCW order automatically.
+            vlist = set()
+            for xa in (True, False): 
+                for ya in (True, False):
+                    vlist.update(self._ortho_search(x_ascending=xa, y_ascending=ya))
+            vlist = list(vlist)
+
+            # Four quadrants
+            # ul = self._ortho_search(x_ascending=True, y_ascending=True)
+            # ll = self._ortho_search(x_ascending=True, y_ascending=False)
+            # ur = self._ortho_search(x_ascending=False, y_ascending=True)
+            # lr = self._ortho_search(x_ascending=False, y_ascending=False)
+            # vlist = np.concatenate([ul[::-1], ll, lr[::-1], ur])
+
         else:
-            raise Exception(f'Invalid kind {kind}')
+            # TODO subclass scipy.spatial.ConvexHull
+            raise Exception('ConvexHull only supports orthgonal kind!')
 
-    @property
-    def dims(self):
-        return self.c.size
+        return np.asarray(vlist)
 
-    #-------------------------------------------------------------------------- 
-    #        Shorthand for 2D or 3D points
-    #--------------------------------------------------------------------------
-    @property
-    def x(self):
-        return self.c[0] if self.dims > 0 else None
+    def simplices(self):
+        # TODO: If you want to have a full rectilinear polygon (with line
+        # segments between consecutive points), then you have to add an
+        # additional point to your chain each time you find next point. For
+        # example, when building the right-up chain, if you find a point (x2,
+        # y2) from the current point (x1, y1), you have to add (x2, y1) and
+        # (x2, y2) to the current chain list (in this order).
+        pass
 
-    @x.setter
-    def x(self, val):
-        self.c[0] = val 
 
-    @property
-    def y(self):
-        return self.c[1] if self.dims > 1 else None
-
-    @y.setter
-    def y(self, val):
-        self.c[1] = val 
-
-    @property
-    def z(self):
-        return self.c[2] if self.dims > 2 else None
-
-    @z.setter
-    def z(self, val):
-        self.c[2] = val 
-
-    #-------------------------------------------------------------------------- 
-    #        Polar coords
-    #--------------------------------------------------------------------------
-    @property
-    def r(self):
-        """Euclidean distance from origin."""
-        return (np.sum(self.c**2))**0.5
-
-    @r.setter
-    def r(self, val):
-        self.c = pol2cart(val, self.theta)
-
-    @property
-    def theta(self): 
-        """Polar angle from x-axis."""
-        if (self.dims != 2) and (self.dims != 3):
-            raise Exception('Property only applicable to 2-D and 3-D Points')
-        return np.arctan2(self.y, self.x)
-
-    @theta.setter
-    def theta(self, val):
-        if (self.dims != 2) and (self.dims != 3):
-            raise Exception('Property only applicable to 2-D and 3-D Points')
-        self.c = pol2cart(self.r, val)
-
-    @property
-    def theta_deg(self):
-        return rad2deg(self.theta)
-
-    #-------------------------------------------------------------------------- 
-    #        Distance
-    #--------------------------------------------------------------------------
-    @staticmethod
-    def _pdist(a, b, p=2):
-        """p-norm distance for general p. 
-
-        :param array-like a: vector of coordinates of point 1
-        :param array-like b: vector of coordinates of point 2
-        :param float p: p-norm value, typically integer. Manhattan p = 1,
-                        Euclidean p = 2.
-        :returns d: distance between two points
-        :rtype float:
-        """
-        return (np.sum(np.abs(a - b)**p))**(1/p)
-
-    def _make_dist(self, p):
-        """Make a p-norm distance function of 2 arguments with parameter p."""
-        return lambda a, b: self._pdist(a, b, p=p)
-
-    def dist(self, q, kind='euclidean'):
-        """Calculate distance between self and second Point."""
-        if self.dims != q.dims:
-            raise Exception("Points must have same dimensionality! ({} != {})"\
-                            .format(self.dims, q.dims))
-        kinds = {'manhattan': self._make_dist(1),
-                 'euclidean': self._make_dist(2)}
-        func = kinds.get(kind.lower(), lambda x, y: f'Invalid kind {x}')
-        return func(self.c, q.c)
-
-    #-------------------------------------------------------------------------- 
-    #        Utilities
-    #--------------------------------------------------------------------------
-    def __str__(self):
-        return 'Point({}, {})'.format(self.x, self.y)
-
-    def __repr__(self):
-        return self.__str__()
-
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
+# class BoundingSet():
+#     """
+#     Set of points closest to bounding box of array of input points.
+#
+#     Parameters
+#     ----------
+#     points : (M, 2) array_like 
+#         array of input points
+#     p : int, 0 < p < infty
+#         distance metric to bounding box
+#
+#     Attributes
+#     ----------
+#     points : (M, 2) ndarray 
+#         array of input points
+#     vertices : (N, 2) ndarray
+#         Array of points forming the N vertices of the bounding set. 
+#
+#     """
+#     def __init__(self, points, p=1):
+#         self.points = np.asarray(points)
+#         if self.points.shape[1] != 2:
+#             raise Exception('ConvexHull only supports 2D points!')
+#         self.points = np.asarray(points)
+#         self.p = p
+#         self.vertices = self._vertices()
+#
+#     def _vertices(self):
+#         pass
 
 #==============================================================================
 #==============================================================================
