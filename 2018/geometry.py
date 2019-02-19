@@ -9,6 +9,7 @@
 """
 #==============================================================================
 
+import operator
 import numpy as np
 
 def rad2deg(theta):
@@ -125,59 +126,31 @@ class ConvexHull():
         self.kind = kind
         self.vertices = self._vertices()
 
-    # def _ortho_search(self, x_ascending=True, y_ascending=True):
-    #     """Find orthogonal convex hull quarters."""
-    #     vlist = list()  # list of indices
-    #     ind = argsort_by_xy(self.points)  # point indices sorted by x, then y
-    #     return np.asarray(vlist)
+    def _ortho_search(self, x_ascending=True, y_ascending=True):
+        """Find orthogonal convex hull quarters."""
+        ind = argsort_by_xy(self.points,
+                            x_ascending=x_ascending, y_ascending=y_ascending)
+        vlist = [ind[0]]  # start at corner extremum
+        curr = vlist[0]
+        op = operator.gt if y_ascending else operator.lt
+        for i in ind:
+            if op(self.points[i, 1], self.points[curr, 1]):
+                vlist.append(i)
+                curr = i
+
+        return vlist
 
     def _vertices(self):
-        vlist = list()  # list of indices
-        ind = argsort_by_xy(self.points)  # point indices sorted by x, then y
-
-        # Top left to top right
-        #   **Increasing x, increasing y**
-        # Get the index of the point with the largest y-value out of the points
-        # with the smallest x-value
-        upper_left = np.flatnonzero(   self.points[ind][:, 0] 
-                                    == self.points[ind][0, 0])[-1]
-        vlist.append(upper_left)
-        curr = vlist[0]
-        for i in ind:
-            if self.points[i, 1] > self.points[curr, 1]:
-                vlist.append(i)
-                curr = vlist[-1]
-
-        # Top left to bottom right
-        #   **Increasing x, decreasing y**
-        import ipdb; ipdb.set_trace()
-        curr = vlist[0]
-        for i in ind:
-            if self.points[i, 1] < self.points[curr, 1]:
-                vlist.append(i)
-                curr = vlist[-1]
-
-        # Top right to top left
-        #   **Decreasing x, increasing y**
-        # Get the index of the point with the largest y-value out of the points
-        # with the largest x-value
-        upper_right = np.flatnonzero(   self.points[ind][:, 0] 
-                                     == self.points[ind][-1, 0])[-1]
-        vlist.append(upper_right)
-        ur_idx = len(vlist)-1  # current end of list index
-        curr = vlist[-1]
-        for i in ind[::-1]:
-            if self.points[i, 1] > self.points[curr, 1]:
-                vlist.append(i)
-                curr = vlist[-1]
-
-        # Top right to bottom left
-        #   **Decreasing x, decreasing y**
-        curr = vlist[ur_idx]
-        for i in ind[::-1]:
-            if self.points[i, 1] < self.points[curr, 1]:
-                vlist.append(i)
-                curr = vlist[-1]
+        vlist = list()
+        if self.kind == 'orthogonal':
+            # TODO eliminate double for loop??
+            vlist = list()
+            for xa in (True, False): 
+                for ya in (True, False):
+                    vlist += self._ortho_search(x_ascending=xa, y_ascending=ya)
+        else:
+            # TODO subclass scipy.spatial.ConvexHull
+            raise Exception('ConvexHull only supports orthgonal kind!')
 
         return np.asarray(vlist)
 

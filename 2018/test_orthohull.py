@@ -18,7 +18,9 @@ import geometry as geom
 
 # Load the file (the easy way!)
 filename = './data/wiki_orthohull.dat'
+# filename = './data/test_input06.dat'
 # filename = './data/test_input06_b.dat'
+# filename = './data/input06.dat'
 coords = np.loadtxt(filename, delimiter=', ') #, max_rows=6)
 
 # Scale up to all integers
