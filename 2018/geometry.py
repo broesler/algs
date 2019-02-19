@@ -67,38 +67,30 @@ def sort_by_x(points):
 def sort_by_y(points):
     return points[np.argsort(points[:, 1])]
 
-def sort_by_xy(points):
-    return points[np.lexsort((points[:, 1], points[:, 0]))]
+def sort_by_xy(points, x_ascending=True, y_ascending=True):
+    """Sort array of points by x, then y."""
+    return points[argsort_by_xy(points)]
 
-def argsort_by_xy(points):
-    return np.lexsort((points[:, 1], points[:, 0]))
+def argsort_by_xy(points, x_ascending=True, y_ascending=True):
+    """Sort array of points by x, then y; return indices."""
+    _rev_x = None if x_ascending else -1
+
+    if x_ascending:
+        _rev_y = None if y_ascending else -1  # y works as expected
+    else:
+        _rev_y = -1 if y_ascending else None  # y role is reversed
+
+    rev_x = slice(None, None, _rev_x)
+    rev_y = slice(None, None, _rev_y)
+
+    # [rev_x] must go outside the final sort
+    return np.lexsort((points[:, 1][rev_y], points[:, 0]))[rev_x]
 
 #------------------------------------------------------------------------------ 
 #        Algorithm for Orthogonal Convex Hull
 #------------------------------------------------------------------------------
 # From <https://stackoverflow.com/questions/32496421/orthogonal-hull-algorithm>
-#
-# 1. Start constructing upper hull from the leftmost point (uppermost among such
-#    if there are many). Add this point to a list.
-# 2. Find the next point: among all the points with both coordinates strictly
-#    greater than of the current point, choose the one with minimal
-#    x coordinate. Add this point to your list and continue from it.
-# 3. Continue adding points in step 2 as long as you can.
-# 4. Repeat the same from the rightmost point (uppermost among such), but going
-#    to the left. I.e. each time choose the next point with greater y, less x,
-#    and difference in x must be minimal.
-# 5. Merge the two lists you got from steps 3 and 4, you got upper hull.
-# 6. Do the same steps 1-5 for lower hull analogously.
-# 7. Merge the upper and lower hulls found at steps 5 and 6.
-#
-# In order to find the next point quickly, just sort your points by
-# x coordinate. For example, when building the very first right-up chain, you
-# sort by x increasing. Then iterate over all points. For each point check if
-# its y coordinate is greater than the current value. If yes, add the point to
-# the list and make it current.
-#
-# EDIT: The description above only shows how to trace the main vertices of the
-# hull. If you want to have a full rectilinear polygon (with line segments
+# TODO: If you want to have a full rectilinear polygon (with line segments
 # between consecutive points), then you have to add an additional point to your
 # chain each time you find next point. For example, when building the right-up
 # chain, if you find a point (x2, y2) from the current point (x1, y1), you have
@@ -133,11 +125,18 @@ class ConvexHull():
         self.kind = kind
         self.vertices = self._vertices()
 
+    # def _ortho_search(self, x_ascending=True, y_ascending=True):
+    #     """Find orthogonal convex hull quarters."""
+    #     vlist = list()  # list of indices
+    #     ind = argsort_by_xy(self.points)  # point indices sorted by x, then y
+    #     return np.asarray(vlist)
+
     def _vertices(self):
         vlist = list()  # list of indices
         ind = argsort_by_xy(self.points)  # point indices sorted by x, then y
 
         # Top left to top right
+        #   **Increasing x, increasing y**
         # Get the index of the point with the largest y-value out of the points
         # with the smallest x-value
         upper_left = np.flatnonzero(   self.points[ind][:, 0] 
@@ -150,6 +149,8 @@ class ConvexHull():
                 curr = vlist[-1]
 
         # Top left to bottom right
+        #   **Increasing x, decreasing y**
+        import ipdb; ipdb.set_trace()
         curr = vlist[0]
         for i in ind:
             if self.points[i, 1] < self.points[curr, 1]:
@@ -157,6 +158,7 @@ class ConvexHull():
                 curr = vlist[-1]
 
         # Top right to top left
+        #   **Decreasing x, increasing y**
         # Get the index of the point with the largest y-value out of the points
         # with the largest x-value
         upper_right = np.flatnonzero(   self.points[ind][:, 0] 
@@ -170,6 +172,7 @@ class ConvexHull():
                 curr = vlist[-1]
 
         # Top right to bottom left
+        #   **Decreasing x, decreasing y**
         curr = vlist[ur_idx]
         for i in ind[::-1]:
             if self.points[i, 1] < self.points[curr, 1]:
