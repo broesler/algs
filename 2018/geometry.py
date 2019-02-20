@@ -11,7 +11,7 @@
 
 import operator
 import numpy as np
-
+from scipy import spatial
 
 def rad2deg(theta):
     return (180 / np.pi) * theta
@@ -177,35 +177,55 @@ class ConvexHull():
         pass
 
 
-# class BoundingSet():
-#     """
-#     Set of points closest to bounding box of array of input points.
-#
-#     Parameters
-#     ----------
-#     points : (M, 2) array_like 
-#         array of input points
-#     p : int, 0 < p < infty
-#         distance metric to bounding box
-#
-#     Attributes
-#     ----------
-#     points : (M, 2) ndarray 
-#         array of input points
-#     vertices : (N, 2) ndarray
-#         Array of points forming the N vertices of the bounding set. 
-#
-#     """
-#     def __init__(self, points, p=1):
-#         self.points = np.asarray(points)
-#         if self.points.shape[1] != 2:
-#             raise Exception('ConvexHull only supports 2D points!')
-#         self.points = np.asarray(points)
-#         self.p = p
-#         self.vertices = self._vertices()
-#
-#     def _vertices(self):
-#         pass
+class BoundingSet():
+    """
+    Set of points closest to bounding box of array of input points.
+
+    Parameters
+    ----------
+    points : (M, 2) array_like 
+        array of M input points
+    p : int, 0 < p < infinity
+        Minkowski p-norm distance metric to bounding box
+
+    Attributes
+    ----------
+    points : (M, 2) ndarray 
+        array of input points
+    maxima : (4,) ndarray
+        array of min/maxima (x_min, x_max, y_min, y_max)
+    vertices : (N, 2) ndarray
+        Array of points forming the N vertices of the bounding set. 
+
+    """
+    def __init__(self, points, p=1):
+        self.points = np.asarray(points)
+        if self.points.shape[1] != 2:
+            raise Exception('ConvexHull only supports 2D points!')
+        self.points = np.asarray(points)
+        self.p = p  # Min
+        # (xmin, xmax, ymin, ymax) tuple
+        self.maxima = np.array((np.min(points[:, 0]), np.max(points[:, 0]),
+                                np.min(points[:, 1]), np.max(points[:, 1])))
+        self.vertices = self._vertices()
+
+    def _bounding_box(self):
+        """Create bounding box of integer points, in CCW order."""
+        xmin, xmax, ymin, ymax = self.maxima
+        xs, ys = np.arange(xmin, xmax+1), np.arange(ymin, ymax+1)
+        bot = np.vstack([xs, ymin*np.ones(xs.size)]).T
+        top = np.vstack([xs, ymax*np.ones(xs.size)]).T
+        left = np.vstack([xmin*np.ones(ys.size), ys]).T
+        right = np.vstack([xmax*np.ones(ys.size), ys]).T
+        return np.concatenate([bot, right, top[::-1], left[::-1]])
+
+    def _vertices(self):
+        """Get indices of points closest to a bounding box point."""
+        bounding_box = self._bounding_box()
+        dists = spatial.distance_matrix(bounding_box, self.points)
+        # Get list of point indices closest to each bounding box points
+        vlist = np.unique(dists.argmin(axis=1))
+        return np.asarray(vlist)
 
 #==============================================================================
 #==============================================================================

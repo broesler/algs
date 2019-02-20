@@ -17,33 +17,29 @@ from scipy import spatial
 import geometry as geom
 
 # Load the file (the easy way!)
-# filename = './data/wiki_orthohull.dat'
-filename = './data/test_input06.dat'
+# filename = './data/wiki_orthohull_int2.dat'
+# filename = './data/test_input06.dat'
 # filename = './data/test_input06_b.dat'  # degenerate case, no interior points!
-# filename = './data/input06.dat'
+filename = './data/input06.dat'
 coords = np.loadtxt(filename, delimiter=', ') #, max_rows=6)
 
 # Convenience arrays
-x, y, angles = np.array([(p[0], p[1], geom.theta_deg(p[1], p[0])) for p in coords]).T
+x, y = coords[:, 0], coords[:, 1]
 
 # Algorithm:
 #   * compute Voronoi vertices (using Manhattan distance!!)
 #   * compute area of finite Voronoi cells
 #   * return maximum of areas (count integral points in polygon)
 
-# Brute-force:
-#   * generate grid of max/min coords
-#   * run k-NN to classify each grid point
-#   * count points in each class
-#   * repeat with larger grid until convergence
-
 # Current algorithm:
 #   * generate grid of max/min coords
 #   * run k-NN to classify each grid point
 #   * count points in each class
 #   x compute orthogonal convex hull vertices
-#       NOTE caveat: orthogonal convex hull does NOT guarantee Vorononi cells
+#       * NOTE caveat: orthogonal convex hull does NOT guarantee Vorononi cells
 #       will be finite! 
+#       * NOTE caveat: orthogonal convex hull does NOT guarantee Vorononi cells
+#       will be infinite either!! See wiki_orthohull.dat, point (8, 18)
 #   * Find set of points that are closest to bounding box (via
 #     Manhattan distance)
 #   * return maximum of counts (excluding convex hull)
@@ -63,8 +59,8 @@ grid = np.vstack([xg.ravel(), yg.ravel()]).T
 
 # Ignore convex hull points (guaranteed to have infinite areas)
 # hull = spatial.ConvexHull(coords)
-hull = geom.ConvexHull(coords, kind='orthogonal')
-# hull = geom.BoundingSet(coords)  # not convex, but infinite areas
+# hull = geom.ConvexHull(coords, kind='orthogonal')
+hull = geom.BoundingSet(coords)  # not convex, but infinite areas
 n_cl = coords.shape[0]
 mask = np.ones(n_cl, dtype=bool)
 mask[hull.vertices] = False
@@ -112,12 +108,6 @@ ax.scatter(x[out[0]], y[out[0]], s=80,
 # Convex hull
 ax.scatter(coords[hull.vertices, 0], coords[hull.vertices, 1],
            s=30, marker='x', c='r')
-
-# sc = ax.scatter(x, y, c=angles, vmin=0, vmax=90)
-# cb = plt.colorbar(sc)
-# cb.ax.set_ylabel(r'$\theta$ [deg]')
-
-# ax.scatter(x[:2], y[:2], marker='x', c='r', s=100)  # highlight points
 
 ax.set_xlabel(r'$x$')
 ax.set_ylabel(r'$y$')

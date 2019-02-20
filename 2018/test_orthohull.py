@@ -17,32 +17,32 @@ from scipy import spatial
 import geometry as geom
 
 # Load the file (the easy way!)
-filename = './data/wiki_orthohull.dat'
+filename = './data/wiki_orthohull_int2.dat'
 # filename = './data/test_input06.dat'
 # filename = './data/test_input06_b.dat'  # degenerate case, no interior points!
 # filename = './data/input06.dat'
 coords = np.loadtxt(filename, delimiter=', ') #, max_rows=6)
 
-# Scale up to all integers
-# TODO write back to file
-coords = 10.0*(coords.round(1).astype(int))
+# './data/wiki_orthohull_int2.dat' contains "escaping" points, and interior
+# corner points on the orthogonal hull that have finite Voronoi cells
 
 # Convenience arrays
 x, y = coords[:, 0], coords[:, 1]
 
 # Ignore convex hull points (guaranteed to have infinite areas
-hull = geom.ConvexHull(coords, kind='orthogonal')
-# hull = geom.BoundingSet(coords)
-
-# TODO other idea: find all points that are "closest" to each point on the
-# bounding box? Any point that is closest to a point on the bounding box will
-# have a Voronoi cell that "escapes", i.e. has infinite area.
+# hull = geom.ConvexHull(coords, kind='orthogonal')
+hull = geom.BoundingSet(coords)
+bb = hull._bounding_box()
 
 #------------------------------------------------------------------------------
 #        Plots
 #------------------------------------------------------------------------------
 fig = plt.figure(1, clear=True)
 ax = fig.add_subplot(111)
+
+# Bounding box
+ax.scatter(bb[:, 0], bb[:, 1], 
+           s=30, marker='o', edgecolors='b', facecolors='none')
 
 # Data points
 ax.scatter(x, y, s=30, c='k', marker='x')
