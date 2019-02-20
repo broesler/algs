@@ -46,10 +46,9 @@ points = np.loadtxt(filename, delimiter=', ') #, max_rows=6)
 x, y = points[:, 0], points[:, 1]
 
 # Generate query grid of integer points, arbitrary size
-grid = geom.grid_points(x, y, grid_mult=1)
-# xg, yg = np.mgrid[np.min(x):np.max(x)+1, 
-#                   np.min(y):np.max(y)+1]
-# grid = np.vstack([xg.ravel(), yg.ravel()]).T
+xg, yg = np.mgrid[np.min(x):np.max(x)+1, 
+                  np.min(y):np.max(y)+1]
+grid = np.vstack([xg.ravel(), yg.ravel()]).T
 
 # Ignore convex hull points (guaranteed to have infinite areas)
 # hull = spatial.ConvexHull(coords)
@@ -84,6 +83,22 @@ else:
     import warnings
     warnings.warn('Degenerate case! All cells have infinite area!')
     out = [slice(0,0)]  # ignore plot command below
+
+#------------------------------------------------------------------------------ 
+#        Part 2
+#------------------------------------------------------------------------------
+# What is the size of the region containing all locations which have a total
+# distance to all given coordinates of less than 10000?
+thresh = 10000
+grid_add = thresh / points.shape[0]
+xg, yg = np.mgrid[np.min(x)-grid_add-1:np.max(x)+grid_add+1, 
+                  np.min(y)-grid_add-1:np.max(y)+grid_add+1]
+grid2 = np.vstack([xg.ravel(), yg.ravel()]).T
+grid_dists = spatial.distance_matrix(grid2, points, p=1)
+gd_sum = grid_dists.sum(axis=1)
+
+out2 = np.sum(gd_sum < thresh)
+print(f'Area: {out2}')
 
 #------------------------------------------------------------------------------
 #        Plots
