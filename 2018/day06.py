@@ -6,6 +6,25 @@
 #
 """
   Description: Manhattan Areas
+
+  Algorithm:
+    * compute Voronoi vertices (using Manhattan distance!!)
+    * compute area of finite Voronoi cells
+    * return maximum of areas (count integral points in polygon)
+  
+  Current algorithm:
+    * generate grid of max/min coords
+    * run k-NN to classify each grid point
+    x compute orthogonal convex hull vertices
+        * NOTE caveat: orthogonal convex hull does NOT guarantee Vorononi cells
+        will be finite! 
+        * NOTE caveat: orthogonal convex hull does NOT guarantee Vorononi cells
+        will be infinite either!! See wiki_orthohull.dat, point (8, 18)
+    * Find set of points that are closest to bounding box (via
+      Manhattan distance)
+    * count points in each class
+    * return maximum of counts (excluding BoundingSet)
+
 """
 #==============================================================================
 
@@ -26,24 +45,7 @@ coords = np.loadtxt(filename, delimiter=', ') #, max_rows=6)
 # Convenience arrays
 x, y = coords[:, 0], coords[:, 1]
 
-# Algorithm:
-#   * compute Voronoi vertices (using Manhattan distance!!)
-#   * compute area of finite Voronoi cells
-#   * return maximum of areas (count integral points in polygon)
-
-# Current algorithm:
-#   * generate grid of max/min coords
-#   * run k-NN to classify each grid point
-#   * count points in each class
-#   x compute orthogonal convex hull vertices
-#       * NOTE caveat: orthogonal convex hull does NOT guarantee Vorononi cells
-#       will be finite! 
-#       * NOTE caveat: orthogonal convex hull does NOT guarantee Vorononi cells
-#       will be infinite either!! See wiki_orthohull.dat, point (8, 18)
-#   * Find set of points that are closest to bounding box (via
-#     Manhattan distance)
-#   * return maximum of counts (excluding convex hull)
-
+# Generate query grid of integer points, arbitrary size
 grid_mult = 1
 xmin, xmax = np.min(x), np.max(x)+1
 ymin, ymax = np.min(y), np.max(y)+1
@@ -79,14 +81,14 @@ cl = np.asarray(cl)
 counts = np.bincount(cl, minlength=n_cl+1)  # extra bin for equidistant pts
 areas = np.vstack([np.arange(n_cl), counts[:-1]]).T  # skip "unused" class
 
-if not np.any(mask):
-    import warnings
-    warnings.warn('Degenerate case! All cells have infinite area!')
-    out = [slice(0,0)]  # ignore plot command below
-else:
+if np.any(mask):
     masked = areas[mask]
     out = masked[np.argmax(masked[:, 1])]  # tuple based on max area
     print(f"Point ID: {out[0]}, Area: {out[1]}")  # Point ID: 41, Area: 3989
+else:
+    import warnings
+    warnings.warn('Degenerate case! All cells have infinite area!')
+    out = [slice(0,0)]  # ignore plot command below
 
 #------------------------------------------------------------------------------
 #        Plots
