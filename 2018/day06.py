@@ -40,35 +40,27 @@ import geometry as geom
 # filename = './data/test_input06.dat'
 # filename = './data/test_input06_b.dat'  # degenerate case, no interior points!
 filename = './data/input06.dat'
-coords = np.loadtxt(filename, delimiter=', ') #, max_rows=6)
+points = np.loadtxt(filename, delimiter=', ') #, max_rows=6)
 
 # Convenience arrays
-x, y = coords[:, 0], coords[:, 1]
+x, y = points[:, 0], points[:, 1]
 
 # Generate query grid of integer points, arbitrary size
-grid_mult = 1
-xmin, xmax = np.min(x), np.max(x)+1
-ymin, ymax = np.min(y), np.max(y)+1
-cx = (xmax - xmin) / 2 + xmin    # center coordinate
-cy = (ymax - ymin) / 2 + ymin
-w = grid_mult * (xmax - xmin)    # width/height
-h = grid_mult * (ymax - ymin)
-xmin, xmax = int(cx - w/2), int(cx + w/2)  # corners
-ymin, ymax = int(cy - h/2), int(cy + h/2)
-
-xg, yg = np.mgrid[xmin:xmax, ymin:ymax]
-grid = np.vstack([xg.ravel(), yg.ravel()]).T
+grid = geom.grid_points(x, y, grid_mult=1)
+# xg, yg = np.mgrid[np.min(x):np.max(x)+1, 
+#                   np.min(y):np.max(y)+1]
+# grid = np.vstack([xg.ravel(), yg.ravel()]).T
 
 # Ignore convex hull points (guaranteed to have infinite areas)
 # hull = spatial.ConvexHull(coords)
 # hull = geom.ConvexHull(coords, kind='orthogonal')
-hull = geom.BoundingSet(coords)  # not convex, but infinite areas
-n_cl = coords.shape[0]
+hull = geom.BoundingSet(points)  # not convex, but infinite areas
+n_cl = points.shape[0]
 mask = np.ones(n_cl, dtype=bool)
 mask[hull.vertices] = False
 
 # Use KDTree to efficiently calculate k-NN of grid points -> coords
-kdtree = spatial.cKDTree(coords)
+kdtree = spatial.cKDTree(points)
 dists, classes = kdtree.query(grid, k=2, p=1)  # 2 neighbors, Minkowski p = 1
 
 # tag equidistant points with unused class number, so we don't include them
@@ -81,6 +73,9 @@ cl = np.asarray(cl)
 counts = np.bincount(cl, minlength=n_cl+1)  # extra bin for equidistant pts
 areas = np.vstack([np.arange(n_cl), counts[:-1]]).T  # skip "unused" class
 
+#------------------------------------------------------------------------------ 
+#        Part 1
+#------------------------------------------------------------------------------
 if np.any(mask):
     masked = areas[mask]
     out = masked[np.argmax(masked[:, 1])]  # tuple based on max area
@@ -108,7 +103,7 @@ ax.scatter(x[out[0]], y[out[0]], s=80,
            marker='o', edgecolors='r', facecolors='none')
 
 # Convex hull
-ax.scatter(coords[hull.vertices, 0], coords[hull.vertices, 1],
+ax.scatter(points[hull.vertices, 0], points[hull.vertices, 1],
            s=30, marker='x', c='r')
 
 ax.set_xlabel(r'$x$')

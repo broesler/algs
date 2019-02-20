@@ -21,17 +21,17 @@ filename = './data/wiki_orthohull_int2.dat'
 # filename = './data/test_input06.dat'
 # filename = './data/test_input06_b.dat'  # degenerate case, no interior points!
 # filename = './data/input06.dat'
-coords = np.loadtxt(filename, delimiter=', ') #, max_rows=6)
+points = np.loadtxt(filename, delimiter=', ') #, max_rows=6)
 
 # './data/wiki_orthohull_int2.dat' contains "escaping" points, and interior
 # corner points on the orthogonal hull that have finite Voronoi cells
 
 # Convenience arrays
-x, y = coords[:, 0], coords[:, 1]
+x, y = points[:, 0], points[:, 1]
 
 # Ignore convex hull points (guaranteed to have infinite areas
-# hull = geom.ConvexHull(coords, kind='orthogonal')
-hull = geom.BoundingSet(coords)
+# hull = geom.ConvexHull(points, kind='orthogonal')
+hull = geom.BoundingSet(points)
 bb = hull._bounding_box()
 
 #------------------------------------------------------------------------------
@@ -48,7 +48,7 @@ ax.scatter(bb[:, 0], bb[:, 1],
 ax.scatter(x, y, s=30, c='k', marker='x')
 
 # Convex Hull
-ax.scatter(coords[hull.vertices, 0], coords[hull.vertices, 1], 
+ax.scatter(points[hull.vertices, 0], points[hull.vertices, 1], 
            marker='x', c='r', s=30)
 
 ax.set_xlabel(r'$x$')

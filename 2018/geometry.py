@@ -38,6 +38,20 @@ def theta(x, y):
 def theta_deg(x, y):
     return rad2deg(theta(x, y))
 
+def grid_points(x, y, grid_mult=1):
+    """Generate an array of grid points of arbitrary size."""
+    grid_mult = 1
+    xmin, xmax = np.min(x), np.max(x)+1
+    ymin, ymax = np.min(y), np.max(y)+1
+    cx = (xmax - xmin) / 2 + xmin    # center coordinate
+    cy = (ymax - ymin) / 2 + ymin
+    w = grid_mult * (xmax - xmin)    # width/height
+    h = grid_mult * (ymax - ymin)
+    xmin, xmax = int(cx - w/2), int(cx + w/2)  # corners
+    ymin, ymax = int(cy - h/2), int(cy + h/2)
+    xg, yg = np.mgrid[xmin:xmax, ymin:ymax]
+    return np.vstack([xg.ravel(), yg.ravel()]).T
+
 
 def poly_area(pts, signed=False):
     """
