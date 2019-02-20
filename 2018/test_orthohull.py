@@ -24,14 +24,15 @@ filename = './data/wiki_orthohull.dat'
 coords = np.loadtxt(filename, delimiter=', ') #, max_rows=6)
 
 # Scale up to all integers
+# TODO write back to file
 coords = 10.0*(coords.round(1).astype(int))
 
 # Convenience arrays
 x, y = coords[:, 0], coords[:, 1]
 
 # Ignore convex hull points (guaranteed to have infinite areas
-# hull = geom.ConvexHull(coords, kind='orthogonal')
-hull = geom.BoundingSet(coords)
+hull = geom.ConvexHull(coords, kind='orthogonal')
+# hull = geom.BoundingSet(coords)
 
 # TODO other idea: find all points that are "closest" to each point on the
 # bounding box? Any point that is closest to a point on the bounding box will
