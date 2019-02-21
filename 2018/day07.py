@@ -21,7 +21,7 @@ def parse(line):
 
 filename = 'data/input07.dat'
 
-G = graph.Graph()
+G = graph.Digraph()
 
 with open(filename, 'r') as file:
     data = list()

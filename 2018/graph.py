@@ -10,67 +10,79 @@
 #==============================================================================
 
 class Node():
+    """Node of a graph.
+
+    Parameters
+    ----------
+    name : str
+        Name of the node
+    neighbors : iterable of str, optional
+        Iterable of the node names to which this node is connected.
+
+    Attributes
+    ----------
+    name : str
+        Name of the node
+    neighbors : iterable of str
+        Iterable of the node names to which this node is connected.
+    indegree : int
+        Number of nodes pointing to this node.
+    """
     def __init__(self, name, neighbors=list()):
         self.name = name
-        self.neighbors = neighbors
+        self.neighbors = set(neighbors)
+        self.indegree = 0
 
     def __repr__(self):
         return f'<Node {self.name}:{self.neighbors}>'
 
-class Graph():
+class Digraph():
     """Directed graph represented as a dictionary of Nodes.
     
     Parameters
     ----------
     nodes : :obj:`list` of :obj:`Node`
-        List of nodes to initialize the directed `Graph`. The first node will
-        be marked as the start of the Graph. The order of the following nodes
+        List of nodes to initialize the directed `Digraph`. The first node will
+        be marked as the start of the Digraph. The order of the following nodes
         does not matter.
 
     Attributes
     ----------
     nodes : :obj:`list` of :obj:`Node`
-        List of nodes in `Graph`. Includes those added with `Graph.add_node`.
-    root : :obj:`Node`
-        Starting node from which all others stem.
-
+        List of nodes in `Digraph`.
     """
     def __init__(self, nodes=list()):
         self.nodes = dict()
-        self.root = None
         if nodes:
-            self.root = nodes[0]
             for node in nodes:
                 self.nodes[node.name] = node
 
     def count(self):
         return len(G.nodes)
 
+    def find_root(self):
+        """Find node with indegree 0."""
+        pass
+
     def add_edge(self, a, b):
         """Add edge between two node names.
 
         Parameters
         ----------
-        a, b : char
-            Node names
+        a : str
+            Starting node name
+        b : str
+            Ending node name
         """
-        self.add_node(Node(a, [b]))
-        self.add_node(Node(b, []))
-
-    def add_node(self, new_node):
-        """Update existing node, or create new one.
-
-        Parameters
-        ----------
-        new_node : :obj:`Node`
-            Node object to be added to graph.
-        """
-        if not self.nodes:
-            self.root = new_node
-        if new_node.name in self.nodes:
-            self.nodes[new_node.name].neighbors.extend(new_node.neighbors)
+        if a in self.nodes:
+            self.nodes[a].neighbors.add(b)
         else:
-            self.nodes[new_node.name] = new_node
+            self.nodes[a] = Node(a, [b])
+
+        if b in self.nodes:
+            self.nodes[b].indegree += 1
+        else:
+            self.nodes[b] = Node(b, [])
 
     def get_next(self, node):
         return self.nodes[min(node.neighbors)]  # first alphabetically
@@ -78,7 +90,7 @@ class Graph():
     def traverse_graph(self, start=None, path=None):
         """Depth-first search."""
         if not start:
-            start = self.root
+            start = self.find_root()
 
         if not path:
             path = list()
