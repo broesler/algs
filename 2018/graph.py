@@ -12,7 +12,11 @@
 class Node():
     def __init__(self, name, neighbors=list()):
         self.name = name
-        self.neighbors = neighbors
+        self.neighbors = set(neighbors)
+        self.indegree = 0
+
+    def add_neighbor(self, b):
+        self.neighbors.add(b)
 
     def __repr__(self):
         return f'<Node {self.name}:{self.neighbors}>'
@@ -37,14 +41,17 @@ class Graph():
     """
     def __init__(self, nodes=list()):
         self.nodes = dict()
-        self.root = None
         if nodes:
-            self.root = nodes[0]
             for node in nodes:
                 self.nodes[node.name] = node
+        self.E = 0
 
-    def count(self):
-        return len(G.nodes)
+    @property
+    def V(self):
+        return len(self.nodes)
+
+    def find_root(self):
+        return [x for x, y in self.nodes.items() if y.indegree == 0]
 
     def add_edge(self, a, b):
         """Add edge between two node names.
@@ -54,41 +61,39 @@ class Graph():
         a, b : char
             Node names
         """
-        self.add_node(Node(a, [b]))
-        self.add_node(Node(b, []))
+        self.E += 1
 
-    def add_node(self, new_node):
-        """Update existing node, or create new one.
-
-        Parameters
-        ----------
-        new_node : :obj:`Node`
-            Node object to be added to graph.
-        """
-        if not self.nodes:
-            self.root = new_node
-        if new_node.name in self.nodes:
-            self.nodes[new_node.name].neighbors.extend(new_node.neighbors)
+        if a in self.nodes:
+            self.nodes[a].add_neighbor(b)
         else:
-            self.nodes[new_node.name] = new_node
+            self.nodes[a] = Node(a, [b])
 
-    def get_next(self, node):
-        return self.nodes[min(node.neighbors)]  # first alphabetically
+        if b not in self.nodes:
+            self.nodes[b] = Node(b, [])
+        self.nodes[b].indegree += 1
+
+    def get_next(self, a):
+        """Get the next node to traverse."""
+        try:
+            node = self.nodes[a]
+            return self.nodes[min(node.neighbors)]  # first alphabetically
+        except (KeyError, ValueError):
+            return None
 
     def traverse_graph(self, start=None, path=None):
         """Depth-first search."""
         if not start:
-            start = self.root
+            start = self.find_root()[0]
 
         if not path:
             path = list()
         
         # Track path through the graph
-        path.append(start.name)
+        path.append(start)
 
-        if start.neighbors:
-            next_node = self.get_next(start)
-            self.traverse_graph(next_node, path)
+        next_node = self.get_next(start)
+        if next_node:
+            self.traverse_graph(next_node.name, path)
 
         return path
 
