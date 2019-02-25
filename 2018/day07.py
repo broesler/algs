@@ -12,8 +12,6 @@
 import re
 import graph
 
-from graphviz import Digraph
-
 pat = re.compile('Step (\w) must be finished before step (\w) can begin\.')
 
 # Utilities
@@ -34,10 +32,10 @@ def parse(line):
 #------------------------------------------------------------------------------ 
 #        Main
 #------------------------------------------------------------------------------
+# filename = 'data/test_input07.dat'
 filename = 'data/input07.dat'
 
 G = graph.Graph()
-dot = Digraph()
 
 with open(filename, 'r') as file:
     data = list()
@@ -45,10 +43,6 @@ with open(filename, 'r') as file:
         a, b = parse(line)
         data.append((a, b))
         G.add_edge(a, b)
-        dot.edge(a, b)
-
-print(dot.source)
-dot.render('out.dot', view=True)
 
 # Test graph building
 f = flatten(data)
@@ -58,8 +52,10 @@ should_be(E % 1, 0)
 should_be(G.V, V)
 should_be(G.E, E)
 
-path = G.traverse_graph()
+# Need to do BREADTH-FIRST search!
+path = G.bfs_all()
 print(''.join(path))
+should_be(len(path), G.V)  # all vertices visited
 
 #==============================================================================
 #==============================================================================

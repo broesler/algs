@@ -10,16 +10,17 @@
 #==============================================================================
 
 class Node():
-    def __init__(self, name, neighbors=list()):
-        self.name = name
-        self.neighbors = set(neighbors)
+    def __init__(self, node_id, children=list()):
+        self.id = node_id
+        self.next = set(children)
         self.indegree = 0
+        self.visited = False
 
-    def add_neighbor(self, b):
-        self.neighbors.add(b)
+    def add_next(self, b):
+        self.next.add(b)
 
     def __repr__(self):
-        return f'<Node {self.name}:{self.neighbors}>'
+        return f'<Node {self.id}:{self.next}>'
 
 class Graph():
     """Directed graph represented as a dictionary of Nodes.
@@ -43,16 +44,12 @@ class Graph():
         self.nodes = dict()
         if nodes:
             for node in nodes:
-                self.nodes[node.name] = node
+                self.nodes[node.id] = node
         self.E = 0
 
     @property
     def V(self):
         return len(self.nodes)
-
-    def find_root(self):
-        """First alphabetically of nodes with indegree zero."""
-        return min(self.find_all_roots())
 
     def find_all_roots(self):
         """List of nodes with indegree zero."""
@@ -69,7 +66,7 @@ class Graph():
         self.E += 1
 
         if a in self.nodes:
-            self.nodes[a].add_neighbor(b)
+            self.nodes[a].add_next(b)
         else:
             self.nodes[a] = Node(a, [b])
 
@@ -77,30 +74,49 @@ class Graph():
             self.nodes[b] = Node(b, [])
         self.nodes[b].indegree += 1
 
-    def get_next(self, a):
-        """Get the next node to traverse."""
-        try:
-            node = self.nodes[a]
-            return self.nodes[min(node.neighbors)]  # first alphabetically
-        except (KeyError, ValueError):
-            return None
+    def bfs_all(self, available=None, path=None):
+        """Traverse all nodes breadth-first. Choose lowest alphabetical.
 
-    def traverse_graph(self, start=None, path=None):
-        """Depth-first search."""
-        if not start:
-            start = self.find_root()
+        Parameters
+        ----------
+        available : :obj:`list`
+            List of node ids to which we can travel next.
+        path : :obj:`list`
+            List of node ids to which we have already traveled.
 
+        Returns
+        -------
+        path : :obj:`list`
+            List of node ids to which we have already traveled.
+        """
+        if not available:
+            # TODO store "available" in a priority queue so we can efficiently
+            # get the min value and keep traversing
+            available = set(self.find_all_roots())
         if not path:
             path = list()
-        
-        # Track path through the graph
-        path.append(start)
 
-        next_node = self.get_next(start)
-        if next_node:
-            self.traverse_graph(next_node.name, path)
+        curr = self.nodes[min(available)]  # first alphabetically
+        path.append(curr.id)
+        available.remove(curr.id)
+        curr.visited = True
+
+        if curr.next:
+            children = list()
+            for n in curr.next:
+                if not self.nodes[n].visited and self.nodes[n].indegree < 2:
+                    children.append(self.nodes[n].id)
+                self.nodes[n].indegree -= 1  # pre-req is done for children
+            available.update(children)
+
+        if available:
+            self.bfs_all(available, path)
 
         return path
+
+
+
+
 
 
 #==============================================================================
