@@ -51,6 +51,11 @@ class Graph():
         return len(self.nodes)
 
     def find_root(self):
+        """First alphabetically of nodes with indegree zero."""
+        return min(self.find_all_roots())
+
+    def find_all_roots(self):
+        """List of nodes with indegree zero."""
         return [x for x, y in self.nodes.items() if y.indegree == 0]
 
     def add_edge(self, a, b):
@@ -83,7 +88,7 @@ class Graph():
     def traverse_graph(self, start=None, path=None):
         """Depth-first search."""
         if not start:
-            start = self.find_root()[0]
+            start = self.find_root()
 
         if not path:
             path = list()

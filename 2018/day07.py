@@ -10,26 +10,34 @@
 #==============================================================================
 
 import re
-
 import graph
+
+from graphviz import Digraph
 
 pat = re.compile('Step (\w) must be finished before step (\w) can begin\.')
 
+# Utilities
 def flatten(forest): 
     """Flatten all elements of all sublists into one single list."""
     return [leaf for tree in forest for leaf in tree]
 
-def parse(line):
-    match = pat.match(line)
-    return match.group(1).upper(), match.group(2).upper()
-
 def should_be(a, b):
+    """Comparison function for testing."""
     if a != b:
         raise Exception(f'Got {a}, expected {b}')
 
+def parse(line):
+    """Parse line from data file to get two characters."""
+    match = pat.match(line)
+    return match.group(1).upper(), match.group(2).upper()
+
+#------------------------------------------------------------------------------ 
+#        Main
+#------------------------------------------------------------------------------
 filename = 'data/input07.dat'
 
 G = graph.Graph()
+dot = Digraph()
 
 with open(filename, 'r') as file:
     data = list()
@@ -37,6 +45,10 @@ with open(filename, 'r') as file:
         a, b = parse(line)
         data.append((a, b))
         G.add_edge(a, b)
+        dot.edge(a, b)
+
+print(dot.source)
+dot.render('out.dot', view=True)
 
 # Test graph building
 f = flatten(data)
