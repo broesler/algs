@@ -9,7 +9,7 @@
 """
 #==============================================================================
 
-from stack import Stack
+from basics.stack import Stack
 
 def reduce_polymer(polymer):
     """Perform reaction algorithm on polymer string."""
