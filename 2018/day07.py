@@ -38,7 +38,8 @@ with open(filename, 'r') as file:
         G.add_edge(a, b)
 
 # Need to do BREADTH-FIRST search!
-path = G.bfs_all()
+bfs = graph.BFSPaths(G)
+path = bfs.all_paths
 print(''.join(path))
 should_be(len(path), G.V)  # all vertices visited
 
