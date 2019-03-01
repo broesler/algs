@@ -28,13 +28,17 @@ class Node():
     indegree : int
         Number of nodes pointing to this node.
     """
-    def __init__(self, name, neighbors=list()):
-        self.name = name
-        self.neighbors = set(neighbors)
+    def __init__(self, node_id, children=list()):
+        self.id = node_id
+        self.next = set(children)
         self.indegree = 0
+        self.visited = False
+
+    def add_next(self, b):
+        self.next.add(b)
 
     def __repr__(self):
-        return f'<Node {self.name}:{self.neighbors}>'
+        return f'<Node {self.id}:{self.next}>'
 
 class Digraph():
     """Directed graph represented as a dictionary of Nodes.
@@ -49,16 +53,25 @@ class Digraph():
     Attributes
     ----------
     nodes : :obj:`list` of :obj:`Node`
-        List of nodes in `Digraph`.
+        List of nodes in `Digraph`. Includes those added with `Digraph.add_node`.
+    root : :obj:`Node`
+        Starting node from which all others stem.
+
     """
     def __init__(self, nodes=list()):
         self.nodes = dict()
         if nodes:
             for node in nodes:
-                self.nodes[node.name] = node
+                self.nodes[node.id] = node
+        self.E = 0
 
-    def count(self):
-        return len(G.nodes)
+    @property
+    def V(self):
+        return len(self.nodes)
+
+    def find_all_roots(self):
+        """List of nodes with indegree zero."""
+        return [x for x, y in self.nodes.items() if y.indegree == 0]
 
     def find_root(self):
         """Find node with indegree 0."""
@@ -74,35 +87,60 @@ class Digraph():
         b : str
             Ending node name
         """
+        self.E += 1
+
         if a in self.nodes:
-            self.nodes[a].neighbors.add(b)
+            self.nodes[a].add_next(b)
         else:
             self.nodes[a] = Node(a, [b])
 
-        if b in self.nodes:
-            self.nodes[b].indegree += 1
-        else:
+        if b not in self.nodes:
             self.nodes[b] = Node(b, [])
+        self.nodes[b].indegree += 1
 
-    def get_next(self, node):
-        return self.nodes[min(node.neighbors)]  # first alphabetically
+    def bfs_all(self, available=None, path=None):
+        """Traverse all nodes breadth-first. Choose lowest alphabetical.
 
-    def traverse_graph(self, start=None, path=None):
-        """Depth-first search."""
-        if not start:
-            start = self.find_root()
+        Parameters
+        ----------
+        available : :obj:`list`
+            List of node ids to which we can travel next.
+        path : :obj:`list`
+            List of node ids to which we have already traveled.
 
+        Returns
+        -------
+        path : :obj:`list`
+            List of node ids to which we have already traveled.
+        """
+        if not available:
+            # TODO store "available" in a priority queue so we can efficiently
+            # get the min value and keep traversing
+            available = set(self.find_all_roots())
         if not path:
             path = list()
-        
-        # Track path through the graph
-        path.append(start.name)
 
-        if start.neighbors:
-            next_node = self.get_next(start)
-            self.traverse_graph(next_node, path)
+        curr = self.nodes[min(available)]  # first alphabetically
+        path.append(curr.id)
+        available.remove(curr.id)
+        curr.visited = True
+
+        if curr.next:
+            children = list()
+            for n in curr.next:
+                if not self.nodes[n].visited and self.nodes[n].indegree < 2:
+                    children.append(self.nodes[n].id)
+                self.nodes[n].indegree -= 1  # pre-req is done for children
+            available.update(children)
+
+        if available:
+            self.bfs_all(available, path)
 
         return path
+
+
+
+
 
 
 #==============================================================================
