@@ -15,8 +15,8 @@ class Queue():
     
     Parameters
     ----------
-    *items : list
-        List of items to add to the queue, in FIFO order.
+    items : List of objects
+        Items to add to the queue, in FIFO order.
 
     Attributes
     ----------
@@ -25,7 +25,7 @@ class Queue():
     is_empty : bool
         True if `size == 0`
     """
-    def __init__(self, *items):
+    def __init__(self, items):
         self._items = list(items)
 
     @property
@@ -40,15 +40,14 @@ class Queue():
         """Look at first item in queue."""
         return self._items[0]
 
-    def enqueue(self, item):
-        """Add item to the end of the queue.
+    def enqueue(self, items):
+        """Add items to the end of the queue.
 
         Parameters
         ----------
-        item : object
-            Item to add to the queue.
+        items : Iterable of items to add to the queue.
         """
-        self._items.append(item)
+        self._items.extend(list(items))
 
     def dequeue(self):
         """Remove item from the front of the queue.
@@ -64,19 +63,24 @@ class Queue():
         for item in self._items:
             yield item
 
+    def __bool__(self):
+        return bool(self._items)
+
     def __str__(self):
         return ' '.join([str(x) for x in self._items])
 
 
 if __name__ == '__main__':
     from basics.queue import Queue
-    q = Queue(*[1, 2, 3])
+    q = Queue(['A', 'B', 'C'])
     assert q.size == 3
     assert not q.is_empty
-    q.enqueue(4)
+    q.enqueue('D')
     # Test iteration
     for item in q:
         print(item)
+    assert min(q) == 'A'
+    assert max(q) == 'D'
 
 #==============================================================================
 #==============================================================================
