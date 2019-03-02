@@ -1,4 +1,4 @@
-#!/Users/bernardroesler/anaconda3/envs/insight/bin/python3
+#!/usr/bin/env python3
 #==============================================================================
 #     File: graph.py
 #  Created: 2019-02-20 22:40
@@ -9,54 +9,19 @@
 """
 #==============================================================================
 
-import sys
 from basics.stack import Stack
 from basics.queue import Queue
 
-INT_MAX = sys.maxsize
-
-class Vertex():
-    """Vertex of a graph.
-
-    Parameters
-    ----------
-    vertex_id : str
-        id of the vertex
-    adjacent : iterable of str, optional
-        Iterable of the vertex names to which this vertex is connected.
-
-    Attributes
-    ----------
-    id : str or int
-        id of the vertex
-    adj : iterable
-        Iterable of the vertex names to which this vertex is connected.
-    indegree : int
-        Number of vertices pointing to this vertex.
-    """
-    def __init__(self, vertex_id, adjacent=list()):
-        self.id = vertex_id
-        self.adj = set(adjacent)
-        self.indegree = 0
-
-    def add_adj(self, b):
-        """Add a vertex to the list of adjacent."""
-        self.adj.add(b)
-
-    def __repr__(self):
-        return f'<Vertex {self.id}:{self.adj}>'
-
-
 class Digraph():
     """Directed graph represented as a dictionary of Vertices.
-    
+
     Parameters
     ----------
-    vertices : iterable of :obj:`Vertex`
+    vertices : iterable of vertex ids
         Iterable of vertices to initialize the directed `Digraph`.
 
-        *NOTE*: Vertices are stored as a dictionary, so duplicate `vertex.id`s
-        in the list will overwrite.
+        *NOTE*: Vertices are stored as a dictionary, so duplicate ids in the
+        list will overwrite.
 
     Attributes
     ----------
@@ -64,25 +29,25 @@ class Digraph():
         Number of vertices in the graph.
     E : int
         Number of edges in the graph.
+    adj : dict of lists of vertices
+        `adj[v]` returns adjacency list of vertices to which `v` points.
+    indegree : dict of int
+        `indegree[v]` is number of vertices that have edges to `v`.
     """
     def __init__(self, vertices=list()):
-        self._vertices = dict()
-        # TODO get rid of Vertex class...
-        self._indegree = dict()
-        for vertex in vertices:
-            self._vertices[vertex.id] = vertex
         self.E = 0
-
-    @property
-    def V(self):
-        return len(self._vertices)
+        self.V = 0
+        self.adj = dict()       # vertex adjacency list
+        self.indegree = dict()  # list of vertex indegrees
+        for v in vertices:
+            self._init_vertex(v)
 
     def roots(self):
         """List of vertices with indegree zero."""
-        return [n.id for n in self if n.indegree == 0]
+        return [v for v in self if self.indegree[v] == 0]
 
     def vertices(self):
-        return self._vertices.values()
+        return set(self.adj.keys()) #and set(self.indegree.keys())
 
     def add_edge(self, a, b):
         """Add edge between two vertex ids.
@@ -96,24 +61,37 @@ class Digraph():
         """
         self.E += 1
 
-        if a in self._vertices:
-            self._vertices[a].add_adj(b)
+        if a in self.adj:
+            self.adj[a].append(b)
         else:
-            self._vertices[a] = Vertex(a, [b])
+            self._init_vertex(a, [b])
 
-        if b not in self._vertices:
-            self._vertices[b] = Vertex(b, [])
+        if b not in self.indegree:
+            self._init_vertex(b)
+        self.indegree[b] += 1
 
-        self._vertices[b].indegree += 1
+    def _init_vertex(self, v, w=list()):
+        """Add a new vertex to the graph.
 
-    def __getitem__(self, vertex_id):
-        return self._vertices[vertex_id]
+        Parameters
+        ----------
+        v : vertex id (str or int)
+            Name of vertex to add to the graph
+        w : list of vertex ids
+            Adjacent vertices to `v`. May be empty.
+        """
+        self.V += 1
+        self.adj[v] = list(w)
+        self.indegree[v] = 0
+
+    def __getitem__(self, v):
+        return self.adj[v]
 
     def __iter__(self):
         yield from self.vertices()
 
     def __str__(self):
-        return '\n'.join(str(n) for n in self)
+        return str(self.adj).replace('],', ']\n')
 
 
 class BFSPaths():
@@ -122,7 +100,7 @@ class BFSPaths():
     Parameters
     ----------
     G : :obj:`Digraph`
-    sources : iterable of `Vertex` ids
+    sources : iterable of vertex ids
         Iterable of vertex ids from which to begin the search.
     ordered : bool, optional
         Traverse the nodes in a specific order, determined by `choose_next`.
@@ -139,17 +117,16 @@ class BFSPaths():
     all_paths : list
         List of all vertices touched during BFS.
     """
-    def __init__(self, G, sources=None,
-                 ordered=False, choose_next=lambda x: x[0]):
+    def __init__(self, G, sources=None, ordered=False, choose_next=None):
         if not isinstance(G, Digraph):
             raise Exception('BFS requires a Digraph type.')
         self.G = G
         self.sources = sources or self.G.roots()
+        self.all_paths = list()
         self._edge_to = dict()  # v -> w : edge_to[w] = v
         self._visited = dict()
         for v in G:
-            self._visited[v.id] = False
-        self.all_paths = list()
+            self._visited[v] = False
         # populate edge_to dict via the search
         if ordered:
             self.ordered_bfs(choose_next)
@@ -157,11 +134,28 @@ class BFSPaths():
             self._bfs()
 
     def has_path_to(self, v):
-        """has_path_to(v) is True if there is a path from s -> w."""
+        """has_path_to(v) returns True if there is a path from s -> w.
+
+        Parameters
+        ----------
+        v : vertex id
+            A vertex id, typically int or str.
+        """
         return self._visited[v]
 
     def path_to(self, v):
-        """Returns path from source vertex to v."""
+        """Returns path from source vertex to v.
+
+        Parameters
+        ----------
+        v : vertex id
+            A vertex id, typically int or str.
+
+        Returns
+        -------
+        path : Stack of keys
+            Stack of vertex ids in order of traversal.
+        """
         if not self.has_path_to(v):
             return None
         path = Stack()
@@ -173,56 +167,57 @@ class BFSPaths():
         return path
 
     def _bfs(self):
-        """Traverse all vertices breadth-first."""
+        """Traverse all vertices breadth-first.
+
+        Sets self._edge_to, self._visited.
+        """
         available = Queue()
         for s in self.sources:
-            # self._visited[s] = True
+            self._visited[s] = True
             available.enqueue(s)
 
-        # TODO remove all `*.id` when we destroy Vertex class.
         while available:
-            v = self.G[available.dequeue()]
-            self.all_paths.append(v.id)
-            for a in v.adj:
-                w = self.G[a]
-                if not self._visited[w.id]:
-                    self._visited[w.id] = True
-                    self._edge_to[w.id] = v.id
-                    available.enqueue(w.id)
+            v = available.dequeue()
+            self.all_paths.append(v)
+            for w in self.G[v]:
+                if not self._visited[w]:
+                    self._visited[w] = True
+                    self._edge_to[w] = v
+                    available.enqueue(w)
 
-    def ordered_bfs(self, choose_next):
+    def ordered_bfs(self, choose_next=lambda x: x[0]):
         """Traverse all edges breadth-first.
+
+        Sets self._edge_to, self._visited.
 
         Parameters
         ----------
-        choose_next : callable, optional
+        choose_next : callable, optional, default `lambda x: x[0]`
             Function that accepts an iterable and returns a single value in
-            order to choose an vertex from the available list.
+            order to choose an vertex from the available list. The default is
+            to take the first value from the list.
 
-        Returns
-        -------
-        path : :obj:`list`
-            List of vertex ids to which we have traveled, in order.
         """
         # TODO store `available` in a min priority queue so we can efficiently
         # get the min value and keep traversing
         available = set(self.sources)
 
         while available:
-            v = self.G[choose_next(available)]
-            self.all_paths.append(v.id)
-            self._visited[v.id] = True  # unnecessary for this algorithm
-            available.remove(v.id)
+            v = choose_next(available)
+            self.all_paths.append(v)
+            self._visited[v] = True  # unnecessary for this algorithm
+            available.remove(v)
 
-            for w_id in v.adj:
-                w = self.G[w_id]
-                if w.indegree < 2:
-                    self._visited[w.id] = True
-                    self._edge_to[w.id] = v.id
-                    available.add(w.id)
-                w.indegree -= 1  # pre-req is done
+            for w in self.G[v]:
+                # TODO add custom node attribute to track pre-reqs
+                # Generalize: `visit_condition` and `graph_update`
+                if self.G.indegree[w] == 1:
+                    self._visited[w] = True
+                    self._edge_to[w] = v
+                    available.add(w)
+                self.G.indegree[w] -= 1  # pre-req is done
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 #        TEST CLIENT
 #------------------------------------------------------------------------------
 if __name__ == '__main__':
@@ -240,6 +235,15 @@ if __name__ == '__main__':
             a, b = parse(line)
             G.add_edge(a, b)
 
+    # Test graph construction
+    if filename == 'test_data/tinyDG.txt':
+        assert 13 == G.V
+        assert 22 == G.E
+    elif filename == 'test_data/mediumDG.txt':
+        assert 50 == G.V
+        assert 147 == G.E
+
+    # Test BFS
     s = G.roots()[0]        # get the first source
     bfs = BFSPaths(G, [s])  # BFS from source(s)
 
@@ -255,8 +259,6 @@ if __name__ == '__main__':
             print()
         else:
             print("{:<2d} to {:2d}:  not connected".format(s, v))
-
-
 
 #==============================================================================
 #==============================================================================
