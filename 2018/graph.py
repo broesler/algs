@@ -9,6 +9,7 @@
 """
 #==============================================================================
 
+import copy
 from basics.stack import Stack
 from basics.queue import Queue
 
@@ -103,10 +104,9 @@ class BFSPaths():
     sources : iterable of vertex ids
         Iterable of vertex ids from which to begin the search.
     ordered : bool, optional
-        Traverse the nodes in a specific order, determined by `choose_next`.
-    choose_next : callable, optional
-        Function that accepts an iterable and returns a single value in
-        order to choose an vertex from the available list.
+        Traverse the nodes in a specific order.
+    kind : str in {'min, 'max'}, optional, default='min'
+        How to choose the next node to traverse when outdegree > 1.
 
     Attributes
     ----------
@@ -117,9 +117,7 @@ class BFSPaths():
     all_paths : list
         List of all vertices touched during BFS.
     """
-    def __init__(self, G, sources=None, ordered=False, choose_next=None):
-        if not isinstance(G, Digraph):
-            raise Exception('BFS requires a Digraph type.')
+    def __init__(self, G, sources=None, ordered=False, kind='min'):
         self.G = G
         self.sources = sources or self.G.roots()
         self.all_paths = list()
@@ -129,7 +127,7 @@ class BFSPaths():
             self._visited[v] = False
         # populate edge_to dict via the search
         if ordered:
-            self.ordered_bfs(choose_next)
+            self._ordered_bfs(kind)
         else:
             self._bfs()
 
@@ -171,51 +169,38 @@ class BFSPaths():
 
         Sets self._edge_to, self._visited.
         """
-        available = Queue()
-        for s in self.sources:
-            self._visited[s] = True
-            available.enqueue(s)
+        available = Queue(self.sources)
 
         while available:
             v = available.dequeue()
             self.all_paths.append(v)
+            self._visited[v] = True
+
             for w in self.G[v]:
                 if not self._visited[w]:
                     self._visited[w] = True
                     self._edge_to[w] = v
                     available.enqueue(w)
 
-    def ordered_bfs(self, choose_next=lambda x: x[0]):
-        """Traverse all edges breadth-first.
+    def _ordered_bfs(self, kind):
+        """Traverse graph breadth-first, choosing minimum node id first.
 
         Sets self._edge_to, self._visited.
-
-        Parameters
-        ----------
-        choose_next : callable, optional, default `lambda x: x[0]`
-            Function that accepts an iterable and returns a single value in
-            order to choose an vertex from the available list. The default is
-            to take the first value from the list.
-
         """
-        # TODO store `available` in a min priority queue so we can efficiently
-        # get the min value and keep traversing
-        available = set(self.sources)
+        prereqs = copy.deepcopy(self.G.indegree)  # mutable copy
+        available = Queue(self.sources)
 
         while available:
-            v = choose_next(available)
+            v = available.dequeue()  # take min value
             self.all_paths.append(v)
-            self._visited[v] = True  # unnecessary for this algorithm
-            available.remove(v)
+            self._visited[v] = True
 
             for w in self.G[v]:
-                # TODO add custom node attribute to track pre-reqs
-                # Generalize: `visit_condition` and `graph_update`
-                if self.G.indegree[w] == 1:
+                if prereqs[w] == 1:
                     self._visited[w] = True
                     self._edge_to[w] = v
-                    available.add(w)
-                self.G.indegree[w] -= 1  # pre-req is done
+                    available.enqueue(w)
+                prereqs[w] -= 1
 
 #------------------------------------------------------------------------------
 #        TEST CLIENT
@@ -247,7 +232,7 @@ if __name__ == '__main__':
     s = G.roots()[0]        # get the first source
     bfs = BFSPaths(G, [s])  # BFS from source(s)
 
-    # Print paths from source to all other nodes
+    # Print paths from source to each other node
     for v in range(G.V):
         if bfs.has_path_to(v):
             print("{:<2d} to {:2d}:  ".format(s, v), end='')

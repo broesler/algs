@@ -38,15 +38,15 @@ with open(filename, 'r') as file:
         G.add_edge(a, b)
 
 # choose first alphabetical node to operate on first
-bfs = graph.BFSPaths(G, ordered=True, choose_next=lambda x: min(x))
-path = bfs.all_paths
-print(''.join(path))
+bfs = graph.BFSPaths(G, ordered=True)
+path = ''.join(bfs.all_paths)
+print(path)
 should_be(len(path), G.V)  # all vertices visited
 
 if filename == 'data/test_input07.dat':
-    should_be(''.join(path), 'CABDFE')
+    should_be(path, 'CABDFE')
 elif filename == 'data/input07.dat':
-    should_be(''.join(path), 'GNJOCHKSWTFMXLYDZABIREPVUQ')
+    should_be(path, 'GNJOCHKSWTFMXLYDZABIREPVUQ')
 
 #==============================================================================
 #==============================================================================
