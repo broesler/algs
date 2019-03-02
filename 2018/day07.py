@@ -39,9 +39,14 @@ with open(filename, 'r') as file:
 
 # Need to do BREADTH-FIRST search!
 bfs = graph.BFSPaths(G)
-path = bfs.all_paths
-print(''.join(path))
-should_be(len(path), G.V)  # all vertices visited
+# path = bfs.ordered_bfs()
+# print(''.join(path))
+# should_be(len(path), G.V)  # all vertices visited
+#
+# if filename == 'data/test_input07.dat':
+#     should_be(''.join(path), 'CABDFE')
+# elif filename == 'data/input07.dat':
+#     should_be(''.join(path), 'GNJOCHKSWTFMXLYDZABIREPVUQ')
 
 #==============================================================================
 #==============================================================================
