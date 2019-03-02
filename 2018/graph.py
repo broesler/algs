@@ -33,19 +33,12 @@ class Vertex():
         Iterable of the vertex names to which this vertex is connected.
     indegree : int
         Number of vertices pointing to this vertex.
-    outdegree : int
-        Number of vertices to which this vertex points.
     """
     def __init__(self, vertex_id, adjacent=list()):
         self.id = vertex_id
         self.adj = set(adjacent)
         self.indegree = 0
         self.visited = False
-
-    @property
-    def outdegree(self):
-        """Number of vertices to which this vertex points."""
-        return len(self.adj)
 
     def add_adj(self, b):
         """Add a vertex to the list of adjacent."""
