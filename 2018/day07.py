@@ -1,4 +1,4 @@
-#!/Users/bernardroesler/anaconda3/envs/insight/bin/python3
+#!/usr/bin/env python3
 #==============================================================================
 #     File: day07.py
 #  Created: 2019-02-20 22:31
@@ -38,7 +38,7 @@ with open(filename, 'r') as file:
         G.add_edge(a, b)
 
 # choose first alphabetical node to operate on first
-bfs = graph.BFSPaths(G, ordered=False, choose_next=lambda x: min(x))
+bfs = graph.BFSPaths(G, ordered=True, choose_next=lambda x: min(x))
 path = bfs.all_paths
 print(''.join(path))
 should_be(len(path), G.V)  # all vertices visited

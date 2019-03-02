@@ -1,4 +1,4 @@
-#!/Users/bernardroesler/anaconda3/envs/insight/bin/python3
+#!/usr/bin/env python3
 #==============================================================================
 #     File: geometry.py
 #  Created: 2019-02-06 20:08

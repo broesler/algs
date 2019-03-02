@@ -1,4 +1,4 @@
-#!/Users/bernardroesler/anaconda3/envs/insight/bin/python3
+#!/usr/bin/env python3
 #==============================================================================
 #     File: test_orthohull.py
 #  Created: 2019-02-13 22:06

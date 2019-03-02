@@ -1,4 +1,4 @@
-#!/Users/bernardroesler/anaconda3/envs/insight/bin/python3
+#!/usr/bin/env python3
 #==============================================================================
 #     File: day06.py
 #  Created: 2019-01-28 22:39

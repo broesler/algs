@@ -1,4 +1,4 @@
-#!/Users/bernardroesler/anaconda3/bin/python3
+#!/usr/bin/env python3
 #==============================================================================
 #     File: day2.py
 #  Created: 2018-12-16 21:23

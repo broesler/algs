@@ -1,4 +1,4 @@
-#!/home/broesler/anaconda3/bin/python3
+#!/usr/bin/env python3
 #==============================================================================
 #     File: day1.py
 #  Created: 2018-12-05 19:59

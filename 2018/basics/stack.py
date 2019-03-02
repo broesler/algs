@@ -1,4 +1,4 @@
-#!/home/broesler/anaconda3/envs/expo/bin/python3
+#!/usr/bin/env python3
 #==============================================================================
 #     File: stack.py
 #  Created: 2019-02-08 17:23
@@ -55,7 +55,6 @@ class Stack():
         return bool(self.size)
 
     def __str__(self):
-        # print from top of stack
         return str(self._items)
 
 if __name__ == '__main__':

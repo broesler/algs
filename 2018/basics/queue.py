@@ -1,4 +1,4 @@
-#!/home/broesler/anaconda3/envs/expo/bin/python3
+#!/usr/bin/env python3
 #==============================================================================
 #     File: queue.py
 #  Created: 2019-03-01 11:53
