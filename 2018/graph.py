@@ -38,7 +38,6 @@ class Vertex():
         self.id = vertex_id
         self.adj = set(adjacent)
         self.indegree = 0
-        self.visited = False
 
     def add_adj(self, b):
         """Add a vertex to the list of adjacent."""
@@ -68,6 +67,8 @@ class Digraph():
     """
     def __init__(self, vertices=list()):
         self._vertices = dict()
+        # TODO get rid of Vertex class...
+        self._indegree = dict()
         for vertex in vertices:
             self._vertices[vertex.id] = vertex
         self.E = 0
@@ -123,36 +124,51 @@ class BFSPaths():
     G : :obj:`Digraph`
     sources : iterable of `Vertex` ids
         Iterable of vertex ids from which to begin the search.
+    ordered : bool, optional
+        Traverse the nodes in a specific order, determined by `choose_next`.
+    choose_next : callable, optional
+        Function that accepts an iterable and returns a single value in
+        order to choose an vertex from the available list.
 
     Attributes
     ----------
     G : :obj:`Digraph`
         The directed graph object to search.
+    sources : iterable
+        Iterable of given sources, or vertices with indegree 0.
+    all_paths : list
+        List of all vertices touched during BFS.
     """
-    def __init__(self, G, sources=None):
+    def __init__(self, G, sources=None,
+                 ordered=False, choose_next=lambda x: x[0]):
         if not isinstance(G, Digraph):
             raise Exception('BFS requires a Digraph type.')
         self.G = G
-        self.edge_to = dict()  # v -> w : edge_to[w] = v
-        if not sources:
-            sources = self.G.roots()
-        self.sources = sources
-        self._bfs()      # populate edge_to dict
+        self.sources = sources or self.G.roots()
+        self._edge_to = dict()  # v -> w : edge_to[w] = v
+        self._visited = dict()
+        for v in G:
+            self._visited[v.id] = False
+        self.all_paths = list()
+        # populate edge_to dict via the search
+        if ordered:
+            self.ordered_bfs(choose_next)
+        else:
+            self._bfs()
 
     def has_path_to(self, v):
         """has_path_to(v) is True if there is a path from s -> w."""
-        return self.G[v].visited
+        return self._visited[v]
 
     def path_to(self, v):
         """Returns path from source vertex to v."""
         if not self.has_path_to(v):
             return None
-
         path = Stack()
         x = v
         while x not in self.sources:
             path.push(x)
-            x = self.edge_to[x]
+            x = self._edge_to[x]
         path.push(x)
         return path
 
@@ -160,20 +176,22 @@ class BFSPaths():
         """Traverse all vertices breadth-first."""
         available = Queue()
         for s in self.sources:
-            self.G[s].visited = True
+            # self._visited[s] = True
             available.enqueue(s)
 
+        # TODO remove all `*.id` when we destroy Vertex class.
         while available:
             v = self.G[available.dequeue()]
+            self.all_paths.append(v.id)
             for a in v.adj:
                 w = self.G[a]
-                if not w.visited:
-                    w.visited = True
-                    self.edge_to[w.id] = v.id
+                if not self._visited[w.id]:
+                    self._visited[w.id] = True
+                    self._edge_to[w.id] = v.id
                     available.enqueue(w.id)
 
-    def ordered_bfs(self, choose_next=lambda x: x[0]):
-        """Traverse all edges breadth-first. Choose minimum vertex_id first.
+    def ordered_bfs(self, choose_next):
+        """Traverse all edges breadth-first.
 
         Parameters
         ----------
@@ -186,24 +204,23 @@ class BFSPaths():
         path : :obj:`list`
             List of vertex ids to which we have traveled, in order.
         """
-        path = list()
-
         # TODO store `available` in a min priority queue so we can efficiently
         # get the min value and keep traversing
         available = set(self.sources)
 
         while available:
             v = self.G[choose_next(available)]
-            path.append(v.id)
+            self.all_paths.append(v.id)
+            self._visited[v.id] = True  # unnecessary for this algorithm
             available.remove(v.id)
 
             for w_id in v.adj:
-                n = self.G[w_id]
-                if n.indegree < 2:
-                    available.add(n.id)
-                n.indegree -= 1  # pre-req is done
-
-        return path
+                w = self.G[w_id]
+                if w.indegree < 2:
+                    self._visited[w.id] = True
+                    self._edge_to[w.id] = v.id
+                    available.add(w.id)
+                w.indegree -= 1  # pre-req is done
 
 #------------------------------------------------------------------------------ 
 #        TEST CLIENT

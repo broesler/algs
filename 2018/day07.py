@@ -37,9 +37,9 @@ with open(filename, 'r') as file:
         a, b = parse(line)
         G.add_edge(a, b)
 
-bfs = graph.BFSPaths(G)
 # choose first alphabetical node to operate on first
-path = bfs.ordered_bfs(choose_next=lambda x: min(x))
+bfs = graph.BFSPaths(G, ordered=False, choose_next=lambda x: min(x))
+path = bfs.all_paths
 print(''.join(path))
 should_be(len(path), G.V)  # all vertices visited
 
