@@ -83,6 +83,10 @@ class Digraph():
     def V(self):
         return len(self._vertices)
 
+    def roots(self):
+        """List of vertices with indegree zero."""
+        return [n.id for n in self if n.indegree == 0]
+
     def vertices(self):
         return self._vertices.values()
 
@@ -137,14 +141,10 @@ class BFSPaths():
             raise Exception('BFS requires a Digraph type.')
         self.G = G
         self.edge_to = dict()  # v -> w : edge_to[w] = v
-        self.dist_to = dict()  # distance from source to 
-        for v in G:
-            self.dist_to[v] = INT_MAX
-        self.bfs(sources)      # populate edge_to dict
-
-    def find_all_roots(self):
-        """List of vertices with indegree zero."""
-        return [n.id for n in self.G if n.indegree == 0]
+        if not sources:
+            sources = self.G.roots()
+        self.sources = sources
+        self._bfs()      # populate edge_to dict
 
     def has_path_to(self, v):
         """has_path_to(v) is True if there is a path from s -> w."""
@@ -157,33 +157,17 @@ class BFSPaths():
 
         path = Stack()
         x = v
-        while self.dist_to[x]:
+        while x not in self.sources:
             path.push(x)
             x = self.edge_to[x]
         path.push(x)
         return path
-        
 
-    def bfs(self, sources=None):
-        """Traverse all vertices breadth-first.
-
-        Parameters
-        ----------
-        sources : iterable of `Vertex` ids
-            Iterable of vertex ids from which to begin the search.
-
-        Returns
-        -------
-        path : :obj:`list`
-            List of vertex ids to which we have already traveled.
-        """
-        if not sources:
-            sources = self.find_all_roots()
-
+    def _bfs(self):
+        """Traverse all vertices breadth-first."""
         available = Queue()
-        for s in sources:
+        for s in self.sources:
             self.G[s].visited = True
-            self.dist_to[s] = 0
             available.enqueue(s)
 
         while available:
@@ -193,44 +177,40 @@ class BFSPaths():
                 if not w.visited:
                     w.visited = True
                     self.edge_to[w.id] = v.id
-                    self.dist_to[w.id] = self.dist_to[v.id] + 1
                     available.enqueue(w.id)
 
-    # def ordered_bfs(self, sources=None):
-    #     """Traverse all edges breadth-first. Choose minimum vertex_id first.
-    #
-    #     Parameters
-    #     ----------
-    #     sources : iterable of `Vertex` ids
-    #         Iterable of vertex ids from which to begin the search.
-    #
-    #     Returns
-    #     -------
-    #     path : :obj:`list`
-    #         List of vertex ids to which we have traveled, in order.
-    #     """
-    #     path = list()
-    #     if not sources:
-    #         sources = self.find_all_roots()
-    #
-    #     # TODO store `available` in a min priority queue so we can efficiently
-    #     # get the min value and keep traversing
-    #     available = set(sources)
-    #
-    #     while available:
-    #         curr = self.G[min(available)]
-    #         path.append(curr.id)
-    #         curr.visited = True
-    #         available.remove(curr.id)
-    #
-    #         if curr.adj:
-    #             for vertex_id in curr.adj:
-    #                 n = self.G[vertex_id]
-    #                 if not n.visited and n.indegree < 2:
-    #                     available.add(n.id)
-    #                 n.indegree -= 1  # pre-req is done
-    #
-    #     return path
+    def ordered_bfs(self, choose_next=lambda x: x[0]):
+        """Traverse all edges breadth-first. Choose minimum vertex_id first.
+
+        Parameters
+        ----------
+        choose_next : callable, optional
+            Function that accepts an iterable and returns a single value in
+            order to choose an vertex from the available list.
+
+        Returns
+        -------
+        path : :obj:`list`
+            List of vertex ids to which we have traveled, in order.
+        """
+        path = list()
+
+        # TODO store `available` in a min priority queue so we can efficiently
+        # get the min value and keep traversing
+        available = set(self.sources)
+
+        while available:
+            v = self.G[choose_next(available)]
+            path.append(v.id)
+            available.remove(v.id)
+
+            for w_id in v.adj:
+                n = self.G[w_id]
+                if n.indegree < 2:
+                    available.add(n.id)
+                n.indegree -= 1  # pre-req is done
+
+        return path
 
 #------------------------------------------------------------------------------ 
 #        TEST CLIENT
@@ -250,21 +230,21 @@ if __name__ == '__main__':
             a, b = parse(line)
             G.add_edge(a, b)
 
-    bfs = BFSPaths(G)
-    s = bfs.find_all_roots()[0]  # take the first (only one for example
+    s = G.roots()[0]        # get the first source
+    bfs = BFSPaths(G, [s])  # BFS from source(s)
 
     # Print paths from source to all other nodes
     for v in range(G.V):
         if bfs.has_path_to(v):
-            print("{:<2d} to {:2d} ({:d}):  ".format(s, v, bfs.dist_to[v]), end='')
+            print("{:<2d} to {:2d}:  ".format(s, v), end='')
             for x in bfs.path_to(v):
                 if x == s:
                     print(x, end='')
                 else:
-                    print('->' + str(x), end='')
+                    print('-' + str(x), end='')
             print()
         else:
-            print("{:<2d} to {:2d} (-):  not connected".format(s, v))
+            print("{:<2d} to {:2d}:  not connected".format(s, v))
 
 
 

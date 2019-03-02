@@ -37,16 +37,16 @@ with open(filename, 'r') as file:
         a, b = parse(line)
         G.add_edge(a, b)
 
-# Need to do BREADTH-FIRST search!
 bfs = graph.BFSPaths(G)
-# path = bfs.ordered_bfs()
-# print(''.join(path))
-# should_be(len(path), G.V)  # all vertices visited
-#
-# if filename == 'data/test_input07.dat':
-#     should_be(''.join(path), 'CABDFE')
-# elif filename == 'data/input07.dat':
-#     should_be(''.join(path), 'GNJOCHKSWTFMXLYDZABIREPVUQ')
+# choose first alphabetical node to operate on first
+path = bfs.ordered_bfs(choose_next=lambda x: min(x))
+print(''.join(path))
+should_be(len(path), G.V)  # all vertices visited
+
+if filename == 'data/test_input07.dat':
+    should_be(''.join(path), 'CABDFE')
+elif filename == 'data/input07.dat':
+    should_be(''.join(path), 'GNJOCHKSWTFMXLYDZABIREPVUQ')
 
 #==============================================================================
 #==============================================================================
