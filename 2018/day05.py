@@ -15,7 +15,7 @@ def reduce_polymer(polymer):
     """Perform reaction algorithm on polymer string."""
     rp = Stack()  # initialize reduced polymer output
     for mer in polymer:
-        if rp.is_empty():
+        if rp.is_empty:
             rp.push(mer)
             continue
 
@@ -27,7 +27,7 @@ def reduce_polymer(polymer):
             rp.push(last)
             rp.push(mer)
 
-    return rp.items
+    return rp
 
 def is_react_pair(a, b):
     """Determine if two mers should eliminate each other. If they are the same
@@ -51,7 +51,7 @@ with open(filename, 'r') as file:
 
 # Reduce polymer string
 rp = reduce_polymer(data)
-print("(a) Length = {:d}".format(len(rp)))  # Length = 11636
+print("(a) Length = {:d}".format(rp.size))  # Length = 11636
 
 # OG:
 # 52.1 s ± 16.6 s per loop (mean ± std. dev. of 7 runs, 1 loop each)
@@ -72,8 +72,8 @@ min_chr = -1
 for c in string.ascii_lowercase:
     pm = remove_units(data, c)
     rp = reduce_polymer(pm)
-    if len(rp) < min_len:
-        min_len = len(rp)
+    if rp.size < min_len:
+        min_len = rp.size
         min_chr = c
 
 print('(b) Remove {}/{}, length = {:d}'\
