@@ -25,7 +25,7 @@ class Queue():
     is_empty : bool
         True if `size == 0`
     """
-    def __init__(self, items):
+    def __init__(self, items=list()):
         # _items[0] is "front" of queue
         self._items = list(items)
 
