@@ -9,7 +9,6 @@
 """
 #==============================================================================
 
-import copy
 from basics.stack import Stack
 from basics.queue import Queue
 
@@ -91,8 +90,11 @@ class Digraph():
     def __iter__(self):
         yield from self.vertices()
 
-    def __str__(self):
+    def __repr__(self):
         return str(self.adj).replace('],', ']\n')
+
+    def __str__(self):
+        return self.__repr__()
 
 
 class BFSPaths():
@@ -132,13 +134,18 @@ class BFSPaths():
             self._bfs()
 
     def has_path_to(self, v):
-        """has_path_to(v) returns True if there is a path from s -> w.
+        """has_path_to(v) returns True if there is a path from *any* s -> w.
 
         Parameters
         ----------
         v : vertex id
             A vertex id, typically int or str.
         """
+        # FIXME only works for *any* source, not a specific source...
+        #   fixes:
+        #       * only allow a single source
+        #           - would require special logic to do _unordered_bfs on all
+        #           sources for day07.py
         return self._visited[v]
 
     def path_to(self, v):
@@ -185,9 +192,10 @@ class BFSPaths():
     def _ordered_bfs(self, kind):
         """Traverse graph breadth-first, choosing minimum node id first.
 
+        *NOTE* will only find a complete path for a connected, acyclic graph.
         Sets self._edge_to, self._visited.
         """
-        prereqs = copy.deepcopy(self.G.indegree)  # mutable copy
+        prereqs = self.G.indegree.copy()  # mutable copy
         available = Queue(self.sources)
 
         while available:
@@ -202,17 +210,36 @@ class BFSPaths():
                     available.enqueue(w)
                 prereqs[w] -= 1
 
+    def print_paths(self):
+        """Print paths from each source to each other node."""
+        for s in self.sources:
+            for v in range(self.G.V):
+                if self.has_path_to(v):
+                    print("{:<2d} -> {:2d}:  ".format(s, v), end='')
+                    for x in self.path_to(v):
+                        if x == s:
+                            print(x, end='')
+                        else:
+                            print('-' + str(x), end='')
+                    print()
+                else:
+                    print("{:<2d} -> {:2d}:  not connected".format(s, v))
+
 #------------------------------------------------------------------------------
 #        TEST CLIENT
 #------------------------------------------------------------------------------
 if __name__ == '__main__':
     import re
+    pat = re.compile('(\d+)\s+(\d+)')
     def parse(line):
-        match = re.search('(\d+)\s+(\d+)', line)
+        match = pat.search(line)
         return int(match.group(1)), int(match.group(2))
 
-    filename = 'test_data/tinyDG.txt'
+    # Load test file
+    # filename = 'test_data/tinyDG.txt'
+    filename = 'test_data/tinyDAG.txt'
     # filename = 'test_data/mediumDG.txt'
+
     G = Digraph()
     with open(filename, 'r') as file:
         for i, line in enumerate(file.readlines()):
@@ -220,30 +247,18 @@ if __name__ == '__main__':
             a, b = parse(line)
             G.add_edge(a, b)
 
-    # Test graph construction
-    if filename == 'test_data/tinyDG.txt':
-        assert 13 == G.V
-        assert 22 == G.E
-    elif filename == 'test_data/mediumDG.txt':
-        assert 50 == G.V
-        assert 147 == G.E
-
     # Test BFS
-    s = G.roots()[0]        # get the first source
-    bfs = BFSPaths(G, [s])  # BFS from source(s)
+    s = G.roots()[0]  # get the first source
+    bfs = BFSPaths(G, [s])
+    print('Unordered BFS:')
+    print('--------------')
+    bfs.print_paths()
 
-    # Print paths from source to each other node
-    for v in range(G.V):
-        if bfs.has_path_to(v):
-            print("{:<2d} to {:2d}:  ".format(s, v), end='')
-            for x in bfs.path_to(v):
-                if x == s:
-                    print(x, end='')
-                else:
-                    print('-' + str(x), end='')
-            print()
-        else:
-            print("{:<2d} to {:2d}:  not connected".format(s, v))
+    # Test Ordered BFS
+    bfs_o = BFSPaths(G, [s], ordered=True)
+    print('Ordered BFS:')
+    print('------------')
+    bfs_o.print_paths()
 
 #==============================================================================
 #==============================================================================
