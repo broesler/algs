@@ -11,6 +11,7 @@
 
 from basics.stack import Stack
 from basics.queue import Queue
+from basics.priority_queue import PriorityQueue
 
 class Digraph():
     """Directed graph represented as a dictionary of Vertices.
@@ -196,7 +197,7 @@ class BFSPaths():
         Sets self._edge_to, self._visited.
         """
         prereqs = self.G.indegree.copy()  # mutable copy
-        available = Queue(self.sources)
+        available = PriorityQueue(self.sources, kind='min')
 
         while available:
             v = available.dequeue()  # take min value

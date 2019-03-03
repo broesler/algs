@@ -40,7 +40,7 @@ with open(filename, 'r') as file:
 # choose first alphabetical node to operate on first
 bfs = graph.BFSPaths(G, ordered=True)
 path = ''.join(bfs.all_paths)
-print(path)
+print('path = ' + path)
 should_be(len(path), G.V)  # all vertices visited
 
 if filename == 'data/test_input07.dat':
