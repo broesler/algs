@@ -37,7 +37,7 @@ class PriorityQueue():
     """
     def __init__(self, items=list(), kind='min'):
         # TODO generalize to take any (-1, 0, 1) comparator function 
-        self._op = operator.lt if kind == 'min' else operator.gt
+        self._op = operator.gt if kind == 'min' else operator.lt
         self._items = list([None])  # ignore index 0
         self._items.extend(items)
         # Sink nodes from right-to-left
@@ -47,6 +47,7 @@ class PriorityQueue():
 
     @property
     def size(self):
+        # Ignore index 0
         return len(self._items) - 1
 
     @property
@@ -67,6 +68,8 @@ class PriorityQueue():
 
     def dequeue(self):
         """Remove and return item from the top of the heap."""
+        if self.is_empty:
+            raise Exception('Attempting to dequeue from empty PriorityQueue!')
         self._swap(self.size, 1)              # swap root with bottom node
         the_min = self._items.pop(self.size)  # remove the root
         self._sink(1)                         # sink the new root to reorder
@@ -123,10 +126,8 @@ class PriorityQueue():
         # Check the children of k
         left = 2*k
         right = 2*k + 1
-        if (left  <= self.size and self._comp(k, left)):
-            return False
-        if (right <= self.size and self._comp(k, right)):
-            return False
+        if (left  <= self.size and self._comp(k, left)):  return False
+        if (right <= self.size and self._comp(k, right)): return False
         return self._is_heap(left) and self._is_heap(right)
 
     #-------------------------------------------------------------------------- 
@@ -159,33 +160,32 @@ class PriorityQueue():
 if __name__ == '__main__':
     import string
     from basics.stack import Stack
-    # Test minPQ
-    pq = PriorityQueue(list(string.ascii_uppercase), kind='min')
+    # Test maxPQ
+    pq = PriorityQueue(list(string.ascii_uppercase), kind='max')
     assert not pq.is_empty
     assert pq.size == 26
     assert 'Z' == pq.peek()
     assert 'Z' == pq.dequeue()
     assert 'Y' == pq.dequeue()
     assert 'X' == pq.dequeue()
-    for a in ['X', 'Y', 'Z']:
-        pq.enqueue(a)
+    for c in ['X', 'Y', 'Z']:
+        pq.enqueue(c)
     s = Stack()
-    for a in pq:
-        s.push(a)
+    for c in pq:
+        s.push(c)
     assert ''.join(s) == string.ascii_uppercase
 
-    # Test maxPQ
-    pq = PriorityQueue(list(string.ascii_uppercase), kind='max')
+    # Test minPQ
+    pq = PriorityQueue(list(string.ascii_uppercase), kind='min')
     assert 'A' == pq.dequeue()
     assert 'B' == pq.dequeue()
     assert 'C' == pq.dequeue()
-    for a in ['A', 'B', 'C']:
-        pq.enqueue(a)
+    for c in ['A', 'B', 'C']:
+        pq.enqueue(c)
     s = Stack()
-    for a in pq:
-        s.push(a)
+    for c in pq:
+        s.push(c)
     assert ''.join(s) == string.ascii_uppercase[::-1]
-
 
 #==============================================================================
 #==============================================================================
