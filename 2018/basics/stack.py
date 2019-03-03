@@ -54,8 +54,11 @@ class Stack():
     def __bool__(self):
         return bool(self.size)
 
+    def __repr__(self):
+        return '<Stack: ' + self.__str__() + '>'
+
     def __str__(self):
-        return str(self._items)
+        return str(self._items) 
 
 if __name__ == '__main__':
     s = Stack()
