@@ -15,7 +15,7 @@ See: <https://algs4.cs.princeton.edu/24pq/> for details.
 """
 #==============================================================================
 
-import copy
+from copy import deepcopy
 import operator
 
 class PriorityQueue():
@@ -36,6 +36,7 @@ class PriorityQueue():
         True if `size == 0`
     """
     def __init__(self, items=list(), kind='min'):
+        # TODO generalize to take any (-1, 0, 1) comparator function 
         self._op = operator.lt if kind == 'min' else operator.gt
         self._items = list([None])  # ignore index 0
         self._items.extend(items)
@@ -142,7 +143,7 @@ class PriorityQueue():
 
     # Iterator methods
     def __iter__(self):
-        self._pq = copy.deepcopy(self)
+        self._pq = deepcopy(self)
         return self
 
     def __next__(self):
@@ -158,6 +159,7 @@ class PriorityQueue():
 if __name__ == '__main__':
     import string
     from basics.stack import Stack
+    # Test minPQ
     pq = PriorityQueue(list(string.ascii_uppercase), kind='min')
     assert not pq.is_empty
     assert pq.size == 26
@@ -171,6 +173,18 @@ if __name__ == '__main__':
     for a in pq:
         s.push(a)
     assert ''.join(s) == string.ascii_uppercase
+
+    # Test maxPQ
+    pq = PriorityQueue(list(string.ascii_uppercase), kind='max')
+    assert 'A' == pq.dequeue()
+    assert 'B' == pq.dequeue()
+    assert 'C' == pq.dequeue()
+    for a in ['A', 'B', 'C']:
+        pq.enqueue(a)
+    s = Stack()
+    for a in pq:
+        s.push(a)
+    assert ''.join(s) == string.ascii_uppercase[::-1]
 
 
 #==============================================================================
