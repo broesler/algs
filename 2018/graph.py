@@ -13,6 +13,9 @@ from basics.stack import Stack
 from basics.queue import Queue
 from basics.priority_queue import PriorityQueue
 
+# TODO make `Graph` base class (undirected?)
+# TODO make `Search` base class (DFS/BFS inherit?)
+
 class Digraph():
     """Directed graph represented as a dictionary of Vertices.
 
@@ -48,7 +51,7 @@ class Digraph():
         return [v for v in self if self.indegree[v] == 0]
 
     def vertices(self):
-        return set(self.adj.keys()) #and set(self.indegree.keys())
+        return self.adj.keys()
 
     def add_edge(self, a, b):
         """Add edge between two vertex ids.
@@ -97,7 +100,7 @@ class Digraph():
     def __str__(self):
         return self.__repr__()
 
-
+# NOTE indegree is the only reference to Digraphs, specifically.
 class BFSPaths():
     """Breadth-first search class.
 
@@ -144,9 +147,10 @@ class BFSPaths():
         """
         # FIXME only works for *any* source, not a specific source...
         #   fixes:
-        #       * only allow a single source
-        #           - would require special logic to do _unordered_bfs on all
-        #           sources for day07.py
+        #     * only allow a single source
+        #         - would require special logic to do _unordered_bfs on all
+        #         sources for day07.py
+        #     * run DFS from s to determine if there is a path
         return self._visited[v]
 
     def path_to(self, v):
