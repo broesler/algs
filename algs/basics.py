@@ -12,8 +12,6 @@
 from copy import deepcopy
 import operator
 
-# TODO implement bag?
-
 class Stack():
     """Implement a Stack data structure.
 
@@ -31,7 +29,7 @@ class Stack():
     """
     def __init__(self, items=list()):
         # _items[0] is "top" of stack
-        self._items = list(items)[::-1]
+        self._items = list(items)
 
     @property
     def size(self):
@@ -53,11 +51,16 @@ class Stack():
         """Add item to top of stack."""
         self._items.insert(0, item)
 
+    # dunder(-mifflin) methods
+    # TODO move these + size + is_empty to ABC?
     def __iter__(self):
         yield from self._items
 
     def __bool__(self):
         return bool(self.size)
+
+    def __eq__(self, other):
+        return self._items == other._items
 
     def __repr__(self):
         return '<Stack: ' + self.__str__() + '>'
@@ -105,8 +108,12 @@ class Queue():
         """Remove and return item from the front of the queue."""
         return self._items.pop(0)
 
+    # dunder(-mifflin) methods
     def __iter__(self):
         yield from self._items
+
+    def __eq__(self, other):
+        return self._items == other._items
 
     def __bool__(self):
         return bool(self.size)
@@ -239,11 +246,12 @@ class PriorityQueue():
         if (right <= self.size and self._comp(k, right)): return False
         return self._is_heap(left) and self._is_heap(right)
 
-    #-------------------------------------------------------------------------- 
-    #        Python dunder (mifflin) methods
-    #--------------------------------------------------------------------------
+    # TODO move these + size + is_empty to ABC?
     def __bool__(self):
         return bool(self.size)
+
+    def __eq__(self, other):
+        return self._items == other._items
 
     def __repr__(self):
         return '<PriorityQueue: ' + self.__str__() + '>'
