@@ -10,7 +10,8 @@
 #==============================================================================
 
 import re
-from algs import Digraph, DepthFirstSearch, DirectedCycle, BreadthFirstSearch
+from algs import (Digraph, DepthFirstSearch, DepthFirstOrder, DirectedCycle,
+                  TopologicalOrder, BreadthFirstSearch)
 # from ..graph import Digraph, BreadthFirstSearch
 
 # TODO import pytest
@@ -20,40 +21,53 @@ def parse(line):
     match = pat.search(line)
     return int(match.group(1)), int(match.group(2))
 
+def load_graph(filename='test_data/tinyDG.txt'):
+    G = Digraph()
+    with open(filename, 'r') as file:
+        for i, line in enumerate(file.readlines()):
+            if i == 0: V = int(line.rstrip())
+            if i == 1: E = int(line.rstrip())
+            if i < 2: continue
+            a, b = parse(line)
+            G.add_edge(a, b)
+    assert G.V == V
+    assert G.E == E
+    return G
+
 # Load test file
 # TODO loop over all test files
-filename = 'test_data/tinyDG.txt'
-# filename = 'test_data/tinyDAG.txt'
-# filename = 'test_data/mediumDG.txt'
 
-G = Digraph()
-with open(filename, 'r') as file:
-    for i, line in enumerate(file.readlines()):
-        if i == 0: V = int(line.rstrip())
-        if i == 1: E = int(line.rstrip())
-        if i < 2: continue
-        a, b = parse(line)
-        G.add_edge(a, b)
+G = load_graph('test_data/tinyDG.txt')
+# G = load_graph('test_data/mediumDG.txt')
 
-# Test graph construction
-# def test_graph_size():
-assert G.V == V
-assert G.E == E
-
-# def test_source():
 sources = G.roots()
 # assert s == 7  # only for tinyDG.txt
 
-# def test_reverse():
 Gr = G.reverse()
 for s in sources:
     assert Gr[s] == list([])  # source has no adjacents in reverse
 
 # Test DFS
 dfs = DepthFirstSearch(G, [sources[0]])
+assert dfs.has_path_to(2)
+print(f'{sources[0]} -> 2: ', dfs.path_to(2))
+
+# Test paths
+dfs = DepthFirstOrder(G)
 
 finder = DirectedCycle(G)
 assert finder.has_cycle
+
+print('pre-order:      ', dfs.preorder)
+print('post-order:     ', dfs.postorder)
+print('rev-post-order: ', dfs.reverse_post)
+
+# Test TopologicalOrder
+G = load_graph('test_data/tinyDAG.txt')
+topo = TopologicalOrder(G)
+assert topo.has_order
+print('order: ', topo.order)
+print('rank: ',  topo.rank)
 
 # Test BFS
 # bfs = BreadthFirstSearch(G, [s])
