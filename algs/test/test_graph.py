@@ -11,11 +11,10 @@
 
 from algs import (Stack, Queue, PriorityQueue,
                   Digraph, DepthFirstSearch, DepthFirstOrder, DirectedCycle,
-                  TopologicalOrder, BreadthFirstSearch, 
-                  EdgeWeightedDigraph, AcyclicLP)
+                  TopologicalOrder, BreadthFirstSearch, AcyclicPath)
 
-def load_graph(filename='test_data/tinyDG.txt', weights=False):
-    G = EdgeWeightedDigraph() if weights else Digraph()
+def load_graph(filename):
+    G = Digraph()
     with open(filename, 'r') as file:
         for i, line in enumerate(file.readlines()):
             if i == 0: V = int(line.rstrip())
@@ -23,7 +22,7 @@ def load_graph(filename='test_data/tinyDG.txt', weights=False):
             if i < 2: continue
             nums = line.rstrip().split()
             args = [int(nums[0]), int(nums[1])]
-            if weights:
+            if len(nums) == 3:
                 args.append(float(nums[2]))
             G.add_edge(*args)
     assert G.V == V
@@ -49,20 +48,20 @@ assert dfs.path_to(12) == Stack([7, 9, 10, 12])
 print(f'{sources[0]} -> 12: ', dfs.path_to(12))
 
 # Test paths
-dfs = DepthFirstOrder(G)
+dfo = DepthFirstOrder(G)
 
 finder = DirectedCycle(G)
 assert finder.has_cycle
 
-print('pre-order:      ', dfs.preorder)
-print('post-order:     ', dfs.postorder)
-print('rev-post-order: ', dfs.reverse_post)
+print('pre-order:      ', dfo.preorder)
+print('post-order:     ', dfo.postorder)
+print('rev-post-order: ', dfo.reverse_post)
 
 # Test TopologicalOrder
 G = load_graph('test_data/tinyDAG.txt')
 topo = TopologicalOrder(G)
-assert topo.has_order
-print('order: ', topo.order)
+assert topo
+print('order: ', topo)
 
 # Test BFS
 # bfs = BreadthFirstSearch(G, [s])
@@ -77,9 +76,9 @@ print('order: ', topo.order)
 # bfs_o.print_paths()
 
 # Test EWD
-EG = load_graph('test_data/tinyEWDAG.txt', weights=True)
-s = EG.roots()[0]
-ap = AcyclicLP(EG, s)
+EG = load_graph('test_data/tinyEWDAG.txt')
+s = EG.roots()
+ap = AcyclicPath(EG, s[0], kind='max')
 
 #==============================================================================
 #==============================================================================
