@@ -37,7 +37,7 @@ class DirectedEdge():
         return '<DirectedEdge: ' + self.__str__() + '>'
 
     def __str__(self):
-        return '{:d}->{:d} ({:3.2g})'.format(self.v, self.w, self.weight)
+        return f"{self.v}->{self.w} ({self.weight:3.2g})"
 
 
 class Digraph():
@@ -94,7 +94,7 @@ class Digraph():
         return [v for v in self.adj if self.indegree[v] == 0]
 
     def edges(self):
-        """Iterable of all the edges in the digraph.""" 
+        """Iterable of all the edges in the digraph."""
         the_edges = list()
         for v in self.adj:
             the_edges.extend(self.adj[v])
@@ -155,6 +155,10 @@ class Digraph():
 #------------------------------------------------------------------------------
 #        Graph Searches
 #------------------------------------------------------------------------------
+# TODO implement dist_to method for all searches
+# TODO update __doc__ for GraphSearch -> subclasses to include common
+# attributes in all documentation + custom subclass parameters/attributes
+# TODO make _edge_to, _visited, _dist_to @property, @abstractmethod
 class GraphSearch(ABC):
     """General graph search class.
 
@@ -223,7 +227,7 @@ class GraphSearch(ABC):
         for s in self.sources:
             for v in range(self.G.V):
                 if self.has_path_to(v):
-                    print("{:<2d} -> {:2d}:  ".format(s, v), end='')
+                    print(f"{s} -> {v} ({self._dist_to[v]:4.2f}): ", end='')
                     for x in self.path_to(v):
                         if x == s:
                             print(x, end='')
@@ -231,7 +235,7 @@ class GraphSearch(ABC):
                             print('-' + str(x), end='')
                     print()
                 else:
-                    print("{:<2d} -> {:2d}:  not connected".format(s, v))
+                    print(f"{s} -> {v}:  not connected")
 
 
 class DepthFirstSearch(GraphSearch):
@@ -551,11 +555,24 @@ class BreadthFirstSearch(GraphSearch):
                 prereqs[w] -= 1
 
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 #        Weighted Searches
 #------------------------------------------------------------------------------
 class AcyclicPath(GraphSearch):
-    """Find the shortest or longest path in a DAG."""
+    """Find the shortest or longest paths in a DAG.
+
+    If the Digraph is not acyclic, AcyclicPath finds the max/minima paths from
+    a source `s` to all other vertices `v` in the Digraph.
+
+    Parameters
+    ----------
+    G : :obj:`Digraph`
+        The directed graph object to search.
+    s : key
+        Single source vertex from which to find shortest paths.
+    kind : str in {'min', 'max'}, optional, default='min'
+        Choose whether to find the minimum path, or the maximum
+    """
     def __init__(self, G, s, kind='min'):
         self._op = operator.gt if kind == 'min' else operator.lt
         self._dist_to = dict()
@@ -569,8 +586,12 @@ class AcyclicPath(GraphSearch):
         if not topo:
             raise TypeError('Graph is not acyclic!')
         for v in topo:
+            self._visited[v] = True
             for e in self.G[v]:
                 self._relax(e)
+
+    def dist_to(self, v):
+        return self._dist_to[v]
 
     def _relax(self, e):
         """Relax a DirectedEdge if you find a *longer* path."""

@@ -57,28 +57,35 @@ print('pre-order:      ', dfo.preorder)
 print('post-order:     ', dfo.postorder)
 print('rev-post-order: ', dfo.reverse_post)
 
+# Test BFS
+bfs = BreadthFirstSearch(G, [s])
+# print('------------ Unordered BFS: ------------')
+# bfs.print_paths()
+
+# # Test Ordered BFS
+bfs_o = BreadthFirstSearch(G, [s], ordered=True)
+# print('------------ Ordered BFS: ------------')
+# bfs_o.print_paths()
+
 # Test TopologicalOrder
-G = load_graph('test_data/tinyDAG.txt')
-topo = TopologicalOrder(G)
+DAG = load_graph('test_data/tinyDAG.txt')
+topo = TopologicalOrder(DAG)
 assert topo
 print('order: ', topo)
-
-# Test BFS
-# bfs = BreadthFirstSearch(G, [s])
-# print('Unordered BFS:')
-# print('--------------')
-# bfs.print_paths()
-#
-# # Test Ordered BFS
-# bfs_o = BreadthFirstSearch(G, [s], ordered=True)
-# print('Ordered BFS:')
-# print('------------')
-# bfs_o.print_paths()
 
 # Test EWD
 EG = load_graph('test_data/tinyEWDAG.txt')
 s = EG.roots()
+assert len(s) == 1
 ap = AcyclicPath(EG, s[0], kind='max')
+print('----- Edge-Weighted DAG -----')
+ap.print_paths()
+assert ap.dist_to(s[0]) == 0.0
+
+ap = AcyclicPath(EG, s[0], kind='min')
+print('----- Edge-Weighted DAG -----')
+ap.print_paths()
+assert ap.dist_to(s[0]) == 0.0
 
 #==============================================================================
 #==============================================================================
