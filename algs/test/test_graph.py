@@ -9,34 +9,28 @@
 """
 #==============================================================================
 
-import re
-from algs import (Digraph, DepthFirstSearch, DepthFirstOrder, DirectedCycle,
-                  TopologicalOrder, BreadthFirstSearch)
-# from ..graph import Digraph, BreadthFirstSearch
+from algs import (Stack, Queue, PriorityQueue,
+                  Digraph, DepthFirstSearch, DepthFirstOrder, DirectedCycle,
+                  TopologicalOrder, BreadthFirstSearch, AcyclicPath)
 
-# TODO import pytest
-
-pat = re.compile('(\d+)\s+(\d+)')
-def parse(line):
-    match = pat.search(line)
-    return int(match.group(1)), int(match.group(2))
-
-def load_graph(filename='test_data/tinyDG.txt'):
+def load_graph(filename):
     G = Digraph()
     with open(filename, 'r') as file:
         for i, line in enumerate(file.readlines()):
             if i == 0: V = int(line.rstrip())
             if i == 1: E = int(line.rstrip())
             if i < 2: continue
-            a, b = parse(line)
-            G.add_edge(a, b)
+            nums = line.rstrip().split()
+            args = [int(nums[0]), int(nums[1])]
+            if len(nums) == 3:
+                args.append(float(nums[2]))
+            G.add_edge(*args)
     assert G.V == V
     assert G.E == E
     return G
 
 # Load test file
 # TODO loop over all test files
-
 G = load_graph('test_data/tinyDG.txt')
 # G = load_graph('test_data/mediumDG.txt')
 
@@ -49,37 +43,49 @@ for s in sources:
 
 # Test DFS
 dfs = DepthFirstSearch(G, [sources[0]])
-assert dfs.has_path_to(2)
-print(f'{sources[0]} -> 2: ', dfs.path_to(2))
+assert dfs.has_path_to(12)
+assert dfs.path_to(12) == Stack([7, 9, 10, 12])
+print(f'{sources[0]} -> 12: ', dfs.path_to(12))
 
 # Test paths
-dfs = DepthFirstOrder(G)
+dfo = DepthFirstOrder(G)
 
 finder = DirectedCycle(G)
 assert finder.has_cycle
 
-print('pre-order:      ', dfs.preorder)
-print('post-order:     ', dfs.postorder)
-print('rev-post-order: ', dfs.reverse_post)
-
-# Test TopologicalOrder
-G = load_graph('test_data/tinyDAG.txt')
-topo = TopologicalOrder(G)
-assert topo.has_order
-print('order: ', topo.order)
-print('rank: ',  topo.rank)
+print('pre-order:      ', dfo.preorder)
+print('post-order:     ', dfo.postorder)
+print('rev-post-order: ', dfo.reverse_post)
 
 # Test BFS
-# bfs = BreadthFirstSearch(G, [s])
-# print('Unordered BFS:')
-# print('--------------')
+bfs = BreadthFirstSearch(G, [s])
+# print('------------ Unordered BFS: ------------')
 # bfs.print_paths()
 
-# Test Ordered BFS
-# bfs_o = BreadthFirstSearch(G, [s], ordered=True)
-# print('Ordered BFS:')
-# print('------------')
+# # Test Ordered BFS
+bfs_o = BreadthFirstSearch(G, [s], ordered=True)
+# print('------------ Ordered BFS: ------------')
 # bfs_o.print_paths()
+
+# Test TopologicalOrder
+DAG = load_graph('test_data/tinyDAG.txt')
+topo = TopologicalOrder(DAG)
+assert topo
+print('order: ', topo)
+
+# Test EWD
+EG = load_graph('test_data/tinyEWDAG.txt')
+s = EG.roots()
+assert len(s) == 1
+ap = AcyclicPath(EG, s[0], kind='max')
+print('----- Edge-Weighted DAG -----')
+ap.print_paths()
+assert ap.dist_to(s[0]) == 0.0
+
+ap = AcyclicPath(EG, s[0], kind='min')
+print('----- Edge-Weighted DAG -----')
+ap.print_paths()
+assert ap.dist_to(s[0]) == 0.0
 
 #==============================================================================
 #==============================================================================
