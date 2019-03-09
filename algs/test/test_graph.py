@@ -15,20 +15,17 @@ from algs import (Stack, Queue, PriorityQueue,
                   BreadthFirstSearch)
 
 def load_graph(filename='test_data/tinyDG.txt', weights=False):
-    if weights:
-        G = EdgeWeightedDigraph()
-    else:
-        G = Digraph()
+    G = EdgeWeightedDigraph() if weights else Digraph()
     with open(filename, 'r') as file:
         for i, line in enumerate(file.readlines()):
             if i == 0: V = int(line.rstrip())
             if i == 1: E = int(line.rstrip())
             if i < 2: continue
             nums = line.rstrip().split()
+            args = [int(nums[0]), int(nums[1])]
             if weights:
-                G.add_edge(int(nums[0]), int(nums[1]), float(nums[2]))
-            else:
-                G.add_edge(int(nums[0]), int(nums[1]))
+                args.append(float(nums[2]))
+            G.add_edge(*args)
     assert G.V == V
     assert G.E == E
     return G

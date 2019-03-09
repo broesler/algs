@@ -70,6 +70,9 @@ class Digraph():
         """Iterable of all the vertex keys in the Digraph."""
         yield from self.adj.keys()
 
+    # def iter_adj(self):
+    #     return {v: iter(self.adj[v]) for v in self.adj}
+
     def add_edge(self, a, b):
         """Add edge between two vertex ids.
 
@@ -349,7 +352,7 @@ class DepthFirstSearch(GraphSearch):
 
     def search(self):
         for s in self.sources:
-            self._dfs(s)
+            self._dfsX(s)
 
     def _dfs(self, v):
         """Perform depth-first search, recursively."""
@@ -362,16 +365,22 @@ class DepthFirstSearch(GraphSearch):
     def _dfsX(self, v):
         """Perform depth-first search, with explicit stack."""
         path = Stack()
-        self._visited[v] = True
         path.push(v)
+        self._visited[v] = True
+
+        # Iterator of each adjacency list
+        adj = {v: iter(self.G[v]) for v in self.G}
+
         while path:
-            for w in self.G[v]:
+            v = path.peek()
+            try:
+                w = next(adj[v])
                 if not self._visited[w]:
                     self._edge_to[w] = v
                     self._visited[w] = True
                     path.push(w)
-                    break
-            v = path.pop()
+            except StopIteration:
+                path.pop()
 
 
 class DirectedCycle(GraphSearch):
@@ -402,7 +411,7 @@ class DirectedCycle(GraphSearch):
         """Find a cycle, if one exists."""
         for v in self.G:
             if not (self._visited[v] or self.cycle):
-                self._dfs(v)
+                self._dfsX(v)
 
     @property
     def has_cycle(self):
@@ -410,7 +419,7 @@ class DirectedCycle(GraphSearch):
         return bool(self.cycle)
 
     def _dfs(self, v):
-        """Perform depth-first search, recursively, until cycle is found."""
+        """Recursive depth-first search from vertex `v` until cycle is found."""
         self._visited[v] = True
         self._on_stack[v] = True
 
@@ -433,6 +442,36 @@ class DirectedCycle(GraphSearch):
         # "pop" the item off the stack
         self._on_stack[v] = False
 
+    def _dfsX(self, v):
+        """Perform depth-first search, with explicit stack."""
+        # Iterator of each adjacency list
+        adj = {v: iter(self.G[v]) for v in self.G}
+
+        path = Stack()
+        path.push(v)
+        self._on_stack[v] = True
+        self._visited[v] = True
+
+        while path:
+            v = path.peek()
+            try:
+                w = next(adj[v])
+                if not self._visited[w]:
+                    path.push(w)
+                    self._on_stack[w] = True
+                    self._visited[w] = True
+                    self._edge_to[w] = v
+                elif self._on_stack[w]:
+                    # Trace back through the cycle
+                    x = v
+                    while x != w:
+                        self.cycle.push(x)
+                        x = self._edge_to[x]
+                    self.cycle.push(w)
+                    self.cycle.push(v)  # store the first node twice
+            except StopIteration:
+                path.pop()
+                self._on_stack[v] = False
 
 class DepthFirstOrder(GraphSearch):
     """Depth-first search to find vertex orders.
@@ -468,7 +507,7 @@ class DepthFirstOrder(GraphSearch):
 
     def search(self):
         for s in self.sources:
-            self._dfs(s)
+            self._dfsX(s)
 
     @property
     def reverse_post(self):
@@ -494,6 +533,35 @@ class DepthFirstOrder(GraphSearch):
         self.postorder.enqueue(v)
         self.postrank[v] = self._postcounter
         self._postcounter += 1
+
+    def _dfsX(self, v):
+        """Perform depth-first search with explicit stack."""
+        path = Stack()
+        path.push(v)
+        self._visited[v] = True
+        self.preorder.enqueue(v)  # preorder order
+        self.prerank[v] = self._precounter
+        self._precounter += 1
+
+        # Iterator of each adjacency list
+        adj = {v: iter(self.G[v]) for v in self.G}
+
+        while path:
+            v = path.peek()
+            try:
+                w = next(adj[v])
+                if not self._visited[w]:
+                    self._edge_to[w] = v
+                    self._visited[w] = True
+                    path.push(w)
+                    self.preorder.enqueue(w)  # preorder order
+                    self.prerank[w] = self._precounter
+                    self._precounter += 1
+            except StopIteration:
+                path.pop()
+                self.postorder.enqueue(v)
+                self.postrank[v] = self._postcounter
+                self._postcounter += 1
 
 
 class TopologicalOrder():
