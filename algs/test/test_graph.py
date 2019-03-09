@@ -9,34 +9,32 @@
 """
 #==============================================================================
 
-import re
-from algs import (Digraph, DepthFirstSearch, DepthFirstOrder, DirectedCycle,
-                  TopologicalOrder, BreadthFirstSearch)
-# from ..graph import Digraph, BreadthFirstSearch
+from algs import (Stack, Queue, PriorityQueue,
+                  Digraph, EdgeWeightedDigraph, DepthFirstSearch,
+                  DepthFirstOrder, DirectedCycle, TopologicalOrder,
+                  BreadthFirstSearch)
 
-# TODO import pytest
-
-pat = re.compile('(\d+)\s+(\d+)')
-def parse(line):
-    match = pat.search(line)
-    return int(match.group(1)), int(match.group(2))
-
-def load_graph(filename='test_data/tinyDG.txt'):
-    G = Digraph()
+def load_graph(filename='test_data/tinyDG.txt', weights=False):
+    if weights:
+        G = EdgeWeightedDigraph()
+    else:
+        G = Digraph()
     with open(filename, 'r') as file:
         for i, line in enumerate(file.readlines()):
             if i == 0: V = int(line.rstrip())
             if i == 1: E = int(line.rstrip())
             if i < 2: continue
-            a, b = parse(line)
-            G.add_edge(a, b)
+            nums = line.rstrip().split()
+            if weights:
+                G.add_edge(int(nums[0]), int(nums[1]), float(nums[2]))
+            else:
+                G.add_edge(int(nums[0]), int(nums[1]))
     assert G.V == V
     assert G.E == E
     return G
 
 # Load test file
 # TODO loop over all test files
-
 G = load_graph('test_data/tinyDG.txt')
 # G = load_graph('test_data/mediumDG.txt')
 
@@ -49,8 +47,9 @@ for s in sources:
 
 # Test DFS
 dfs = DepthFirstSearch(G, [sources[0]])
-assert dfs.has_path_to(2)
-print(f'{sources[0]} -> 2: ', dfs.path_to(2))
+assert dfs.has_path_to(12)
+assert dfs.path_to(12) == Stack([7, 9, 10, 12])
+print(f'{sources[0]} -> 12: ', dfs.path_to(12))
 
 # Test paths
 dfs = DepthFirstOrder(G)
@@ -74,12 +73,15 @@ print('rank: ',  topo.rank)
 # print('Unordered BFS:')
 # print('--------------')
 # bfs.print_paths()
-
-# Test Ordered BFS
+#
+# # Test Ordered BFS
 # bfs_o = BreadthFirstSearch(G, [s], ordered=True)
 # print('Ordered BFS:')
 # print('------------')
 # bfs_o.print_paths()
+
+# Test EWD
+EG = load_graph('test_data/tinyEWD.txt', weights=True)
 
 #==============================================================================
 #==============================================================================
