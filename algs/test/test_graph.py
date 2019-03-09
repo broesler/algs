@@ -10,9 +10,9 @@
 #==============================================================================
 
 from algs import (Stack, Queue, PriorityQueue,
-                  Digraph, EdgeWeightedDigraph, DepthFirstSearch,
-                  DepthFirstOrder, DirectedCycle, TopologicalOrder,
-                  BreadthFirstSearch)
+                  Digraph, DepthFirstSearch, DepthFirstOrder, DirectedCycle,
+                  TopologicalOrder, BreadthFirstSearch, 
+                  EdgeWeightedDigraph, AcyclicLP)
 
 def load_graph(filename='test_data/tinyDG.txt', weights=False):
     G = EdgeWeightedDigraph() if weights else Digraph()
@@ -63,7 +63,6 @@ G = load_graph('test_data/tinyDAG.txt')
 topo = TopologicalOrder(G)
 assert topo.has_order
 print('order: ', topo.order)
-print('rank: ',  topo.rank)
 
 # Test BFS
 # bfs = BreadthFirstSearch(G, [s])
@@ -78,7 +77,9 @@ print('rank: ',  topo.rank)
 # bfs_o.print_paths()
 
 # Test EWD
-EG = load_graph('test_data/tinyEWD.txt', weights=True)
+EG = load_graph('test_data/tinyEWDAG.txt', weights=True)
+s = EG.roots()[0]
+ap = AcyclicLP(EG, s)
 
 #==============================================================================
 #==============================================================================

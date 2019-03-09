@@ -13,6 +13,9 @@ from abc import ABC, abstractmethod
 
 from .basics import Stack, Queue, PriorityQueue
 
+INF = float('inf')
+M_INF = float('-inf')
+
 class Digraph():
     """Directed graph represented as a dictionary of vertices.
 
@@ -68,10 +71,11 @@ class Digraph():
 
     def vertices(self):
         """Iterable of all the vertex keys in the Digraph."""
-        yield from self.adj.keys()
+        return self.adj.keys()
 
-    # def iter_adj(self):
-    #     return {v: iter(self.adj[v]) for v in self.adj}
+    def iter_adjs(self):
+        """Iterators of the adjacent nodes to all vertices."""
+        return {v: iter(self.adj[v]) for v in self.adj}
 
     def add_edge(self, a, b):
         """Add edge between two vertex ids.
@@ -196,11 +200,15 @@ class EdgeWeightedDigraph():
         the_edges = list()
         for v in self.adj:
             the_edges.extend(self.adj[v])
-        yield from the_edges
+        return the_edges
 
     def vertices(self):
         """Iterable of all the vertex keys in the Digraph."""
-        yield from self.adj.keys()
+        return self.adj.keys()
+
+    def iter_adjs(self):
+        """Iterators of the adjacent nodes to all vertices."""
+        return {v: iter(self.adj[v]) for v in self.adj}
 
     def add_edge(self, a, b, w):
         """Add a weighted edge between two vertices.
@@ -369,7 +377,7 @@ class DepthFirstSearch(GraphSearch):
         self._visited[v] = True
 
         # Iterator of each adjacency list
-        adj = {v: iter(self.G[v]) for v in self.G}
+        adj = self.G.iter_adjs()
 
         while path:
             v = path.peek()
@@ -445,7 +453,7 @@ class DirectedCycle(GraphSearch):
     def _dfsX(self, v):
         """Perform depth-first search, with explicit stack."""
         # Iterator of each adjacency list
-        adj = {v: iter(self.G[v]) for v in self.G}
+        adj = self.G.iter_adjs()
 
         path = Stack()
         path.push(v)
@@ -473,6 +481,8 @@ class DirectedCycle(GraphSearch):
                 path.pop()
                 self._on_stack[v] = False
 
+
+# TODO remove in favor of queue-based TopologicalOrder?
 class DepthFirstOrder(GraphSearch):
     """Depth-first search to find vertex orders.
 
@@ -490,19 +500,11 @@ class DepthFirstOrder(GraphSearch):
         Order of node traversal *after* recursion
     reverse_post : iterable of keys
         Reversed order of node traversal *after* recursion
-    prerank : iterable of keys
-        prerank[v] returns the `preorder` ranking of vertex with key `v`.
-    postrank : iterable of keys
-        postrank[v] returns the `postorder` ranking of vertex with key `v`.
     """
     def __init__(self, G):
         # Track the graph orders
         self.preorder = Queue()   # graph order before recursion
         self.postorder = Queue()  # graph order after recursion
-        self.prerank = dict()
-        self.postrank = dict()
-        self._precounter = 0
-        self._postcounter = 0
         super().__init__(G)
 
     def search(self):
@@ -522,8 +524,6 @@ class DepthFirstOrder(GraphSearch):
         self._visited[v] = True
 
         self.preorder.enqueue(v)  # preorder order
-        self.prerank[v] = self._precounter
-        self._precounter += 1
 
         for w in self.G[v]:
             if not self._visited[w]:
@@ -531,8 +531,6 @@ class DepthFirstOrder(GraphSearch):
                 self._dfs(w)
 
         self.postorder.enqueue(v)
-        self.postrank[v] = self._postcounter
-        self._postcounter += 1
 
     def _dfsX(self, v):
         """Perform depth-first search with explicit stack."""
@@ -540,11 +538,9 @@ class DepthFirstOrder(GraphSearch):
         path.push(v)
         self._visited[v] = True
         self.preorder.enqueue(v)  # preorder order
-        self.prerank[v] = self._precounter
-        self._precounter += 1
 
         # Iterator of each adjacency list
-        adj = {v: iter(self.G[v]) for v in self.G}
+        adj = self.G.iter_adjs()
 
         while path:
             v = path.peek()
@@ -555,13 +551,9 @@ class DepthFirstOrder(GraphSearch):
                     self._visited[w] = True
                     path.push(w)
                     self.preorder.enqueue(w)  # preorder order
-                    self.prerank[w] = self._precounter
-                    self._precounter += 1
             except StopIteration:
                 path.pop()
                 self.postorder.enqueue(v)
-                self.postrank[v] = self._postcounter
-                self._postcounter += 1
 
 
 class TopologicalOrder():
@@ -669,6 +661,31 @@ class BreadthFirstSearch(GraphSearch):
                     self._edge_to[w] = v
                     available.enqueue(w)
                 prereqs[w] -= 1
+
+
+# TODO make this AcyclicPath(kind='min') and have generic operator
+class AcyclicLP(GraphSearch):
+    """Find the longest path in a DAG."""
+    def __init__(self, G, s):
+        self._dist_to = dict()
+        for v in G:
+            self._dist_to[v] = M_INF
+        self._dist_to[s] = 0.0
+        super().__init__(G, s)
+
+    def search(self):
+        topo = TopologicalOrder(self.G)
+        if not topo.has_order:
+            raise TypeError('G is not acyclic!')
+        for v in topo.order:
+            for e in self.G[v]:
+                self._relax(e)
+
+    def _relax(self, e):
+        """Relax a DirectedEdge if you find a *longer* path."""
+        if self._dist_to[e.w] < self._dist_to[e.v] + e.weight:
+            self._dist_to[e.w] = self._dist_to[e.v] + e.weight
+            self._edge_to[e.w] = e
 
 
 #==============================================================================
