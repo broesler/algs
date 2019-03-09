@@ -13,12 +13,12 @@ from copy import deepcopy
 import operator
 
 class Stack():
-    """Implement a Stack data structure.
+    """Implements a Stack data structure.
 
     Parameters
     ----------
     items : iterable 
-        List of items to push onto the stack, in LIFO order.
+        List of items on the stack, in FIFO order.
 
     Attributes
     -------
@@ -128,12 +128,16 @@ class Queue():
 class PriorityQueue():
     """Iterable priority queue object.
 
+    A custom key function can be supplied to customize the sort order.
+
     Parameters
     ----------
     items : List of objects, optional
         Items to add to the queue.
     kind : str in {'min', 'max'}, optional, default='min'
         How to order the priority queue: minimum item at the front, or maximum.
+    key : callable, optional
+        Transformation function used in item comparison, *see* `sorted`.
 
     Attributes
     ----------
@@ -151,10 +155,10 @@ class PriorityQueue():
 
     See: <https://algs4.cs.princeton.edu/24pq/> for details.
     """
-    def __init__(self, items=list(), kind='min'):
-        # TODO generalize to take any (-1, 0, 1) comparator function 
+    def __init__(self, items=list(), kind='min', key=None):
         self._op = operator.gt if kind == 'min' else operator.lt
-        self._items = list([None])  # ignore index 0
+        self._key = key or (lambda x: x)  # identity if not given
+        self._items = list([None])        # ignore index 0
         self._items.extend(items)
         # Sink nodes from right-to-left
         for k in range(self.size // 2, 0, -1):
@@ -163,8 +167,7 @@ class PriorityQueue():
 
     @property
     def size(self):
-        # Ignore index 0
-        return len(self._items) - 1
+        return len(self._items) - 1  # ignore index 0
 
     @property
     def is_empty(self):
@@ -172,8 +175,7 @@ class PriorityQueue():
 
     def peek(self):
         """Look at first item in queue without dequeue-ing."""
-        # self._items[0] is ALWAYS `None` in heap-land
-        return self._items[1]
+        return self._items[1]  # self._items[0] is ALWAYS `None` in heap-land
 
     def enqueue(self, item):
         """Add item to the queue in proper position."""
@@ -212,13 +214,15 @@ class PriorityQueue():
             self._swap(k, k//2)
             k = k//2
 
-    def _comp(self, a, b):
+    def _comp(self, ind_a, ind_b):
         """Compare two items in the heap. 
         
-        If      kind == 'min', returns True if self._items[a] < self._items[b],
-        else if kind == 'max', returns True if self._items[a] > self._items[b].
+        .. note::
+            If      kind == 'min', True if self._items[a] < self._items[b],
+            else if kind == 'max', True if self._items[a] > self._items[b].
         """
-        return self._op(self._items[a], self._items[b])
+        return self._op(self._key(self._items[ind_a]), 
+                        self._key(self._items[ind_b]))
 
     def _swap(self, a, b):
         """Swap the location of two items in the heap."""
