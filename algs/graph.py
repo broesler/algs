@@ -31,7 +31,17 @@ class DirectedEdge():
     def __init__(self, v, w, weight=0.0):
         self.v = v
         self.w = w
-        self.weight = weight
+        self.weight = float(weight)
+
+    def __eq__(self, other):
+        return ((self.v == other.v) and
+                (self.w == other.w) and
+                (self.weight == other.weight))
+
+    def __lt__(self, other):
+        return ((self.v < other.v) and
+                (self.w < other.w) and
+                (self.weight < other.weight))
 
     def __repr__(self):
         return '<DirectedEdge: ' + self.__str__() + '>'
@@ -128,7 +138,7 @@ class Digraph():
             self._init_vertex(a)
         self.adj[a].append(edge)
 
-        if b not in self.indegree:
+        if b not in self.adj:
             self._init_vertex(b)
         self.indegree[b] += 1
 
@@ -574,10 +584,11 @@ class AcyclicPath(GraphSearch):
         Choose whether to find the minimum path, or the maximum
     """
     def __init__(self, G, s, kind='min'):
+        init_val = INF if kind == 'min' else M_INF
         self._op = operator.gt if kind == 'min' else operator.lt
         self._dist_to = dict()
         for v in G:
-            self._dist_to[v] = INF if kind == 'min' else M_INF
+            self._dist_to[v] = init_val
         self._dist_to[s] = 0.0
         super().__init__(G, [s])
 
