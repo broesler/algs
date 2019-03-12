@@ -39,7 +39,7 @@ sources = G.roots()
 
 Gr = G.reverse()
 for s in sources:
-    assert Gr[s] == list([])  # source has no adjacents in reverse
+    assert Gr[s] == list()  # source has no adjacents in reverse
 
 # Test DFS
 dfs = DepthFirstSearch(G, [sources[0]])

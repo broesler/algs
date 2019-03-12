@@ -74,13 +74,14 @@ class Digraph():
     outdegree : dict of int
         `outdegree[v]` is number of vertices that have edges from `v`.
     """
-    def __init__(self, vertices=list()):
+    def __init__(self, vertices=None):
         self.E = 0
         self.V = 0
         self.adj = dict()       # vertex-keyed adjacency list of edges
         self.indegree = dict()  # list of vertex indegrees
-        for v in vertices:
-            self._init_vertex(v)
+        if vertices:
+            for v in vertices:
+                self._init_vertex(v)
 
     def _init_vertex(self, v):
         """Add a new vertex to the graph.
@@ -185,7 +186,7 @@ class GraphSearch(ABC):
     sources : iterable
         Iterable of given sources, or vertices with indegree 0.
     """
-    def __init__(self, G, sources=list(), *args, **kwargs):
+    def __init__(self, G, sources=None, *args, **kwargs):
         self.G = G
         self.sources = sources or self.G.roots()
         # Properties common to all digraph searches
@@ -267,7 +268,7 @@ class DepthFirstSearch(GraphSearch):
     sources : iterable of vertex ids, optional
         Iterable of vertex ids from which to begin the search.
     """
-    def __init__(self, G, sources=list()):
+    def __init__(self, G, sources=None):
         super().__init__(G, sources)
 
     def search(self):
