@@ -9,9 +9,9 @@
 """
 #==============================================================================
 
-from algs import (Stack, Queue, PriorityQueue,
-                  Digraph, DepthFirstSearch, DepthFirstOrder, DirectedCycle,
-                  TopologicalOrder, BreadthFirstSearch, AcyclicPath)
+from algs import (Stack, Digraph, DepthFirstSearch, DepthFirstOrder,
+                  DirectedCycle, TopologicalOrder, BreadthFirstSearch,
+                  AcyclicPath)
 
 def load_graph(filename):
     G = Digraph()

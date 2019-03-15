@@ -9,8 +9,10 @@
 """
 #==============================================================================
 
-from copy import deepcopy
 import operator
+
+from collections import deque
+from copy import deepcopy
 
 class Stack():
     """Implements a Stack data structure.
@@ -28,8 +30,8 @@ class Stack():
         True if `size == 0`.
     """
     def __init__(self, items=list()):
-        # _items[0] is "top" of stack
-        self._items = list(items)
+        # _items[-1] is "top" of stack
+        self._items = list(items[::-1])
 
     @property
     def size(self):
@@ -41,15 +43,15 @@ class Stack():
 
     def peek(self):
         """Look at top of stack without popping.""" 
-        return self._items[0]
+        return self._items[-1]
 
     def pop(self):
         """Remove and return item from top of stack."""
-        return self._items.pop(0)
+        return self._items.pop()
 
     def push(self, item):
         """Add item to top of stack."""
-        self._items.insert(0, item)
+        self._items.append(item)
 
     # dunder(-mifflin) methods
     # TODO move these + size + is_empty to ABC?
@@ -85,8 +87,8 @@ class Queue():
         True if `size == 0`
     """
     def __init__(self, items=list()):
-        # _items[0] is "front" of queue
-        self._items = list(items)
+        # _items[-1] is "front" of queue
+        self._items = deque(items[::-1])
 
     @property
     def size(self):
@@ -98,15 +100,15 @@ class Queue():
 
     def peek(self):
         """Look at first item in queue without dequeue-ing."""
-        return self._items[0]
+        return self._items[-1]
 
     def enqueue(self, item):
         """Add item to the end of the queue."""
-        self._items.append(item)
+        self._items.appendleft(item)
 
     def dequeue(self):
         """Remove and return item from the front of the queue."""
-        return self._items.pop(0)
+        return self._items.pop()
 
     # dunder(-mifflin) methods
     def __iter__(self):
@@ -280,6 +282,9 @@ class PriorityQueue():
 #------------------------------------------------------------------------------
 # TODO move to unit tests!
 if __name__ == '__main__':
+    import string
+
+    # Test Stack
     s = Stack()
     for i in range(5):
         s.push(i)
@@ -287,21 +292,20 @@ if __name__ == '__main__':
     assert not s.is_empty
     assert 4 == s.peek()
     assert 4 == s.pop()
-    assert str(s) == '[3, 2, 1, 0]'
     # Test iteration
-    for i, item in zip([3, 2, 1, 0], s):
+    for i, item in zip([0, 1, 2, 3], s):
         assert i == item
 
+    # Test Queue
     q = Queue(['A', 'B', 'C'])
     q.enqueue('D')
     assert q.size == 4
     assert not q.is_empty
     assert 'A' == q.peek()
     assert 'A' == q.dequeue()
-    for c, item in zip(['B', 'C', 'D'], q):
+    for c, item in zip(['D', 'C', 'B'], q):
         assert c == item
 
-    import string
     # Test maxPQ
     pq = PriorityQueue(list(string.ascii_uppercase), kind='max')
     assert not pq.is_empty
@@ -312,10 +316,10 @@ if __name__ == '__main__':
     assert 'X' == pq.dequeue()
     for c in ['X', 'Y', 'Z']:
         pq.enqueue(c)
-    s = Stack()
+    q = Queue()
     for c in pq:
-        s.push(c)
-    assert ''.join(s) == string.ascii_uppercase
+        q.enqueue(c)
+    assert ''.join(q) == string.ascii_uppercase
 
     # Test minPQ
     pq = PriorityQueue(list(string.ascii_uppercase), kind='min')
@@ -324,10 +328,11 @@ if __name__ == '__main__':
     assert 'C' == pq.dequeue()
     for c in ['A', 'B', 'C']:
         pq.enqueue(c)
-    s = Stack()
+    q = Queue()
     for c in pq:
-        s.push(c)
-    assert ''.join(s) == string.ascii_uppercase[::-1]
+        q.enqueue(c)
+    assert ''.join(q) == string.ascii_uppercase[::-1]
+    print('All tests passed.')
 
 #==============================================================================
 #==============================================================================
