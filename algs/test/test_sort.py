@@ -9,8 +9,7 @@
 """
 #==============================================================================
 
-from algs.sort import (is_sorted, bubble_sort, insertion_sort, merge_sort,
-                       quick_sort, heap_sort)
+from algs.sort import *
 
 def should_be(a, b):
     """Test a condition."""
@@ -30,7 +29,8 @@ chrs = list('SORTEXAMPLE')
 test_As = ((ints, sorted(ints)),
            (chrs, sorted(chrs)))
 
-sort_funs = [bubble_sort, insertion_sort, merge_sort, quick_sort, heap_sort]
+sort_funs = [bubble_sort, insertion_sort, merge_sort, merge_sort_BU,
+             quick_sort, heap_sort]
 
 #------------------------------------------------------------------------------
 #        Run general sorting algorithm tests
