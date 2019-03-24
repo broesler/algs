@@ -19,7 +19,7 @@ class Stack():
 
     Parameters
     ----------
-    items : iterable 
+    items : iterable
         List of items on the stack, in FIFO order.
 
     Attributes
@@ -42,7 +42,7 @@ class Stack():
         return (self.size == 0)
 
     def peek(self):
-        """Look at top of stack without popping.""" 
+        """Look at top of stack without popping."""
         return self._items[-1]
 
     def pop(self):
@@ -54,9 +54,8 @@ class Stack():
         self._items.append(item)
 
     # dunder(-mifflin) methods
-    # TODO move these + size + is_empty to ABC?
     def __iter__(self):
-        yield from self._items
+        yield from (self._items[::-1])
 
     def __bool__(self):
         return bool(self.size)
@@ -68,12 +67,12 @@ class Stack():
         return '<Stack: ' + self.__str__() + '>'
 
     def __str__(self):
-        return str(self._items) 
+        return str(list(self._items))
 
 
 class Queue():
     """Iterable queue object.
-    
+
     Parameters
     ----------
     items : List of objects
@@ -88,7 +87,7 @@ class Queue():
     """
     def __init__(self, items=list()):
         # _items[-1] is "front" of queue
-        self._items = deque(items[::-1])
+        self._items = deque(items)
 
     @property
     def size(self):
@@ -100,15 +99,15 @@ class Queue():
 
     def peek(self):
         """Look at first item in queue without dequeue-ing."""
-        return self._items[-1]
+        return self._items[0]
 
     def enqueue(self, item):
         """Add item to the end of the queue."""
-        self._items.appendleft(item)
+        self._items.append(item)
 
     def dequeue(self):
         """Remove and return item from the front of the queue."""
-        return self._items.pop()
+        return self._items.popleft()
 
     # dunder(-mifflin) methods
     def __iter__(self):
@@ -124,7 +123,7 @@ class Queue():
         return '<Queue: ' + self.__str__() + '>'
 
     def __str__(self):
-        return str(self._items) 
+        return str(list(self._items))
 
 
 class PriorityQueue():
@@ -196,7 +195,7 @@ class PriorityQueue():
         assert self._is_heap()
         return the_min
 
-    #-------------------------------------------------------------------------- 
+    #--------------------------------------------------------------------------
     #        Private helper functions
     #--------------------------------------------------------------------------
     def _sink(self, k):
@@ -217,13 +216,13 @@ class PriorityQueue():
             k = k//2
 
     def _comp(self, ind_a, ind_b):
-        """Compare two items in the heap. 
-        
+        """Compare two items in the heap.
+
         .. note::
             If      kind == 'min', True if self._items[a] < self._items[b],
             else if kind == 'max', True if self._items[a] > self._items[b].
         """
-        return self._op(self._key(self._items[ind_a]), 
+        return self._op(self._key(self._items[ind_a]),
                         self._key(self._items[ind_b]))
 
     def _swap(self, a, b):
@@ -232,7 +231,7 @@ class PriorityQueue():
 
     def _is_heap(self, k=1):
         """Return True if PriorityQueue is heap-ordered according to `kind`.
-            
+
         Parameters
         ----------
         k : int in [1, self.size], optional, default = 1
@@ -252,7 +251,6 @@ class PriorityQueue():
         if (right <= self.size and self._comp(k, right)): return False
         return self._is_heap(left) and self._is_heap(right)
 
-    # TODO move these + size + is_empty to ABC?
     def __bool__(self):
         return bool(self.size)
 
@@ -263,7 +261,7 @@ class PriorityQueue():
         return '<PriorityQueue: ' + self.__str__() + '>'
 
     def __str__(self):
-        return str(self._items[1:]) 
+        return str(list(self._items[1:]))
 
     # Iterator methods
     def __iter__(self):
@@ -274,13 +272,12 @@ class PriorityQueue():
         if self._pq.is_empty:
             raise StopIteration
         else:
-            return self._pq.dequeue() 
+            return self._pq.dequeue()
 
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 #        Test client
 #------------------------------------------------------------------------------
-# TODO move to unit tests!
 if __name__ == '__main__':
     import string
 
@@ -292,8 +289,8 @@ if __name__ == '__main__':
     assert not s.is_empty
     assert 4 == s.peek()
     assert 4 == s.pop()
-    # Test iteration
-    for i, item in zip([0, 1, 2, 3], s):
+    # Test iteration -- pop should be in reverse order
+    for i, item in zip([3, 2, 1, 0], s):
         assert i == item
 
     # Test Queue
@@ -303,7 +300,8 @@ if __name__ == '__main__':
     assert not q.is_empty
     assert 'A' == q.peek()
     assert 'A' == q.dequeue()
-    for c, item in zip(['D', 'C', 'B'], q):
+    # Elements should be in forwards order
+    for c, item in zip(['B', 'C', 'D'], q):
         assert c == item
 
     # Test maxPQ
@@ -319,7 +317,7 @@ if __name__ == '__main__':
     q = Queue()
     for c in pq:
         q.enqueue(c)
-    assert ''.join(q) == string.ascii_uppercase
+    assert ''.join(q) == string.ascii_uppercase[::-1]
 
     # Test minPQ
     pq = PriorityQueue(list(string.ascii_uppercase), kind='min')
@@ -331,7 +329,7 @@ if __name__ == '__main__':
     q = Queue()
     for c in pq:
         q.enqueue(c)
-    assert ''.join(q) == string.ascii_uppercase[::-1]
+    assert ''.join(q) == string.ascii_uppercase
     print('All tests passed.')
 
 #==============================================================================
