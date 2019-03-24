@@ -1,0 +1,85 @@
+#!/usr/bin/env python3
+#==============================================================================
+#     File: test_timesorts.py
+#  Created: 2019-03-21 00:12
+#   Author: Bernie Roesler
+#
+"""
+  Description:
+"""
+#==============================================================================
+
+import time
+import itertools
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+from algs.sort import *
+
+# sort_funs = [bubble_sort, insertion_sort, mergesort, mergesort_BU,
+#              quicksort, heap_sort]
+sort_funs = [mergesort, quicksort]
+
+# Define lengths of input
+mags = 3  # number of orders of magnitude
+base = np.array(np.logspace(1, mags, mags), dtype=np.uint64)
+vals = np.concatenate([base, 3*base, 5*base])
+vals.sort()
+M = len(vals)
+
+# Massive arrays from which to sample later
+masters = dict()
+masters['random'] = np.random.randint(max(vals), size=max(vals))
+masters['sorted'] = np.array(sorted(masters['random']))
+masters['reverse'] = np.array(masters['sorted'][::-1])
+
+runtimes = dict()
+for sort in sort_funs:
+    runtimes[sort.__name__] = dict()
+    for kind in masters:
+        runtimes[sort.__name__][kind] = np.zeros([M, 2])
+
+for sort in sort_funs:
+    name = sort.__name__
+    print(f"-----{name}-----")
+    for kind in masters:
+        for i, N in enumerate(vals):
+            A = masters[kind][:N]
+            start = time.time()
+            S = sort(A)
+            stop = time.time()
+            assert is_sorted(S)
+            runtimes[name][kind][i, :] = (N, stop - start)
+
+
+fig = plt.figure(1, clear=True)
+ax = fig.add_subplot(111)
+
+colors = ax._get_lines.prop_cycler
+marker = itertools.cycle(('x', 'o', '^'))
+# ls = itertools.cycle(('-', '--', '-.'))
+
+for sort in sort_funs:
+    name = sort.__name__
+    color = next(colors)['color']
+    for kind in masters:
+        ax.plot(runtimes[name][kind][:, 0], runtimes[name][kind][:, 1],
+                c=color, marker=next(marker), ls='-',
+                label="{}: {}".format(name.replace('_', ' '), kind))
+
+ax.set_xscale('log')
+ax.set_yscale('log')
+ax.grid(b=True, which='major', c='k')
+ax.grid(b=True, which='minor')
+
+ax.legend()
+ax.set_xlabel('$N$')
+ax.set_ylabel('runtime [s]')
+
+plt.show()
+
+print('done.')
+
+#==============================================================================
+#==============================================================================

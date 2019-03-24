@@ -5,7 +5,7 @@
 #   Author: Bernie Roesler
 #
 """
-  Description: Test sorting functions
+  Description: Test sorting functions with basic inputs.
 """
 #==============================================================================
 
@@ -20,17 +20,17 @@ def should_be(a, b):
         assert a == b
     except AssertionError as e:
         fails += 1
-        print(f"[{TEST_NAME}]: Got: {a}, Expected: {b}")
+        print(f"[{test_name}]: Got: {a}, Expected: {b}")
         raise e
 
 # Define test cases
 ints = [8, 4, 3, 2, 1, 7, 6, 0, 5, 9]
 chrs = list('SORTEXAMPLE')
-test_As = ((ints, sorted(ints)),
-           (chrs, sorted(chrs)))
+test_As = [(ints, sorted(ints)),
+           (chrs, sorted(chrs))]
 
-sort_funs = [bubble_sort, insertion_sort, merge_sort, merge_sort_BU,
-             quick_sort, heap_sort]
+sort_funs = [bubble_sort, insertion_sort, mergesort, mergesort_BU,
+             quicksort, heap_sort]
 
 #------------------------------------------------------------------------------
 #        Run general sorting algorithm tests
@@ -41,7 +41,7 @@ fails = 0
 for A, S in test_As:
     should_be(is_sorted(S), True)
     for sort in sort_funs:
-        TEST_NAME = sort.__name__
+        test_name = sort.__name__
         should_be(sort(A) is not A, True)      # return a copy
         should_be(sort([]), [])                # empty list
         should_be(sort([0]), [0])              # single element list

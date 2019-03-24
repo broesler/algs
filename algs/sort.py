@@ -9,7 +9,9 @@
 """
 #==============================================================================
 
+from random import shuffle
 from numpy.random import randint
+
 
 def _swap(a, i, j):
     """Swap two list elements in-place."""
@@ -55,38 +57,39 @@ def insertion_sort(s):
     return a
 
 
-def merge_sort(a):
+def mergesort(a):
     """Recursively sort halves of a list, then merge them together.
 
     Uses ~[1/2, 1] N log N compares, < ~6 N log N array accesses.
     """
-    merge_sort.CUTOFF = 7
+    mergesort.CUTOFF = 8
     N = len(a)
     # Trivial sort
     if N < 2:
         return a
     # Use insertion_sort for small arrays
-    if N < merge_sort.CUTOFF:
+    if N < mergesort.CUTOFF:
         return insertion_sort(a)
     mid = N // 2
-    bot = merge_sort(a[mid:])
-    top = merge_sort(a[:mid])
+    bot = mergesort(a[mid:])
+    top = mergesort(a[:mid])
     return _merge(bot, top)
 
 
-def merge_sort_BU(a):
+def mergesort_BU(a):
     """Sort pairs of log-scale growth subarrays.
 
     Uses ~[1/2, 1] N log N compares, < ~6 N log N array accesses.
     """
     N = len(a)
-    out = list(a)
+    out = list(a)  # return a copy
     slen = 1
     while slen < N:
         lo = 0
         while lo < (N - slen):
             mid = lo + slen
             hi = min(lo + 2*slen, N)
+            # Place sorted pairs into output array
             out[lo:hi] = _merge(out[lo:mid], out[mid:hi])
             lo += 2*slen
         slen *= 2
@@ -113,31 +116,66 @@ def _merge(a, b):
     return merged
 
 
-def quick_sort(s):
+def quicksort(s):
     """Quicksort implementation.
 
     Average case: ~ 2 N log N compares and ~ 1/3 N log N exchanges.
     Worst case: ~ N^2 / 2 compares if not randomized.
     """
     a = list(s)
-    return _quick_sort(a, 0, len(a)-1)
+    shuffle(a)  # defend against O(N^2)
+    return _quicksort(a, 0, len(a)-1)
 
 
-def _quick_sort(a, lo, hi):
+def _quicksort(a, lo, hi):
     """Recursively move elements less than pivot to the left."""
     if lo < hi:
         p = _partition(a, lo, hi)
-        _quick_sort(a, lo, p-1)
-        _quick_sort(a, p+1, hi)
+        _quicksort(a, lo, p-1)
+        _quicksort(a, p+1, hi)
     return a
 
 
 # TODO implement 3-way partitioning (<, =, >)
 def _partition(a, lo, hi):
     """Recursively move elements less than pivot to the left."""
-    # idx = randint(lo, hi+1)
-    # piv = a[idx]
-    piv = a[hi] # pivot value
+    piv = a[hi]  # pivot value
+    i = lo - 1
+    for j in range(lo, hi):
+        if a[j] < piv:
+            i += 1
+            _swap(a, i, j)
+    _swap(a, i+1, hi)
+    return i+1
+
+
+def quicksort_rand(s):
+    """Quicksort implementation.
+
+    Average case: ~ 2 N log N compares and ~ 1/3 N log N exchanges.
+    Worst case: ~ N^2 / 2 compares if not randomized.
+    """
+    a = list(s)
+    return _quicksort_rand(a, 0, len(a)-1)
+
+
+def _quicksort_rand(a, lo, hi):
+    """Recursively move elements less than pivot to the left."""
+    if lo < hi:
+        p = _partition_rand(a, lo, hi)
+        _quicksort_rand(a, lo, p-1)
+        _quicksort_rand(a, p+1, hi)
+    return a
+
+
+def _partition_rand(a, lo, hi):
+    """Recursively move elements less than pivot to the left.
+
+    Choose a random element as the pivot instead of shuffling the list.
+    """
+    idx = randint(lo, hi+1)
+    piv = a[idx]  # pivot value
+    _swap(a, idx, hi)
     i = lo - 1
     for j in range(lo, hi):
         if a[j] < piv:
