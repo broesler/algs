@@ -9,9 +9,7 @@
 """
 #==============================================================================
 
-from algs import (Stack, Digraph, DepthFirstSearch, DepthFirstOrder,
-                  DirectedCycle, TopologicalOrder, BreadthFirstSearch,
-                  AcyclicPath)
+from algs.graph import *
 
 def load_graph(filename):
     G = Digraph()
@@ -44,7 +42,7 @@ for s in sources:
 # Test DFS
 dfs = DepthFirstSearch(G, [sources[0]])
 assert dfs.has_path_to(12)
-assert dfs.path_to(12) == Stack([7, 9, 10, 12])
+assert str(dfs.path_to(12)) == str([7, 9, 10, 12])
 print(f'{sources[0]} -> 12: ', dfs.path_to(12))
 
 # Test paths
@@ -78,12 +76,12 @@ EG = load_graph('test_data/tinyEWDAG.txt')
 s = EG.roots()
 assert len(s) == 1
 ap = AcyclicPath(EG, s[0], kind='max')
-print('----- Edge-Weighted DAG -----')
+print('----- Max Edge-Weighted DAG -----')
 ap.print_paths()
 assert ap.dist_to(s[0]) == 0.0
 
 ap = AcyclicPath(EG, s[0], kind='min')
-print('----- Edge-Weighted DAG -----')
+print('----- Min Edge-Weighted DAG -----')
 ap.print_paths()
 assert ap.dist_to(s[0]) == 0.0
 

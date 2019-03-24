@@ -220,17 +220,17 @@ class GraphSearch(ABC):
 
         Returns
         -------
-        path : Stack of keys
-            Stack of vertex ids in order of traversal.
+        path : Queue of keys
+            Queue of vertex ids in order of traversal.
         """
         if not self.has_path_to(v):
             return None
-        path = Stack()
+        path = Queue()
         x = v
         while x not in self.sources:
-            path.push(x)
+            path.enqueue(x)
             x = self._edge_to[x].v
-        path.push(x)
+        path.enqueue(x)
         return path
 
     def print_paths(self):
@@ -238,7 +238,10 @@ class GraphSearch(ABC):
         for s in self.sources:
             for v in range(self.G.V):
                 if self.has_path_to(v):
-                    print(f"{s} -> {v} ({self._dist_to[v]:4.2f}): ", end='')
+                    if hasattr(self, '_dist_to'):
+                        print(f"{s} -> {v} ({self._dist_to[v]:4.2f}): ", end='')
+                    else:
+                        print(f"{s} -> {v}: ", end='')
                     for x in self.path_to(v):
                         if x == s:
                             print(x, end='')
