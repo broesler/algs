@@ -21,7 +21,7 @@ def _swap(a, i, j):
 def is_sorted(a):
     """True if a list is sorted in ascending order."""
     for i in range(1, len(a)):
-        if a[i] < a[i-1]:
+        if a[i-1] > a[i]:
             return False
     return True
 
@@ -123,7 +123,6 @@ def quicksort(s):
     Worst case: ~ N^2 / 2 compares if not randomized.
     """
     a = list(s)
-    shuffle(a)  # defend against O(N^2)
     return _quicksort(a, 0, len(a)-1)
 
 
@@ -156,6 +155,7 @@ def quicksort_rand(s):
     Worst case: ~ N^2 / 2 compares if not randomized.
     """
     a = list(s)
+    # shuffle(a)  # defend against O(N^2), OR pick random pivot (below)
     return _quicksort_rand(a, 0, len(a)-1)
 
 

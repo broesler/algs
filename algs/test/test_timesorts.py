@@ -19,10 +19,10 @@ from algs.sort import *
 
 # sort_funs = [bubble_sort, insertion_sort, mergesort, mergesort_BU,
 #              quicksort, heap_sort]
-sort_funs = [mergesort, quicksort]
+sort_funs = [quicksort, quicksort_rand]
 
 # Define lengths of input
-mags = 3  # number of orders of magnitude
+mags = 2  # number of orders of magnitude
 base = np.array(np.logspace(1, mags, mags), dtype=np.uint64)
 vals = np.concatenate([base, 3*base, 5*base])
 vals.sort()
