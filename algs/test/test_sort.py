@@ -1,4 +1,4 @@
-#!/home/broesler/anaconda3/envs/expo/bin/python3
+#!/usr/bin/env python3
 #==============================================================================
 #     File: test_sort.py
 #  Created: 2019-03-15 00:28
@@ -30,7 +30,7 @@ test_As = [(ints, sorted(ints)),
            (chrs, sorted(chrs))]
 
 sort_funs = [bubble_sort, insertion_sort, mergesort, mergesort_BU,
-             quicksort, heap_sort]
+             quicksort0, quicksort0r, heap_sort]
 
 #------------------------------------------------------------------------------
 #        Run general sorting algorithm tests

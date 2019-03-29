@@ -5,7 +5,7 @@
 #   Author: Bernie Roesler
 #
 """
-  Description:
+  Description: Time the run of sorting algorithms.
 """
 #==============================================================================
 
@@ -19,10 +19,12 @@ from algs.sort import *
 
 # sort_funs = [bubble_sort, insertion_sort, mergesort, mergesort_BU,
 #              quicksort, heap_sort]
-sort_funs = [quicksort, quicksort_rand]
+def quicksort0(a): return quicksort(a, kind='nonrand1')
+def quicksort0r(a): return quicksort(a, kind='rand1')
+sort_funs = [quicksort0, quicksort0r]
 
 # Define lengths of input
-mags = 2  # number of orders of magnitude
+mags = 2.5  # number of orders of magnitude
 base = np.array(np.logspace(1, mags, mags), dtype=np.uint64)
 vals = np.concatenate([base, 3*base, 5*base])
 vals.sort()
@@ -33,6 +35,7 @@ masters = dict()
 masters['random'] = np.random.randint(max(vals), size=max(vals))
 masters['sorted'] = np.array(sorted(masters['random']))
 masters['reverse'] = np.array(masters['sorted'][::-1])
+masters['equal'] = np.ones(max(vals))
 
 runtimes = dict()
 for sort in sort_funs:
@@ -57,7 +60,7 @@ fig = plt.figure(1, clear=True)
 ax = fig.add_subplot(111)
 
 colors = ax._get_lines.prop_cycler
-marker = itertools.cycle(('x', 'o', '^'))
+marker = itertools.cycle(('x', 'o', '^', 's'))
 # ls = itertools.cycle(('-', '--', '-.'))
 
 for sort in sort_funs:

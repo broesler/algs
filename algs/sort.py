@@ -1,4 +1,4 @@
-#+1/home/broesler/anaconda3/envs/expo/bin/python3
+#!/usr/bin/env python3
 #==============================================================================
 #     File: sort.py
 #  Created: 2019-03-14 14:22
@@ -9,9 +9,7 @@
 """
 #==============================================================================
 
-from random import shuffle
-from numpy.random import randint
-
+from random import randrange, shuffle
 
 def _swap(a, i, j):
     """Swap two list elements in-place."""
@@ -116,27 +114,39 @@ def _merge(a, b):
     return merged
 
 
-def quicksort(s):
+def quicksort(s, kind=None):
     """Quicksort implementation.
 
     Average case: ~ 2 N log N compares and ~ 1/3 N log N exchanges.
     Worst case: ~ N^2 / 2 compares if not randomized.
+
+    WARNING: Goes O(N^2) for already-sorted keys
     """
     a = list(s)
-    return _quicksort(a, 0, len(a)-1)
+    return _quicksort(a, 0, len(a)-1, kind=kind)
 
 
-def _quicksort(a, lo, hi):
-    """Recursively move elements less than pivot to the left."""
+def _quicksort(a, lo, hi, kind=None):
+    """The actual quicksort algorithm."""
+    # Test different partitioning functions
+    if not kind:
+        kind = 'rand1'
+    _quicksort.kinds = dict({'nonrand1': _partition_nr,
+                             'rand1': _partition_r})
+    _quicksort.partition = _quicksort.kinds[kind]
+
+    # Sort the list
     if lo < hi:
-        p = _partition(a, lo, hi)
+        p = _quicksort.partition(a, lo, hi)
         _quicksort(a, lo, p-1)
         _quicksort(a, p+1, hi)
     return a
 
 
-# TODO implement 3-way partitioning (<, =, >)
-def _partition(a, lo, hi):
+#------------------------------------------------------------------------------ 
+#        Quicksort partition functions
+#------------------------------------------------------------------------------
+def _partition_nr(a, lo, hi):
     """Recursively move elements less than pivot to the left."""
     piv = a[hi]  # pivot value
     i = lo - 1
@@ -144,44 +154,28 @@ def _partition(a, lo, hi):
         if a[j] < piv:
             i += 1
             _swap(a, i, j)
-    _swap(a, i+1, hi)
+    _swap(a, i+1, hi)  # move pivot into position
     return i+1
 
 
-def quicksort_rand(s):
-    """Quicksort implementation.
-
-    Average case: ~ 2 N log N compares and ~ 1/3 N log N exchanges.
-    Worst case: ~ N^2 / 2 compares if not randomized.
-    """
-    a = list(s)
-    # shuffle(a)  # defend against O(N^2), OR pick random pivot (below)
-    return _quicksort_rand(a, 0, len(a)-1)
-
-
-def _quicksort_rand(a, lo, hi):
-    """Recursively move elements less than pivot to the left."""
-    if lo < hi:
-        p = _partition_rand(a, lo, hi)
-        _quicksort_rand(a, lo, p-1)
-        _quicksort_rand(a, p+1, hi)
-    return a
-
-
-def _partition_rand(a, lo, hi):
+def _partition_r(a, lo, hi):
     """Recursively move elements less than pivot to the left.
 
     Choose a random element as the pivot instead of shuffling the list.
     """
-    idx = randint(lo, hi+1)
+    idx = randrange(lo, hi+1)
     piv = a[idx]  # pivot value
+    # print(f"lo: {lo}, hi: {hi}, piv: {piv}, idx: {idx}")
+    # print("{:3d}  {:3d}   {}".format(0, 0, a))
     _swap(a, idx, hi)
     i = lo - 1
     for j in range(lo, hi):
+        # print("{:3d}  {:3d}   {}".format(i, j, a))
         if a[j] < piv:
             i += 1
             _swap(a, i, j)
-    _swap(a, i+1, hi)
+    _swap(a, i+1, hi)  # move pivot into position
+    # print("{:3d}  {:3d}   {}".format(i, j, a))
     return i+1
 
 
