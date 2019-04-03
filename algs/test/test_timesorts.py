@@ -19,13 +19,11 @@ from algs.sort import *
 
 # sort_funs = [bubble_sort, insertion_sort, mergesort, mergesort_BU,
 #              quicksort, heap_sort]
-def quicksort0(a): return quicksort(a, kind='nonrand1')
-def quicksort0r(a): return quicksort(a, kind='rand1')
-sort_funs = [quicksort0, quicksort0r]
+sort_funs = [qsort1]
 
 # Define lengths of input
 mags = 2.5  # number of orders of magnitude
-base = np.array(np.logspace(1, mags, mags), dtype=np.uint64)
+base = np.array(np.logspace(1, mags, mags), dtype=np.int64)
 vals = np.concatenate([base, 3*base, 5*base])
 vals.sort()
 M = len(vals)
@@ -34,15 +32,21 @@ M = len(vals)
 masters = dict()
 masters['random'] = np.random.randint(max(vals), size=max(vals))
 masters['sorted'] = np.array(sorted(masters['random']))
-masters['reverse'] = np.array(masters['sorted'][::-1])
-masters['equal'] = np.ones(max(vals))
+# masters['reverse'] = np.array(masters['sorted'][::-1])
+# masters['equal'] = np.ones(max(vals))
+masters['binary'] = np.concatenate([np.ones(max(vals//2)), 
+                                    np.zeros(max(vals//2))]).astype(np.int64)
+np.random.shuffle(masters['binary'])
+Ntypes = len(masters)
 
+# Initialize dictionary
 runtimes = dict()
 for sort in sort_funs:
     runtimes[sort.__name__] = dict()
     for kind in masters:
         runtimes[sort.__name__][kind] = np.zeros([M, 2])
 
+# Time the sort functions
 for sort in sort_funs:
     name = sort.__name__
     print(f"-----{name}-----")
@@ -56,12 +60,14 @@ for sort in sort_funs:
             runtimes[name][kind][i, :] = (N, stop - start)
 
 
+#------------------------------------------------------------------------------ 
+#        Plots!
+#------------------------------------------------------------------------------
 fig = plt.figure(1, clear=True)
 ax = fig.add_subplot(111)
 
 colors = ax._get_lines.prop_cycler
-marker = itertools.cycle(('x', 'o', '^', 's'))
-# ls = itertools.cycle(('-', '--', '-.'))
+marker = itertools.cycle(('x', 'o', '^', 's', 'd')[:Ntypes])
 
 for sort in sort_funs:
     name = sort.__name__

@@ -114,39 +114,29 @@ def _merge(a, b):
     return merged
 
 
-def quicksort(s, kind=None):
+def quicksort0(s):
     """Quicksort implementation.
 
     Average case: ~ 2 N log N compares and ~ 1/3 N log N exchanges.
     Worst case: ~ N^2 / 2 compares if not randomized.
 
     WARNING: Goes O(N^2) for already-sorted keys
+    WARNING: Goes O(N^2) for all equal keys
     """
     a = list(s)
-    return _quicksort(a, 0, len(a)-1, kind=kind)
+    return _quicksort0(a, 0, len(a)-1)
 
 
-def _quicksort(a, lo, hi, kind=None):
+def _quicksort0(a, lo, hi):
     """The actual quicksort algorithm."""
-    # Test different partitioning functions
-    if not kind:
-        kind = 'rand1'
-    _quicksort.kinds = dict({'nonrand1': _partition_nr,
-                             'rand1': _partition_r})
-    _quicksort.partition = _quicksort.kinds[kind]
-
-    # Sort the list
     if lo < hi:
-        p = _quicksort.partition(a, lo, hi)
-        _quicksort(a, lo, p-1)
-        _quicksort(a, p+1, hi)
+        p = _partition0(a, lo, hi)
+        _quicksort0(a, lo, p-1)
+        _quicksort0(a, p+1, hi)
     return a
 
 
-#------------------------------------------------------------------------------ 
-#        Quicksort partition functions
-#------------------------------------------------------------------------------
-def _partition_nr(a, lo, hi):
+def _partition0(a, lo, hi):
     """Recursively move elements less than pivot to the left."""
     piv = a[hi]  # pivot value
     i = lo - 1
@@ -158,25 +148,184 @@ def _partition_nr(a, lo, hi):
     return i+1
 
 
-def _partition_r(a, lo, hi):
-    """Recursively move elements less than pivot to the left.
+def quicksort0r(s):
+    """Quicksort implementation.
+    Average case: ~ 2 N log N compares and ~ 1/3 N log N exchanges.
+    WARNING: Goes O(N^2) for all equal keys
+    """
+    a = list(s)
+    return _quicksort0r(a, 0, len(a)-1)
 
+
+def _quicksort0r(a, lo, hi):
+    """Recursively move elements less than pivot to the left."""
+    if lo < hi:
+        p = _partition0r(a, lo, hi)
+        _quicksort0r(a, lo, p-1)
+        _quicksort0r(a, p+1, hi)
+    return a
+
+
+def _partition0r(a, lo, hi):
+    """Recursively move elements less than pivot to the left.
     Choose a random element as the pivot instead of shuffling the list.
     """
     idx = randrange(lo, hi+1)
     piv = a[idx]  # pivot value
-    # print(f"lo: {lo}, hi: {hi}, piv: {piv}, idx: {idx}")
-    # print("{:3d}  {:3d}   {}".format(0, 0, a))
     _swap(a, idx, hi)
     i = lo - 1
     for j in range(lo, hi):
-        # print("{:3d}  {:3d}   {}".format(i, j, a))
         if a[j] < piv:
             i += 1
             _swap(a, i, j)
     _swap(a, i+1, hi)  # move pivot into position
-    # print("{:3d}  {:3d}   {}".format(i, j, a))
     return i+1
+
+
+#------------------------------------------------------------------------------ 
+#        Engineering a Sorting Algorithm Examples
+#------------------------------------------------------------------------------
+def qsort0(s):
+    """Quicksort implementation.
+
+    Average case: ~ 2 N log N compares and ~ 1/3 N log N exchanges.
+    Worst case: ~ N^2 / 2 compares if not randomized.
+
+    WARNING: Goes O(N^2) for already-sorted keys
+    WARNING: Goes O(N^2) for all equal keys
+    """
+    a = list(s)
+    return _qsort0(a, 0, len(a)-1)
+
+
+def _qsort0(a, lo, hi):
+    """The actual quicksort algorithm."""
+    if lo < hi:
+        p = _part0(a, lo, hi)
+        _qsort0(a, lo, p-1)
+        _qsort0(a, p+1, hi)
+    return a
+
+
+def _part0(a, lo, hi):
+    """A toy partition, not useful in practice due to O(N^2) worst-case."""
+    j = lo  # j is boundary pointer
+    for i in range(lo+1, hi+1):
+        if (a[i] < a[lo]):
+            j += 1
+            _swap(a, i, j)
+    _swap(a, lo, j)  # move pivot into position
+    return j
+
+
+def qsort1(s):
+    """Quicksort implementation.
+
+    Average case: ~2 N log N compares and ~1/3 N log N exchanges.
+
+    WARNING: Goes O(N^2) for all equal keys
+    """
+    a = list(s)
+    return _qsort1(a, 0, len(a)-1)
+
+
+def _qsort1(a, lo, hi):
+    """The actual quicksort algorithm."""
+    if lo < hi:
+        p = _part1(a, lo, hi)
+        _qsort1(a, lo, p-1)
+        _qsort1(a, p+1, hi)
+    return a
+
+
+def _part1(a, lo, hi):
+    """Improved with randomization of the pivot."""
+    i = lo
+    j = hi
+    idx = randrange(lo, hi+1)
+    piv = a[idx]  # pivot value
+    _swap(a, idx, lo)
+    while True:
+        i += 1
+        while i < hi and a[i] < piv: i += 1
+        while j > lo and a[j] > piv: j -= 1
+        if j < i: 
+            break
+        _swap(a, i, j)
+
+    _swap(a, lo, j)  # move pivot into position
+    return j
+
+
+def qsort2(s):
+    """Bentley-McIlroy 3-way partitioning."""
+    a = list(s)
+    return _qsort2(a, 0, len(a)-1)
+
+
+def _qsort2(a, lo, hi):
+    # Use insertion_sort for small arrays
+    # N = hi - lo + 1
+    # _qsort2.CUTOFF = 8
+    # if N < _qsort2.CUTOFF:
+    #     return insertion_sort(a)
+
+    if hi - lo > 1:
+        p, q = _part2(a, lo, hi)
+        _qsort2(a, lo, p)
+        _qsort2(a, q, hi)
+    return a
+
+
+def _part2(a, lo, hi):
+    """Partition s.t.:
+        [ = ][   <   ][  ?  ][  >  ][ = ]
+        lo   p        i      j      q    hi
+    """
+    # idx = randrange(lo, hi+1)
+    idx = 0
+    piv = a[idx]  # pivot value
+    print(f"\nlo: {lo}, hi: {hi}, piv: {piv}")
+    p = i = lo
+    q = j = hi
+    while True:
+        print(f"{p:3d}  {i:3d}  {j:3d}  {q:3d}  {a}")
+        # Scan pointers from each end
+        while i <= j and a[i] <= piv:
+            # Swap equal elements to left end
+            if a[i] == piv:
+                _swap(a, p, i)
+                p += 1
+            i += 1
+        while j >= i and a[j] >= piv:
+            # Swap equal elements to right end
+            if a[j] == piv:
+                _swap(a, j, q)
+                q -= 1
+            j -= 1
+
+        # Pointers cross
+        if j < i:
+            break
+
+        # Found out-of-order elements
+        _swap(a, i, j)
+        i += 1
+        j -= 1
+
+
+    # Move all elements equal to the pivot to the center
+    print(f"{p:3d}  {i:3d}  {j:3d}  {q:3d}  {a}")
+    print("Move to center...")
+    i = j + 1
+    for k in range(lo, p):
+        _swap(a, k, j)
+        j -= 1
+    for k in range(hi, q, -1):
+        _swap(a, k, i)
+        i += 1
+    print(f"{p:3d}  {i:3d}  {j:3d}  {q:3d}  {a}")
+    return j, i  # role reversal
 
 
 def heap_sort(s):
