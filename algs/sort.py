@@ -258,38 +258,45 @@ def _part1(a, lo, hi):
 
 
 def qsort2(s):
-    """Bentley-McIlroy 3-way partitioning."""
+    """Standard sort interface. Return a sorted copy."""
     a = list(s)
     return _qsort2(a, 0, len(a)-1)
 
 
 def _qsort2(a, lo, hi):
-    # Use insertion_sort for small arrays
-    # N = hi - lo + 1
-    # _qsort2.CUTOFF = 8
-    # if N < _qsort2.CUTOFF:
-    #     return insertion_sort(a)
-
-    if hi - lo > 1:
-        p, q = _part2(a, lo, hi)
+    """Actual quicksort algorithm."""
+    N = hi - lo + 1
+    if N > 1:
+        p, q = _partitionBM(a, lo, hi)
         _qsort2(a, lo, p)
         _qsort2(a, q, hi)
     return a
 
 
-def _part2(a, lo, hi):
-    """Partition s.t.:
+def _partitionBM(a, lo, hi):
+    """Bentley-McIlroy 3-way partitioning.
+
+    Partition s.t. the array keeps the invariant:
         [ = ][   <   ][  ?  ][  >  ][ = ]
         lo   p        i      j      q    hi
+
+    Example:
+        >>> T = list('PABXWPPVPDPCYZ')
+        >>> _partitionBM(list(T), 0, len(T)-1)
+        lo: 0, hi: 13, piv: P
+        0    0   13   13  ['P', 'A', 'B', 'X', 'W', 'P', 'P', 'V', 'P', 'D', 'P', 'C', 'Y', 'Z']
+        1    4   10   13  ['P', 'A', 'B', 'C', 'W', 'P', 'P', 'V', 'P', 'D', 'P', 'X', 'Y', 'Z']
+        1    5    8   12  ['P', 'A', 'B', 'C', 'D', 'P', 'P', 'V', 'P', 'W', 'Z', 'X', 'Y', 'P']
+        3    7    6   11  ['P', 'P', 'P', 'C', 'D', 'A', 'B', 'V', 'Y', 'W', 'Z', 'X', 'P', 'P']
+        Move to center...
+        3    9    3   11  ['B', 'A', 'D', 'C', 'P', 'P', 'P', 'P', 'P', 'W', 'Z', 'X', 'Y', 'V']
+        (3, 9)
     """
-    # idx = randrange(lo, hi+1)
-    idx = 0
+    idx = randrange(lo, hi+1)
     piv = a[idx]  # pivot value
-    print(f"\nlo: {lo}, hi: {hi}, piv: {piv}")
     p = i = lo
     q = j = hi
     while True:
-        print(f"{p:3d}  {i:3d}  {j:3d}  {q:3d}  {a}")
         # Scan pointers from each end
         while i <= j and a[i] <= piv:
             # Swap equal elements to left end
@@ -315,8 +322,6 @@ def _part2(a, lo, hi):
 
 
     # Move all elements equal to the pivot to the center
-    print(f"{p:3d}  {i:3d}  {j:3d}  {q:3d}  {a}")
-    print("Move to center...")
     i = j + 1
     for k in range(lo, p):
         _swap(a, k, j)
@@ -324,7 +329,6 @@ def _part2(a, lo, hi):
     for k in range(hi, q, -1):
         _swap(a, k, i)
         i += 1
-    print(f"{p:3d}  {i:3d}  {j:3d}  {q:3d}  {a}")
     return j, i  # role reversal
 
 

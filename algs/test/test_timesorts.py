@@ -19,7 +19,7 @@ from algs.sort import *
 
 # sort_funs = [bubble_sort, insertion_sort, mergesort, mergesort_BU,
 #              quicksort, heap_sort]
-sort_funs = [qsort1]
+sort_funs = [qsort0, qsort1, qsort2]
 
 # Define lengths of input
 mags = 2.5  # number of orders of magnitude
