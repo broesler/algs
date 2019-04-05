@@ -15,6 +15,10 @@ def _swap(a, i, j):
     """Swap two list elements in-place."""
     a[i], a[j] = a[j], a[i]
 
+def _med3(a, i, j, k):
+    """Return the index of the median of the elements a[i], a[j], a[k]."""
+    return (j if a[j] < a[k] else (k if a[i] < a[k] else i)) if a[i] < a[j] else\
+           (j if a[k] < a[j] else (k if a[k] < a[i] else i))
 
 def is_sorted(a):
     """True if a list is sorted in ascending order."""
@@ -34,7 +38,8 @@ def bubble_sort(s):
                 _swap(a, i-1, i)
                 no_swaps = False
         if no_swaps:
-            return a
+            break
+    return a
 
 
 def insertion_sort(s):
@@ -45,14 +50,17 @@ def insertion_sort(s):
     Worst case: ~N^2/2 compares and exchanges.
     """
     a = list(s)  # make a copy
-    N = len(a)
+    _insertion_sort(a, 0, len(a)-1)
+    return a
+
+
+def _insertion_sort(a, lo, hi):
+    N = hi - lo + 1
     for i in range(1, N):
         j = i
         while j > 0 and a[j] < a[j-1]:
             _swap(a, j, j-1)
             j -= 1
-    assert is_sorted(a)
-    return a
 
 
 def mergesort(a):
@@ -95,7 +103,7 @@ def mergesort_BU(a):
 
 
 def _merge(a, b):
-    """Merge two sorted lists. Uses O(n) compares per item."""
+    """Merge two sorted lists. Uses O(N) compares per item."""
     assert is_sorted(a)
     assert is_sorted(b)
 
@@ -115,7 +123,7 @@ def _merge(a, b):
 
 
 def quicksort0(s):
-    """Quicksort implementation.
+    """A quicksort implementation.
 
     Average case: ~ 2 N log N compares and ~ 1/3 N log N exchanges.
     Worst case: ~ N^2 / 2 compares if not randomized.
@@ -124,7 +132,8 @@ def quicksort0(s):
     WARNING: Goes O(N^2) for all equal keys
     """
     a = list(s)
-    return _quicksort0(a, 0, len(a)-1)
+    _quicksort0(a, 0, len(a)-1)
+    return a
 
 
 def _quicksort0(a, lo, hi):
@@ -133,7 +142,6 @@ def _quicksort0(a, lo, hi):
         p = _partition0(a, lo, hi)
         _quicksort0(a, lo, p-1)
         _quicksort0(a, p+1, hi)
-    return a
 
 
 def _partition0(a, lo, hi):
@@ -154,7 +162,8 @@ def quicksort0r(s):
     WARNING: Goes O(N^2) for all equal keys
     """
     a = list(s)
-    return _quicksort0r(a, 0, len(a)-1)
+    _quicksort0r(a, 0, len(a)-1)
+    return a
 
 
 def _quicksort0r(a, lo, hi):
@@ -163,7 +172,6 @@ def _quicksort0r(a, lo, hi):
         p = _partition0r(a, lo, hi)
         _quicksort0r(a, lo, p-1)
         _quicksort0r(a, p+1, hi)
-    return a
 
 
 def _partition0r(a, lo, hi):
@@ -258,29 +266,66 @@ def _part1(a, lo, hi):
 
 
 def qsort2(s):
-    """Bentley-McIlroy 3-way partitioning."""
+    """Standard sort interface. Return a sorted copy."""
     a = list(s)
-    return _qsort2(a, 0, len(a)-1)
-
-
-def _qsort2(a, lo, hi):
-    # Use insertion_sort for small arrays
-    N = hi - lo + 1
-    if N > 1:
-        p, q = _part2(a, lo, hi)
-        _qsort2(a, lo, p)
-        _qsort2(a, q, hi)
+    _qsort2(a, 0, len(a)-1)
     return a
 
 
-def _part2(a, lo, hi):
-    """Partition s.t.:
+def _qsort2(a, lo, hi):
+    """Actual quicksort algorithm."""
+    N = hi - lo + 1
+    if N > 1:
+        p, q = _partition(a, lo, hi)
+        _qsort2(a, lo, p)
+        _qsort2(a, q, hi)
+
+
+def qsort(s):
+    """Interface to the Bentley-McIlroy quicksort algorithm."""
+    a = list(s)
+    _qsort(a, 0, len(a)-1)
+    return a
+
+
+def _qsort(a, lo, hi):
+    """The complete Bentley-McIlroy qsort algorithm."""
+    # Define function parameters
+    _qsort.INSERTION_CUTOFF = 8
+    _qsort.MEDIAN_CUTOFF = 40
+
+    N = hi - lo + 1
+    if N < _qsort.INSERTION_CUTOFF:
+        # Insertion sort for small arrays
+        _insertion_sort(a, lo, hi)
+        return
+    elif N < _qsort.MEDIAN_CUTOFF:
+        # Use median of array to select partition element
+        idx = _med3(a, lo, lo + N//2, hi)
+    else:
+        # Use Tukey ninther to select median of medians
+        d = N//8
+        mid = lo + N//2
+        m1 = _med3(a, lo, lo + d, lo + d + d)
+        m2 = _med3(a, mid - d, mid, mid + d)
+        m3 = _med3(a, hi - d - d, hi - d, hi)
+        idx = _med3(a, m1, m2, m3)  # THE NINTHER
+
+    p, q = _partition(a, lo, hi, idx)
+    _qsort2(a, lo, p)
+    _qsort2(a, q, hi)
+
+
+def _partition(a, lo, hi, idx=None):
+    """Bentley-McIlroy 3-way partitioning.
+
+    Partition s.t. the array keeps the invariant:
         [ = ][   <   ][  ?  ][  >  ][ = ]
         lo   p        i      j      q    hi
 
     Example:
         >>> T = list('PABXWPPVPDPCYZ')
-        >>> _part2(list(T), 0, len(T)-1)
+        >>> _partition(list(T), 0, len(T)-1)
         lo: 0, hi: 13, piv: P
         0    0   13   13  ['P', 'A', 'B', 'X', 'W', 'P', 'P', 'V', 'P', 'D', 'P', 'C', 'Y', 'Z']
         1    4   10   13  ['P', 'A', 'B', 'C', 'W', 'P', 'P', 'V', 'P', 'D', 'P', 'X', 'Y', 'Z']
@@ -290,13 +335,12 @@ def _part2(a, lo, hi):
         3    9    3   11  ['B', 'A', 'D', 'C', 'P', 'P', 'P', 'P', 'P', 'W', 'Z', 'X', 'Y', 'V']
         (3, 9)
     """
-    idx = randrange(lo, hi+1)
+    if idx is None:
+        idx = randrange(lo, hi+1)
     piv = a[idx]  # pivot value
-    print(f"\nlo: {lo}, hi: {hi}, piv: {piv}")
     p = i = lo
     q = j = hi
     while True:
-        print(f"{p:3d}  {i:3d}  {j:3d}  {q:3d}  {a}")
         # Scan pointers from each end
         while i <= j and a[i] <= piv:
             # Swap equal elements to left end
@@ -312,18 +356,14 @@ def _part2(a, lo, hi):
             j -= 1
 
         # Pointers cross
-        if j < i:
-            break
+        if j < i: break
 
         # Found out-of-order elements
         _swap(a, i, j)
         i += 1
         j -= 1
 
-
     # Move all elements equal to the pivot to the center
-    print(f"{p:3d}  {i:3d}  {j:3d}  {q:3d}  {a}")
-    print("Move to center...")
     i = j + 1
     for k in range(lo, p):
         _swap(a, k, j)
@@ -331,7 +371,6 @@ def _part2(a, lo, hi):
     for k in range(hi, q, -1):
         _swap(a, k, i)
         i += 1
-    print(f"{p:3d}  {i:3d}  {j:3d}  {q:3d}  {a}")
     return j, i  # role reversal
 
 

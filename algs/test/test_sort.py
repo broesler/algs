@@ -30,10 +30,9 @@ chrs = list('SORTEXAMPLE')
 test_As = [(ints, sorted(ints)),
            (chrs, sorted(chrs))]
 
-# sort_funs = [bubble_sort, insertion_sort, mergesort, mergesort_BU,
-#              qsort0, quicksort0, quicksort0r, heap_sort]
-# sort_funs = [qsort0, quicksort0, quicksort0r]
-sort_funs = [qsort2]
+sort_funs = [bubble_sort, insertion_sort, mergesort, mergesort_BU,
+             quicksort0, quicksort0r, qsort0, qsort1, qsort2, qsort,
+             heap_sort]
 
 #------------------------------------------------------------------------------
 #        Run general sorting algorithm tests
