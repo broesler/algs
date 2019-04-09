@@ -15,20 +15,21 @@ import itertools
 import numpy as np
 import matplotlib.pyplot as plt
 
+from collections import defaultdict
+
 from algs.sort import *
 
 # sort_funs = [bubble_sort, insertion_sort, mergesort, mergesort_BU,
 #              quicksort, heap_sort]
-# sort_funs = [qsort0, qsort1, qsort2, qsort]
+sort_funs = [qsort0, qsort1, qsort2, qsort]
 
 # Define lengths of input
-mags = 2.5  # number of orders of magnitude
-base = np.array(np.logspace(0, mags, mags), dtype=np.int64)
-vals = np.concatenate([base, 3*base, 5*base])
-vals.sort()
+Nmax = 1e3
+vals = np.power(2, np.arange(np.log2(Nmax))).astype(np.int64)
 M = len(vals)
 
 # Massive arrays from which to sample later
+# TODO implement all types of inputs per Bentley & McIlroy.
 masters = dict()
 masters['random'] = np.random.randint(max(vals), size=max(vals))
 masters['sorted'] = np.array(sorted(masters['random']))
@@ -40,11 +41,7 @@ np.random.shuffle(masters['binary'])
 Ntypes = len(masters)
 
 # Initialize dictionary
-runtimes = dict()
-for sort in sort_funs:
-    runtimes[sort.__name__] = dict()
-    for kind in masters:
-        runtimes[sort.__name__][kind] = np.zeros([M, 2])
+runtimes = defaultdict(lambda: defaultdict(lambda: np.zeros([M, 2])))
 
 # Time the sort functions
 for sort in sort_funs:

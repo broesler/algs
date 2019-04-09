@@ -291,8 +291,8 @@ def qsort(s):
 def _qsort(a, lo, hi):
     """The complete Bentley-McIlroy qsort algorithm."""
     # Define function parameters
-    _qsort.INSERTION_CUTOFF = 8
-    _qsort.MEDIAN_CUTOFF = 40
+    _qsort.INSERTION_CUTOFF = 20
+    _qsort.MEDIAN_CUTOFF = 100
 
     N = hi - lo + 1
     if N < _qsort.INSERTION_CUTOFF:
