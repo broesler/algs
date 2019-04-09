@@ -11,6 +11,8 @@
 
 from random import randrange, shuffle
 
+__all__ = ['is_sorted'] + [x for x in dir() if x.endswith('sort')]
+
 def _swap(a, i, j):
     """Swap two list elements in-place."""
     a[i], a[j] = a[j], a[i]
@@ -411,6 +413,7 @@ def _sink(a, k, N):
 def _comp(a, i, j):
     """Compare two elements in 1-based indexed max-heap."""
     return a[i-1] < a[j-1]
+
 
 #==============================================================================
 #==============================================================================
