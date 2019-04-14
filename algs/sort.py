@@ -11,16 +11,17 @@
 
 from random import randrange, shuffle
 
-__all__ = ['is_sorted'] + [x for x in dir() if x.endswith('sort')]
 
 def _swap(a, i, j):
     """Swap two list elements in-place."""
     a[i], a[j] = a[j], a[i]
 
+
 def _med3(a, i, j, k):
     """Return the index of the median of the elements a[i], a[j], a[k]."""
     return (j if a[j] < a[k] else (k if a[i] < a[k] else i)) if a[i] < a[j] else\
            (j if a[k] < a[j] else (k if a[k] < a[i] else i))
+
 
 def is_sorted(a):
     """True if a list is sorted in ascending order."""
@@ -413,6 +414,9 @@ def _sink(a, k, N):
 def _comp(a, i, j):
     """Compare two elements in 1-based indexed max-heap."""
     return a[i-1] < a[j-1]
+
+
+__all__ = [x for x in dir() if not x.startswith('_')]
 
 
 #==============================================================================
