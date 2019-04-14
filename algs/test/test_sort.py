@@ -15,7 +15,6 @@ def should_be(a, b):
     """Test a condition."""
     global tests, fails
     tests += 1
-    # if not a == b:
     try:
         assert a == b
     except AssertionError as e:
