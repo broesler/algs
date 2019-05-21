@@ -265,20 +265,193 @@ class PriorityQueue():
 
     # Iterator methods
     def __iter__(self):
-        self._pq = deepcopy(self)
+        # Make a copy because we destroy the heap upon iteration
+        self._pq_copy = deepcopy(self)
         return self
 
     def __next__(self):
-        if self._pq.is_empty:
+        if self._pq_copy.is_empty:
             raise StopIteration
         else:
-            return self._pq.dequeue()
+            return self._pq_copy.dequeue()
+
+
+class IndexPriorityQueue():
+    """Iterable priority queue object, with indexing for item access.
+
+    A custom key function can be supplied to customize the sort order.
+
+    Parameters
+    ----------
+    items : List of objects, optional
+        Items to add to the queue.
+    kind : str in {'min', 'max'}, optional, default='min'
+        How to order the priority queue: minimum item at the front, or maximum.
+    key : callable, optional
+        Transformation function used in item comparison, *see* `sorted`.
+
+    Attributes
+    ----------
+    size : int
+        Number of items in queue.
+    is_empty : bool
+        True if `size == 0`
+
+    Notes
+    -----
+    IndexPQ is implemented as a max/min-heap, using array representation. To
+    simplify indices, the root node is index 1. In general, if the parent index
+    is k, it's children are 2k and 2k+1. Likewise, the parent index of node
+    k is k/2.
+
+    See: <https://algs4.cs.princeton.edu/24pq/> for details.
+    """
+    def __init__(self, items=list(), kind='min', key=None):
+        self._op = operator.gt if kind == 'min' else operator.lt
+        self._key = key or (lambda x: x)  # identity if not given
+        self._pq = list([None])           # indices of pq items
+        self._qp = list([None])           # inverse of pq pq[qp[i]] = i
+        self._items = list()
+
+        # TODO implement initialization routine when `items` is given.
+        # Sink nodes from right-to-left
+        # self._items = list(items)
+        # for k in range(self.size // 2, 0, -1):
+        #     self._sink(k)
+        # assert self._is_heap()
+
+    @property
+    def size(self):
+        return len(self._pq) - 1  # ignore index 0
+
+    @property
+    def is_empty(self):
+        return (self.size == 0)
+
+    def peek(self):
+        """Look at first item in queue without dequeue-ing."""
+        return self._items[self._pq[1]]  # self._pq[0] is `None` in heap-land
+
+    def enqueue(self, item):
+        """Add item to the queue in proper position."""
+        # Add the item at the end of the list, then percolate it up.
+        # self._pq
+        # self._qp
+        self._items.append(item)
+        self._swim(self.size)
+        assert self._is_heap()
+
+    def dequeue(self):
+        """Remove and return item from the top of the heap."""
+        if self.is_empty:
+            raise Exception('Attempting to dequeue from empty PriorityQueue!')
+        self._swap(self.size, 1)              # swap root with bottom node
+        the_min = self._pq.pop(self.size)  # remove the root
+        self._sink(1)                         # sink the new root to reorder
+        assert self._is_heap()
+        return the_min
+
+    def change(self, k, item):
+        """Change item associated with index k to `item`."""
+        pass
+
+    def delete(self, k):
+        """Delete item associated with index k."""
+        pass
+
+    def contains(self, k):
+        """Return True if there is an item associated with index k."""
+        return self._qp[k] != -1
+
+    def top_index(self):
+        """Return the index associated with the item at the top of the heap."""
+        pass
+
+    #--------------------------------------------------------------------------
+    #        Private helper functions
+    #--------------------------------------------------------------------------
+    def _sink(self, k):
+        """Sink the given node index down to its proper location in the heap."""
+        while 2*k <= self.size:
+            j = 2*k
+            if j < self.size and self._comp(j, j+1):
+                j += 1
+            if not self._comp(k, j):
+                break
+            self._swap(k, j)
+            k = j
+
+    def _swim(self, k):
+        """Swim the given node index up to its proper location in the heap."""
+        while k > 1 and self._comp(k//2, k):
+            self._swap(k, k//2)
+            k = k//2
+
+    def _comp(self, ind_a, ind_b):
+        """Compare two items in the heap.
+
+        .. note::
+            If      kind == 'min', True if self._pq[a] < self._pq[b],
+            else if kind == 'max', True if self._pq[a] > self._pq[b].
+        """
+        return self._op(self._key(self._pq[ind_a]),
+                        self._key(self._pq[ind_b]))
+
+    def _swap(self, a, b):
+        """Swap the location of two items in the heap."""
+        self._pq[b], self._pq[a] = self._pq[a], self._pq[b]
+
+    def _is_heap(self, k=1):
+        """Return True if PriorityQueue is heap-ordered according to `kind`.
+
+        Parameters
+        ----------
+        k : int in [1, self.size], optional, default = 1
+            index of root of sub-heap to check.
+
+        Returns
+        -------
+        result : bool
+            True if self._pq is heap-ordered (min/max according to `kind`).
+        """
+        if k > self.size:
+            return True
+        # Check the children of k
+        left = 2*k
+        right = 2*k + 1
+        if (left  <= self.size and self._comp(k, left)):  return False
+        if (right <= self.size and self._comp(k, right)): return False
+        return self._is_heap(left) and self._is_heap(right)
+
+    def __bool__(self):
+        return bool(self.size)
+
+    def __eq__(self, other):
+        return self._pq == other._pq
+
+    def __repr__(self):
+        return '<PriorityQueue: ' + self.__str__() + '>'
+
+    def __str__(self):
+        return str(list(self._pq[1:]))
+
+    # Iterator methods
+    def __iter__(self):
+        self._pq_copy = deepcopy(self)
+        return self
+
+    def __next__(self):
+        if self._pq_copy.is_empty:
+            raise StopIteration
+        else:
+            return self._pq_copy.dequeue()
 
 
 #------------------------------------------------------------------------------
 #        Test client
 #------------------------------------------------------------------------------
 if __name__ == '__main__':
+    # TODO move to proper unit testing suite for package
     import string
 
     # Test Stack
