@@ -188,7 +188,7 @@ class PriorityQueue():
     def dequeue(self):
         """Remove and return item from the top of the heap."""
         if self.is_empty:
-            raise Exception('Attempting to dequeue from empty PriorityQueue!')
+            raise IndexError('Attempting to dequeue from empty PriorityQueue!')
         self._swap(self.size, 1)              # swap root with bottom node
         the_min = self._items.pop(self.size)  # remove the root
         self._sink(1)                         # sink the new root to reorder
@@ -281,6 +281,30 @@ class PriorityQueue():
 if __name__ == '__main__':
     import string
 
+    def err_test(container, op, err_type=IndexError):
+        """Test for raising a given error type.
+
+        Parameters
+        ----------
+        container : list-like container data type
+        op : str
+            attribute name of method to test
+        err_type : Exception, optional
+            error type that object is expected to raise
+
+        Returns
+        -------
+        None
+        """
+        while True:
+            try:
+                getattr(container, op)()  # call the method
+            except err_type:
+                return
+            except Exception as err:
+                raise Exception(f'Improper error thrown: {type(err)}, {err}')
+
+
     # Test Stack
     s = Stack()
     for i in range(5):
@@ -292,6 +316,8 @@ if __name__ == '__main__':
     # Test iteration -- pop should be in reverse order
     for i, item in zip([3, 2, 1, 0], s):
         assert i == item
+    # Test for pop
+    err_test(s, 'pop')
 
     # Test Queue
     q = Queue(['A', 'B', 'C'])
@@ -303,6 +329,8 @@ if __name__ == '__main__':
     # Elements should be in forwards order
     for c, item in zip(['B', 'C', 'D'], q):
         assert c == item
+    # Test dequeue error
+    err_test(q, 'dequeue')
 
     # Test maxPQ
     pq = PriorityQueue(list(string.ascii_uppercase), kind='max')
@@ -318,6 +346,8 @@ if __name__ == '__main__':
     for c in pq:
         q.enqueue(c)
     assert ''.join(q) == string.ascii_uppercase[::-1]
+    # Test dequeue error
+    err_test(pq, 'dequeue')
 
     # Test minPQ
     pq = PriorityQueue(list(string.ascii_uppercase), kind='min')
@@ -330,6 +360,7 @@ if __name__ == '__main__':
     for c in pq:
         q.enqueue(c)
     assert ''.join(q) == string.ascii_uppercase
+
     print('All tests passed.')
 
 #==============================================================================
