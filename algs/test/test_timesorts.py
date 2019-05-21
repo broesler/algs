@@ -24,12 +24,11 @@ from algs.sort import *
 sort_funs = [qsort0, qsort1, qsort2, qsort]
 
 # Define lengths of input
-Nmax = 1e3
+Nmax = 2e3
 vals = np.power(2, np.arange(np.log2(Nmax))).astype(np.int64)
 M = len(vals)
 
 # Massive arrays from which to sample later
-# TODO implement all types of inputs per Bentley & McIlroy.
 masters = dict()
 masters['random'] = np.random.randint(max(vals), size=max(vals))
 masters['sorted'] = np.array(sorted(masters['random']))

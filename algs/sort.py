@@ -9,7 +9,7 @@
 """
 #==============================================================================
 
-from random import randrange, shuffle
+from random import randrange
 
 
 def _swap(a, i, j):
@@ -127,7 +127,7 @@ def _merge(a, b):
 
 
 def quicksort0(s):
-    """A quicksort implementation.
+    """A simple quicksort implementation. See K&R.
 
     Average case: ~ 2 N log N compares and ~ 1/3 N log N exchanges.
     Worst case: ~ N^2 / 2 compares if not randomized.
@@ -161,9 +161,12 @@ def _partition0(a, lo, hi):
 
 
 def quicksort0r(s):
-    """Quicksort implementation.
+    """A randomized pivot quicksort implementation.
+
+    Randomization fixes O(N^2) behavior when sorting an already-sorted list.
+
     Average case: ~ 2 N log N compares and ~ 1/3 N log N exchanges.
-    WARNING: Goes O(N^2) for all equal keys
+    WARNING: Goes O(N^2) for many equal keys.
     """
     a = list(s)
     _quicksort0r(a, 0, len(a)-1)
@@ -194,7 +197,7 @@ def _partition0r(a, lo, hi):
     return i+1
 
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 #        Engineering a Sorting Algorithm Examples
 #------------------------------------------------------------------------------
 def qsort0(s):
@@ -204,7 +207,7 @@ def qsort0(s):
     Worst case: ~ N^2 / 2 compares if not randomized.
 
     WARNING: Goes O(N^2) for already-sorted keys
-    WARNING: Goes O(N^2) for all equal keys
+    WARNING: Goes O(N^2) for many repeated keys
     """
     a = list(s)
     return _qsort0(a, 0, len(a)-1)
@@ -235,7 +238,7 @@ def qsort1(s):
 
     Average case: ~2 N log N compares and ~1/3 N log N exchanges.
 
-    WARNING: Goes O(N^2) for all equal keys
+    WARNING: Goes O(N^2) for many repeated keys
     """
     a = list(s)
     return _qsort1(a, 0, len(a)-1)
@@ -270,7 +273,12 @@ def _part1(a, lo, hi):
 
 
 def qsort2(s):
-    """Standard sort interface. Return a sorted copy."""
+    """Standard sort interface. Return a sorted copy.
+    
+    Notes
+    -----
+    Marginally slower than `qsort` for intermediate length lists (~20 -- ~100).
+    """
     a = list(s)
     _qsort2(a, 0, len(a)-1)
     return a
@@ -286,7 +294,10 @@ def _qsort2(a, lo, hi):
 
 
 def qsort(s):
-    """Interface to the Bentley-McIlroy quicksort algorithm."""
+    """Interface to the Bentley-McIlroy quicksort algorithm.
+    
+    Average case: ~2 N log N compares and ~1/3 N log N exchanges.
+    """
     a = list(s)
     _qsort(a, 0, len(a)-1)
     return a
@@ -411,9 +422,11 @@ def _sink(a, k, N):
 
 
 # TODO: all sorts could take generic comparison function
-#   cmp(a, i, j): if a[i] <  a[j] == -1 
+#   cmp(a, i, j): if a[i] <  a[j] == -1
 #                 if a[i] == a[j] ==  0
 #                 if a[i] >  a[j] == +1
+#
+# Generic `sort` interface: sort(a, reverse=False, cmp=None)
 #
 # def _cmp(a, i, j):
 #     """Compare two elements."""
