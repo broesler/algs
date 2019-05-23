@@ -9,18 +9,19 @@
 """
 #==============================================================================
 
-from random import randrange, shuffle
+from random import randrange
 
-__all__ = ['is_sorted'] + [x for x in dir() if x.endswith('sort')]
 
 def _swap(a, i, j):
     """Swap two list elements in-place."""
     a[i], a[j] = a[j], a[i]
 
+
 def _med3(a, i, j, k):
     """Return the index of the median of the elements a[i], a[j], a[k]."""
     return (j if a[j] < a[k] else (k if a[i] < a[k] else i)) if a[i] < a[j] else\
            (j if a[k] < a[j] else (k if a[k] < a[i] else i))
+
 
 def is_sorted(a):
     """True if a list is sorted in ascending order."""
@@ -57,6 +58,7 @@ def insertion_sort(s):
 
 
 def _insertion_sort(a, lo, hi):
+    """Implementation of insertion sort for arbitrary slices of an array."""
     N = hi - lo + 1
     for i in range(1, N):
         j = i
@@ -125,7 +127,7 @@ def _merge(a, b):
 
 
 def quicksort0(s):
-    """A quicksort implementation.
+    """A simple quicksort implementation. See K&R.
 
     Average case: ~ 2 N log N compares and ~ 1/3 N log N exchanges.
     Worst case: ~ N^2 / 2 compares if not randomized.
@@ -159,9 +161,12 @@ def _partition0(a, lo, hi):
 
 
 def quicksort0r(s):
-    """Quicksort implementation.
+    """A randomized pivot quicksort implementation.
+
+    Randomization fixes O(N^2) behavior when sorting an already-sorted list.
+
     Average case: ~ 2 N log N compares and ~ 1/3 N log N exchanges.
-    WARNING: Goes O(N^2) for all equal keys
+    WARNING: Goes O(N^2) for many equal keys.
     """
     a = list(s)
     _quicksort0r(a, 0, len(a)-1)
@@ -192,7 +197,7 @@ def _partition0r(a, lo, hi):
     return i+1
 
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 #        Engineering a Sorting Algorithm Examples
 #------------------------------------------------------------------------------
 def qsort0(s):
@@ -202,7 +207,7 @@ def qsort0(s):
     Worst case: ~ N^2 / 2 compares if not randomized.
 
     WARNING: Goes O(N^2) for already-sorted keys
-    WARNING: Goes O(N^2) for all equal keys
+    WARNING: Goes O(N^2) for many repeated keys
     """
     a = list(s)
     return _qsort0(a, 0, len(a)-1)
@@ -233,7 +238,7 @@ def qsort1(s):
 
     Average case: ~2 N log N compares and ~1/3 N log N exchanges.
 
-    WARNING: Goes O(N^2) for all equal keys
+    WARNING: Goes O(N^2) for many repeated keys
     """
     a = list(s)
     return _qsort1(a, 0, len(a)-1)
@@ -268,7 +273,12 @@ def _part1(a, lo, hi):
 
 
 def qsort2(s):
-    """Standard sort interface. Return a sorted copy."""
+    """Standard sort interface. Return a sorted copy.
+    
+    Notes
+    -----
+    Marginally slower than `qsort` for intermediate length lists (~20 -- ~100).
+    """
     a = list(s)
     _qsort2(a, 0, len(a)-1)
     return a
@@ -284,7 +294,10 @@ def _qsort2(a, lo, hi):
 
 
 def qsort(s):
-    """Interface to the Bentley-McIlroy quicksort algorithm."""
+    """Interface to the Bentley-McIlroy quicksort algorithm.
+    
+    Average case: ~2 N log N compares and ~1/3 N log N exchanges.
+    """
     a = list(s)
     _qsort(a, 0, len(a)-1)
     return a
@@ -381,38 +394,43 @@ def heap_sort(s):
 
     Uses ~ 2 N log N compares and exchanges.
     """
-    # NOTE subtract 1 from indices in `_swap` calls for 1-based indexing.
-    a = list(s)
-    N = len(a)
+    a = list([None] + s)  # use 1-indexing for easier heap calcs
+    N = len(a)-1
 
     # Put array in max-heap order
     for k in range(N//2, 0, -1):
         _sink(a, k, N)
 
-    # heap is max-oriented, so "pop" root to end of array
     while N > 1:
-        _swap(a, 0, N-1)
-        N -= 1
-        _sink(a, 1, N)
-    return a
+        _swap(a, 1, N)  # heap is max-oriented, so pop root to end of array
+        N -= 1          # update length of unsorted elements
+        _sink(a, 1, N)  # sink the new root to its proper position
+
+    return a[1:]  # ignore empty element
 
 
 def _sink(a, k, N):
     """Sink the given node index down to its proper location in the heap."""
-    # NOTE subtract 1 from indices in `_swap` calls for 1-based indexing.
     while 2*k <= N:
-        j = 2*k
-        if j < N and _comp(a, j, j+1):
-            j += 1
-        if not _comp(a, k, j):
+        j = 2*k                      # check left child
+        if j < N and a[j] < a[j+1]:  # if left child < right child
+            j += 1                   # take right child
+        if not a[k] < a[j]:          # if child <= parent, done.
             break
-        _swap(a, k-1, j-1)
-        k = j
+        _swap(a, k, j)               # otherwise swap child/parent
+        k = j                        # move to child and repeat
 
 
-def _comp(a, i, j):
-    """Compare two elements in 1-based indexed max-heap."""
-    return a[i-1] < a[j-1]
+# TODO: all sorts could take generic comparison function
+#   cmp(a, i, j): if a[i] <  a[j] == -1
+#                 if a[i] == a[j] ==  0
+#                 if a[i] >  a[j] == +1
+#
+# Generic `sort` interface: sort(a, reverse=False, cmp=None)
+#
+# def _cmp(a, i, j):
+#     """Compare two elements."""
+#     return 0 if a[i] == a[j] else (1 if a[i] > a[j] else -1)
 
 
 #==============================================================================

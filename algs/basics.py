@@ -129,11 +129,11 @@ class Queue():
 class PriorityQueue():
     """Iterable priority queue object.
 
-    A custom key function can be supplied to customize the sort order.
+    A custom key function can be supplied to determine the sort order.
 
     Parameters
     ----------
-    items : List of objects, optional
+    items : list of objects, optional
         Items to add to the queue.
     kind : str in {'min', 'max'}, optional, default='min'
         How to order the priority queue: minimum item at the front, or maximum.
@@ -151,18 +151,17 @@ class PriorityQueue():
     -----
     PQ is implemented as a max/min-heap, using array representation. To
     simplify indices, the root node is index 1. In general, if the parent index
-    is k, it's children are 2k and 2k+1. Likewise, the parent index of node
-    k is k/2.
+    is `k`, it's children are `2k` and `2k+1`. Likewise, the parent index of
+    node `k` is `k//2`.
 
     See: <https://algs4.cs.princeton.edu/24pq/> for details.
     """
     def __init__(self, items=list(), kind='min', key=None):
+        self._items = list([None] + items)  # ignore index 0
         self._op = operator.gt if kind == 'min' else operator.lt
-        self._key = key or (lambda x: x)  # identity if not given
-        self._items = list([None])        # ignore index 0
-        self._items.extend(items)
+        self._key = key or lambda x: x
         # Sink nodes from right-to-left
-        for k in range(self.size // 2, 0, -1):
+        for k in range(self.size//2, 0, -1):
             self._sink(k)
         assert self._is_heap()
 
@@ -188,7 +187,7 @@ class PriorityQueue():
     def dequeue(self):
         """Remove and return item from the top of the heap."""
         if self.is_empty:
-            raise Exception('Attempting to dequeue from empty PriorityQueue!')
+            raise IndexError('Attempting to dequeue from empty PriorityQueue!')
         self._swap(self.size, 1)              # swap root with bottom node
         the_min = self._items.pop(self.size)  # remove the root
         self._sink(1)                         # sink the new root to reorder
@@ -201,12 +200,12 @@ class PriorityQueue():
     def _sink(self, k):
         """Sink the given node index down to its proper location in the heap."""
         while 2*k <= self.size:
-            j = 2*k
+            j = 2*k                                   # move to left child
             if j < self.size and self._comp(j, j+1):
-                j += 1
+                j += 1                                # move to right child
             if not self._comp(k, j):
                 break
-            self._swap(k, j)
+            self._swap(k, j)                          # sink the node one level
             k = j
 
     def _swim(self, k):
@@ -216,11 +215,11 @@ class PriorityQueue():
             k = k//2
 
     def _comp(self, ind_a, ind_b):
-        """Compare two items in the heap.
+        """Compare two items in the heap via their indices.
 
         .. note::
-            If      kind == 'min', True if self._items[a] < self._items[b],
-            else if kind == 'max', True if self._items[a] > self._items[b].
+            If      kind == 'min', True if self._items[a] > self._items[b],
+            else if kind == 'max', True if self._items[a] < self._items[b].
         """
         return self._op(self._key(self._items[ind_a]),
                         self._key(self._items[ind_b]))
@@ -263,9 +262,8 @@ class PriorityQueue():
     def __str__(self):
         return str(list(self._items[1:]))
 
-    # Iterator methods
+    # Iterator methods: make a copy because in-order iteration is destructive.
     def __iter__(self):
-        # Make a copy because we destroy the heap upon iteration
         self._pq_copy = deepcopy(self)
         return self
 
@@ -458,6 +456,30 @@ if __name__ == '__main__':
     # TODO move to proper unit testing suite for package
     import string
 
+    def err_test(container, op, err_type=IndexError):
+        """Test for raising a given error type.
+
+        Parameters
+        ----------
+        container : list-like container data type
+        op : str
+            attribute name of method to test
+        err_type : Exception, optional
+            error type that object is expected to raise
+
+        Returns
+        -------
+        None
+        """
+        while True:
+            try:
+                getattr(container, op)()  # call the method
+            except err_type:
+                return
+            except Exception as err:
+                raise Exception(f'Improper error thrown: {repr(err)}')
+
+
     # Test Stack
     s = Stack()
     for i in range(5):
@@ -469,6 +491,8 @@ if __name__ == '__main__':
     # Test iteration -- pop should be in reverse order
     for i, item in zip([3, 2, 1, 0], s):
         assert i == item
+    # Test for pop
+    err_test(s, 'pop')
 
     # Test Queue
     q = Queue(['A', 'B', 'C'])
@@ -480,6 +504,8 @@ if __name__ == '__main__':
     # Elements should be in forwards order
     for c, item in zip(['B', 'C', 'D'], q):
         assert c == item
+    # Test dequeue error
+    err_test(q, 'dequeue')
 
     # Test maxPQ
     pq = PriorityQueue(list(string.ascii_uppercase), kind='max')
@@ -495,8 +521,10 @@ if __name__ == '__main__':
     for c in pq:
         q.enqueue(c)
     assert ''.join(q) == string.ascii_uppercase[::-1]
+    # Test dequeue error
+    err_test(pq, 'dequeue')
 
-    # Test minPQ
+    # Test MinPQ
     pq = PriorityQueue(list(string.ascii_uppercase), kind='min')
     assert 'A' == pq.dequeue()
     assert 'B' == pq.dequeue()
@@ -507,6 +535,7 @@ if __name__ == '__main__':
     for c in pq:
         q.enqueue(c)
     assert ''.join(q) == string.ascii_uppercase
+
     print('All tests passed.')
 
 #==============================================================================

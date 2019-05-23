@@ -15,7 +15,6 @@ def should_be(a, b):
     """Test a condition."""
     global tests, fails
     tests += 1
-    # if not a == b:
     try:
         assert a == b
     except AssertionError as e:
@@ -24,8 +23,8 @@ def should_be(a, b):
         raise e
 
 # Define test cases
-# ints = [8, 4, 3, 2, 1, 7, 6, 0, 5, 9]
-ints = [6, 8, 3, 9, 6, 6, 2, 1, 6, 0, 7, 4]
+ints = [8, 4, 3, 2, 1, 7, 6, 0, 5, 9]
+# ints = [6, 8, 3, 9, 6, 6, 2, 1, 6, 0, 7, 4]  # repeated keys
 chrs = list('SORTEXAMPLE')
 test_As = [(ints, sorted(ints)),
            (chrs, sorted(chrs))]
@@ -46,8 +45,8 @@ for A, S in test_As:
         test_name = sort.__name__
         should_be(sort([]), [])                # empty list
         should_be(sort([0]), [0])              # single element list
-        # should_be(sort([1, 1, 1]), [1, 1, 1])  # all equal
-        # should_be(sort(A) is not A, True)      # return a copy
+        should_be(sort([1, 1, 1]), [1, 1, 1])  # all equal
+        should_be(sort(A) is not A, True)      # return a copy
         should_be(sort(list(A)), S)            # randomized A
         should_be(sort(list(S)), S)            # sorted list
         should_be(sort(list(S[::-1])), S)      # reverse sorted list
