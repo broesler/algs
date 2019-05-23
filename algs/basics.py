@@ -306,23 +306,24 @@ class IndexPriorityQueue():
 
     See: <https://algs4.cs.princeton.edu/24pq/> for details.
     """
-    def __init__(self, items=list(), kind='min', key=None):
+    def __init__(self, maxN=None, items=list(), kind='min', key=None):
         self._op = operator.gt if kind == 'min' else operator.lt
         self._key = key or (lambda x: x)  # identity if not given
-        self._pq = list([None])           # indices of pq items
-        self._qp = list([None])           # inverse of pq pq[qp[i]] = i
-        self._items = list()
 
-        # TODO implement initialization routine when `items` is given.
-        # Sink nodes from right-to-left
-        # self._items = list(items)
-        # for k in range(self.size // 2, 0, -1):
-        #     self._sink(k)
-        # assert self._is_heap()
+        maxN = maxN or len(items)
+        self._pq = list((maxN+1)*[None])     # indices of pq items
+        self._qp = list([None] + maxN*[-1])  # inverse of pq pq[qp[i]] = i
+        self._items = list((maxN+1)*[None])
+        self._N = 0
+        for i, item in enumerate(items):
+            self.insert(i, item)
+            self._N += 1
+        assert self._is_heap()
 
     @property
     def size(self):
-        return len(self._pq) - 1  # ignore index 0
+        # return len(self._pq) - 1  # ignore index 0
+        return self._N
 
     @property
     def is_empty(self):
@@ -332,24 +333,27 @@ class IndexPriorityQueue():
         """Look at first item in queue without dequeue-ing."""
         return self._items[self._pq[1]]  # self._pq[0] is `None` in heap-land
 
-    def enqueue(self, item):
-        """Add item to the queue in proper position."""
+    def insert(self, k, item):
+        """Add item to the queue in position `k`."""
         # Add the item at the end of the list, then percolate it up.
-        # self._pq
-        # self._qp
-        self._items.append(item)
+        self._N += 1
+        self._items[k] = item
+        self._qp[k] = self.size
+        self._pq[self.size] = k
         self._swim(self.size)
         assert self._is_heap()
 
     def dequeue(self):
-        """Remove and return item from the top of the heap."""
+        """Remove item from the top of the heap. Return its index."""
         if self.is_empty:
             raise Exception('Attempting to dequeue from empty PriorityQueue!')
+        idx = self._pq[1]
         self._swap(self.size, 1)              # swap root with bottom node
-        the_min = self._pq.pop(self.size)  # remove the root
         self._sink(1)                         # sink the new root to reorder
+        self._items[self._pq[self.size + 1]] = None  # empty item slot
+        self._qp[self._pq[self.size + 1]] = -1       # empty reverse index slot
         assert self._is_heap()
-        return the_min
+        return idx
 
     def change(self, k, item):
         """Change item associated with index k to `item`."""
