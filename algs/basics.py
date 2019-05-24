@@ -5,7 +5,7 @@
 #   Author: Bernie Roesler
 #
 """
-  Description: Implement a basic Stack data structure
+  Description: Basic container algorithms.
 """
 #==============================================================================
 
@@ -154,12 +154,17 @@ class PriorityQueue():
     is `k`, it's children are `2k` and `2k+1`. Likewise, the parent index of
     node `k` is `k//2`.
 
+    Algorithm provides
+        * O(1) return the extremum value
+        * O(log N) insertion
+        * O(log N) remove the extremum value
+
     See: <https://algs4.cs.princeton.edu/24pq/> for details.
     """
     def __init__(self, items=list(), kind='min', key=None):
         self._items = list([None] + items)  # ignore index 0
         self._op = operator.gt if kind == 'min' else operator.lt
-        self._key = key or lambda x: x
+        self._key = key or (lambda x: x)
         # Sink nodes from right-to-left
         for k in range(self.size//2, 0, -1):
             self._sink(k)
@@ -299,29 +304,28 @@ class IndexPriorityQueue():
     -----
     IndexPQ is implemented as a max/min-heap, using array representation. To
     simplify indices, the root node is index 1. In general, if the parent index
-    is k, it's children are 2k and 2k+1. Likewise, the parent index of node
-    k is k/2.
+    is `k`, it's children are `2k` and `2k+1`. Likewise, the parent index of
+    node `k` is `k//2`.
+
+    Algorithm provides
+        * O(1) return the extremum value
+        * O(log N) insertion
+        * O(log N) remove the extremum value
+        * O(log N) change any value in the queue by index
+        * O(log N) deletion of any value in the queue by index
 
     See: <https://algs4.cs.princeton.edu/24pq/> for details.
     """
-    def __init__(self, maxN=None, items=list(), kind='min', key=None):
+    def __init__(self, kind='min', key=None):
+        # TODO include initialization options
         self._op = operator.gt if kind == 'min' else operator.lt
         self._key = key or (lambda x: x)  # identity if not given
-
-        maxN = maxN or len(items)
-        self._pq = list((maxN+1)*[None])     # indices of pq items
-        self._qp = list([None] + maxN*[-1])  # inverse of pq pq[qp[i]] = i
-        self._items = list((maxN+1)*[None])
-        self._N = 0
-        for i, item in enumerate(items):
-            self.insert(i, item)
-            self._N += 1
-        assert self._is_heap()
+        self._pq = list([None])  # ignore index 0, pq stores the keys
+        self._items = dict()     # values
 
     @property
     def size(self):
-        # return len(self._pq) - 1  # ignore index 0
-        return self._N
+        return len(self._pq) - 1  # ignore index 0
 
     @property
     def is_empty(self):
@@ -331,13 +335,21 @@ class IndexPriorityQueue():
         """Look at first item in queue without dequeue-ing."""
         return self._items[self._pq[1]]  # self._pq[0] is `None` in heap-land
 
-    def insert(self, k, item):
-        """Add item to the queue in position `k`."""
+    def peek_idx(self):
+        """Return the index associated with the item at the top of the heap."""
+        return self._pq[1]
+
+    def enqueue(self, k, item):
+        """Add item to the queue with index `k`. 
+
+        .. note:
+            Note that the *index* does not correspond to the *priority* in the
+            queue! It is for the client to use when accessing specific
+            elements.
+        """
         # Add the item at the end of the list, then percolate it up.
-        self._N += 1
         self._items[k] = item
-        self._qp[k] = self.size
-        self._pq[self.size] = k
+        self._pq.append(k)
         self._swim(self.size)
         assert self._is_heap()
 
@@ -345,13 +357,12 @@ class IndexPriorityQueue():
         """Remove item from the top of the heap. Return its index."""
         if self.is_empty:
             raise Exception('Attempting to dequeue from empty PriorityQueue!')
-        idx = self._pq[1]
-        self._swap(self.size, 1)              # swap root with bottom node
-        self._sink(1)                         # sink the new root to reorder
-        self._items[self._pq[self.size + 1]] = None  # empty item slot
-        self._qp[self._pq[self.size + 1]] = -1       # empty reverse index slot
+        self._swap(self.size, 1)       # swap root with bottom node
+        idx = self._pq.pop(self.size)  # remove the index
+        item = self._items.pop(idx)    # remove the item
+        self._sink(1)                  # sink the new root to reorder
         assert self._is_heap()
-        return idx
+        return idx, item
 
     def change(self, k, item):
         """Change item associated with index k to `item`."""
@@ -363,10 +374,6 @@ class IndexPriorityQueue():
 
     def contains(self, k):
         """Return True if there is an item associated with index k."""
-        return self._qp[k] != -1
-
-    def top_index(self):
-        """Return the index associated with the item at the top of the heap."""
         pass
 
     #--------------------------------------------------------------------------
@@ -396,8 +403,8 @@ class IndexPriorityQueue():
             If      kind == 'min', True if self._pq[a] < self._pq[b],
             else if kind == 'max', True if self._pq[a] > self._pq[b].
         """
-        return self._op(self._key(self._pq[ind_a]),
-                        self._key(self._pq[ind_b]))
+        return self._op(self._key(self._items[self._pq[ind_a]]),
+                        self._key(self._items[self._pq[ind_b]]))
 
     def _swap(self, a, b):
         """Swap the location of two items in the heap."""
@@ -455,6 +462,7 @@ class IndexPriorityQueue():
 if __name__ == '__main__':
     # TODO move to proper unit testing suite for package
     import string
+    from random import shuffle
 
     def err_test(container, op, err_type=IndexError):
         """Test for raising a given error type.
@@ -507,8 +515,15 @@ if __name__ == '__main__':
     # Test dequeue error
     err_test(q, 'dequeue')
 
+    # Shuffled alphabet data with indices
+    data_s = list(string.ascii_uppercase)
+    idx_s = list(range(len(data_s)))
+    idx = idx_s.copy()
+    shuffle(idx)
+    data = [data_s[i] for i in idx]
+
     # Test maxPQ
-    pq = PriorityQueue(list(string.ascii_uppercase), kind='max')
+    pq = PriorityQueue(data, kind='max')
     assert not pq.is_empty
     assert pq.size == 26
     assert 'Z' == pq.peek()
@@ -520,12 +535,12 @@ if __name__ == '__main__':
     q = Queue()
     for c in pq:
         q.enqueue(c)
-    assert ''.join(q) == string.ascii_uppercase[::-1]
+    assert ''.join(q) ==  string.ascii_uppercase[::-1]
     # Test dequeue error
     err_test(pq, 'dequeue')
 
     # Test MinPQ
-    pq = PriorityQueue(list(string.ascii_uppercase), kind='min')
+    pq = PriorityQueue(data, kind='min')
     assert 'A' == pq.dequeue()
     assert 'B' == pq.dequeue()
     assert 'C' == pq.dequeue()
@@ -535,6 +550,21 @@ if __name__ == '__main__':
     for c in pq:
         q.enqueue(c)
     assert ''.join(q) == string.ascii_uppercase
+
+    # Test IndexMinPQ
+    pq = IndexPriorityQueue(kind='min')
+    for i, c in zip(idx, data):
+        pq.enqueue(i, c)
+    assert (0, 'A') == pq.dequeue()
+    assert (1, 'B') == pq.dequeue()
+    assert (2, 'C') == pq.dequeue()
+    for i, c in [(0, 'A'), (1, 'B'), (2, 'C')]:
+        pq.enqueue(i, c)
+    q = Queue()
+    for c in pq:
+        q.enqueue(c)
+    assert [item[0] for item in q] == idx_s
+    assert ''.join([item[1] for item in q]) == string.ascii_uppercase
 
     print('All tests passed.')
 
