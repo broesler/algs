@@ -325,13 +325,15 @@ class IndexPriorityQueue():
     #   qp : the inverse of pq: `dict` with integer keys, but arbitrary values
     #     ** pq[qp[i]] == qp[pq[i]] == i
     #   items : a dictionary of values, with pq as the keys.
-    def __init__(self, kind='min', key=None):
-        # TODO include initialization options
+    def __init__(self, data=None, kind='min', key=None):
         self._op = operator.gt if kind == 'min' else operator.lt
         self._key = key or (lambda x: x)  # identity if not given
         self._pq = list([None])
         self._qp = dict()
         self._items = dict()
+        # TODO move this class to MutableMapping so init operation is efficient 
+        for k, v in data:
+            self.enqueue(k, v)
 
     @property
     def size(self):
@@ -568,10 +570,7 @@ if __name__ == '__main__':
     assert ''.join(pq) ==  string.ascii_uppercase
 
     # Test IndexMinPQ
-    pq = IndexPriorityQueue(kind='min')
-    for i, c in zip(idx, data):
-        pq.enqueue(i, c)
-        assert pq.contains(i)
+    pq = IndexPriorityQueue(zip(idx, data), kind='min')
     assert pq.size == 26
     assert (0, 'A') == pq.dequeue()
     assert (1, 'B') == pq.dequeue()
