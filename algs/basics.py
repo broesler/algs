@@ -320,19 +320,18 @@ class IndexPriorityQueue():
 
     See: <https://algs4.cs.princeton.edu/24pq/> for details.
     """
-    # Internal Notes:
-    # pq : a `list` of arbitrary keys, but integer indices
-    # qp : the inverse of pq, a `dict` with integer keys, but arbitrary values
-    #   ** pq[qp[i]] == qp[pq[i]] == i
-    # items : a dictionary of values, with pq as the keys.
+    # Notes:
+    #   pq : a `list` of arbitrary keys, but integer indices
+    #   qp : the inverse of pq: `dict` with integer keys, but arbitrary values
+    #     ** pq[qp[i]] == qp[pq[i]] == i
+    #   items : a dictionary of values, with pq as the keys.
     def __init__(self, kind='min', key=None):
         # TODO include initialization options
         self._op = operator.gt if kind == 'min' else operator.lt
         self._key = key or (lambda x: x)  # identity if not given
-        self._pq = list([None])  # ignore index 0, pq stores the keys
-        self._qp = dict()        # inverse of indices in pq
-        self._items = dict()     # values
-        # self.size = 0
+        self._pq = list([None])
+        self._qp = dict()
+        self._items = dict()
 
     @property
     def size(self):
@@ -344,11 +343,7 @@ class IndexPriorityQueue():
 
     def peek(self):
         """Look at first item in queue without dequeue-ing."""
-        return self._items[self._pq[1]]  # self._pq[0] is `None` in heap-land
-
-    def peek_idx(self):
-        """Return the index associated with the item at the top of the heap."""
-        return self._pq[1]
+        return self._pq[1], self._items[self._pq[1]]
 
     def enqueue(self, k, item):
         """Add item to the queue with index `k`. 
@@ -582,8 +577,7 @@ if __name__ == '__main__':
     assert (1, 'B') == pq.dequeue()
     assert (2, 'C') == pq.dequeue()
     assert pq.size == 23
-    assert  3  == pq.peek_idx()
-    assert 'D' == pq.peek()
+    assert (3, 'D') == pq.peek()
     for i, c in [(0, 'A'), (1, 'B'), (2, 'C')]:
         pq.enqueue(i, c)
     assert list([item[0] for item in pq]) == idx_s
