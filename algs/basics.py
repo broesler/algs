@@ -14,6 +14,10 @@ import operator
 from collections import deque
 from copy import deepcopy
 
+# TODO implement __lt__ for all classes (in addition to __eq__) for total
+# ordering. See:
+# <https://docs.python.org/3/library/functools.html#functools.total_ordering>
+
 class Stack():
     """Implements a Stack data structure.
 
@@ -193,9 +197,9 @@ class PriorityQueue():
         """Remove and return item from the top of the heap."""
         if self.is_empty:
             raise IndexError('Attempting to dequeue from empty PriorityQueue!')
-        self._swap(self.size, 1)              # swap root with bottom node
-        the_min = self._items.pop(self.size)  # remove the root
-        self._sink(1)                         # sink the new root to reorder
+        self._swap(self.size, 1)     # swap root with bottom node
+        the_min = self._items.pop()  # remove the root
+        self._sink(1)                # sink the new root to reorder
         assert self._is_heap()
         return the_min
 
@@ -316,12 +320,19 @@ class IndexPriorityQueue():
 
     See: <https://algs4.cs.princeton.edu/24pq/> for details.
     """
+    # Internal Notes:
+    # pq : a `list` of arbitrary keys, but integer indices
+    # qp : the inverse of pq, a `dict` with integer keys, but arbitrary values
+    #   ** pq[qp[i]] == qp[pq[i]] == i
+    # items : a dictionary of values, with pq as the keys.
     def __init__(self, kind='min', key=None):
         # TODO include initialization options
         self._op = operator.gt if kind == 'min' else operator.lt
         self._key = key or (lambda x: x)  # identity if not given
         self._pq = list([None])  # ignore index 0, pq stores the keys
+        self._qp = dict()        # inverse of indices in pq
         self._items = dict()     # values
+        # self.size = 0
 
     @property
     def size(self):
@@ -350,6 +361,7 @@ class IndexPriorityQueue():
         # Add the item at the end of the list, then percolate it up.
         self._items[k] = item
         self._pq.append(k)
+        self._qp[k] = self.size
         self._swim(self.size)
         assert self._is_heap()
 
@@ -358,23 +370,32 @@ class IndexPriorityQueue():
         if self.is_empty:
             raise Exception('Attempting to dequeue from empty PriorityQueue!')
         self._swap(self.size, 1)       # swap root with bottom node
-        idx = self._pq.pop(self.size)  # remove the index
-        item = self._items.pop(idx)    # remove the item
+        idx = self._pq.pop()
+        item = self._items.pop(idx)
+        self._qp.pop(idx)
         self._sink(1)                  # sink the new root to reorder
         assert self._is_heap()
         return idx, item
 
     def change(self, k, item):
         """Change item associated with index k to `item`."""
-        pass
+        self._items[k] = item
+        self._sink(self._qp[k])
+        self._swim(self._qp[k])
 
     def delete(self, k):
-        """Delete item associated with index k."""
-        pass
+        """Delete arbitrary item associated with index k."""
+        idx = self._qp[k]
+        self._swap(idx, self.size)  # swap item to end
+        to_pop = self._pq.pop()
+        self._swim(idx)
+        self._sink(idx)
+        self._qp.pop(to_pop)
+        self._items.pop(to_pop)
 
     def contains(self, k):
         """Return True if there is an item associated with index k."""
-        pass
+        return k in self._qp  # keys of qp are values in pq
 
     #--------------------------------------------------------------------------
     #        Private helper functions
@@ -408,7 +429,9 @@ class IndexPriorityQueue():
 
     def _swap(self, a, b):
         """Swap the location of two items in the heap."""
-        self._pq[b], self._pq[a] = self._pq[a], self._pq[b]
+        pq, qp = self._pq, self._qp  # aliases for easy reading
+        pq[b], pq[a] = pq[a], pq[b]
+        qp[pq[b]], qp[pq[a]] = qp[pq[a]], qp[pq[b]]
 
     def _is_heap(self, k=1):
         """Return True if PriorityQueue is heap-ordered according to `kind`.
@@ -516,7 +539,7 @@ if __name__ == '__main__':
     err_test(q, 'dequeue')
 
     # Shuffled alphabet data with indices
-    data_s = list(string.ascii_uppercase)
+    data_s = string.ascii_uppercase
     idx_s = list(range(len(data_s)))
     idx = idx_s.copy()
     shuffle(idx)
@@ -530,12 +553,11 @@ if __name__ == '__main__':
     assert 'Z' == pq.dequeue()
     assert 'Y' == pq.dequeue()
     assert 'X' == pq.dequeue()
+    assert 'W' == pq.peek()
     for c in ['X', 'Y', 'Z']:
         pq.enqueue(c)
-    q = Queue()
-    for c in pq:
-        q.enqueue(c)
-    assert ''.join(q) ==  string.ascii_uppercase[::-1]
+    # implicitly test iteration
+    assert ''.join(pq) ==  string.ascii_uppercase[::-1]
     # Test dequeue error
     err_test(pq, 'dequeue')
 
@@ -544,27 +566,48 @@ if __name__ == '__main__':
     assert 'A' == pq.dequeue()
     assert 'B' == pq.dequeue()
     assert 'C' == pq.dequeue()
+    assert 'D' == pq.peek()
     for c in ['A', 'B', 'C']:
         pq.enqueue(c)
-    q = Queue()
-    for c in pq:
-        q.enqueue(c)
-    assert ''.join(q) == string.ascii_uppercase
+    # implicitly test iteration
+    assert ''.join(pq) ==  string.ascii_uppercase
 
     # Test IndexMinPQ
     pq = IndexPriorityQueue(kind='min')
     for i, c in zip(idx, data):
         pq.enqueue(i, c)
+        assert pq.contains(i)
+    assert pq.size == 26
     assert (0, 'A') == pq.dequeue()
     assert (1, 'B') == pq.dequeue()
     assert (2, 'C') == pq.dequeue()
+    assert pq.size == 23
+    assert  3  == pq.peek_idx()
+    assert 'D' == pq.peek()
     for i, c in [(0, 'A'), (1, 'B'), (2, 'C')]:
         pq.enqueue(i, c)
-    q = Queue()
-    for c in pq:
-        q.enqueue(c)
-    assert [item[0] for item in q] == idx_s
-    assert ''.join([item[1] for item in q]) == string.ascii_uppercase
+    assert list([item[0] for item in pq]) == idx_s
+    assert ''.join([item[1] for item in pq]) == string.ascii_uppercase
+
+    # Test `change` item
+    pq.change(0, 'ZZZ')
+    assert pq.contains(0)
+    assert list([item[0] for item in pq]) == idx_s[1:] + [0]
+    assert ''.join([item[1] for item in pq]) == string.ascii_uppercase[1:] + 'ZZZ'
+    pq.change(0, 'A')
+    assert pq.contains(0)
+    assert list([item[0] for item in pq]) == idx_s
+    assert ''.join([item[1] for item in pq]) == string.ascii_uppercase
+
+    # Test 'delete' item
+    pq.delete(0)
+    assert not pq.contains(0)
+    assert list([item[0] for item in pq]) == idx_s[1:]
+    assert ''.join([item[1] for item in pq]) == string.ascii_uppercase[1:]
+
+    # Internal checks
+    for i in range(1, len(pq._pq)-1):
+        assert pq._pq[pq._qp[i]] == i
 
     print('All tests passed.')
 
