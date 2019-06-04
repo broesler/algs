@@ -9,10 +9,13 @@
 """
 #==============================================================================
 
-import operator
+import operator as _operator
 
-from collections import deque
-from copy import deepcopy
+from collections import deque as _deque
+from collections import MutableMapping as _MutableMapping
+from copy import deepcopy as _deepcopy
+
+# __all__ = ['Stack', 'Queue', 'PriorityQueue', 'IndexPQ']
 
 # TODO implement __lt__ for all classes (in addition to __eq__) for total
 # ordering. See:
@@ -68,7 +71,7 @@ class Stack():
         return self._items == other._items
 
     def __repr__(self):
-        return '<Stack: ' + self.__str__() + '>'
+        return '<{}: {}>'.format(self.__class__.__name__, self.__str__())
 
     def __str__(self):
         return str(list(self._items))
@@ -91,7 +94,7 @@ class Queue():
     """
     def __init__(self, items=list()):
         # _items[-1] is "front" of queue
-        self._items = deque(items)
+        self._items = _deque(items)
 
     @property
     def size(self):
@@ -124,7 +127,7 @@ class Queue():
         return bool(self.size)
 
     def __repr__(self):
-        return '<Queue: ' + self.__str__() + '>'
+        return '<{}: {}>'.format(self.__class__.__name__, self.__str__())
 
     def __str__(self):
         return str(list(self._items))
@@ -167,7 +170,7 @@ class PriorityQueue():
     """
     def __init__(self, items=list(), kind='min', key=None):
         self._items = list([None] + items)  # ignore index 0
-        self._op = operator.gt if kind == 'min' else operator.lt
+        self._op = _operator.gt if kind == 'min' else _operator.lt
         self._key = key or (lambda x: x)
         # Sink nodes from right-to-left
         for k in range(self.size//2, 0, -1):
@@ -266,14 +269,14 @@ class PriorityQueue():
         return self._items == other._items
 
     def __repr__(self):
-        return '<PriorityQueue: ' + self.__str__() + '>'
+        return '<{}: {}>'.format(self.__class__.__name__, self.__str__())
 
     def __str__(self):
         return str(list(self._items[1:]))
 
     # Iterator methods: make a copy because in-order iteration is destructive.
     def __iter__(self):
-        self._pq_copy = deepcopy(self)
+        self._pq_copy = _deepcopy(self)
         return self
 
     def __next__(self):
@@ -283,15 +286,16 @@ class PriorityQueue():
             return self._pq_copy.dequeue()
 
 
-class IndexPriorityQueue():
-    """Iterable priority queue object, with indexing for item access.
+class IndexPQ(_MutableMapping):
+    """Priority queue as a native python dictionary. 'Pythonic' version of
+    IndexPriorityQueue.
 
     A custom key function can be supplied to customize the sort order.
 
     Parameters
     ----------
-    items : List of objects, optional
-        Items to add to the queue.
+    items : map or iterable of objects, optional
+        List or Dictionary of (key, value) pairs to add to the queue.
     kind : str in {'min', 'max'}, optional, default='min'
         How to order the priority queue: minimum item at the front, or maximum.
     key : callable, optional
@@ -325,34 +329,33 @@ class IndexPriorityQueue():
     #   qp : the inverse of pq: `dict` with integer keys, but arbitrary values
     #     ** pq[qp[i]] == qp[pq[i]] == i
     #   items : a dictionary of values, with pq as the keys.
-    def __init__(self, data=None, kind='min', key=None):
-        self._op = operator.gt if kind == 'min' else operator.lt
+    def __init__(self, items=None, kind='min', key=None):
+        self._op = _operator.gt if kind == 'min' else _operator.lt
         self._key = key or (lambda x: x)  # identity if not given
         self._pq = list([None])
         self._qp = dict()
         self._items = dict()
-        # TODO move this class to MutableMapping so init operation is efficient 
-        for k, v in data:
+        for k, v in items:
             self.enqueue(k, v)
 
     @property
     def size(self):
-        return len(self._pq) - 1  # ignore index 0
+        return len(self)
 
     @property
     def is_empty(self):
-        return (self.size == 0)
+        return len(self) == 0
 
     def peek(self):
         """Look at first item in queue without dequeue-ing."""
         return self._pq[1], self._items[self._pq[1]]
 
     def enqueue(self, k, item):
-        """Add item to the queue with index `k`. 
+        """Add an `item` to the queue with index `k`. 
 
         .. note:
             Note that the *index* does not correspond to the *priority* in the
-            queue! It is for the client to use when accessing specific
+            queue! The index is for the client to use when accessing specific
             elements.
         """
         # Add the item at the end of the list, then percolate it up.
@@ -369,30 +372,10 @@ class IndexPriorityQueue():
         self._swap(self.size, 1)       # swap root with bottom node
         idx = self._pq.pop()
         item = self._items.pop(idx)
-        self._qp.pop(idx)
+        if idx in self._qp: del self._qp[idx]
         self._sink(1)                  # sink the new root to reorder
         assert self._is_heap()
         return idx, item
-
-    def change(self, k, item):
-        """Change item associated with index k to `item`."""
-        self._items[k] = item
-        self._sink(self._qp[k])
-        self._swim(self._qp[k])
-
-    def delete(self, k):
-        """Delete arbitrary item associated with index k."""
-        idx = self._qp[k]
-        self._swap(idx, self.size)  # swap item to end
-        to_pop = self._pq.pop()
-        self._swim(idx)
-        self._sink(idx)
-        self._qp.pop(to_pop)
-        self._items.pop(to_pop)
-
-    def contains(self, k):
-        """Return True if there is an item associated with index k."""
-        return k in self._qp  # keys of qp are values in pq
 
     #--------------------------------------------------------------------------
     #        Private helper functions
@@ -452,6 +435,7 @@ class IndexPriorityQueue():
         if (right <= self.size and self._comp(k, right)): return False
         return self._is_heap(left) and self._is_heap(right)
 
+    # Class methods
     def __bool__(self):
         return bool(self.size)
 
@@ -459,14 +443,43 @@ class IndexPriorityQueue():
         return self._pq == other._pq
 
     def __repr__(self):
-        return '<PriorityQueue: ' + self.__str__() + '>'
+        return '<{}: {}>'.format(self.__class__.__name__, self.__str__())
 
     def __str__(self):
-        return str(list(self._pq[1:]))
+        # show list of (key, value) pairs in heap-order
+        return str(list([(x, self._items[x]) for x in self._pq[1:]]))
 
-    # Iterator methods
+    def __contains__(self, k):
+        """Return True if there is an item associated with index `k`."""
+        return k in self._qp  # keys of qp are values in pq
+
+    # _MutableMapping required methods
+    def __len__(self):
+        return len(self._pq) - 1  # ignore index 0
+
+    def __getitem__(self, k):
+        # just look at any dict item
+        return self._items[k]
+
+    def __setitem__(self, k, item):
+        """Change item associated with index `k` to `item`."""
+        self._items[k] = item
+        self._sink(self._qp[k])
+        self._swim(self._qp[k])
+
+    def __delitem__(self, k):
+        """Delete the item associated with index `k`."""
+        idx = self._qp[k]
+        self._swap(idx, self.size)  # swap item to end
+        to_del = self._pq.pop()
+        self._swim(idx)             # reorganize the heap
+        self._sink(idx)
+        if to_del in self._qp:    del self._qp[to_del]    # remove the item
+        if to_del in self._items: del self._items[to_del]
+
     def __iter__(self):
-        self._pq_copy = deepcopy(self)
+        """Iterate through a copy of the list (iteration is *destructive*)."""
+        self._pq_copy = _deepcopy(self)
         return self
 
     def __next__(self):
@@ -570,12 +583,12 @@ if __name__ == '__main__':
     assert ''.join(pq) ==  string.ascii_uppercase
 
     # Test IndexMinPQ
-    pq = IndexPriorityQueue(zip(idx, data), kind='min')
-    assert pq.size == 26
+    pq = IndexPQ(zip(idx, data), kind='min')
+    assert len(pq) == 26
     assert (0, 'A') == pq.dequeue()
     assert (1, 'B') == pq.dequeue()
     assert (2, 'C') == pq.dequeue()
-    assert pq.size == 23
+    assert len(pq) == 23
     assert (3, 'D') == pq.peek()
     for i, c in [(0, 'A'), (1, 'B'), (2, 'C')]:
         pq.enqueue(i, c)
@@ -583,18 +596,18 @@ if __name__ == '__main__':
     assert ''.join([item[1] for item in pq]) == string.ascii_uppercase
 
     # Test `change` item
-    pq.change(0, 'ZZZ')
-    assert pq.contains(0)
+    pq[0] = 'ZZZ'
+    assert 0 in pq
     assert list([item[0] for item in pq]) == idx_s[1:] + [0]
     assert ''.join([item[1] for item in pq]) == string.ascii_uppercase[1:] + 'ZZZ'
-    pq.change(0, 'A')
-    assert pq.contains(0)
+    pq[0] = 'A'
+    assert 0 in pq
     assert list([item[0] for item in pq]) == idx_s
     assert ''.join([item[1] for item in pq]) == string.ascii_uppercase
 
     # Test 'delete' item
-    pq.delete(0)
-    assert not pq.contains(0)
+    del pq[0]
+    assert 0 not in pq
     assert list([item[0] for item in pq]) == idx_s[1:]
     assert ''.join([item[1] for item in pq]) == string.ascii_uppercase[1:]
 
