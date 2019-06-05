@@ -166,7 +166,7 @@ class PriorityQueue():
     See: <https://algs4.cs.princeton.edu/24pq/> for details.
     """
     def __init__(self, items=list(), kind='min', key=None):
-        self._items = list([None] + items)  # ignore index 0
+        self._items = list([None] + list(items))  # ignore index 0
         self._op = _operator.gt if kind == 'min' else _operator.lt
         self._key = key or (lambda x: x)
         # Sink nodes from right-to-left
@@ -259,6 +259,9 @@ class PriorityQueue():
         if (right <= self.size and self._comp(k, right)): return False
         return self._is_heap(left) and self._is_heap(right)
 
+    def __len__(self):
+        return self.size
+
     def __bool__(self):
         return bool(self.size)
 
@@ -348,11 +351,11 @@ class IndexPQ(_MutableMapping):
     #--------------------------------------------------------------------------
     @property
     def size(self):
-        return len(self)
+        return len(self._pq) - 1  # ignore index 0
 
     @property
     def is_empty(self):
-        return len(self) == 0
+        return self.size == 0
 
     def peek(self):
         """Look at first item in queue without dequeue-ing.
@@ -517,7 +520,7 @@ class IndexPQ(_MutableMapping):
     #        _MutableMapping required methods
     #--------------------------------------------------------------------------
     def __len__(self):
-        return len(self._pq) - 1  # ignore index 0
+        return self.size
 
     def __getitem__(self, k):
         return self._items[k]
