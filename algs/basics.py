@@ -331,6 +331,8 @@ class IndexPQ(_MutableMapping):
     #     initialization, timing tests to show log N behavior.
     #   * create pq of objects with attributes and test the key function
     #   * implement self.copy()
+    #   * write setter functions for self.kind and self.key to reorganize the
+    #     heap if they are changed.
     def __init__(self, items=None, kind='min', key=None):
         self.kind = kind
         self._op = _operator.gt if self.kind == 'min' else _operator.lt
@@ -339,8 +341,11 @@ class IndexPQ(_MutableMapping):
         self._qp = dict()
         self._items = dict()
         if items is not None:
-            self.update(items)
+            self.update(items)  # __setitem__ takes care of enqueuing
 
+    #-------------------------------------------------------------------------- 
+    #        Public API
+    #--------------------------------------------------------------------------
     @property
     def size(self):
         return len(self)
@@ -476,7 +481,9 @@ class IndexPQ(_MutableMapping):
         if (right <= self.size and self._comp(k, right)): return False
         return self._is_heap(left) and self._is_heap(right)
 
-    # dunder methods
+    #-------------------------------------------------------------------------- 
+    #        Python object methods
+    #--------------------------------------------------------------------------
     def __bool__(self):
         return bool(self.size)
 
@@ -491,10 +498,9 @@ class IndexPQ(_MutableMapping):
         return str(dict([(x, self._items[x]) for x in self._pq[1:]]))
 
     def __contains__(self, k):
-        """Return True if there is an item associated with index `k`."""
+        """Return True if index `k` is in the queue."""
         return k in self._qp  # keys of qp are values in pq
 
-    # Make iterator out of a copy
     def __iter__(self):
         """Return an iterator with a copy."""
         self._pq_copy = _deepcopy(self)
@@ -507,12 +513,13 @@ class IndexPQ(_MutableMapping):
         else:
             return self._pq_copy.dequeue()[0]  # iterate over keys
 
-    # _MutableMapping required methods
+    #-------------------------------------------------------------------------- 
+    #        _MutableMapping required methods
+    #--------------------------------------------------------------------------
     def __len__(self):
         return len(self._pq) - 1  # ignore index 0
 
     def __getitem__(self, k):
-        # just look at any dict item
         return self._items[k]
 
     def __setitem__(self, k, item):
