@@ -365,8 +365,11 @@ class IndexPQ(_MutableMapping):
         key, value : tuple
             The key associated with the extremum item, and the item itself.
         """
-        idx = self._pq[1]
-        return idx, self._items[idx]
+        if len(self._pq) > 1:
+            idx = self._pq[1]
+            return idx, self._items[idx]
+        else:
+            return None, None
 
     def enqueue(self, k, item):
         """Add an `item` to the queue with index `k`. 
