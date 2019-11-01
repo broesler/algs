@@ -10,6 +10,7 @@
 #==============================================================================
 
 import sys
+import glob
 
 from algs.basics import IndexPQ
 
@@ -25,21 +26,24 @@ def merge(streams):
         if c:
             pq[i] = c
 
-    # While at least one of the streams has elements left, output the minimum
-    # queued value, then get another value from that stream
+    # While at least one of the streams has elements left, pop/output the
+    # minimum queued value, then get another value from that stream
     while pq:
         i, v = pq.dequeue()
-        print(v)  # yield i?
+        yield v
         c = streams[i].readline().strip()
         if c:
             pq[i] = c
 
 
 if __name__ == '__main__':
+    files = sys.argv[1:] if len(sys.argv) > 1 else sorted(glob.glob(f"test_data/m?.txt"))
     streams = list()
-    for a in sys.argv[1:]:
-        streams.append(open(a, 'r'))  # turn into stream read from file
-    merge(streams)
+    for f in files:
+        streams.append(open(f, 'r'))  # turn into stream read from file
+    m = merge(streams)
+    for v in m:
+        print(v)
     for s in streams:
         s.close()
 
