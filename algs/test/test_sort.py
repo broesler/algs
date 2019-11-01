@@ -9,6 +9,9 @@
 """
 #==============================================================================
 
+import string
+import random
+
 from algs.sort import *
 
 def should_be(a, b):
@@ -26,8 +29,14 @@ def should_be(a, b):
 ints = [8, 4, 3, 2, 1, 7, 6, 0, 5, 9]
 # ints = [6, 8, 3, 9, 6, 6, 2, 1, 6, 0, 7, 4]  # repeated keys
 chrs = list('SORTEXAMPLE')
+
+s = string.ascii_uppercase
+strs = [s[i:i+3] for i in range(0, len(s), 3)]
+random.shuffle(strs)
+
 test_As = [(ints, sorted(ints)),
-           (chrs, sorted(chrs))]
+           (chrs, sorted(chrs)),
+           (strs, sorted(strs))]
 
 sort_funs = [bubble_sort, insertion_sort, mergesort, mergesort_BU,
              quicksort0, quicksort0r, qsort0, qsort1, qsort2, qsort,

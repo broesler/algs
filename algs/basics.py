@@ -12,7 +12,7 @@
 import operator as _operator
 
 from collections import deque as _deque
-from collections import MutableMapping as _MutableMapping
+from collections.abc import MutableMapping as _MutableMapping
 from copy import deepcopy as _deepcopy
 
 __all__ = ['Stack', 'Queue', 'PriorityQueue', 'IndexPQ']

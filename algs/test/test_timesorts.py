@@ -19,9 +19,9 @@ from collections import defaultdict
 
 from algs.sort import *
 
-# sort_funs = [bubble_sort, insertion_sort, mergesort, mergesort_BU,
-#              quicksort, heap_sort]
-sort_funs = [qsort0, qsort1, qsort2, qsort]
+sort_funs = [bubble_sort, insertion_sort, mergesort, mergesort_BU,
+             qsort, heap_sort]
+# sort_funs = [qsort0, qsort1, qsort2, qsort]
 
 # Define lengths of input
 Nmax = 2e3

@@ -394,7 +394,7 @@ def heap_sort(s):
 
     Uses ~ 2 N log N compares and exchanges.
     """
-    a = list([None] + s)  # use 1-indexing for easier heap calcs
+    a = list([None] + list(s))  # use 1-indexing for easier heap calcs
     N = len(a)-1
 
     # Put array in max-heap order
