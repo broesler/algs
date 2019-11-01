@@ -17,6 +17,13 @@ from copy import deepcopy as _deepcopy
 
 __all__ = ['Stack', 'Queue', 'PriorityQueue', 'IndexPQ']
 
+def _equals(self, other):
+    if isinstance(other, self.__class__):
+        return self._items == other._items
+    else:
+        raise TypeError("'==' not supported between instances of "\
+                        f"'{self.__class__.__name__}' and '{other.__class__.__name__}'")
+
 
 class Stack():
     """Implements a Stack data structure.
@@ -65,7 +72,7 @@ class Stack():
         return bool(self.size)
 
     def __eq__(self, other):
-        return self._items == other._items
+        return _equals(self, other)
 
     def __repr__(self):
         return '<{}: {}>'.format(self.__class__.__name__, self.__str__())
@@ -118,7 +125,7 @@ class Queue():
         yield from self._items
 
     def __eq__(self, other):
-        return self._items == other._items
+        return _equals(self, other)
 
     def __bool__(self):
         return bool(self.size)
@@ -266,7 +273,7 @@ class PriorityQueue():
         return bool(self.size)
 
     def __eq__(self, other):
-        return self._items == other._items
+        return _equals(self, other)
 
     def __repr__(self):
         return '<{}: {}>'.format(self.__class__.__name__, self.__str__())
@@ -494,7 +501,7 @@ class IndexPQ(_MutableMapping):
         return bool(self.size)
 
     def __eq__(self, other):
-        return self._items == other._items
+        return _equals(self, other)
 
     def __repr__(self):
         return '<{}: {}>'.format(self.__class__.__name__, self.__str__())
@@ -626,7 +633,7 @@ if __name__ == '__main__':
     for c in ['X', 'Y', 'Z']:
         pq.enqueue(c)
     # implicitly test iteration
-    assert ''.join(pq) ==  string.ascii_uppercase[::-1]
+    assert ''.join(pq) == string.ascii_uppercase[::-1]
     # Test dequeue error
     err_test(pq, 'dequeue')
 
@@ -639,7 +646,7 @@ if __name__ == '__main__':
     for c in ['A', 'B', 'C']:
         pq.enqueue(c)
     # implicitly test iteration
-    assert ''.join(pq) ==  string.ascii_uppercase
+    assert ''.join(pq) == string.ascii_uppercase
 
     # Test IndexMinPQ
     pq = IndexPQ(zip(idx, data), kind='min')
@@ -677,7 +684,7 @@ if __name__ == '__main__':
     pq[i] = item
 
     # Internal checks
-    for i in range(1, len(pq._pq)-1):
+    for i in range(len(pq._pq)-1):
         assert pq._pq[pq._qp[i]] == i
 
     # Equality checks
