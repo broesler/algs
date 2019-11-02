@@ -17,6 +17,7 @@ from copy import deepcopy as _deepcopy
 
 __all__ = ['Stack', 'Queue', 'PriorityQueue', 'IndexPQ']
 
+
 def _equals(self, other):
     if isinstance(other, self.__class__):
         return self._items == other._items
@@ -554,7 +555,6 @@ class IndexPQ(_MutableMapping):
             del self._items[to_del]
 
 
-
 #------------------------------------------------------------------------------
 #        Test client
 #------------------------------------------------------------------------------
@@ -562,6 +562,7 @@ if __name__ == '__main__':
     # TODO move to proper unit testing suite for package
     import string
     from random import shuffle
+
 
     def err_test(container, op, err_type=IndexError):
         """Test for raising a given error type.
