@@ -23,7 +23,17 @@ class BST():
         Number of items on the tree.
     is_empty : bool
         True if `size == 0`.
+
+    .. note: `get` and `set` are achieved via python builtins
+    >>> t = BST()
+    >>> t['A'] = 0
+    >>> t['B'] = 1
+    >>> t['C'] = 2
+    >>> t['A'] = 10
+    >>> t.min() == 'A'
+    True
     """
+    # Private Node class
     class _Node():
         """Internal node object to hold key, value, and two children."""
         def __init__(self, key, value=None):
@@ -33,6 +43,18 @@ class BST():
             self.right = None
             self.N = 1  # nodes in subtree rooted here
 
+        def __str__(self):
+            # Avoid recursion through entire tree!! Just print each child
+            left_str = f"({self.left.key}, {self.left.val})" if self.left else 'None'
+            right_str = f"({self.right.key}, {self.right.val})" if self.right else 'None'
+            return f"({self.key}, {self.val}), L:{left_str}, R:{right_str}, N={self.N}"
+
+        def __repr__(self):
+            return f"<{self.__class__.__name__}: {self.__str__()}>"
+
+    # -------------------------------------------------------------------------
+    #         Public API
+    # -------------------------------------------------------------------------
     def __init__(self, items=dict()):
         self._root = None
 
@@ -60,9 +82,6 @@ class BST():
     def is_empty(self):
         return self._size == 0
 
-    # -------------------------------------------------------------------------
-    #         Public API
-    # -------------------------------------------------------------------------
     def min(self):
         """Return the minimum key in the tree."""
         return self._min(self._root).key
@@ -171,7 +190,16 @@ class BST():
         """Return True if `k` is present in the tree, False otherwise."""
         pass
 
+    def __str__(self):
+        return str(self._root)
 
+    def __repr__(self):
+        return f"<{self.__class__.__name__}: {self.__str__()}>"
+
+
+# ----------------------------------------------------------------------------- 
+#         Test Functions
+# -----------------------------------------------------------------------------
 if __name__ == '__main__':
     import string
     import random
@@ -188,12 +216,11 @@ if __name__ == '__main__':
         except AssertionError as e:
             fails += 1
             print(f"[{test_name}]: Got: {a}, Expected: {b}")
-            raise e
+            # raise e
 
     # Test construction by list of tuples
-    data = [(c, i) for i, c in enumerate('SORTEXAMPLE')]
-    t = BST(data)
-
+    test_name = 'SORTEXAMPLE'
+    t = BST([(c, i) for i, c in enumerate('SORTEXAMPLE')])
     # Tree looks like:
     #            S
     #           / \
@@ -220,11 +247,20 @@ if __name__ == '__main__':
     should_be(t.max(), 'X')
 
     # Test construction by dict
-    random.seed(5642069)
+    test_name = 'Alphabet'
+    random.seed(4206956)
     data = [(c, i) for i, c in enumerate(string.ascii_uppercase)]
     random.shuffle(data)
-    data = dict(data)
-    t1 = BST(data)
+
+    td = BST(dict(data))
+    should_be(td.min(), 'A')
+    should_be(td.max(), 'Z')
+
+    # Summary
+    if fails > 0:
+        print(f"{fails}/{tests} tests failed")
+    else:
+        print(f"All {tests} tests passed!")
 
 # =============================================================================
 # =============================================================================
