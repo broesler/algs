@@ -29,8 +29,6 @@ class BST():
     is_empty : bool
         True if `size == 0`.
 
-    .. note: `get` and `set` are achieved via python builtins
-
     Example
     -------
     >>> t = BST()
@@ -112,7 +110,7 @@ class BST():
         """Return True if `k` is present in the tree, False otherwise."""
         return self.__getitem__(k) is not None
 
-    # TODO make `dict_keys`-like class to have pretty-printing?
+    # TODO make `dict_keys`-like class to create view of keys?
     def __iter__(self):
         yield from self.keys()
 
@@ -176,13 +174,36 @@ class BST():
         Returns
         -------
         q : iterator
-            iterator over the keys between `lo` and `hi`, inclusive.
+            iterator over the *keys* between `lo` and `hi`, inclusive.
         """
         if lo is None:
             lo = self.min()
         if hi is None:
             hi = self.max()
         q = self._keys(lo, hi, x=self._root)
+        return iter(q)
+
+    def values(self, lo=None, hi=None):
+        """Return an in-order iterator over the values between the keys `lo`
+        and `hi`, inclusive. Guaranteed to be the same order as `BST.keys()`.
+
+        Parameters
+        ----------
+        lo : key
+            Minimum key over which to search, inclusive.
+        hi : key
+            Maximum key over which to search, inclusive.
+
+        Returns
+        -------
+        q : iterator
+            iterator over the *values* between `lo` and `hi`, inclusive.
+        """
+        if lo is None:
+            lo = self.min()
+        if hi is None:
+            hi = self.max()
+        q = self._keys(lo, hi, x=self._root, return_keys=False)
         return iter(q)
 
     # -------------------------------------------------------------------------
@@ -343,19 +364,35 @@ class BST():
         x.N = self._size(x.left) + self._size(x.right) + 1
         return x
 
-    def _keys(self, lo, hi, x=None, q=None):
+    def _keys(self, lo, hi, x=None, q=None, return_keys=True):
         """Recursively add keys to the given queue."""
+        # Defaults
         if x is None:
             return
         if q is None:
             q = Queue()
+        # Enqueue by key order
         if lo < x.key:
-            self._keys(lo, hi, x.left, q)
+            self._keys(lo, hi, x.left, q, return_keys)
         if lo <= x.key and hi >= x.key:
-            q.enqueue(x.key)
+            q.enqueue(x.key if return_keys else x.val)
         if hi > x.key:
-            self._keys(lo, hi, x.right, q)
+            self._keys(lo, hi, x.right, q, return_keys)
         return q
+
+    def _level_order(self):
+        """Return an iterator over the keys in level-order (breadth-first)."""
+        keys = Queue()
+        q = Queue()
+        q.enqueue(self._root)
+        while q:
+            x = q.dequeue()
+            if x is None:
+                continue
+            keys.enqueue(x.key)
+            q.enqueue(x.left)
+            q.enqueue(x.right)
+        return iter(keys)
 
 
 # -----------------------------------------------------------------------------
@@ -457,6 +494,9 @@ if __name__ == '__main__':
     should_be(list(t.keys(lo='P')), list('PRSTX'))
     should_be(list(t.keys('F', 'Q')), list('LMOP'))  # subset of keys
     should_be(list(t.keys(hi='P')), list('AELMOP'))
+
+    # Level-order traversal
+    should_be(list(t._level_order()), list('SOTERXAMPL'))
 
     # Delete arbitrary key
     v = t['E']
