@@ -561,7 +561,6 @@ if __name__ == '__main__':
     import string
     from random import shuffle
 
-
     def err_test(container, op, err_type=IndexError):
         """Test for raising a given error type.
 

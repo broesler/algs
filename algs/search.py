@@ -63,7 +63,7 @@ class BST():
     # -------------------------------------------------------------------------
     #         Public API
     # -------------------------------------------------------------------------
-    def __init__(self, items=dict()):
+    def __init__(self, items=None):
         self._root = None
 
         # Dictionary construction
@@ -76,11 +76,11 @@ class BST():
 
         # List of tuples construction
         try:
-            for v in items:
-                self._root = self._set(v[0], v[1], self._root)
+            for k, v in items:
+                self._root = self._set(k, v, self._root)
             return
-        except IndexError:
-            raise Exception('Input format not supported!')
+        except ValueError:
+            raise ValueError('BST expects a `dict` or `list` of tuples input.')
 
     @property
     def size(self):
@@ -418,6 +418,14 @@ if __name__ == '__main__':
             print(f"[{name}]: Got: {a}, Expected: {b}")
             raise e
 
+    # Test bad input type
+    try:
+        t = BST(list('EXAMPLE'))
+    except ValueError:
+        should_be(True, True)
+    else:
+        should_be(True, False)
+
     # Test construction by dict
     random.seed(4206956)
     alphabet = [(c, i) for i, c in enumerate(string.ascii_uppercase)]
@@ -444,8 +452,8 @@ if __name__ == '__main__':
     #   /  \    /
     #  A    M  P
     #      /
+
     #     L
-    
     should_be(len(t), len(test_set))  # test __len__
 
     for k, v in data:
@@ -456,7 +464,7 @@ if __name__ == '__main__':
             should_be(t[k], max([v for k, v in data if k == 'E']))
         else:
             should_be(t[k], v)
-    
+
     should_be(t.min(), 'A')
     should_be(t.max(), 'X')
 
