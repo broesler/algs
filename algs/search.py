@@ -71,7 +71,7 @@ class BST():
         # Dictionary construction
         try:
             for k, v in items.items():
-                self._root = self.__setitem__(k, v, self._root)
+                self._root = self._set(k, v, self._root)
             return
         except AttributeError:
             pass
@@ -79,7 +79,7 @@ class BST():
         # List of tuples construction
         try:
             for v in items:
-                self._root = self.__setitem__(v[0], v[1], self._root)
+                self._root = self._set(v[0], v[1], self._root)
             return
         except IndexError:
             raise Exception('Input format not supported!')
@@ -94,64 +94,15 @@ class BST():
 
     def __len__(self):
         return self.size
+    
+    def __getitem__(self, k):
+        """Return the value associated with the given `k`."""
+        return self._get(k, self._root)
 
-    def __getitem__(self, k, x=1):
-        """Return the value associated with the given `k`.
-
-        Parameters
-        ----------
-        k : key
-            key for which to search
-        x : _Node, optional
-            root of the subtree at which to begin search
-        """
-        # Set a default sentinel to save us a separate function definition
-        if x == 1:
-            x = self._root
-
-        # got to the bottom of the tree, key not found
-        if x is None:
-            return
-
-        if k < x.key:
-            return self.__getitem__(k, x.left)
-        elif k > x.key:
-            return self.__getitem__(k, x.right)
-        else:  # k == root.key!
-            return x.val
-
-    def __setitem__(self, k, v, x=1):
+    def __setitem__(self, k, v):
         """Add a new node to subtree at `x`, associating `k` with `v`.
-        If `k` is in subtree rooted at `x`, change its value to `v`.
-
-        Parameters
-        ----------
-        k : key
-            key for which to search
-        v : value
-            object to be associated with key `k`
-        x : _Node, optional
-            root of the subtree at which to begin search
-        """
-        # Set a default sentinel to save us a separate function definition
-        if x == 1:
-            x = self._root
-
-        # subtree is empty, create a new node
-        if x is None:
-            return self._Node(k, v)
-
-        # create a child, or update the value
-        if k < x.key:
-            x.left = self.__setitem__(k, v, x.left)
-        elif k > x.key:
-            x.right = self.__setitem__(k, v, x.right)
-        else:  # k == x.key
-            x.val = v  # update the value
-
-        # Update the size of the subtree located at the given root
-        x.N = self._size(x.left) + self._size(x.right) + 1
-        return x
+        If `k` is in subtree rooted at `x`, change its value to `v`."""
+        return self._set(k, v, self._root)
 
     def __delitem__(self, k):
         """Delete the node associated with `k`."""
@@ -228,6 +179,56 @@ class BST():
             return 0
         else:
             return x.N
+
+    def _get(self, k, x=None):
+        """Return the value associated with the given `k`.
+
+        Parameters
+        ----------
+        k : key
+            key for which to search
+        x : _Node, optional
+            root of the subtree at which to begin search
+        """
+        # got to the bottom of the tree, key not found
+        if x is None:
+            return
+
+        if k < x.key:
+            return self._get(k, x.left)
+        elif k > x.key:
+            return self._get(k, x.right)
+        else:  # k == root.key!
+            return x.val
+
+    def _set(self, k, v, x=None):
+        """Add a new node to subtree at `x`, associating `k` with `v`.
+        If `k` is in subtree rooted at `x`, change its value to `v`.
+
+        Parameters
+        ----------
+        k : key
+            key for which to search
+        v : value
+            object to be associated with key `k`
+        x : _Node, optional
+            root of the subtree at which to begin search
+        """
+        # subtree is empty, create a new node
+        if x is None:
+            return self._Node(k, v)
+
+        # create a child, or update the value
+        if k < x.key:
+            x.left = self._set(k, v, x.left)
+        elif k > x.key:
+            x.right = self._set(k, v, x.right)
+        else:  # k == x.key
+            x.val = v  # update the value
+
+        # Update the size of the subtree located at the given root
+        x.N = self._size(x.left) + self._size(x.right) + 1
+        return x
 
     def _min(self, x=None):
         """Return the minimum key in the subtree rooted at `x`."""
@@ -307,7 +308,7 @@ class BST():
         if x is None:
             return
         # Update links and node counts as we go vs.:
-        #   t = self.__getitem__(k, self._root)
+        #   t = self._get(k, self._root)
         if k < x.key:
             x.left = self._delete(k, x.left)
         elif k > x.key:
