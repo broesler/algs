@@ -150,9 +150,9 @@ class BST():
         """Return the number of keys less than `k`."""
         return self._rank(k, self._root)
 
-    def select(self, k):
-        """Return the key of rank `k`."""
-        return self._select(k, self._root).key
+    def select(self, r):
+        """Return the key of rank `r`."""
+        return self._select(r, self._root).key
 
     def delete_min(self):
         """Delete the smallest key."""
@@ -275,17 +275,17 @@ class BST():
         t = self._ceil(k, x.left)          # ceil might be in left subtree
         return t if t else x
 
-    def _select(self, k, x=None):
-        """Return the Node that has rank `k` in the subtree rooted at `x`.
+    def _select(self, r, x=None):
+        """Return the Node that has rank `r` in the subtree rooted at `x`.
 
         .. note:: `select` is the inverse of `rank`."""
         if x is None:
-            raise KeyError(k)
+            raise KeyError(r)
         t = self._size(x.left)
-        if t > k:
-            return self._select(k, x.left)
-        elif t < k:
-            return self._select(k-t-1, x.right)
+        if t > r:
+            return self._select(r, x.left)
+        elif t < r:
+            return self._select(r-t-1, x.right)
         else:
             return x
 
@@ -307,6 +307,7 @@ class BST():
         if x.left is None:
             return x.right
         x.left = self._delete_min(x.left)
+        # Update the size of the subtree located at the given root
         x.N = self._size(x.left) + self._size(x.right) + 1
         return x
 
@@ -315,6 +316,7 @@ class BST():
         if x.right is None:
             return x.left
         x.right = self._delete_max(x.right)
+        # Update the size of the subtree located at the given root
         x.N = self._size(x.left) + self._size(x.right) + 1
         return x
 
@@ -337,6 +339,7 @@ class BST():
             x = self._min(t.right)
             x.right = self._delete_min(t.right)
             x.left = t.left
+        # Update the size of the subtree located at the given root
         x.N = self._size(x.left) + self._size(x.right) + 1
         return x
 
