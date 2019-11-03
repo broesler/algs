@@ -1,4 +1,5 @@
 from .basics import *
+from .search import *
 from .graph import *
 from .sort import *
 
