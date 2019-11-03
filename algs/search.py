@@ -25,13 +25,18 @@ class BST():
         True if `size == 0`.
 
     .. note: `get` and `set` are achieved via python builtins
+
+    Example
+    -------
     >>> t = BST()
     >>> t['A'] = 0
     >>> t['B'] = 1
     >>> t['C'] = 2
     >>> t['A'] = 10
-    >>> t.min() == 'A'
-    True
+    >>> t.min()
+    'A'
+    >>> t['A']
+    10
     """
     # Private Node class
     class _Node():
@@ -232,6 +237,7 @@ if __name__ == '__main__':
     #      /
     #     L
     #
+    # TODO rewrite using loop and t[k] == v!
     should_be((t._root.key, t._root.val),                                            ( 'S',  0))
     should_be((t._root.left.key, t._root.left.val),                                  ( 'O',  1))
     should_be((t._root.left.right.key, t._root.left.right.val),                      ( 'R',  2))
