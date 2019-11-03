@@ -9,6 +9,10 @@
 """
 # =============================================================================
 
+from algs.basics import Queue
+
+__all__ = ['BST']
+
 
 class BST():
     """Implements a binary search tree data structure.
@@ -107,7 +111,7 @@ class BST():
 
         # got to the bottom of the tree, key not found
         if x is None:
-            return None
+            return
 
         if k < x.key:
             return self.__getitem__(k, x.left)
@@ -151,11 +155,14 @@ class BST():
 
     def __delitem__(self, k):
         """Delete the node associated with `k`."""
-        pass
+        self._root = self._delete(k, self._root)
 
     def __contains__(self, k):
         """Return True if `k` is present in the tree, False otherwise."""
         return self.__getitem__(k) is not None
+
+    def __iter__(self):
+        yield from self.keys()
 
     def __str__(self):
         return str(self._root)
@@ -203,6 +210,15 @@ class BST():
         """Delete the largest key."""
         self._root = self._delete_max(self._root)
 
+    def keys(self, lo=None, hi=None):
+        """Return an in-order iterator over the keys."""
+        if lo is None:
+            lo = self.min()
+        if hi is None:
+            hi = self.max()
+        q = self._keys(lo, hi, x=self._root)
+        return iter(q)
+
     # -------------------------------------------------------------------------
     #         Private API
     # -------------------------------------------------------------------------
@@ -223,7 +239,7 @@ class BST():
     def _floor(self, k, x=None):
         """Return the Node with key that is the floor of `k`."""
         if x is None:
-            return None
+            return
         if k == x.key:
             return x                       # floor may be exactly k
         if k < x.key:
@@ -235,7 +251,7 @@ class BST():
         """Return the Node with key that is the ceiling of `k`."""
         # Note: _ceil is just _floor, interchange < <-> >, left <-> right
         if x is None:
-            return None
+            return
         if k == x.key:
             return x                       # ceil may be exactly k
         if k > x.key:
@@ -248,7 +264,7 @@ class BST():
 
         .. note:: `select` is the inverse of `rank`."""
         if x is None:
-            return None
+            return
         t = self._size(x.left)
         if t > k:
             return self._select(k, x.left)
@@ -285,6 +301,42 @@ class BST():
         x.right = self._delete_max(x.right)
         x.N = self._size(x.left) + self._size(x.right) + 1
         return x
+
+    def _delete(self, k, x=None):
+        """Delete the node associated with `k` using eager Hibbard deletion."""
+        if x is None:
+            return
+        # Update links and node counts as we go vs.:
+        #   t = self.__getitem__(k, self._root)
+        if k < x.key:
+            x.left = self._delete(k, x.left)
+        elif k > x.key:
+            x.right = self._delete(k, x.right)
+        else:
+            if x.left is None:
+                return x.right
+            if x.right is None:
+                return x.left
+            t = x  # save pointer to Node to be deleted
+            x = self._min(t.right)
+            x.right = self._delete_min(t.right)
+            x.left = t.left
+        x.N = self._size(x.left) + self._size(x.right) + 1
+        return x
+
+    def _keys(self, lo, hi, x=None, q=None):
+        """Recursively add keys to the given queue."""
+        if x is None:
+            return
+        if q is None:
+            q = Queue()
+        if lo < x.key:
+            self._keys(lo, hi, x.left, q)
+        if lo <= x.key and hi >= x.key:
+            q.enqueue(x.key)
+        if hi > x.key:
+            self._keys(lo, hi, x.right, q)
+        return q
 
 
 # -----------------------------------------------------------------------------
@@ -324,6 +376,7 @@ if __name__ == '__main__':
 
     # Test construction by list of tuples
     test_str = 'SORTEXAMPLE'
+    test_set = set(test_str)
     data = [(c, i) for i, c in enumerate(test_str)]
     t = BST(data)
 
@@ -338,7 +391,7 @@ if __name__ == '__main__':
     #      /
     #     L
     
-    should_be(len(t), len(set(test_str)))  # test __len__
+    should_be(len(t), len(test_set))  # test __len__
 
     for k, v in data:
         should_be(k in t, True)  # test __contains__
@@ -359,14 +412,14 @@ if __name__ == '__main__':
     should_be(t.floor(chr(ord('A') - 1)), None)  # char < t.min()
     should_be(t.ceil('Z'), None)                 # char > t.max()
 
-    for i, c in enumerate(sorted(set(test_str))):
+    for i, c in enumerate(sorted(test_set)):
         should_be(t.select(i), c)
         should_be(t.rank(c), i)
 
     t.delete_min()  # remove 'A'
     should_be(t.min(), 'E')
     # Test updated ranks
-    for i, c in enumerate(sorted(set(test_str) - set('A'))):
+    for i, c in enumerate(sorted(test_set - set('A'))):
         should_be(t.select(i), c)
         should_be(t.rank(c), i)
 
@@ -374,11 +427,14 @@ if __name__ == '__main__':
     t.delete_max()
     should_be(t.max(), 'T')
     # Test updated ranks
-    for i, c in enumerate(sorted(set(test_str) - set('X'))):
+    for i, c in enumerate(sorted(test_set - set('X'))):
         should_be(t.select(i), c)
         should_be(t.rank(c), i)
 
     t['X'] = 9  # replace value
+
+    should_be(list(t.keys()), sorted(test_set))
+
 
     # Summary
     if fails > 0:
