@@ -69,8 +69,8 @@ class Stack():
     def __iter__(self):
         yield from (self._items[::-1])
 
-    def __bool__(self):
-        return bool(self.size)
+    def __len__(self):
+        return self.size
 
     def __eq__(self, other):
         return _equals(self, other)
@@ -128,8 +128,9 @@ class Queue():
     def __eq__(self, other):
         return _equals(self, other)
 
-    def __bool__(self):
-        return bool(self.size)
+    def __len__(self):
+        return self.size
+
 
     def __repr__(self):
         return '<{}: {}>'.format(self.__class__.__name__, self.__str__())
@@ -269,9 +270,6 @@ class PriorityQueue():
 
     def __len__(self):
         return self.size
-
-    def __bool__(self):
-        return bool(self.size)
 
     def __eq__(self, other):
         return _equals(self, other)
@@ -498,8 +496,8 @@ class IndexPQ(_MutableMapping):
     #-------------------------------------------------------------------------- 
     #        Python object methods
     #--------------------------------------------------------------------------
-    def __bool__(self):
-        return bool(self.size)
+    def __len__(self):
+        return self.size
 
     def __eq__(self, other):
         return _equals(self, other)
