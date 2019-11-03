@@ -112,6 +112,7 @@ class BST():
         """Return True if `k` is present in the tree, False otherwise."""
         return self.__getitem__(k) is not None
 
+    # TODO make `dict_keys`-like class to have pretty-printing?
     def __iter__(self):
         yield from self.keys()
 
@@ -162,7 +163,21 @@ class BST():
         self._root = self._delete_max(self._root)
 
     def keys(self, lo=None, hi=None):
-        """Return an in-order iterator over the keys."""
+        """Return an in-order iterator over the keys between `lo` and `hi`,
+        inclusive.
+
+        Parameters
+        ----------
+        lo : key
+            Minimum key over which to search, inclusive.
+        hi : key
+            Maximum key over which to search, inclusive.
+
+        Returns
+        -------
+        q : iterator
+            iterator over the keys between `lo` and `hi`, inclusive.
+        """
         if lo is None:
             lo = self.min()
         if hi is None:
@@ -192,7 +207,7 @@ class BST():
         """
         # got to the bottom of the tree, key not found
         if x is None:
-            return
+            raise KeyError(k)
 
         if k < x.key:
             return self._get(k, x.left)
@@ -265,7 +280,7 @@ class BST():
 
         .. note:: `select` is the inverse of `rank`."""
         if x is None:
-            return
+            raise KeyError(k)
         t = self._size(x.left)
         if t > k:
             return self._select(k, x.left)
@@ -279,7 +294,7 @@ class BST():
 
         .. note:: `rank` is the inverse of `select`."""
         if x is None:
-            return 0
+            raise KeyError(k)
         if k < x.key:
             return self._rank(k, x.left)
         elif k > x.key:
@@ -348,8 +363,7 @@ if __name__ == '__main__':
     import string
     import random
 
-    tests = 0
-    fails = 0
+    tests = fails = 0
 
     def should_be(a, b, name=None, verbose=False):
         """Test a condition."""
@@ -417,25 +431,47 @@ if __name__ == '__main__':
         should_be(t.select(i), c)
         should_be(t.rank(c), i)
 
+    k, v = t.min(), t[t.min()]
     t.delete_min()  # remove 'A'
     should_be(t.min(), 'E')
     # Test updated ranks
     for i, c in enumerate(sorted(test_set - set('A'))):
         should_be(t.select(i), c)
         should_be(t.rank(c), i)
+    t[k] = v  # replace value
 
-    t['A'] = 0  # replace value
-    t.delete_max()
+    k, v = t.max(), t[t.max()]
+    t.delete_max()  # remove 'X'
     should_be(t.max(), 'T')
     # Test updated ranks
     for i, c in enumerate(sorted(test_set - set('X'))):
         should_be(t.select(i), c)
         should_be(t.rank(c), i)
+    t[k] = v  # replace value
 
-    t['X'] = 9  # replace value
-
+    # In-order traversal
     should_be(list(t.keys()), sorted(test_set))
+    should_be(list(t.keys(lo='P')), list('PRSTX'))
+    should_be(list(t.keys('F', 'Q')), list('LMOP'))  # subset of keys
+    should_be(list(t.keys(hi='P')), list('AELMOP'))
 
+    # Delete arbitrary key
+    v = t['E']
+    del t['E']
+    should_be(len(t), len(test_set)-1)
+    try:
+        t['E']
+    except KeyError:
+        should_be(True, True)   # pass if we get a KeyError as expected
+    else:
+        should_be(True, False)  # fail if we didn't actually delete the key!
+    t['E'] = v
+
+    # delete the root
+    v = t['S']
+    del t['S']
+    should_be(t._root.key, 'T')
+    t['S'] = v
 
     # Summary
     if fails > 0:
