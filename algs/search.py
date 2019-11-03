@@ -87,6 +87,31 @@ class BST():
     def is_empty(self):
         return self._size == 0
 
+    # -------------------------------------------------------------------------
+    #         Built-in Methods
+    # -------------------------------------------------------------------------
+    def __len__(self):
+        return self.size
+
+    def __getitem__(self, k):
+        """Return the value associated with the given `k`."""
+        return self._get(k, self._root)
+
+    def __setitem__(self, k, v):
+        """Insert a new `k`-`v` pair into the tree."""
+        self._root = self._put(k, v, self._root)
+
+    def __delitem__(self, k):
+        """Delete the node associated with `k`."""
+        pass
+
+    def __contains__(self, k):
+        """Return True if `k` is present in the tree, False otherwise."""
+        return self.__getitem__(k) is not None
+
+    # ------------------------------------------------------------------------- 
+    #         Public API
+    # -------------------------------------------------------------------------
     def min(self):
         """Return the minimum key in the tree."""
         return self._min(self._root).key
@@ -175,26 +200,8 @@ class BST():
 
     def _max(self, x=None):
         return x if x.right is None else self._max(x.right)
-    
-    # -------------------------------------------------------------------------
-    #         Object Methods
-    # -------------------------------------------------------------------------
-    def __getitem__(self, k):
-        """Return the value associated with the given `k`."""
-        return self._get(k, self._root)
 
-    def __setitem__(self, k, v):
-        """Insert a new `k`-`v` pair into the tree."""
-        self._root = self._put(k, v, self._root)
-
-    def __delitem__(self, k):
-        """Delete the node associated with `k`."""
-        pass
-
-    def __contains__(self, k):
-        """Return True if `k` is present in the tree, False otherwise."""
-        pass
-
+    # Built-ins
     def __str__(self):
         return str(self._root)
 
@@ -225,7 +232,8 @@ if __name__ == '__main__':
 
     # Test construction by list of tuples
     test_name = 'SORTEXAMPLE'
-    t = BST([(c, i) for i, c in enumerate('SORTEXAMPLE')])
+    data = [(c, i) for i, c in enumerate('SORTEXAMPLE')]
+    t = BST(data)
     # Tree looks like:
     #            S
     #           / \
@@ -237,17 +245,11 @@ if __name__ == '__main__':
     #      /
     #     L
     #
-    # TODO rewrite using loop and t[k] == v!
-    should_be((t._root.key, t._root.val),                                            ( 'S',  0))
-    should_be((t._root.left.key, t._root.left.val),                                  ( 'O',  1))
-    should_be((t._root.left.right.key, t._root.left.right.val),                      ( 'R',  2))
-    should_be((t._root.right.key, t._root.right.val),                                ( 'T',  3))
-    should_be((t._root.left.left.key, t._root.left.left.val),                        ( 'E', 10))  # 'E' is updated at end
-    should_be((t._root.right.right.key, t._root.right.right.val),                    ( 'X',  5))
-    should_be((t._root.left.left.left.key, t._root.left.left.left.val),              ( 'A',  6))
-    should_be((t._root.left.left.right.key, t._root.left.left.right.val),            ( 'M',  7))
-    should_be((t._root.left.right.left.key, t._root.left.right.left.val),            ( 'P',  8))
-    should_be((t._root.left.left.right.left.key, t._root.left.left.right.left.val),  ( 'L',  9))
+    for k, v in data:
+        if k == 'E':
+            should_be(t[k], max([v for k, v in data if k == 'E']))
+        else:
+            should_be(t[k], v)
 
     should_be(t.min(), 'A')
     should_be(t.max(), 'X')
@@ -259,6 +261,8 @@ if __name__ == '__main__':
     random.shuffle(data)
 
     td = BST(dict(data))
+    for k, v in data:
+        should_be(td[k], v)
     should_be(td.min(), 'A')
     should_be(td.max(), 'Z')
 
