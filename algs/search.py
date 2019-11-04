@@ -11,7 +11,7 @@
 
 from algs.basics import Queue
 
-__all__ = ['BST']
+__all__ = ['SequentialSearchST', 'BinarySearchST', 'BST']
 
 class SequentialSearchST():
     """Implements an unordered symbol table with a linked list.
@@ -47,6 +47,9 @@ class SequentialSearchST():
     # ------------------------------------------------------------------------- 
     #         Public API
     # -------------------------------------------------------------------------
+    def __len__(self):
+        return self.size
+
     def __setitem__(self, k, v):
         """Insert a new value `v` associated with key `k`.
         If `k` is in the table, change its value to `v`."""
@@ -78,11 +81,26 @@ class SequentialSearchST():
 
     def keys(self):
         """Return an iterator of all of the keys in the table."""
-        return iter([k for k, v in self._items])
+        return [k for k, v in self._items]
+
+    def values(self):
+        """Return an iterator of all of the values in the table."""
+        return [v for k, v in self._items]
+
+    def items(self):
+        """Return an iterator of all of the items in the table."""
+        return self._items
 
     def __iter__(self):
         """Return an iterator of all of the keys in the table."""
         yield from self.keys()
+
+    def __str__(self):
+        return str(dict(self._items))
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__}: {self.__str__()}>"
+
 
 
 class BinarySearchST():
@@ -101,60 +119,180 @@ class BinarySearchST():
         True if `size == 0`.
     """
     def __init__(self, items=list()):
-        self._items = list()
+        self._keys = list()
+        self._vals = list()
         try:
             for k, v in items:
                 self.__setitem__(k, v)
         except ValueError:
             raise ValueError(f"{self.__class__.__name__} expects a `list` of tuples input.")
 
+    # ------------------------------------------------------------------------- 
+    #         Public API
+    # -------------------------------------------------------------------------
     @property
     def size(self):
-        return len(self._items)
+        return len(self._keys)
 
     @property
     def is_empty(self):
         return self.size == 0
 
-    # ------------------------------------------------------------------------- 
-    #         Public API
-    # -------------------------------------------------------------------------
+    def __len__(self):
+        return self.size
+
     def __setitem__(self, k, v):
         """Insert a new value `v` associated with key `k`.
         If `k` is in the table, change its value to `v`."""
-        self.__delitem__(k)
-        self._items.append((k, v))
+        i = self.rank(k)
+        # if key is in the table, update the value
+        if i < self.size and self._keys[i] == k:
+            self._vals[i] = v
+            return
+        else:
+            self._keys.insert(i, k)  # O(n) to shuffle list elements
+            self._vals.insert(i, v)
 
     def __getitem__(self, k):
         """Return the value associated with the given `k`."""
-        for key, val in self._items:
-            if k == key:
-                return val
+        i = self.rank(k)
+        if i < self.size and self._keys[i] == k:
+            return self._vals[i]
         else:
             raise KeyError(k)
 
     def __contains__(self, k):
         """Return True if `k` is present in the table, False otherwise."""
-        for key, val in self._items:
-            if k == key:
-                return True
-        else:
-            return False
+        return k in self._keys
 
     def __delitem__(self, k):
         """Delete the item associated with `k`."""
-        for i, (key, val) in enumerate(self._items):
-            if k == key:
-                del self._items[i]
-                break
+        i = self.rank(k)
+        if i < self.size and self._keys[i] == k:
+            del self._keys[i]
+            del self._vals[i]
+        else:
+            raise KeyError(k)
 
-    def keys(self):
-        """Return an iterator of all of the keys in the table."""
-        return iter([k for k, v in self._items])
+    def min(self):
+        """Return the minimum key in the table."""
+        return self._keys[0]
+
+    def max(self):
+        """Return the maximum key in the table."""
+        return self._keys[-1]
+
+    def floor(self, k):
+        """Return the largest key less than or equal to `k`."""
+        i = self.rank(k)
+        if i < self.size and  self._keys[i] == k:
+            return self._keys[i]
+        elif i > 0:
+            return self._keys[i-1]
+        else:
+            return None
+
+    def ceil(self, k):
+        """Return the smallest key greater than or equal to `k`."""
+        i = self.rank(k)
+        if i < self.size:
+            return self._keys[i]
+        else:
+            return None
+
+    def delete_min(self):
+        """Delete the smallest key."""
+        del self._keys[0]
+        del self._vals[0]
+
+    def delete_max(self):
+        """Delete the largest key."""
+        del self._keys[-1]
+        del self._vals[-1]
+
+    def select(self, r):
+        """Return the key of rank `r`."""
+        return self._keys[r]
+
+    def rank(self, k):
+        """Return the number of keys less than `k`."""
+        lo, hi = 0, self.size - 1
+        while lo <= hi:
+            mid = (hi + lo) // 2
+            if k < self._keys[mid]:
+                hi = mid - 1
+            elif k > self._keys[mid]:
+                lo = mid + 1
+            else:
+                return mid
+        return lo
+
+    def __str__(self):
+        return str(dict(zip(self._keys, self._vals)))
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__}: {self.__str__()}>"
+
+    # ------------------------------------------------------------------------- 
+    #         Iterator functions
+    # -------------------------------------------------------------------------
+    docstring = """Return an in-order iterator over the {rtype} between the keys `lo`
+    and `hi`, inclusive. Guaranteed to be the same order as `BST.keys()`.
+
+    Parameters
+    ----------
+    lo : key
+        Minimum key over which to search, inclusive.
+    hi : key
+        Maximum key over which to search, inclusive.
+
+    Returns
+    -------
+    q : iterator
+        iterator over the {rtype} between `lo` and `hi`, inclusive.
+    """
+
+    def keys(self, lo=None, hi=None):
+        func = self._make_inorder_iterator(rtype='keys')
+        return func(self, lo, hi)
+    keys.__doc__ = docstring.format(rtype='keys')
+
+    def values(self, lo=None, hi=None):
+        func = self._make_inorder_iterator(rtype='values')
+        return func(self, lo, hi)
+    values.__doc__ = docstring.format(rtype='values')
+
+    def items(self, lo=None, hi=None):
+        func = self._make_inorder_iterator(rtype='items')
+        return func(self, lo, hi)
+    items.__doc__ = docstring.format(rtype='items')
 
     def __iter__(self):
         """Return an iterator of all of the keys in the table."""
-        yield from self.keys()
+        yield from self._keys
+
+    # ------------------------------------------------------------------------- 
+    #         Private API
+    # -------------------------------------------------------------------------
+    def _make_inorder_iterator(self, rtype):
+        """Return an iterator over all of the items in the table."""
+        def iterator(self, lo=None, hi=None):
+            if lo is None:
+                lo = self.min()
+            if hi is None:
+                hi = self.max()
+            q = Queue()
+            for k in self._keys:
+                if lo <= k and k <= hi:
+                    if rtype == 'keys':
+                        item = k
+                    elif rtype == 'values':
+                        item = self.__getitem__(k)
+                    else:
+                        item = (k,  self.__getitem__(k))
+                    q.enqueue(item)
+            return list(q)
+        return iterator
 
 
 
@@ -294,6 +432,9 @@ class BST():
         """Delete the largest key."""
         self._root = self._delete_max(self._root)
 
+    # ------------------------------------------------------------------------- 
+    #         Iterator functions
+    # -------------------------------------------------------------------------
     docstring = """Return an in-order iterator over the {rtype} between the keys `lo`
     and `hi`, inclusive. Guaranteed to be the same order as `BST.keys()`.
 
@@ -494,7 +635,7 @@ class BST():
             if hi is None:
                 hi = self.max()
             q = self._iterate(lo, hi, x=self._root, rtype=rtype)
-            return iter(q)
+            return q
         return iterator
 
     def _iterate(self, lo, hi, x=None, q=None, rtype='keys'):
@@ -511,7 +652,7 @@ class BST():
             q.enqueue(x.key if rtype == 'keys' else (x.val if rtype == 'values' else (x.key, x.val)))
         if hi > x.key:
             self._iterate(lo, hi, x.right, q, rtype)
-        return q
+        return list(q)
 
     def _level_order(self):
         """Return an iterator over the keys in level-order (breadth-first)."""
@@ -525,7 +666,7 @@ class BST():
             keys.enqueue(x.key)
             q.enqueue(x.left)
             q.enqueue(x.right)
-        return iter(keys)
+        return list(keys)
 
 
 # -----------------------------------------------------------------------------
@@ -571,107 +712,111 @@ if __name__ == '__main__':
     del t['A']
     should_be(sorted(t.keys()), sorted(test_set - set('A')))
 
-    # #---------- Test BST ----------
-    # # Test bad input type
-    # try:
-    #     t = BST(list('EXAMPLE'))
-    # except ValueError:
-    #     should_be(True, True)
-    # else:
-    #     should_be(True, False)
-    #
-    # # Test construction by list of tuples
-    # t = BST(data)
-    #
-    # # Tree looks like:
-    # #            S
-    # #           / \
-    # #         O    T
-    # #      /    \   \
-    # #     E      R   X
-    # #   /  \    /
-    # #  A    M  P
-    # #      /
-    # #     L
-    #
-    # should_be(len(t), len(test_set))  # test __len__
-    #
-    # for k, v in data:
-    #     should_be(k in t, True)  # test __contains__
-    #
-    #     # test __get__
-    #     if k == 'E' or k == 'A':
-    #         should_be(t[k], max([v for key, v in data if key == k]))
-    #     else:
-    #         should_be(t[k], v)
-    #
-    # should_be(t.min(), 'A')
-    # should_be(t.max(), 'X')
-    #
-    # should_be(t.floor('H'), 'H')  # key in table
-    # should_be(t.ceil('H'),  'H')
-    # should_be(t.floor('Q'), 'P')  # key not in table
-    # should_be(t.ceil('Q'),  'R')
-    # should_be(t.floor(chr(ord('A') - 1)), None)  # char < t.min()
-    # should_be(t.ceil('Z'), None)                 # char > t.max()
-    #
-    # for i, c in enumerate(sorted(test_set)):
-    #     should_be(t.select(i), c)
-    #     should_be(t.rank(c), i)
-    #
-    # # Level-order traversal
-    # should_be(list(t._level_order()), list('SEXARCHMLP'))
-    #
-    # # In-order traversal
-    # should_be(list(t.keys()), sorted(test_set))
-    # should_be(list(t.keys(lo='P')), list('PRSX'))
-    # should_be(list(t.keys('F', 'Q')), list('HLMP'))  # subset of keys
-    # should_be(list(t.keys(hi='P')), list('ACEHLMP'))
-    #
-    # data_set = data.copy()
-    # data_set.remove(('E', 1))
-    # data_set.remove(('A', 2))
-    # data_set.remove(('E', 6))
-    # should_be(list(t.values()), [v for k, v in sorted(data_set)])
-    # should_be(list(t.items()), sorted(data_set))
-    #
-    # # Test deletion and reinsertion
-    # k, v = t.min(), t[t.min()]
-    # t.delete_min()  # remove 'A'
-    # should_be(t.min(), 'C')
-    # # Test updated ranks
-    # for i, c in enumerate(sorted(test_set - set('A'))):
-    #     should_be(t.select(i), c)
-    #     should_be(t.rank(c), i)
-    # t[k] = v  # replace value
-    #
-    # k, v = t.max(), t[t.max()]
-    # t.delete_max()  # remove 'X'
-    # should_be(t.max(), 'S')
-    # # Test updated ranks
-    # for i, c in enumerate(sorted(test_set - set('X'))):
-    #     should_be(t.select(i), c)
-    #     should_be(t.rank(c), i)
-    # t[k] = v  # replace value
-    #
-    #
-    # # Delete arbitrary key
-    # v = t['E']
-    # del t['E']
-    # should_be(len(t), len(test_set)-1)
-    # try:
-    #     t['E']
-    # except KeyError:
-    #     should_be(True, True)   # pass if we get a KeyError as expected
-    # else:
-    #     should_be(True, False)  # fail if we didn't actually delete the key!
-    # t['E'] = v
-    #
-    # # delete the root
-    # v = t['S']
-    # del t['S']
-    # should_be(t._root.key, 'X')
-    # t['S'] = v
+    #---------- Test Ordered STs ----------
+    for ST in [BinarySearchST, BST]:
+        # Test bad input type
+        try:
+            t = ST(list('EXAMPLE'))
+        except ValueError:
+            should_be(True, True)
+        else:
+            should_be(True, False)
+
+        # Test construction by list of tuples
+        t = ST(data)
+
+        # Binary Search Tree looks like:
+        #            S
+        #           / \
+        #         E    X
+        #      /    \   
+        #     A      R   
+        #      \    /
+        #       C  H
+        #           \
+        #            M
+        #           / \
+        #          L   P 
+
+        should_be(len(t), len(test_set))  # test __len__
+
+        for k, v in data:
+            should_be(k in t, True)  # test __contains__
+
+            # test __get__
+            if k == 'E' or k == 'A':
+                should_be(t[k], max([v for key, v in data if key == k]))
+            else:
+                should_be(t[k], v)
+
+        should_be(t.min(), 'A')
+        should_be(t.max(), 'X')
+
+        should_be(t.floor('H'), 'H')  # key in table
+        should_be(t.ceil('H'),  'H')
+        should_be(t.floor('Q'), 'P')  # key not in table
+        should_be(t.ceil('Q'),  'R')
+        should_be(t.floor(chr(ord('A') - 1)), None)  # char < t.min()
+        should_be(t.ceil('Z'), None)                 # char > t.max()
+
+        for i, c in enumerate(sorted(test_set)):
+            should_be(t.select(i), c)
+            should_be(t.rank(c), i)
+
+        # Level-order traversal (BST-specific)
+        if isinstance(ST, BST):
+            should_be(list(t._level_order()), list('SEXARCHMLP'))
+
+        # In-order traversal
+        should_be(list(t.keys()), sorted(test_set))
+        should_be(list(t.keys(lo='P')), list('PRSX'))
+        should_be(list(t.keys('F', 'Q')), list('HLMP'))  # subset of keys
+        should_be(list(t.keys(hi='P')), list('ACEHLMP'))
+
+        data_set = data.copy()
+        data_set.remove(('E', 1))
+        data_set.remove(('A', 2))
+        data_set.remove(('E', 6))
+        should_be(list(t.values()), [v for k, v in sorted(data_set)])
+        should_be(list(t.items()), sorted(data_set))
+
+        # Test deletion and reinsertion
+        k, v = t.min(), t[t.min()]
+        t.delete_min()  # remove 'A'
+        should_be(t.min(), 'C')
+        # Test updated ranks
+        for i, c in enumerate(sorted(test_set - set('A'))):
+            should_be(t.select(i), c)
+            should_be(t.rank(c), i)
+        t[k] = v  # replace value
+
+        k, v = t.max(), t[t.max()]
+        t.delete_max()  # remove 'X'
+        should_be(t.max(), 'S')
+        # Test updated ranks
+        for i, c in enumerate(sorted(test_set - set('X'))):
+            should_be(t.select(i), c)
+            should_be(t.rank(c), i)
+        t[k] = v  # replace value
+
+        # Delete arbitrary key
+        v = t['E']
+        del t['E']
+        should_be(len(t), len(test_set)-1)
+        try:
+            t['E']
+        except KeyError:
+            should_be(True, True)   # pass if we get a KeyError as expected
+        else:
+            should_be(True, False)  # fail if we didn't actually delete the key!
+        t['E'] = v
+
+        if isinstance(ST, BST):
+            # delete the root
+            v = t['S']
+            del t['S']
+            should_be(t._root.key, 'X')
+            t['S'] = v
 
     # Summary
     if fails > 0:
