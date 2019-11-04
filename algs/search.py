@@ -9,6 +9,8 @@
 """
 # =============================================================================
 
+from collections import namedtuple as _namedtuple
+
 from algs.basics import Queue
 
 __all__ = ['SequentialSearchST', 'BinarySearchST', 'BST']
@@ -27,7 +29,14 @@ class SequentialSearchST():
         Number of items in the table.
     is_empty : bool
         True if `size == 0`.
+
+    .. note:: SequentialSearchST lacks methods like `min`/`max`,
+        `floor`/`ceil`, etc. that the ordered symbol tables (BinarySearchST,
+        BST, etc.) can efficiently implement.
     """
+    # Private class of key/value pairs
+    _Item = _namedtuple('_Item', ['key', 'value'])
+
     def __init__(self, items=list()):
         self._items = list()
         try:
@@ -54,38 +63,43 @@ class SequentialSearchST():
         """Insert a new value `v` associated with key `k`.
         If `k` is in the table, change its value to `v`."""
         self.__delitem__(k)
-        self._items.append((k, v))
+        self._items.append(self._Item(k, v))
 
     def __getitem__(self, k):
         """Return the value associated with the given `k`."""
-        for key, val in self._items:
-            if k == key:
-                return val
+        for item in self._items:
+            if k == item.key:
+                return item.value
         else:
             raise KeyError(k)
 
     def __contains__(self, k):
         """Return True if `k` is present in the table, False otherwise."""
-        for key, val in self._items:
-            if k == key:
-                return True
-        else:
-            return False
+        k in self.keys()
 
     def __delitem__(self, k):
         """Delete the item associated with `k`."""
-        for i, (key, val) in enumerate(self._items):
-            if k == key:
+        for i, item in enumerate(self._items):
+            if k == item.key:
                 del self._items[i]
                 break
 
+    def __str__(self):
+        return str(dict(self._items))
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__}: {self.__str__()}>"
+
+    # ------------------------------------------------------------------------- 
+    #         Iterator methods
+    # -------------------------------------------------------------------------
     def keys(self):
         """Return an iterator of all of the keys in the table."""
-        return [k for k, v in self._items]
+        return [item.key for item in self._items]
 
     def values(self):
         """Return an iterator of all of the values in the table."""
-        return [v for k, v in self._items]
+        return [item.value for item in self._items]
 
     def items(self):
         """Return an iterator of all of the items in the table."""
@@ -94,13 +108,6 @@ class SequentialSearchST():
     def __iter__(self):
         """Return an iterator of all of the keys in the table."""
         yield from self.keys()
-
-    def __str__(self):
-        return str(dict(self._items))
-
-    def __repr__(self):
-        return f"<{self.__class__.__name__}: {self.__str__()}>"
-
 
 
 class BinarySearchST():
@@ -693,24 +700,31 @@ if __name__ == '__main__':
     test_str = 'SEARCHEXAMPLE'
     test_set = set(test_str)
     data = [(c, i) for i, c in enumerate(test_str)]
+    data_set = data.copy()
+    data_set.remove(('E', 1))
+    data_set.remove(('A', 2))
+    data_set.remove(('E', 6))
 
-    # should_be(SequentialSearchST().is_empty, True)
-    should_be(BST().is_empty, True)
+    should_be(SequentialSearchST().is_empty, True)
 
     #---------- Test SequentialSearchST ----------
-    t = SequentialSearchST(data)
+    st = SequentialSearchST(data)
     for k, v in data:
         if k == 'E' or k == 'A':
-            should_be(t[k], max([v for key, v in data if key == k]))
+            should_be(st[k], max([v for key, v in data if key == k]))
         else:
-            should_be(t[k], v)
+            should_be(st[k], v)
 
-    # t.keys() not guaranteed in order
-    should_be(sorted(t.keys()), sorted(test_set))
-    should_be((t.keys() == sorted(test_set)), False)
+    # st.keys() not guaranteed in order, so these tests are weak
+    should_be(sorted(st.keys()), sorted(test_set))
+    should_be((st.keys() == sorted(test_set)), False)
+    should_be(sorted(st.values()), sorted([v for k, v in data_set]))
+    should_be(sorted([(x.key, x.value) for x in st.items()]), sorted(data_set))
 
-    del t['A']
-    should_be(sorted(t.keys()), sorted(test_set - set('A')))
+    v = st['A']
+    del st['A']
+    should_be(sorted(st.keys()), sorted(test_set - set('A')))
+    st['A'] = v
 
     #---------- Test Ordered STs ----------
     for ST in [BinarySearchST, BST]:
@@ -721,6 +735,8 @@ if __name__ == '__main__':
             should_be(True, True)
         else:
             should_be(True, False)
+
+        should_be(ST().is_empty, True)
 
         # Test construction by list of tuples
         t = ST(data)
@@ -773,10 +789,6 @@ if __name__ == '__main__':
         should_be(list(t.keys('F', 'Q')), list('HLMP'))  # subset of keys
         should_be(list(t.keys(hi='P')), list('ACEHLMP'))
 
-        data_set = data.copy()
-        data_set.remove(('E', 1))
-        data_set.remove(('A', 2))
-        data_set.remove(('E', 6))
         should_be(list(t.values()), [v for k, v in sorted(data_set)])
         should_be(list(t.items()), sorted(data_set))
 
