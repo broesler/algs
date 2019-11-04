@@ -92,7 +92,7 @@ class BST():
     Parameters
     ----------
     items : mapping, dict-like
-        Iterable of (key, value) pairs to be put onto the tree.
+        Iterable of (key, value) tuples to be put onto the tree.
 
     Attributes
     ----------
@@ -135,24 +135,14 @@ class BST():
     # -------------------------------------------------------------------------
     #         Public API
     # -------------------------------------------------------------------------
-    def __init__(self, items=None):
+    def __init__(self, items=list()):
         self._root = None
-
-        # Dictionary construction
-        try:
-            for k, v in items.items():
-                self._root = self._set(k, v, self._root)
-            return
-        except AttributeError:
-            pass
-
-        # List of tuples construction
         try:
             for k, v in items:
                 self._root = self._set(k, v, self._root)
             return
         except ValueError:
-            raise ValueError('BST expects a `dict` or `list` of tuples input.')
+            raise ValueError(f"{self.__class__.__name__} expects a `list` of tuples input.")
 
     @property
     def size(self):
@@ -232,9 +222,8 @@ class BST():
         """Delete the largest key."""
         self._root = self._delete_max(self._root)
 
-    def keys(self, lo=None, hi=None):
-        """Return an in-order iterator over the keys between `lo` and `hi`,
-        inclusive.
+    docstring = """Return an in-order iterator over the {rtype} between the keys `lo`
+    and `hi`, inclusive. Guaranteed to be the same order as `BST.keys()`.
 
         Parameters
         ----------
@@ -246,37 +235,23 @@ class BST():
         Returns
         -------
         q : iterator
-            iterator over the *keys* between `lo` and `hi`, inclusive.
+        iterator over the {rtype} between `lo` and `hi`, inclusive.
         """
-        if lo is None:
-            lo = self.min()
-        if hi is None:
-            hi = self.max()
-        q = self._keys(lo, hi, x=self._root)
-        return iter(q)
+
+    def keys(self, lo=None, hi=None):
+        func = self._make_inorder_iterator(rtype='keys')
+        return func(self, lo, hi)
+    keys.__doc__ = docstring.format(rtype='keys')
 
     def values(self, lo=None, hi=None):
-        """Return an in-order iterator over the values between the keys `lo`
-        and `hi`, inclusive. Guaranteed to be the same order as `BST.keys()`.
+        func = self._make_inorder_iterator(rtype='values')
+        return func(self, lo, hi)
+    values.__doc__ = docstring.format(rtype='values')
 
-        Parameters
-        ----------
-        lo : key
-            Minimum key over which to search, inclusive.
-        hi : key
-            Maximum key over which to search, inclusive.
-
-        Returns
-        -------
-        q : iterator
-            iterator over the *values* between `lo` and `hi`, inclusive.
-        """
-        if lo is None:
-            lo = self.min()
-        if hi is None:
-            hi = self.max()
-        q = self._keys(lo, hi, x=self._root, return_keys=False)
-        return iter(q)
+    def items(self, lo=None, hi=None):
+        func = self._make_inorder_iterator(rtype='items')
+        return func(self, lo, hi)
+    items.__doc__ = docstring.format(rtype='items')
 
     # -------------------------------------------------------------------------
     #         Private API
@@ -428,7 +403,9 @@ class BST():
                 return x.right
             if x.right is None:
                 return x.left
-            t = x  # save pointer to Node to be deleted
+            # save pointer to Node to be deleted
+            t = x
+            # Get the successor to the node to be deleted
             x = self._min(t.right)
             x.right = self._delete_min(t.right)
             x.left = t.left
@@ -436,8 +413,20 @@ class BST():
         x.N = self._size(x.left) + self._size(x.right) + 1
         return x
 
-    def _keys(self, lo, hi, x=None, q=None, return_keys=True):
-        """Recursively add keys to the given queue."""
+    # factory for generic in-order iteration over keys
+    def _make_inorder_iterator(self, rtype):
+        """Create an iterator over the desired type."""
+        def iterator(self, lo=None, hi=None):
+            if lo is None:
+                lo = self.min()
+            if hi is None:
+                hi = self.max()
+            q = self._iterate(lo, hi, x=self._root, rtype=rtype)
+            return iter(q)
+        return iterator
+
+    def _iterate(self, lo, hi, x=None, q=None, rtype='keys'):
+        """Recursively add items to the given queue."""
         # Defaults
         if x is None:
             return
@@ -445,11 +434,11 @@ class BST():
             q = Queue()
         # Enqueue by key order
         if lo < x.key:
-            self._keys(lo, hi, x.left, q, return_keys)
+            self._iterate(lo, hi, x.left, q, rtype)
         if lo <= x.key and hi >= x.key:
-            q.enqueue(x.key if return_keys else x.val)
+            q.enqueue(x.key if rtype == 'keys' else (x.val if rtype == 'values' else (x.key, x.val)))
         if hi > x.key:
-            self._keys(lo, hi, x.right, q, return_keys)
+            self._iterate(lo, hi, x.right, q, rtype)
         return q
 
     def _level_order(self):
@@ -472,9 +461,7 @@ class BST():
 # -----------------------------------------------------------------------------
 # TODO move to proper unit testing script
 if __name__ == '__main__':
-    import string
-    import random
-
+    # Define test counts
     tests = fails = 0
 
     def should_be(a, b, name=None, verbose=False):
@@ -490,6 +477,30 @@ if __name__ == '__main__':
             print(f"[{name}]: Got: {a}, Expected: {b}")
             raise e
 
+    test_str = 'SEARCHEXAMPLE'
+    test_set = set(test_str)
+    data = [(c, i) for i, c in enumerate(test_str)]
+
+    # should_be(SequentialSearchST().is_empty, True)
+    should_be(BST().is_empty, True)
+
+    # #---------- Test SequentialSearchST ----------
+    # t = SequentialSearchST(data)
+    # for k, v in data:
+    #     if k == 'E' or k == 'A':
+    #         should_be(t[k], max([v for key, v in data if key == k]))
+    #     else:
+    #         should_be(t[k], v)
+    #
+    # # t.keys() not guaranteed in order
+    # should_be(sorted(t.keys()), sorted(test_set))
+    # should_be((t.keys() == sorted(test_set)), False)
+    #
+    # del t['A']
+    # should_be(sorted(t.keys()), sorted(test_set - set('A')))
+    #
+
+    #---------- Test BST ----------
     # Test bad input type
     try:
         t = BST(list('EXAMPLE'))
@@ -498,21 +509,7 @@ if __name__ == '__main__':
     else:
         should_be(True, False)
 
-    # Test construction by dict
-    random.seed(4206956)
-    alphabet = [(c, i) for i, c in enumerate(string.ascii_uppercase)]
-    random.shuffle(alphabet)
-
-    td = BST(dict(alphabet))
-    for k, v in alphabet:
-        should_be(td[k], v)
-    should_be(td.min(), 'A')
-    should_be(td.max(), 'Z')
-
     # Test construction by list of tuples
-    test_str = 'SORTEXAMPLE'
-    test_set = set(test_str)
-    data = [(c, i) for i, c in enumerate(test_str)]
     t = BST(data)
 
     # Tree looks like:
@@ -524,24 +521,24 @@ if __name__ == '__main__':
     #   /  \    /
     #  A    M  P
     #      /
-
     #     L
+
     should_be(len(t), len(test_set))  # test __len__
 
     for k, v in data:
         should_be(k in t, True)  # test __contains__
 
         # test __get__
-        if k == 'E':
-            should_be(t[k], max([v for k, v in data if k == 'E']))
+        if k == 'E' or k == 'A':
+            should_be(t[k], max([v for key, v in data if key == k]))
         else:
             should_be(t[k], v)
 
     should_be(t.min(), 'A')
     should_be(t.max(), 'X')
 
-    should_be(t.floor('O'), 'O')  # key in table
-    should_be(t.ceil('O'),  'O')
+    should_be(t.floor('H'), 'H')  # key in table
+    should_be(t.ceil('H'),  'H')
     should_be(t.floor('Q'), 'P')  # key not in table
     should_be(t.ceil('Q'),  'R')
     should_be(t.floor(chr(ord('A') - 1)), None)  # char < t.min()
@@ -551,9 +548,26 @@ if __name__ == '__main__':
         should_be(t.select(i), c)
         should_be(t.rank(c), i)
 
+    # Level-order traversal
+    should_be(list(t._level_order()), list('SEXARCHMLP'))
+
+    # In-order traversal
+    should_be(list(t.keys()), sorted(test_set))
+    should_be(list(t.keys(lo='P')), list('PRSX'))
+    should_be(list(t.keys('F', 'Q')), list('HLMP'))  # subset of keys
+    should_be(list(t.keys(hi='P')), list('ACEHLMP'))
+
+    data_set = data.copy()
+    data_set.remove(('E', 1))
+    data_set.remove(('A', 2))
+    data_set.remove(('E', 6))
+    should_be(list(t.values()), [v for k, v in sorted(data_set)])
+    should_be(list(t.items()), sorted(data_set))
+
+    # Test deletion and reinsertion
     k, v = t.min(), t[t.min()]
     t.delete_min()  # remove 'A'
-    should_be(t.min(), 'E')
+    should_be(t.min(), 'C')
     # Test updated ranks
     for i, c in enumerate(sorted(test_set - set('A'))):
         should_be(t.select(i), c)
@@ -562,21 +576,13 @@ if __name__ == '__main__':
 
     k, v = t.max(), t[t.max()]
     t.delete_max()  # remove 'X'
-    should_be(t.max(), 'T')
+    should_be(t.max(), 'S')
     # Test updated ranks
     for i, c in enumerate(sorted(test_set - set('X'))):
         should_be(t.select(i), c)
         should_be(t.rank(c), i)
     t[k] = v  # replace value
 
-    # In-order traversal
-    should_be(list(t.keys()), sorted(test_set))
-    should_be(list(t.keys(lo='P')), list('PRSTX'))
-    should_be(list(t.keys('F', 'Q')), list('LMOP'))  # subset of keys
-    should_be(list(t.keys(hi='P')), list('AELMOP'))
-
-    # Level-order traversal
-    should_be(list(t._level_order()), list('SOTERXAMPL'))
 
     # Delete arbitrary key
     v = t['E']
@@ -593,7 +599,7 @@ if __name__ == '__main__':
     # delete the root
     v = t['S']
     del t['S']
-    should_be(t._root.key, 'T')
+    should_be(t._root.key, 'X')
     t['S'] = v
 
     # Summary
