@@ -13,6 +13,78 @@ from algs.basics import Queue
 
 __all__ = ['BST']
 
+class SequentialSearchST():
+    """Implements an unordered symbol table with a linked list.
+
+    Parameters
+    ----------
+    items : mapping, dict-like
+        Iterable of (key, value) pairs to be put into the table.
+
+    Attributes
+    ----------
+    size : int
+        Number of items in the table.
+    is_empty : bool
+        True if `size == 0`.
+    """
+    def __init__(self, items=list()):
+        self._items = list()
+        try:
+            for k, v in items:
+                self.__setitem__(k, v)
+        except ValueError:
+            raise ValueError(f"{self.__class__.__name__} expects a `list` of tuples input.")
+
+    @property
+    def size(self):
+        return len(self._items)
+
+    @property
+    def is_empty(self):
+        return self.size == 0
+
+    # ------------------------------------------------------------------------- 
+    #         Public API
+    # -------------------------------------------------------------------------
+    def __setitem__(self, k, v):
+        """Insert a new value `v` associated with key `k`.
+        If `k` is in the table, change its value to `v`."""
+        self.__delitem__(k)
+        self._items.append((k, v))
+
+    def __getitem__(self, k):
+        """Return the value associated with the given `k`."""
+        for key, val in self._items:
+            if k == key:
+                return val
+        else:
+            raise KeyError(k)
+
+    def __contains__(self, k):
+        """Return True if `k` is present in the table, False otherwise."""
+        for key, val in self._items:
+            if k == key:
+                return True
+        else:
+            return False
+
+    def __delitem__(self, k):
+        """Delete the item associated with `k`."""
+        for i, (key, val) in enumerate(self._items):
+            if k == key:
+                del self._items[i]
+                break
+
+    def keys(self):
+        """Return an iterator of all of the keys in the table."""
+        return iter([k for k, v in self._items])
+
+    def __iter__(self):
+        """Return an iterator of all of the keys in the table."""
+        yield from self.keys()
+
+
 
 class BST():
     """Implements a binary search tree data structure.
