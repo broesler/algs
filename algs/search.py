@@ -9,11 +9,18 @@
 """
 # =============================================================================
 
-from collections import namedtuple as _namedtuple
+from recordclass import recordclass as _recordclass
 
 from algs.basics import Queue
 
 __all__ = ['SequentialSearchST', 'BinarySearchST', 'BST']
+
+# TODO 
+#   * make ST(ABC) to hold things like `size`, `is_empty`, `__len__` for all?
+#   * use collections.abc.[Keys|Values|Items]View classes?
+
+# Private class of key/value pairs (a mutable tuple)
+_Item = _recordclass('_Item', ['key', 'value'])
 
 class SequentialSearchST():
     """Implements an unordered symbol table with a linked list.
@@ -34,9 +41,6 @@ class SequentialSearchST():
         `floor`/`ceil`, etc. that the ordered symbol tables (BinarySearchST,
         BST, etc.) can efficiently implement.
     """
-    # Private class of key/value pairs
-    _Item = _namedtuple('_Item', ['key', 'value'])
-
     def __init__(self, items=list()):
         self._items = list()
         try:
@@ -63,7 +67,7 @@ class SequentialSearchST():
         """Insert a new value `v` associated with key `k`.
         If `k` is in the table, change its value to `v`."""
         self.__delitem__(k)
-        self._items.append(self._Item(k, v))
+        self._items.append(_Item(k, v))
 
     def __getitem__(self, k):
         """Return the value associated with the given `k`."""
@@ -83,6 +87,10 @@ class SequentialSearchST():
             if k == item.key:
                 del self._items[i]
                 break
+
+    # FIXME need to do a set comparison between keys/values
+    def __eq__(self, other):
+        return sorted(self.items()) == sorted(other.items())
 
     def __str__(self):
         return str(dict(self._items))
@@ -126,8 +134,7 @@ class BinarySearchST():
         True if `size == 0`.
     """
     def __init__(self, items=list()):
-        self._keys = list()
-        self._vals = list()
+        self._items = list()
         try:
             for k, v in items:
                 self.__setitem__(k, v)
@@ -139,7 +146,7 @@ class BinarySearchST():
     # -------------------------------------------------------------------------
     @property
     def size(self):
-        return len(self._keys)
+        return len(self._items)
 
     @property
     def is_empty(self):
@@ -153,49 +160,51 @@ class BinarySearchST():
         If `k` is in the table, change its value to `v`."""
         i = self.rank(k)
         # if key is in the table, update the value
-        if i < self.size and self._keys[i] == k:
-            self._vals[i] = v
+        if i < self.size and self._items[i].key == k:
+            self._items[i].value = v
             return
         else:
-            self._keys.insert(i, k)  # O(n) to shuffle list elements
-            self._vals.insert(i, v)
+            # create new Item in the table
+            self._items.insert(i, _Item(k, v))  # O(n) to shuffle list elements
 
     def __getitem__(self, k):
         """Return the value associated with the given `k`."""
         i = self.rank(k)
-        if i < self.size and self._keys[i] == k:
-            return self._vals[i]
+        if i < self.size and self._items[i].key == k:
+            return self._items[i].value
         else:
             raise KeyError(k)
 
     def __contains__(self, k):
         """Return True if `k` is present in the table, False otherwise."""
-        return k in self._keys
+        for x in self._items:
+            if x.key == k:
+                return True
+        return False
 
     def __delitem__(self, k):
         """Delete the item associated with `k`."""
         i = self.rank(k)
-        if i < self.size and self._keys[i] == k:
-            del self._keys[i]
-            del self._vals[i]
+        if i < self.size and self._items[i].key == k:
+            del self._items[i]
         else:
             raise KeyError(k)
 
     def min(self):
         """Return the minimum key in the table."""
-        return self._keys[0]
+        return self._items[0].key
 
     def max(self):
         """Return the maximum key in the table."""
-        return self._keys[-1]
+        return self._items[-1].key
 
     def floor(self, k):
         """Return the largest key less than or equal to `k`."""
         i = self.rank(k)
-        if i < self.size and  self._keys[i] == k:
-            return self._keys[i]
+        if i < self.size and self._items[i].key == k:
+            return self._items[i].key
         elif i > 0:
-            return self._keys[i-1]
+            return self._items[i-1].key
         else:
             return None
 
@@ -203,39 +212,40 @@ class BinarySearchST():
         """Return the smallest key greater than or equal to `k`."""
         i = self.rank(k)
         if i < self.size:
-            return self._keys[i]
+            return self._items[i].key
         else:
             return None
 
     def delete_min(self):
         """Delete the smallest key."""
-        del self._keys[0]
-        del self._vals[0]
+        del self._items[0]
 
     def delete_max(self):
         """Delete the largest key."""
-        del self._keys[-1]
-        del self._vals[-1]
+        del self._items[-1]
 
     def select(self, r):
         """Return the key of rank `r`."""
-        return self._keys[r]
+        return self._items[r].key
 
     def rank(self, k):
         """Return the number of keys less than `k`."""
         lo, hi = 0, self.size - 1
         while lo <= hi:
             mid = (hi + lo) // 2
-            if k < self._keys[mid]:
+            if k < self._items[mid].key:
                 hi = mid - 1
-            elif k > self._keys[mid]:
+            elif k > self._items[mid].key:
                 lo = mid + 1
             else:
                 return mid
         return lo
 
+    def __eq__(self, other):
+        return self.items() == other.items()
+
     def __str__(self):
-        return str(dict(zip(self._keys, self._vals)))
+        return str(dict(self._items))
 
     def __repr__(self):
         return f"<{self.__class__.__name__}: {self.__str__()}>"
@@ -276,7 +286,7 @@ class BinarySearchST():
 
     def __iter__(self):
         """Return an iterator of all of the keys in the table."""
-        yield from self._keys
+        yield from self.keys()
 
     # ------------------------------------------------------------------------- 
     #         Private API
@@ -284,23 +294,27 @@ class BinarySearchST():
     def _make_inorder_iterator(self, rtype):
         """Return an iterator over all of the items in the table."""
         def iterator(self, lo=None, hi=None):
+            """Iterate over items with keys between `lo` and `hi`."""
             if lo is None:
                 lo = self.min()
+                l = 0
+            else:
+                l = self.rank(lo)
+
             if hi is None:
                 hi = self.max()
+                h = self.size
+            else:
+                h = self.rank(hi)
+                # `hi` is included in range
+                if h < self.size and self._items[h].key == hi:
+                    h += 1
             q = Queue()
-            for k in self._keys:
-                if lo <= k and k <= hi:
-                    if rtype == 'keys':
-                        item = k
-                    elif rtype == 'values':
-                        item = self.__getitem__(k)
-                    else:
-                        item = (k,  self.__getitem__(k))
-                    q.enqueue(item)
+            for x in self._items[l:h]:
+                q.enqueue(x.key if rtype == 'keys' else 
+                          (x.value if rtype == 'values' else x))
             return list(q)
         return iterator
-
 
 
 class BST():
@@ -388,6 +402,9 @@ class BST():
     def __contains__(self, k):
         """Return True if `k` is present in the tree, False otherwise."""
         return self.__getitem__(k) is not None
+
+    def __eq__(self, other):
+        return self.items() == other.items()
 
     # TODO make `dict_keys`-like class to create view of keys?
     def __iter__(self):
@@ -656,7 +673,7 @@ class BST():
         if lo < x.key:
             self._iterate(lo, hi, x.left, q, rtype)
         if lo <= x.key and hi >= x.key:
-            q.enqueue(x.key if rtype == 'keys' else (x.val if rtype == 'values' else (x.key, x.val)))
+            q.enqueue(x.key if rtype == 'keys' else (x.val if rtype == 'values' else _Item(x.key, x.val)))
         if hi > x.key:
             self._iterate(lo, hi, x.right, q, rtype)
         return list(q)
@@ -707,7 +724,7 @@ if __name__ == '__main__':
 
     should_be(SequentialSearchST().is_empty, True)
 
-    #---------- Test SequentialSearchST ----------
+    # ---------- Test SequentialSearchST ----------
     st = SequentialSearchST(data)
     for k, v in data:
         if k == 'E' or k == 'A':
@@ -726,7 +743,7 @@ if __name__ == '__main__':
     should_be(sorted(st.keys()), sorted(test_set - set('A')))
     st['A'] = v
 
-    #---------- Test Ordered STs ----------
+    # ---------- Test Ordered STs ----------
     for ST in [BinarySearchST, BST]:
         # Test bad input type
         try:
@@ -829,6 +846,10 @@ if __name__ == '__main__':
             del t['S']
             should_be(t._root.key, 'X')
             t['S'] = v
+
+    # Test comparisons between objects
+    should_be(SequentialSearchST(data), BinarySearchST(data))
+    should_be(BinarySearchST(data), BST(data))
 
     # Summary
     if fails > 0:
