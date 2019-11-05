@@ -15,7 +15,7 @@ from collections import deque as _deque
 from collections.abc import MutableMapping as _MutableMapping
 from copy import deepcopy as _deepcopy
 
-__all__ = ['Stack', 'Queue', 'PriorityQueue', 'IndexPQ']
+__all__ = ['Bag', 'Stack', 'Queue', 'PriorityQueue', 'IndexPQ']
 
 
 def _equals(self, other):
@@ -24,6 +24,52 @@ def _equals(self, other):
     else:
         raise TypeError("'==' not supported between instances of "\
                         f"'{self.__class__.__name__}' and '{other.__class__.__name__}'")
+
+class Bag():
+    """Implements a Bag data structure.
+
+    Parameters
+    ----------
+    items : iterable
+        List of items on the stack, in FIFO order.
+
+    Attributes
+    -------
+    size : int
+        Number of items on the stack.
+    is_empty : bool
+        True if `size == 0`.
+    """
+    def __init__(self, items=list()):
+        self._items = list(items)
+
+    @property
+    def size(self):
+        return len(self._items)
+
+    @property
+    def is_empty(self):
+        return (self.size == 0)
+    
+    def add(self, item):
+        """Add item to the bag."""
+        self._items.append(item)
+
+    # dunder(-mifflin) methods
+    def __iter__(self):
+        yield from self._items
+
+    def __len__(self):
+        return self.size
+
+    def __eq__(self, other):
+        return _equals(self, other)
+
+    def __repr__(self):
+        return '<{}: {}>'.format(self.__class__.__name__, self.__str__())
+
+    def __str__(self):
+        return str(list(self._items))
 
 
 class Stack():
@@ -67,7 +113,7 @@ class Stack():
 
     # dunder(-mifflin) methods
     def __iter__(self):
-        yield from (self._items[::-1])
+        yield from self._items[::-1]
 
     def __len__(self):
         return self.size
@@ -559,7 +605,23 @@ class IndexPQ(_MutableMapping):
 if __name__ == '__main__':
     # TODO move to proper unit testing suite for package
     import string
+    import numpy as np
     from random import shuffle
+
+    tests = fails = 0
+
+    def should_be(a, b, name=None, verbose=False):
+        """Test a condition."""
+        global tests, fails
+        tests += 1
+        try:
+            assert a == b
+            if verbose:
+                print(f"[{name}]: Got: {a}, Expected: {b}")
+        except AssertionError as e:
+            fails += 1
+            print(f"[{name}]: Got: {a}, Expected: {b}")
+            raise e
 
     def err_test(container, op, err_type=IndexError):
         """Test for raising a given error type.
@@ -584,6 +646,30 @@ if __name__ == '__main__':
             except Exception as err:
                 raise Exception(f'Improper error thrown: {repr(err)}')
 
+
+    # Test Bag
+    b = Bag()
+    for i in range(10):
+        b.add(i)
+    should_be(b.size, 10)
+    should_be(b.is_empty, False)
+    for i, x in enumerate(b):
+        should_be(i, x)
+
+    # Run some basic statistics from an interator of values
+    b = Bag()
+    scores = iter([100, 99, 101, 120, 98, 107, 109, 81, 101, 90])  # ~ StdIn
+    for s in scores:
+        b.add(s)
+    mean = 0.0
+    std = 0.0
+    N = b.size
+    for x in b:
+        mean += x / N
+    for x in b:
+        std += (x - mean)*(x - mean) / (N - 1)
+    should_be(mean, 100.6)
+    np.testing.assert_almost_equal(std, 110.489, decimal=3)
 
     # Test Stack
     s = Stack()
