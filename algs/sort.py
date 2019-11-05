@@ -11,6 +11,11 @@
 
 from random import randrange
 
+# NOTE in python, sorts do not need to take a comparison function!! The objects
+# the client is sorting just need to have `__lt__` and `__eq__` implemented,
+# and use the decorator @functools.total_ordering (or define the other rich
+# comparison operations)
+
 
 def _swap(a, i, j):
     """Swap two list elements in-place."""
@@ -419,19 +424,6 @@ def _sink(a, k, N):
             break
         _swap(a, k, j)               # otherwise swap child/parent
         k = j                        # move to child and repeat
-
-
-# TODO: all sorts could take generic comparison function
-#   cmp(a, i, j): if a[i] <  a[j] == -1
-#                 if a[i] == a[j] ==  0
-#                 if a[i] >  a[j] == +1
-#
-# Generic `sort` interface: sort(a, reverse=False, cmp=None)
-#
-# def _cmp(a, i, j):
-#     """Compare two elements."""
-#     return 0 if a[i] == a[j] else (1 if a[i] > a[j] else -1)
-
 
 #==============================================================================
 #==============================================================================

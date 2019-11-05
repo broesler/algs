@@ -22,8 +22,8 @@ def _equals(self, other):
     if isinstance(other, self.__class__):
         return self._items == other._items
     else:
-        raise TypeError("'==' not supported between instances of "\
-                        f"'{self.__class__.__name__}' and '{other.__class__.__name__}'")
+        return NotImplemented
+
 
 class Bag():
     """Implements a Bag data structure.
