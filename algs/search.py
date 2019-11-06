@@ -74,8 +74,10 @@ class SequentialSearchST():
     def __getitem__(self, k):
         """Return the value associated with the given `k`."""
         # Perform the sequential search
-        for item in self._items:
+        for i, item in enumerate(self._items):
             if k == item.key:
+                # move search hit to front of the list:
+                self._items.insert(0, self._items.pop(i))
                 return item.value
         else:
             raise KeyError(k)
