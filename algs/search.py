@@ -11,7 +11,7 @@
 
 from recordclass import recordclass as _recordclass
 
-from algs.basics import Queue
+from algs.basics import Queue, _empty_check
 from algs.sort import mergesort
 
 __all__ = ['SequentialSearchST', 'BinarySearchST', 'BST']
@@ -202,17 +202,30 @@ class BinarySearchST():
             # Clear cache of item if necessary
             if self._cache and self._cache.key == k:
                 self._cache = None
+            # Delete the item from the symbol table
             del self._items[i]
         else:
             raise KeyError(k)
 
     def min(self):
         """Return the minimum key in the table."""
+        _empty_check(self)
         return self._items[0].key
 
     def max(self):
         """Return the maximum key in the table."""
+        _empty_check(self)
         return self._items[-1].key
+
+    def delete_min(self):
+        """Delete the smallest key."""
+        _empty_check(self)
+        del self._items[0]
+
+    def delete_max(self):
+        """Delete the largest key."""
+        _empty_check(self)
+        del self._items[-1]
 
     def floor(self, k):
         """Return the largest key less than or equal to `k`."""
@@ -231,14 +244,6 @@ class BinarySearchST():
             return self._items[i].key
         else:
             return None
-
-    def delete_min(self):
-        """Delete the smallest key."""
-        del self._items[0]
-
-    def delete_max(self):
-        """Delete the largest key."""
-        del self._items[-1]
 
     def select(self, r):
         """Return the key of rank `r`."""
