@@ -19,10 +19,17 @@ __all__ = ['Bag', 'Stack', 'Queue', 'PriorityQueue', 'IndexPQ']
 
 
 def _equals(self, other):
+    """General __eq__ function for container classes."""
     if isinstance(other, self.__class__):
         return self._items == other._items
     else:
         return NotImplemented
+
+
+def _empty_check(self):
+    """General assertion that container is not empty before indexing."""
+    if self.is_empty:
+        raise IndexError(f"{self.__class__.__name__} is empty!")
 
 
 class Bag():
@@ -49,7 +56,7 @@ class Bag():
 
     @property
     def is_empty(self):
-        return (self.size == 0)
+        return self.size == 0
     
     def add(self, item):
         """Add item to the bag."""
@@ -97,14 +104,16 @@ class Stack():
 
     @property
     def is_empty(self):
-        return (self.size == 0)
+        return self.size == 0
 
     def peek(self):
         """Look at top of stack without popping."""
+        _empty_check(self)
         return self._items[-1]
 
     def pop(self):
         """Remove and return item from top of stack."""
+        _empty_check(self)
         return self._items.pop()
 
     def push(self, item):
@@ -153,10 +162,11 @@ class Queue():
 
     @property
     def is_empty(self):
-        return (self.size == 0)
+        return self.size == 0
 
     def peek(self):
         """Look at first item in queue without dequeue-ing."""
+        _empty_check(self)
         return self._items[0]
 
     def enqueue(self, item):
@@ -165,6 +175,7 @@ class Queue():
 
     def dequeue(self):
         """Remove and return item from the front of the queue."""
+        _empty_check(self)
         return self._items.popleft()
 
     # dunder(-mifflin) methods
@@ -235,10 +246,11 @@ class PriorityQueue():
 
     @property
     def is_empty(self):
-        return (self.size == 0)
+        return self.size == 0
 
     def peek(self):
         """Look at first item in queue without dequeue-ing."""
+        _empty_check(self)
         return self._items[1]  # self._items[0] is ALWAYS `None` in heap-land
 
     def enqueue(self, item):
@@ -250,8 +262,7 @@ class PriorityQueue():
 
     def dequeue(self):
         """Remove and return item from the top of the heap."""
-        if self.is_empty:
-            raise IndexError('Attempting to dequeue from empty PriorityQueue!')
+        _empty_check(self)
         self._swap(self.size, 1)     # swap root with bottom node
         the_min = self._items.pop()  # remove the root
         self._sink(1)                # sink the new root to reorder
@@ -417,11 +428,9 @@ class IndexPQ(_MutableMapping):
         key, value : tuple
             The key associated with the extremum item, and the item itself.
         """
-        if len(self._pq) > 1:
-            idx = self._pq[1]
-            return idx, self._items[idx]
-        else:
-            return None, None
+        _empty_check(self)
+        idx = self._pq[1]
+        return idx, self._items[idx]
 
     def enqueue(self, k, item):
         """Add an `item` to the queue with index `k`. 
@@ -446,8 +455,7 @@ class IndexPQ(_MutableMapping):
         key, value : tuple
             The key associated with the extremum item, and the item itself.
         """
-        if self.is_empty:
-            raise Exception('Attempting to dequeue from empty PriorityQueue!')
+        _empty_check(self)
         self._swap(self.size, 1)       # swap root with bottom node
         idx = self._pq.pop()
         item = self._items.pop(idx)
