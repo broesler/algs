@@ -72,8 +72,8 @@ class SequentialSearchST():
         self._items.append(_Item(k, v))
 
     def __getitem__(self, k):
-        """Return the value associated with the given `k`."""
-        # Perform the sequential search
+        """Return the value associated with the given key `k`."""
+        # Perform sequential search
         for i, item in enumerate(self._items):
             if k == item.key:
                 # move search hit to front of the list:
@@ -137,6 +137,9 @@ class BinarySearchST():
     is_empty : bool
         True if `size == 0`.
     """
+    # "software cache" the most recently accessed key
+    _cache = None
+
     def __init__(self, items=list()):
         self._items = list()
         try:
@@ -173,8 +176,13 @@ class BinarySearchST():
 
     def __getitem__(self, k):
         """Return the value associated with the given `k`."""
+        # See if we have cached the key
+        if self._cache and self._cache.key == k:
+            return self._cache.value
+
         i = self.rank(k)
         if i < self.size and self._items[i].key == k:
+            self._cache = self._items[i]  # cache its location
             return self._items[i].value
         else:
             raise KeyError(k)
@@ -191,6 +199,9 @@ class BinarySearchST():
         """Delete the item associated with `k`."""
         i = self.rank(k)
         if i < self.size and self._items[i].key == k:
+            # Clear cache of item if necessary
+            if self._cache and self._cache.key == k:
+                self._cache = None
             del self._items[i]
         else:
             raise KeyError(k)
