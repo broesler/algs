@@ -12,6 +12,7 @@
 from recordclass import recordclass as _recordclass
 
 from algs.basics import Queue
+from algs.sort import mergesort
 
 __all__ = ['SequentialSearchST', 'BinarySearchST', 'BST']
 
@@ -21,6 +22,7 @@ __all__ = ['SequentialSearchST', 'BinarySearchST', 'BST']
 
 # Private class of key/value pairs (a mutable tuple)
 _Item = _recordclass('_Item', ['key', 'value'])
+
 
 class SequentialSearchST():
     """Implements an unordered symbol table with a linked list.
@@ -71,6 +73,7 @@ class SequentialSearchST():
 
     def __getitem__(self, k):
         """Return the value associated with the given `k`."""
+        # Perform the sequential search
         for item in self._items:
             if k == item.key:
                 return item.value
@@ -88,7 +91,6 @@ class SequentialSearchST():
                 del self._items[i]
                 break
 
-    # FIXME need to do a set comparison between keys/values
     def __eq__(self, other):
         return sorted(self.items()) == sorted(other.items())
 
@@ -177,10 +179,11 @@ class BinarySearchST():
 
     def __contains__(self, k):
         """Return True if `k` is present in the table, False otherwise."""
-        for x in self._items:
-            if x.key == k:
-                return True
-        return False
+        try:
+            self.__getitem__(k)
+            return True
+        except KeyError:
+            return False
 
     def __delitem__(self, k):
         """Delete the item associated with `k`."""
@@ -230,7 +233,9 @@ class BinarySearchST():
 
     def rank(self, k):
         """Return the number of keys less than `k`."""
-        lo, hi = 0, self.size - 1
+        # Non-recursive binary search algorithm
+        lo = 0 
+        hi = self.size - 1
         while lo <= hi:
             mid = (hi + lo) // 2
             if k < self._items[mid].key:
@@ -242,7 +247,7 @@ class BinarySearchST():
         return lo
 
     def __eq__(self, other):
-        return self.items() == other.items()
+        return sorted(self.items()) == sorted(other.items())
 
     def __str__(self):
         return str(dict(self._items))
@@ -296,19 +301,18 @@ class BinarySearchST():
         def iterator(self, lo=None, hi=None):
             """Iterate over items with keys between `lo` and `hi`."""
             if lo is None:
-                lo = self.min()
                 l = 0
             else:
                 l = self.rank(lo)
 
             if hi is None:
-                hi = self.max()
                 h = self.size
             else:
                 h = self.rank(hi)
                 # `hi` is included in range
                 if h < self.size and self._items[h].key == hi:
                     h += 1
+
             q = Queue()
             for x in self._items[l:h]:
                 q.enqueue(x.key if rtype == 'keys' else 
@@ -404,7 +408,7 @@ class BST():
         return self.__getitem__(k) is not None
 
     def __eq__(self, other):
-        return self.items() == other.items()
+        return sorted(self.items()) == sorted(other.items())
 
     # TODO make `dict_keys`-like class to create view of keys?
     def __iter__(self):
@@ -847,9 +851,11 @@ if __name__ == '__main__':
             should_be(t._root.key, 'X')
             t['S'] = v
 
-    # Test comparisons between objects
+    # Test comparisons between objects (in *both* directions)
     should_be(SequentialSearchST(data), BinarySearchST(data))
+    should_be(BinarySearchST(data), SequentialSearchST(data))
     should_be(BinarySearchST(data), BST(data))
+    should_be(BST(data), BinarySearchST(data))
 
     # Summary
     if fails > 0:
