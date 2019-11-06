@@ -295,17 +295,18 @@ class BinarySearchST():
     def keys(self, lo=None, hi=None):
         func = self._make_inorder_iterator(rtype='keys')
         return func(self, lo, hi)
-    keys.__doc__ = docstring.format(rtype='keys')
 
     def values(self, lo=None, hi=None):
         func = self._make_inorder_iterator(rtype='values')
         return func(self, lo, hi)
-    values.__doc__ = docstring.format(rtype='values')
 
     def items(self, lo=None, hi=None):
         func = self._make_inorder_iterator(rtype='items')
         return func(self, lo, hi)
-    items.__doc__ = docstring.format(rtype='items')
+
+    keys.__doc__   = docstring.format(rtype = 'keys')
+    values.__doc__ = docstring.format(rtype = 'values')
+    items.__doc__  = docstring.format(rtype = 'items')
 
     def __iter__(self):
         """Return an iterator of all of the keys in the table."""
@@ -428,10 +429,6 @@ class BST():
     def __eq__(self, other):
         return sorted(self.items()) == sorted(other.items())
 
-    # TODO make `dict_keys`-like class to create view of keys?
-    def __iter__(self):
-        yield from self.keys()
-
     def __str__(self):
         return str(self._root)
 
@@ -500,17 +497,21 @@ class BST():
     def keys(self, lo=None, hi=None):
         func = self._make_inorder_iterator(rtype='keys')
         return func(self, lo, hi)
-    keys.__doc__ = docstring.format(rtype='keys')
 
     def values(self, lo=None, hi=None):
         func = self._make_inorder_iterator(rtype='values')
         return func(self, lo, hi)
-    values.__doc__ = docstring.format(rtype='values')
 
     def items(self, lo=None, hi=None):
         func = self._make_inorder_iterator(rtype='items')
         return func(self, lo, hi)
-    items.__doc__ = docstring.format(rtype='items')
+
+    keys.__doc__   = docstring.format(rtype = 'keys')
+    values.__doc__ = docstring.format(rtype = 'values')
+    items.__doc__  = docstring.format(rtype = 'items')
+
+    def __iter__(self):
+        yield from self.keys()
 
     # -------------------------------------------------------------------------
     #         Private API
