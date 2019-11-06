@@ -143,7 +143,8 @@ class BinarySearchST():
     def __init__(self, items=list()):
         self._items = list()
         try:
-            for k, v in items:
+            # sort by keys so we get O(N log N) construction
+            for k, v in mergesort(items):
                 self.__setitem__(k, v)
         except ValueError:
             raise ValueError(f"{self.__class__.__name__} expects a `list` of tuples input.")
@@ -165,6 +166,12 @@ class BinarySearchST():
     def __setitem__(self, k, v):
         """Insert a new value `v` associated with key `k`.
         If `k` is in the table, change its value to `v`."""
+        # If key is largest in table, slap it on the end! This feature makes
+        # construction with a sorted list O(n).
+        if not self.is_empty and k > self.max():
+            self._items.append(_Item(k, v))
+
+        # Perform binary search O(lg N)
         i = self.rank(k)
         # if key is in the table, update the value
         if i < self.size and self._items[i].key == k:
