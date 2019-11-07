@@ -30,8 +30,8 @@ def normalize(w):
 
 def get_num_lines(filename):
     """Scan through file to count the number of lines."""
-    fp = os.open(filename, os.O_RDONLY)
-    buf = mmap.mmap(fp, 0, prot=mmap.PROT_READ)
+    fp = open(filename, 'r+')
+    buf = mmap.mmap(fp.fileno(), 0)
     lines = 0
     while buf.readline():
         lines += 1
