@@ -24,7 +24,7 @@ sort_funs = [bubble_sort, insertion_sort, mergesort, mergesort_BU,
 # sort_funs = [qsort0, qsort1, qsort2, qsort]
 
 # Define lengths of input
-Nmax = 2e3
+Nmax = 4e3
 vals = np.power(2, np.arange(np.log2(Nmax))).astype(np.int64)
 M = len(vals)
 

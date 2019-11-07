@@ -17,6 +17,9 @@ from random import randrange
 # comparison operations)
 
 
+# ----------------------------------------------------------------------------- 
+#         Utilities
+# -----------------------------------------------------------------------------
 def _swap(a, i, j):
     """Swap two list elements in-place."""
     a[i], a[j] = a[j], a[i]
@@ -36,6 +39,31 @@ def is_sorted(a):
     return True
 
 
+class _SortNode():
+    """Node for use when sorting with a key function."""
+    def __init__(self, k, v=None):
+        self.key = k
+        self.value = v
+
+    def __eq__(self, other):
+        return self.key == other.key
+
+    def __lt__(self, other):
+        return self.key < other.key
+
+    def __le__(self, other):
+        return self.key <= other.key
+
+    def __gt__(self, other):
+        return self.key > other.key
+
+    def __ge__(self, other):
+        return self.key >= other.key
+
+
+# ----------------------------------------------------------------------------- 
+#         Sorts
+# -----------------------------------------------------------------------------
 def bubble_sort(s):
     """Swap elements so that lesser elements 'float' to the top."""
     a = list(s)
@@ -72,22 +100,34 @@ def _insertion_sort(a, lo, hi):
             j -= 1
 
 
-def mergesort(a):
-    """Recursively sort halves of a list, then merge them together.
+def mergesort(s, key=None):
+    """Public mergesort interface."""
+    if key is not None:
+        a = [_SortNode(key(x), x) for x in s]
+        return [x.value for x in _mergesort(a)]
+    else:
+        a = list(s)
+        return _mergesort(a)
+
+
+def _mergesort(a):
+    """Recursively sort halves of a list, then merge them together. Returns
+    a copy of the input in sorted order.
 
     Uses ~[1/2, 1] N log N compares, < ~6 N log N array accesses.
     """
-    mergesort.CUTOFF = 8
+    # NOTE copy of input is made in _merge, *not* initially.
+    # _mergesort.CUTOFF = 8
     N = len(a)
     # Trivial sort
     if N < 2:
         return a
-    # Use insertion_sort for small arrays
-    if N < mergesort.CUTOFF:
-        return insertion_sort(a)
+    # # Use insertion_sort for small arrays
+    # if N < _mergesort.CUTOFF:
+    #     return insertion_sort(a)
     mid = N // 2
-    bot = mergesort(a[mid:])
-    top = mergesort(a[:mid])
+    bot = _mergesort(a[mid:])
+    top = _mergesort(a[:mid])
     return _merge(bot, top)
 
 
@@ -131,6 +171,9 @@ def _merge(a, b):
     return merged
 
 
+# ----------------------------------------------------------------------------- 
+#         Bad Quicksorts
+# -----------------------------------------------------------------------------
 def quicksort0(s):
     """A simple quicksort implementation. See K&R.
 
@@ -298,19 +341,22 @@ def _qsort2(a, lo, hi):
         _qsort2(a, q, hi)
 
 
+# ----------------------------------------------------------------------------- 
+#         The Proper Quicksort
+# -----------------------------------------------------------------------------
 def qsort(s):
     """Interface to the Bentley-McIlroy quicksort algorithm.
     
     Average case: ~2 N log N compares and ~1/3 N log N exchanges.
     """
     a = list(s)
-    _qsort(a, 0, len(a)-1)
+    _qsort_bm(a, 0, len(a)-1)  # choose partition, then recurse
     return a
 
 
-def _qsort(a, lo, hi):
+def _qsort_bm(a, lo, hi):
     """The complete Bentley-McIlroy qsort algorithm."""
-    # Define function parameters
+    # Define function parameters, experimentally determined
     _qsort.INSERTION_CUTOFF = 20
     _qsort.MEDIAN_CUTOFF = 100
 
@@ -331,9 +377,20 @@ def _qsort(a, lo, hi):
         m3 = _med3(a, hi - d - d, hi - d, hi)
         idx = _med3(a, m1, m2, m3)  # THE NINTHER
 
+    # Make the first partition with the chosen index
     p, q = _partition(a, lo, hi, idx)
-    _qsort2(a, lo, p)
-    _qsort2(a, q, hi)
+    # Then run the recursion
+    _qsort(a, lo, p)
+    _qsort(a, q, hi)
+
+
+def _qsort(a, lo, hi):
+    """Actual quicksort algorithm."""
+    N = hi - lo + 1
+    if N > 1:
+        p, q = _partition(a, lo, hi)
+        _qsort(a, lo, p)
+        _qsort(a, q, hi)
 
 
 def _partition(a, lo, hi, idx=None):
@@ -424,6 +481,7 @@ def _sink(a, k, N):
             break
         _swap(a, k, j)               # otherwise swap child/parent
         k = j                        # move to child and repeat
+
 
 #==============================================================================
 #==============================================================================
