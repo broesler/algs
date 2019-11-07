@@ -17,15 +17,11 @@ from tqdm import tqdm
 
 from algs.search import SequentialSearchST, BinarySearchST
 
-# filename = 'data/tiny_tale.txt'
-filename = 'data/tale.txt'
-ST = SequentialSearchST
-
-regex = re.compile('[^a-z]')
+pat = re.compile('[^a-z]')
 
 def normalize(w):
     """Replace any non-alphabetic characters in a word."""
-    word = regex.sub('', w.lower())
+    word = pat.sub('', w.lower())
     return word
 
 def get_num_lines(filename):
@@ -65,8 +61,15 @@ def frequency_counter(ST, filename, minlen=1):
 
     return t
 
-# t = frequency_counter(SequentialSearchST, filename)
-t = frequency_counter(BinarySearchST, filename)
+if __name__ == '__main__':
+    # filename = 'data/tiny_tale.txt'   # 292
+    filename = 'data/tale.txt'          # 779K
+    # filename = 'data/leipzig1m.txt'     # 124M
+
+    ST = SequentialSearchST
+
+    # t = frequency_counter(SequentialSearchST, filename)
+    t = frequency_counter(BinarySearchST, filename)
 
 
 
