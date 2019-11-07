@@ -143,7 +143,7 @@ class BinarySearchST():
     def __init__(self, items=list()):
         self._items = list()
         try:
-            # sort by keys so we get O(N log N) construction
+            # sort by keys so we get O(N log N) construction vs O(N^2)
             for k, v in mergesort(items):
                 self.__setitem__(k, v)
         except ValueError:
@@ -180,6 +180,7 @@ class BinarySearchST():
         else:
             # create new Item in the table
             self._items.insert(i, _Item(k, v))  # O(n) to shuffle list elements
+        self._assert_integrity()
 
     def __getitem__(self, k):
         """Return the value associated with the given `k`."""
@@ -213,6 +214,7 @@ class BinarySearchST():
             del self._items[i]
         else:
             raise KeyError(k)
+        self._assert_integrity()
 
     def min(self):
         """Return the minimum key in the table."""
@@ -228,11 +230,13 @@ class BinarySearchST():
         """Delete the smallest key."""
         _empty_check(self)
         del self._items[0]
+        self._assert_integrity()
 
     def delete_max(self):
         """Delete the largest key."""
         _empty_check(self)
         del self._items[-1]
+        self._assert_integrity()
 
     def floor(self, k):
         """Return the largest key less than or equal to `k`."""
@@ -345,6 +349,24 @@ class BinarySearchST():
                           (x.value if rtype == 'values' else x))
             return list(q)
         return iterator
+
+    # ------------------------------------------------------------------------- 
+    #         Data Integrity Checks
+    # -------------------------------------------------------------------------
+    def _assert_integrity(self):
+        assert self._rank_check() and self._is_sorted()
+
+    def _rank_check(self):
+        for i in range(self.size):
+            if i != self.rank(self.select(i)):
+                return False
+        return True
+
+    def _is_sorted(self):
+        for i in range(1, self.size):
+            if self._items[i-1].key > self._items[i].key:
+                return False
+        return True
 
 
 class BST():
