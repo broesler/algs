@@ -11,6 +11,7 @@
 
 import mmap
 import os
+import pickle
 import re
 
 from tqdm import tqdm
@@ -19,10 +20,12 @@ from algs.search import SequentialSearchST, BinarySearchST
 
 pat = re.compile('[^a-z]')
 
+
 def normalize(w):
     """Replace any non-alphabetic characters in a word."""
     word = pat.sub('', w.lower())
     return word
+
 
 def get_num_lines(filename):
     """Scan through file to count the number of lines."""
@@ -61,17 +64,19 @@ def frequency_counter(ST, filename, minlen=1):
 
     return t
 
+
 if __name__ == '__main__':
     # filename = 'data/tiny_tale.txt'   # 292
     filename = 'data/tale.txt'          # 779K
     # filename = 'data/leipzig1m.txt'     # 124M
 
+    minlen = 8
+
     ST = SequentialSearchST
+    # ST = BinarySearchST
 
-    # t = frequency_counter(SequentialSearchST, filename)
-    t = frequency_counter(BinarySearchST, filename)
-
-
+    t = frequency_counter(ST, filename, minlen=minlen)
+    pickle.dump(t, open(f"tale_{ST.__name__}_N{minlen}.pkl", 'wb'))
 
 # =============================================================================
 # =============================================================================
