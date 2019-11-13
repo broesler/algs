@@ -18,14 +18,7 @@ from tqdm import tqdm
 
 from algs.search import SequentialSearchST, BinarySearchST
 
-pat = re.compile('[^a-z]')
-
-
-def normalize(w):
-    """Replace any non-alphabetic characters in a word."""
-    word = pat.sub('', w.lower())
-    return word
-
+pat = re.compile(r"[a-zA-Z']+")  # split on non-alphabet chars and underscores
 
 def get_num_lines(filename):
     """Scan through file to count the number of lines."""
@@ -44,10 +37,10 @@ def frequency_counter(ST, filename, minlen=1):
     with open(filename, 'r') as f:
         # for line in f:
         for line in tqdm(f, total=get_num_lines(filename)):
-            for w in line.split():
-                word = normalize(w)
+            # split the line on anything
+            for word in pat.findall(line.lower()):
                 N += 1  # count total words
-                if len(word) > minlen:
+                if len(word) >= minlen:
                     try:
                         t[word] += 1
                     except KeyError:
@@ -60,6 +53,7 @@ def frequency_counter(ST, filename, minlen=1):
         if t[word] > max_freq:
             max_word = word
             max_freq = t[word]
+    print(f"N = {N}")
     print(max_word, max_freq)
 
     return t
@@ -76,7 +70,7 @@ if __name__ == '__main__':
     # ST = BinarySearchST
 
     t = frequency_counter(ST, filename, minlen=minlen)
-    pickle.dump(t, open(f"tale_{ST.__name__}_N{minlen}.pkl", 'wb'))
+    # pickle.dump(t, open(f"tale_{ST.__name__}_N{minlen}.pkl", 'wb'))
 
 # =============================================================================
 # =============================================================================
