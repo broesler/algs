@@ -32,6 +32,8 @@ def count_lines(filename):
     return lines
 
 
+# TODO make into class to store more info... need to output list of
+# ST._compares, where we append to the list after each `put` (`t[word]`)
 def count_frequencies(ST, filename, minlen=1):
     # Build symbol table of word counts
     t = ST()  # new symbol table
@@ -58,11 +60,11 @@ def count_frequencies(ST, filename, minlen=1):
 
 if __name__ == '__main__':
     # Choose symbol table to test
-    # ST = SequentialSearchST
-    ST = BinarySearchST
+    ST = SequentialSearchST
+    # ST = BinarySearchST
 
-    filenames = ['data/tiny_tale.txt',  # 292
-                 'data/tale.txt']       # 779K
+    filenames = ['data/tiny_tale.txt']  # 292
+                 # 'data/tale.txt']       # 779K
                  # 'data/leipzig1m.txt']  # 124M
 
     # words = dict()

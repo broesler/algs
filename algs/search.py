@@ -45,7 +45,8 @@ class SequentialSearchST():
     """
     def __init__(self, items=list(), self_organize=False):
         self._items = list()
-        self._self_organize = self_organize  # controls order of list
+        self._self_organize = self_organize  # control order of list
+        self._compares = 0                   # track number of operations
         try:
             for k, v in items:
                 self.__setitem__(k, v)
@@ -69,7 +70,7 @@ class SequentialSearchST():
     def __setitem__(self, k, v):
         """Insert a new value `v` associated with key `k`.
         If `k` is in the table, change its value to `v`."""
-        self.__delitem__(k)
+        self._delete(k)  # does not raise an error if key not in table
         self._items.append(_Item(k, v))
 
     def __getitem__(self, k):
@@ -77,23 +78,35 @@ class SequentialSearchST():
         # Perform sequential search
         for i, item in enumerate(self._items):
             if k == item.key:
+                self._compares += i
                 if self._self_organize:
                     # move search hit to front of the list:
                     self._items.insert(0, self._items.pop(i))
                 return item.value
         else:
+            self._compares += self.size  # tested all the keys!
             raise KeyError(k)
 
     def __contains__(self, k):
         """Return True if `k` is present in the table, False otherwise."""
         k in self.keys()
 
-    def __delitem__(self, k):
+    def _delete(self, k):
         """Delete the item associated with `k`."""
+        # TODO refactor to general operartion?? __get__item uses same loop
         for i, item in enumerate(self._items):
             if k == item.key:
+                self._compares += i
                 del self._items[i]
-                break
+                return True  # successful search
+        else:
+            self._compares += self.size
+
+    def __delitem__(self, k):
+        """Delete the item associated with `k`. Raises KeyError."""
+        # `del t['k']` should raise an error if 'k' is not in the table.
+        if self._delete(k) is None:
+            raise KeyError(k)
 
     def __eq__(self, other):
         return sorted(self.items()) == sorted(other.items())
