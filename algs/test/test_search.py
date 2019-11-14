@@ -14,13 +14,15 @@ import os
 import pickle
 import re
 
+import pandas as pd
+
 from tqdm import tqdm
 
 from algs.search import SequentialSearchST, BinarySearchST
 
 pat = re.compile(r"[a-zA-Z']+")  # split on non-alphabet chars and underscores
 
-def get_num_lines(filename):
+def count_lines(filename):
     """Scan through file to count the number of lines."""
     fp = open(filename, 'r+')
     buf = mmap.mmap(fp.fileno(), 0)
@@ -30,47 +32,56 @@ def get_num_lines(filename):
     return lines
 
 
-def frequency_counter(ST, filename, minlen=1):
+def count_frequencies(ST, filename, minlen=1):
     # Build symbol table of word counts
     t = ST()  # new symbol table
     N = 0
     with open(filename, 'r') as f:
-        # for line in f:
-        for line in tqdm(f, total=get_num_lines(filename)):
-            # split the line on anything
+        for line in tqdm(f, total=count_lines(filename)):
             for word in pat.findall(line.lower()):
-                N += 1  # count total words
                 if len(word) >= minlen:
+                    N += 1  # count all words matching criterion
                     try:
                         t[word] += 1
                     except KeyError:
                         t[word] = 1
 
     # Find the key with the highest frequency
-    max_word = ""
-    max_freq = 0
+    max_word = ''
+    t[max_word] = 0
     for word in t:
-        if t[word] > max_freq:
+        if t[word] > t[max_word]:
             max_word = word
-            max_freq = t[word]
-    print(f"N = {N}")
-    print(max_word, max_freq)
-
-    return t
+    del t['']  # remove placeholder
+    return t, N, max_word
 
 
 if __name__ == '__main__':
-    # filename = 'data/tiny_tale.txt'   # 292
-    filename = 'data/tale.txt'          # 779K
-    # filename = 'data/leipzig1m.txt'     # 124M
+    # Choose symbol table to test
+    # ST = SequentialSearchST
+    ST = BinarySearchST
 
-    minlen = 8
+    filenames = ['data/tiny_tale.txt',  # 292
+                 'data/tale.txt']       # 779K
+                 # 'data/leipzig1m.txt']  # 124M
 
-    ST = SequentialSearchST
-    # ST = BinarySearchST
+    # words = dict()
+    tags = [os.path.splitext(os.path.basename(x))[0] for x in filenames]
+    df = pd.DataFrame(columns=pd.MultiIndex.from_product([tags,
+                                                             ['words', 'distinct', 'max_word', 'max_freq']]))
+    for f in filenames:
+        tag = os.path.splitext(os.path.basename(f))[0]  # i.e. 'tiny_tale'
+        for minlen in [1, 8, 10]:
+            t, N, max_word = count_frequencies(ST, f, minlen)
+            df.loc[minlen, (tag, 'words')] = N
+            df.loc[minlen, (tag, 'distinct')] = len(t)
+            df.loc[minlen, (tag, 'max_word')] = max_word
+            df.loc[minlen, (tag, 'max_freq')] = t[max_word]
+            # print("words =", N)
+            # print("distinct =", len(t))
+            # print(max_word, t[max_word])
 
-    t = frequency_counter(ST, filename, minlen=minlen)
-    # pickle.dump(t, open(f"tale_{ST.__name__}_N{minlen}.pkl", 'wb'))
+            # pickle.dump(t, open(f"{tag}_{ST.__name__}_m{minlen:02d}.pkl", 'wb'))
 
 # =============================================================================
 # =============================================================================

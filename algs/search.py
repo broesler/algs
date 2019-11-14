@@ -139,11 +139,12 @@ class BinarySearchST():
     is_empty : bool
         True if `size == 0`.
     """
-    # "software cache" the most recently accessed key
-    _cache = None
-
-    def __init__(self, items=list()):
+    def __init__(self, items=list(), cache=False):
         self._items = list()
+        # "software cache" the most recently accessed key
+        self._CACHE_FLAG = cache  # client-controlled on/off switch
+        self._cache = None
+
         try:
             # sort by keys so we get O(N log N) construction vs O(N^2)
             for k, v in mergesort(items):
@@ -170,8 +171,9 @@ class BinarySearchST():
         If `k` is in the table, change its value to `v`."""
         # If key is largest in table, slap it on the end! This feature makes
         # construction with a sorted list O(n).
-        if not self.is_empty and k > self.max():
-            self._items.append(_Item(k, v))
+        # TODO create switch for ordered insertions
+        # if not self.is_empty and k > self.max():
+        #     self._items.append(_Item(k, v))
 
         # Perform binary search O(lg N)
         i = self.rank(k)
@@ -182,17 +184,18 @@ class BinarySearchST():
         else:
             # create new Item in the table
             self._items.insert(i, _Item(k, v))  # O(n) to shuffle list elements
-        self._assert_integrity()
+            # self._assert_integrity()
 
     def __getitem__(self, k):
         """Return the value associated with the given `k`."""
         # See if we have cached the key
-        if self._cache and self._cache.key == k:
+        if self._CACHE_FLAG and self._cache and self._cache.key == k:
             return self._cache.value
 
         i = self.rank(k)
         if i < self.size and self._items[i].key == k:
-            self._cache = self._items[i]  # cache its location
+            if self._CACHE_FLAG:
+                self._cache = self._items[i]  # cache its location
             return self._items[i].value
         else:
             raise KeyError(k)
@@ -210,13 +213,13 @@ class BinarySearchST():
         i = self.rank(k)
         if i < self.size and self._items[i].key == k:
             # Clear cache of item if necessary
-            if self._cache and self._cache.key == k:
+            if self._CACHE_FLAG and self._cache and self._cache.key == k:
                 self._cache = None
             # Delete the item from the symbol table
             del self._items[i]
         else:
             raise KeyError(k)
-        self._assert_integrity()
+        # self._assert_integrity()
 
     def min(self):
         """Return the minimum key in the table."""
@@ -232,13 +235,13 @@ class BinarySearchST():
         """Delete the smallest key."""
         _empty_check(self)
         del self._items[0]
-        self._assert_integrity()
+        # self._assert_integrity()
 
     def delete_max(self):
         """Delete the largest key."""
         _empty_check(self)
         del self._items[-1]
-        self._assert_integrity()
+        # self._assert_integrity()
 
     def floor(self, k):
         """Return the largest key less than or equal to `k`."""
@@ -355,6 +358,7 @@ class BinarySearchST():
     # ------------------------------------------------------------------------- 
     #         Data Integrity Checks
     # -------------------------------------------------------------------------
+    # NOTE integrity checks are O(N)!! They break the O(Lg N) search...
     def _assert_integrity(self):
         assert self._rank_check() and self._is_sorted()
 
@@ -787,6 +791,8 @@ if __name__ == '__main__':
             should_be(st[k], v)
 
     # st.keys() not guaranteed in order, so these tests are weak
+    should_be(len(st), len(test_set))  # test __len__
+    should_be(len(st), st.size)
     should_be(sorted(st.keys()), sorted(test_set))
     should_be((st.keys() == sorted(test_set)), False)
     should_be(sorted(st.values()), sorted([v for k, v in data_set]))
@@ -826,6 +832,7 @@ if __name__ == '__main__':
         #          L   P 
 
         should_be(len(t), len(test_set))  # test __len__
+        should_be(len(t), t.size)
 
         for k, v in data:
             should_be(k in t, True)  # test __contains__
