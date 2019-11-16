@@ -9,7 +9,7 @@
 """
 # =============================================================================
 
-from recordclass import recordclass as _recordclass
+from recordclass import recordclass
 
 from algs.basics import Queue, _empty_check
 from algs.sort import mergesort
@@ -21,7 +21,7 @@ __all__ = ['SequentialSearchST', 'BinarySearchST', 'BST']
 #   * use collections.abc.[Keys|Values|Items]View classes?
 
 # Private class of key/value pairs (a mutable tuple)
-_Item = _recordclass('_Item', ['key', 'value'])
+Item = recordclass('Item', ['key', 'value'])
 
 
 class SequentialSearchST():
@@ -72,7 +72,7 @@ class SequentialSearchST():
         """Insert a new value `v` associated with key `k`.
         If `k` is in the table, change its value to `v`."""
         self._delete(k)  # does not raise an error if key not in table
-        self._items.append(_Item(k, v))
+        self._items.append(Item(k, v))
 
     def __getitem__(self, k):
         """Return the value associated with the given key `k`."""
@@ -200,7 +200,7 @@ class BinarySearchST():
             return
         else:
             # create new Item in the table
-            self._items.insert(i, _Item(k, v))  # O(n) to shuffle list elements
+            self._items.insert(i, Item(k, v))  # O(n-i) to move list elements
             # self._assert_integrity()
 
     def __getitem__(self, k):
@@ -748,7 +748,7 @@ class BST():
         if lo < x.key:
             self._iterate(lo, hi, x.left, q, rtype)
         if lo <= x.key and hi >= x.key:
-            q.enqueue(x.key if rtype == 'keys' else (x.val if rtype == 'values' else _Item(x.key, x.val)))
+            q.enqueue(x.key if rtype == 'keys' else (x.val if rtype == 'values' else Item(x.key, x.val)))
         if hi > x.key:
             self._iterate(lo, hi, x.right, q, rtype)
         return list(q)

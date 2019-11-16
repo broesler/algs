@@ -16,6 +16,8 @@ from random import randrange
 # and use the decorator @functools.total_ordering (or define the other rich
 # comparison operations)
 
+__all__ = ['is_sorted', 'bubble_sort', 'insertion_sort', 'mergesort',
+           'mergesort_BU', 'qsort', 'heap_sort']
 
 # ----------------------------------------------------------------------------- 
 #         Utilities

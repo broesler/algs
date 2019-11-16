@@ -12,7 +12,9 @@
 import string
 import random
 
-from algs.sort import *
+from algs.sort import is_sorted, bubble_sort, insertion_sort, mergesort, \
+                      mergesort_BU, qsort, heap_sort, \
+                      quicksort0, quicksort0r, qsort0, qsort1, qsort2
 
 def should_be(a, b):
     """Test a condition."""
