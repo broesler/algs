@@ -46,7 +46,8 @@ class SequentialSearchST():
     def __init__(self, items=list(), self_organize=False):
         self._items = list()
         self._self_organize = self_organize  # control order of list
-        self._compares = 0                   # track number of operations
+        self._compares = 0  # track number of compares per operation
+        # Initialize the symbol table
         try:
             for k, v in items:
                 self.__setitem__(k, v)
@@ -76,6 +77,7 @@ class SequentialSearchST():
     def __getitem__(self, k):
         """Return the value associated with the given key `k`."""
         # Perform sequential search
+        self._compares = 0
         for i, item in enumerate(self._items):
             if k == item.key:
                 self._compares += i
@@ -94,6 +96,7 @@ class SequentialSearchST():
     def _delete(self, k):
         """Delete the item associated with `k`."""
         # TODO refactor to general operartion?? __get__item uses same loop
+        self._compares = 0
         for i, item in enumerate(self._items):
             if k == item.key:
                 self._compares += i
@@ -157,7 +160,8 @@ class BinarySearchST():
         # "software cache" the most recently accessed key
         self._CACHE_FLAG = cache  # client-controlled on/off switch
         self._cache = None
-
+        self._compares = 0        # track number of compares per operation
+        # Initialize the symbol table
         try:
             # sort by keys so we get O(N log N) construction vs O(N^2)
             for k, v in mergesort(items):
@@ -803,9 +807,9 @@ if __name__ == '__main__':
         else:
             should_be(st[k], v)
 
-    # st.keys() not guaranteed in order, so these tests are weak
     should_be(len(st), len(test_set))  # test __len__
     should_be(len(st), st.size)
+    # st.keys() not guaranteed in order, so these tests are weak
     should_be(sorted(st.keys()), sorted(test_set))
     should_be((st.keys() == sorted(test_set)), False)
     should_be(sorted(st.values()), sorted([v for k, v in data_set]))
