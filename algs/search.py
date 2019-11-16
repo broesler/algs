@@ -46,7 +46,7 @@ class SequentialSearchST():
     def __init__(self, items=list(), self_organize=False):
         self._items = list()
         self._self_organize = self_organize  # control order of list
-        self._compares = 0  # track number of compares per operation
+        self._cost = 0  # track number of compares per operation
         # Initialize the symbol table
         try:
             for k, v in items:
@@ -77,16 +77,16 @@ class SequentialSearchST():
     def __getitem__(self, k):
         """Return the value associated with the given key `k`."""
         # Perform sequential search
-        self._compares = 0
+        self._cost = 0
         for i, item in enumerate(self._items):
             if k == item.key:
-                self._compares += i
+                self._cost += i
                 if self._self_organize:
                     # move search hit to front of the list:
                     self._items.insert(0, self._items.pop(i))
                 return item.value
         else:
-            self._compares += self.size  # tested all the keys!
+            self._cost += self.size  # tested all the keys!
             raise KeyError(k)
 
     def __contains__(self, k):
@@ -95,15 +95,14 @@ class SequentialSearchST():
 
     def _delete(self, k):
         """Delete the item associated with `k`."""
-        # TODO refactor to general operartion?? __get__item uses same loop
-        self._compares = 0
+        self._cost = 0
         for i, item in enumerate(self._items):
             if k == item.key:
-                self._compares += i
+                self._cost += i
                 del self._items[i]
                 return True  # successful search
         else:
-            self._compares += self.size
+            self._cost += self.size
 
     def __delitem__(self, k):
         """Delete the item associated with `k`. Raises KeyError."""
@@ -160,7 +159,7 @@ class BinarySearchST():
         # "software cache" the most recently accessed key
         self._CACHE_FLAG = cache  # client-controlled on/off switch
         self._cache = None
-        self._compares = 0        # track number of compares per operation
+        self._cost = 0        # track number of compares + array accesses
         # Initialize the symbol table
         try:
             # sort by keys so we get O(N log N) construction vs O(N^2)
@@ -190,17 +189,19 @@ class BinarySearchST():
         # construction with a sorted list O(n).
         # TODO create switch for ordered insertions
         # if not self.is_empty and k > self.max():
-        #     self._items.append(_Item(k, v))
+        #     self._items.append(Item(k, v))
 
         # Perform binary search O(lg N)
         i = self.rank(k)
         # if key is in the table, update the value
         if i < self.size and self._items[i].key == k:
             self._items[i].value = v
+            self._cost += 1
             return
         else:
             # create new Item in the table
-            self._items.insert(i, Item(k, v))  # O(n-i) to move list elements
+            self._items.insert(i, Item(k, v))
+            self._cost += self.size - i  # Θ(n-i) to move list elements
             # self._assert_integrity()
 
     def __getitem__(self, k):
@@ -285,10 +286,12 @@ class BinarySearchST():
     def rank(self, k):
         """Return the number of keys less than `k`."""
         # Non-recursive binary search algorithm
+        self._cost = 0
         lo = 0 
         hi = self.size - 1
         while lo <= hi:
             mid = (hi + lo) // 2
+            self._cost += 2  # count 1 compare + 1 access here for simplicity
             if k < self._items[mid].key:
                 hi = mid - 1
             elif k > self._items[mid].key:
@@ -821,10 +824,10 @@ if __name__ == '__main__':
     st['A'] = v
 
     # ---------- Test Ordered STs ----------
-    for ST in [BinarySearchST, BST]:
+    for ST in [BinarySearchST]:
         # Test bad input type
         try:
-            t = ST(list('EXAMPLE'))
+            t = ST(list('BADEXAMPLE'))
         except ValueError:
             should_be(True, True)
         else:

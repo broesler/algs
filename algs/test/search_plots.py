@@ -28,27 +28,29 @@ filename = 'data/tale.txt'       # 779K
 minlen = 8
 tag = os.path.splitext(os.path.basename(filename))[0]
 
+# Load the FrequencyCounter
 fc = pickle.load(open(f"{tag}_{ST_name}_m{minlen:02d}.pkl", 'rb'))
 
 ops = np.arange(fc.N)  # one operation per word in input
-mean_cmp = np.cumsum(fc.compares)[1:] / ops[1:]  # cumulative average compares
+mean_cmp = np.cumsum(fc.cost)[1:] / ops[1:]  # cumulative average cost
 
-# Plot the amortized cost (# compares) vs. number of `put` operations
+# Plot the amortized cost (# cost) vs. number of `put` operations
 fig = plt.figure(1, clear=True)
 ax = fig.add_subplot()
 ax.set(title=f"{ST_name}: {os.path.basename(filename)}, minlen={minlen}",
        xlabel='operations',
-       ylabel='compares')
-ax.scatter(ops, fc.compares, c=0.7*np.array([[1, 1, 1]]), s=1, alpha=0.8)
+       ylabel='cost')
+
+ax.scatter(ops, fc.cost, c=0.7*np.array([[1, 1, 1]]), s=1, alpha=0.8)
 ax.plot(ops[1:], mean_cmp, 'C3-')
 
 ax.text(fc.N, 0.99*mean_cmp[-1], f"$\leftarrow$ {mean_cmp[-1]:.0f}", color='C3')
 ax.xaxis.label.set_color('C3')
 ax.yaxis.label.set_color('C3')
 ax.set_xlim([0, fc.N])
-ax.set_ylim([0, np.max(fc.compares)])
+ax.set_ylim([0, np.max(fc.cost)])
 ax.set_xticks([0, fc.N])
-ax.set_yticks([0, np.max(fc.compares)])
+ax.set_yticks([0, np.max(fc.cost)])
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
 plt.tight_layout()

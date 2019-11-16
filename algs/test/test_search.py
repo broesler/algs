@@ -26,22 +26,24 @@ class FrequencyCounter():
 
     Parameters
     ----------
-    input : :obj:file
-        File object from which to read the input string. Can be a file pointer,
-        `sys.stdin`, etc.
+    ST : symbol table class
+        The class of symbol table that will be used to store the frequencies.
+    **kwargs : dict-like
+        Any additional parameters will be passed to `ST`.
 
     Returns
     -------
     result : (M, N) ndarray
         Matrix of M vectors in K dimensions
     """
-    pat = re.compile(r"[a-zA-Z']+")  # split on non-alphabet chars and underscores
+    # split on non-alphabet chars and underscores
+    pat = re.compile(r"[a-zA-Z']+")
 
-    def __init__(self, ST):
-        self.t = ST()
-        self.N = 0  # number of words in the input
+    def __init__(self, ST, **kwargs):
+        self.t = ST(**kwargs)
+        self.N = 0              # number of words in the input
         self.max_word = ''
-        self.compares = list()
+        self.cost = list()  # count compares for each `put` operation
 
     @staticmethod
     def count_lines(fp):
@@ -53,7 +55,6 @@ class FrequencyCounter():
             lines += 1
         return lines
 
-    # Output list of ST._compares, where we append to the list after each `put` (`t[word]`)
     def count_frequencies(self, fp, minlen=1):
         """Build symbol table of word counts."""
         self.N = 0
@@ -65,8 +66,8 @@ class FrequencyCounter():
                         self.t[word] += 1
                     except KeyError:
                         self.t[word] = 1
-                    # Track number of compares for each `put` operation
-                    self.compares.append(self.t._compares)
+                    # Track cost for each `put` operation, len(cost) == N
+                    self.cost.append(self.t._cost)
 
         # Find the key with the highest frequency
         max_word = ''
@@ -80,8 +81,8 @@ class FrequencyCounter():
 
 if __name__ == '__main__':
     # Choose symbol table to test
-    # ST = SequentialSearchST
-    ST = BinarySearchST
+    ST = SequentialSearchST
+    # ST = BinarySearchST
 
     filenames = ['data/tiny_tale.txt',  # 292
                  'data/tale.txt']       # 779K
