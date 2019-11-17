@@ -43,9 +43,9 @@ class SequentialSearchST():
         `floor`/`ceil`, etc. that the ordered symbol tables (BinarySearchST,
         BST, etc.) can efficiently implement.
     """
-    def __init__(self, items=list(), self_organize=False):
+    def __init__(self, items=list(), cache=False):
         self._items = list()
-        self._self_organize = self_organize  # control order of list
+        self._CACHE_FLAG = cache  # control order of list
         self._cost = 0  # track number of compares per operation
         # Initialize the symbol table
         try:
@@ -81,7 +81,7 @@ class SequentialSearchST():
         for i, item in enumerate(self._items):
             if k == item.key:
                 self._cost += i
-                if self._self_organize:
+                if self._CACHE_FLAG:
                     # move search hit to front of the list:
                     self._items.insert(0, self._items.pop(i))
                 return item.value
@@ -188,8 +188,8 @@ class BinarySearchST():
         # If key is largest in table, slap it on the end! This feature makes
         # construction with a sorted list O(n).
         # TODO create switch for ordered insertions
-        # if not self.is_empty and k > self.max():
-        #     self._items.append(Item(k, v))
+        if not self.is_empty and k > self.max():
+            self._items.append(Item(k, v))
 
         # Perform binary search O(lg N)
         i = self.rank(k)

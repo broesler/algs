@@ -29,7 +29,7 @@ minlen = 8
 tag = os.path.splitext(os.path.basename(filename))[0]
 
 # Load the FrequencyCounter
-fc = pickle.load(open(f"{tag}_{ST_name}_m{minlen:02d}.pkl", 'rb'))
+fc = pickle.load(open(f"./pkl/{tag}_{ST_name}_m{minlen:02d}.pkl", 'rb'))
 
 ops = np.arange(fc.N)  # one operation per word in input
 mean_cmp = np.cumsum(fc.cost)[1:] / ops[1:]  # cumulative average cost
