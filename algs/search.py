@@ -71,8 +71,17 @@ class SequentialSearchST():
     def __setitem__(self, k, v):
         """Insert a new value `v` associated with key `k`.
         If `k` is in the table, change its value to `v`."""
-        self._delete(k)  # does not raise an error if key not in table
-        self._items.append(Item(k, v))
+        self._cost = 0
+        # key exists, so update value
+        for i, item in enumerate(self._items):
+            if k == item.key:
+                self._cost += i + 1
+                item.value = v
+                return
+        else:
+            self._cost += self.size  # tested all the keys!
+            # Add new key to end of list O(1)
+            self._items.append(Item(k, v))
 
     def __getitem__(self, k):
         """Return the value associated with the given key `k`."""
@@ -80,9 +89,9 @@ class SequentialSearchST():
         self._cost = 0
         for i, item in enumerate(self._items):
             if k == item.key:
-                self._cost += i
-                if self._CACHE_FLAG:
-                    # move search hit to front of the list:
+                self._cost += i + 1
+                if self._CACHE_FLAG and i > 0:
+                    # move search hit to front of the list O(n)
                     self._items.insert(0, self._items.pop(i))
                 return item.value
         else:
@@ -98,7 +107,7 @@ class SequentialSearchST():
         self._cost = 0
         for i, item in enumerate(self._items):
             if k == item.key:
-                self._cost += i
+                self._cost += i + 1
                 del self._items[i]
                 return True  # successful search
         else:
@@ -800,9 +809,10 @@ if __name__ == '__main__':
     data_set.remove(('A', 2))
     data_set.remove(('E', 6))
 
+    # ---------- Test SequentialSearchST ----------
+    # TODO implement tests for t._cost after various operations
     should_be(SequentialSearchST().is_empty, True)
 
-    # ---------- Test SequentialSearchST ----------
     st = SequentialSearchST(data)
     for k, v in data:
         if k == 'E' or k == 'A':

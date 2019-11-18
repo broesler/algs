@@ -18,8 +18,8 @@ from algs.search import SequentialSearchST, BinarySearchST
 from test_search import FrequencyCounter
 
 # Choose symbol table to test
-# ST_name = 'SequentialSearchST'
-ST_name = 'BinarySearchST'
+ST_name = 'SequentialSearchST'
+# ST_name = 'BinarySearchST'
 
 # filename = 'data/tiny_tale.txt'  # 292
 filename = 'data/tale.txt'       # 779K

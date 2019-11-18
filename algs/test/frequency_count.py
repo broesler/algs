@@ -30,13 +30,15 @@ df = pd.DataFrame(columns=pd.MultiIndex.from_product([tags, ['words', 'distinct'
 for i, f in enumerate(filenames):
     tag = tags[i]
     for minlen in [1, 8, 10]:
-        fc = FrequencyCounter(ST, cache=True)
+        cache = False
+        fc = FrequencyCounter(ST, cache=cache)
         fc.count_frequencies(f, minlen)
         df.loc[minlen, (tag, 'words')] = fc.N
         df.loc[minlen, (tag, 'distinct')] = fc.t.size
         df.loc[minlen, (tag, 'max_word')] = fc.max_word
         df.loc[minlen, (tag, 'max_freq')] = fc.t[fc.max_word]
-        pickle.dump(fc, open(f"./pkl/{tag}_{ST.__name__}_m{minlen:02d}_cached.pkl", 'wb'))
+        cached = '_cached' if cache else ''
+        pickle.dump(fc, open(f"./pkl/{tag}_{ST.__name__}_m{minlen:02d}{cached}.pkl", 'wb'))
 
 print(df)
 
