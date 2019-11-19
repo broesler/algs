@@ -47,7 +47,8 @@ class FrequencyCounter():
         return i
 
     def count_frequencies(self, filename, minlen=1):
-        """Build symbol table of word counts."""
+        """Build symbol table of word counts, and find the max."""
+        # Compute the frequency counts
         with open(filename, 'r') as fp:
             for line in tqdm(fp, total=self.count_lines(fp)):
                 for word in self.pat.findall(line.lower()):

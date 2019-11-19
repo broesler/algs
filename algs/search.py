@@ -93,6 +93,7 @@ class SequentialSearchST():
                 if self._CACHE_FLAG and i > 0:
                     # move search hit to front of the list O(n)
                     self._items.insert(0, self._items.pop(i))
+                    # self._cost += self.size  # O(n) to insert(0)
                 return item.value
         else:
             self._cost += self.size  # tested all the keys!
@@ -196,7 +197,6 @@ class BinarySearchST():
         If `k` is in the table, change its value to `v`."""
         # If key is largest in table, slap it on the end! This feature makes
         # construction with a sorted list O(n).
-        # TODO create switch for ordered insertions
         if not self.is_empty and k > self.max():
             self._items.append(Item(k, v))
 
@@ -214,7 +214,7 @@ class BinarySearchST():
             # self._assert_integrity()
 
     def __getitem__(self, k):
-        """Return the value associated with the given `k`."""
+        """Return the value associated with the given key `k`."""
         # See if we have cached the key
         if self._CACHE_FLAG and self._cache and self._cache.key == k:
             return self._cache.value
@@ -293,7 +293,7 @@ class BinarySearchST():
         return self._items[r].key
 
     def rank(self, k):
-        """Return the number of keys less than `k`."""
+        """Return the number of keys strictly less than `k`."""
         # Non-recursive binary search algorithm
         self._cost = 0
         lo = 0 
@@ -834,7 +834,7 @@ if __name__ == '__main__':
     st['A'] = v
 
     # ---------- Test Ordered STs ----------
-    for ST in [BinarySearchST]:
+    for ST in [BinarySearchST]:  # BST
         # Test bad input type
         try:
             t = ST(list('BADEXAMPLE'))
