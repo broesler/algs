@@ -46,7 +46,7 @@ class SequentialSearchST():
     def __init__(self, items=list(), cache=False):
         self._items = list()
         self._CACHE_FLAG = cache  # control order of list
-        self._cost = 0  # track number of compares per operation
+        self._cost = 0  # track cumulative number of compares of all operation
         # Initialize the symbol table
         try:
             for k, v in items:
@@ -71,53 +71,42 @@ class SequentialSearchST():
     def __setitem__(self, k, v):
         """Insert a new value `v` associated with key `k`.
         If `k` is in the table, change its value to `v`."""
-        self._cost = 0
-        # key exists, so update value
         for i, item in enumerate(self._items):
             if k == item.key:
-                self._cost += i + 1
-                item.value = v
+                self._cost = i + 1
+                item.value = v              # key exists, so update value
                 return
         else:
-            self._cost += self.size  # tested all the keys!
-            # Add new key to end of list O(1)
-            self._items.append(Item(k, v))
+            self._cost = self.size          # tested all the keys!
+            self._items.append(Item(k, v))  # add new key to end of list O(1)
 
     def __getitem__(self, k):
         """Return the value associated with the given key `k`."""
         # Perform sequential search
-        self._cost = 0
         for i, item in enumerate(self._items):
             if k == item.key:
-                self._cost += i + 1
+                self._cost = i + 1
                 if self._CACHE_FLAG and i > 0:
                     # move search hit to front of the list O(n)
                     self._items.insert(0, self._items.pop(i))
-                    # self._cost += self.size  # O(n) to insert(0)
                 return item.value
         else:
-            self._cost += self.size  # tested all the keys!
+            self._cost = self.size  # tested all the keys!
             raise KeyError(k)
 
     def __contains__(self, k):
         """Return True if `k` is present in the table, False otherwise."""
         k in self.keys()
 
-    def _delete(self, k):
-        """Delete the item associated with `k`."""
-        self._cost = 0
+    def __delitem__(self, k):
+        """Delete the item associated with `k`. Raises KeyError."""
         for i, item in enumerate(self._items):
             if k == item.key:
-                self._cost += i + 1
+                self._cost = i + 1
                 del self._items[i]
                 return True  # successful search
         else:
-            self._cost += self.size
-
-    def __delitem__(self, k):
-        """Delete the item associated with `k`. Raises KeyError."""
-        # `del t['k']` should raise an error if 'k' is not in the table.
-        if self._delete(k) is None:
+            self._cost = self.size
             raise KeyError(k)
 
     def __eq__(self, other):
