@@ -21,13 +21,12 @@ import pickle
 import time
 
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
 import numpy as np
 import pandas as pd
 import seaborn as sns
 
-from tqdm import tqdm
 from matplotlib.gridspec import GridSpec
+from tqdm import tqdm
 
 from algs.search import SequentialSearchST, BinarySearchST
 
@@ -39,32 +38,34 @@ def H_N(N):
                      for n in np.asarray(N)])
 
 # Define sequence of N to test
-Ns = [int(x) for x in [10, 1e2, 1e3, 2e3, 5e3, 1e4, 2e4]]
-names = [x.__name__ for x in [SequentialSearchST, BinarySearchST]]
-Ns_str = [str(x) for x in Ns]
+Ns = [int(x) for x in [10, 1e2, 1e3, 2e3, 5e3, 1e4]]
 
 N_s = 100  # number of search times to sample
 
-# Store the runtimes
-cols = pd.MultiIndex.from_product([names, Ns_str], names=['ST', 'N'])
-data = np.empty((N_s, len(names)*len(Ns_str)))
+# Store the individual search runtimes
+ST_names = [x.__name__ for x in [SequentialSearchST, BinarySearchST]]
+
+cols = pd.MultiIndex.from_product([ST_names, Ns, ['put', 'get']],
+                                  names=['ST', 'N', 'op'])
+data = np.empty((N_s, len(ST_names)*len(Ns)*2))
 df = pd.DataFrame(columns=cols, data=data)
+tots = pd.Series(index=cols, data=data[0, :].T)
 
 for N in Ns:
     M = 10*N
 
-    for t in [SequentialSearchST(cache=True), BinarySearchST()]:
-        print(f"Testing with {N} keys...")
-
-        # Fill symbol table with N keys
-        # TODO time puts() as well as gets() ['put', 'get']
+    for ST in [SequentialSearchST, BinarySearchST]:
+        print(f"Filling table with {N} keys...")
+        put_tic = time.perf_counter()
         keys = np.arange(N)
         np.random.shuffle(keys)  # random insertion order
-        for k in keys:
-            t[k] = None
-        keys.sort()
+        kv = [(k, None) for k in keys]  # values don't matter
+        t = ST(kv, cache=isinstance(ST, SequentialSearchST))
+        put_toc = time.perf_counter()
+        tots[(t.__class__.__name__, N, 'put')] = put_toc - put_tic
 
         # Pre-determined probability of searching for key `i`
+        keys.sort()
         if zipf:
             probs = 1 / ((keys+1.0) * H_N(keys))
         else:
@@ -72,29 +73,31 @@ for N in Ns:
 
         probs /= np.sum(probs)  # normalize to 1
 
-        # Perform 10N successful searches
+        print(f"Performing 10N successful searches...")
         runtimes = np.empty(M)
-        # for i in range(M):
+        get_tic = time.perf_counter()
         for i in tqdm(range(M), total=M):
             k = np.random.choice(keys, p=probs)
 
-            tic = time.time()
+            tic = time.perf_counter()
             x = t[k]  # perform get operation
-            toc = time.time()
+            toc = time.perf_counter()
 
             runtimes[i] = toc - tic
+        get_toc = time.perf_counter()
 
         # Randomly sample the search times for easier plotting
         idx = np.random.randint(0, M, size=N_s)
-        df[(t.__class__.__name__, str(N))] = runtimes[idx]
+        df[(t.__class__.__name__, N, 'get')] = runtimes[idx]
+        tots[(t.__class__.__name__, N, 'get')] = get_toc - get_tic
 
-# pickle.dump(df, open('runtimes.pkl', 'wb'))
-df = pickle.load(open('runtimes.pkl', 'rb'))
+pickle.dump((df, tots), open('runtimes.pkl', 'wb'))
+# df = pickle.load(open('runtimes.pkl', 'rb'))
 
 # ----------------------------------------------------------------------------- 
 #         Plots
 # -----------------------------------------------------------------------------
-tf = df.melt(value_name='runtime')  # prep for plotting
+tf = df.xs('get', level='op', axis=1).melt(value_name='runtime')
 
 # Plot distributions of runtimes
 fig = plt.figure(1, clear=True)
@@ -105,9 +108,9 @@ sns.stripplot(data=tf, x='N', y='runtime', hue='ST',
               dodge=True, jitter=True, alpha=0.25, zorder=1)
 
 # PLot the means of each group
-# sns.pointplot(data=tf, x='N', y='runtime', hue='ST',
-#               dodge=0.4, join=False, markers='d',
-#               palette='dark')
+sns.pointplot(data=tf, x='N', y='runtime', hue='ST',
+              dodge=0.4, join=False, markers='d',
+              palette='dark')
 
 # Nice legend
 h, l = ax.get_legend_handles_labels()
@@ -122,8 +125,8 @@ ax.set_ylabel('time per search [s]')
 # Plot total runtimes
 fig = plt.figure(2, clear=True)
 ax = fig.add_subplot()
-ax.plot(Ns, 10*N_s*1000*df['SequentialSearchST'].mean(), 'x-', label='SequentialSearchST')
-ax.plot(Ns, 10*N_s*1000*df['BinarySearchST'].mean(),     'x-', label='BinarySearchST')
+ax.plot(Ns, tots.xs(['SequentialSearchST', 'get'], level=['ST', 'op']), 'x-', label='SequentialSearchST')
+ax.plot(Ns, tots.xs(['BinarySearchST', 'get'], level=['ST', 'op']), 'x-', label='BinarySearchST')
 ax.set(xlabel='N',
        ylabel='Runtime [s]')
 ax.legend()
