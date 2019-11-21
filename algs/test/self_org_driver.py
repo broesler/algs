@@ -37,6 +37,12 @@ def H_N(N):
     return np.array([np.sum([1.0 / i  for i in np.arange(1, n)]) 
                      for n in np.asarray(N)])
 
+def find_nearest(a, v):
+    """Find the value in `a` nearest to `v`."""
+    a = np.asarray(a)
+    idx = (np.abs(a - v)).argmin()
+    return a[idx]
+
 # Define sequence of N to test
 Ns = [int(x) for x in [10, 1e2, 1e3, 2e3, 5e3, 1e4]]
 
@@ -45,11 +51,12 @@ N_s = 100  # number of search times to sample
 # Store the individual search runtimes
 ST_names = [x.__name__ for x in [SequentialSearchST, BinarySearchST]]
 
-cols = pd.MultiIndex.from_product([ST_names, Ns, ['put', 'get']],
-                                  names=['ST', 'N', 'op'])
-data = np.empty((N_s, len(ST_names)*len(Ns)*2))
-df = pd.DataFrame(columns=cols, data=data)
-tots = pd.Series(index=cols, data=data[0, :].T)
+cols = pd.MultiIndex.from_product([ST_names, ['put', 'get'], Ns],
+                                  names=['ST', 'op', 'N'])
+data = np.empty((N_s, len(ST_names)*len(Ns)))
+
+df = pd.DataFrame(columns=cols.droplevel('op').unique(), data=data)
+tots = pd.Series(index=cols)
 
 for N in Ns:
     M = 10*N
@@ -59,10 +66,13 @@ for N in Ns:
         put_tic = time.perf_counter()
         keys = np.arange(N)
         np.random.shuffle(keys)  # random insertion order
-        kv = [(k, None) for k in keys]  # values don't matter
-        t = ST(kv, cache=isinstance(ST, SequentialSearchST))
+
+        # Fill the symbol table with keys (no values needed)
+        t = ST([(k, None) for k in keys], cache=isinstance(ST, SequentialSearchST))
+
+        # Time the insertions separately
         put_toc = time.perf_counter()
-        tots[(t.__class__.__name__, N, 'put')] = put_toc - put_tic
+        tots[(t.__class__.__name__, 'put', N)] = put_toc - put_tic
 
         # Pre-determined probability of searching for key `i`
         keys.sort()
@@ -88,8 +98,8 @@ for N in Ns:
 
         # Randomly sample the search times for easier plotting
         idx = np.random.randint(0, M, size=N_s)
-        df[(t.__class__.__name__, N, 'get')] = runtimes[idx]
-        tots[(t.__class__.__name__, N, 'get')] = get_toc - get_tic
+        df[(t.__class__.__name__, N)] = runtimes[idx]
+        tots[(t.__class__.__name__, 'get', N)] = get_toc - get_tic
 
 pickle.dump((df, tots), open('runtimes.pkl', 'wb'))
 # df = pickle.load(open('runtimes.pkl', 'rb'))
@@ -97,7 +107,7 @@ pickle.dump((df, tots), open('runtimes.pkl', 'wb'))
 # ----------------------------------------------------------------------------- 
 #         Plots
 # -----------------------------------------------------------------------------
-tf = df.xs('get', level='op', axis=1).melt(value_name='runtime')
+tf = df.melt(value_name='runtime')
 
 # Plot distributions of runtimes
 fig = plt.figure(1, clear=True)
@@ -120,16 +130,25 @@ ax.legend(h[2:], l[2:], title='Symbol Table',
 
 ax.ticklabel_format(axis='y', style='sci', scilimits=(-2,2))
 ax.set_ylim([0.9*tf['runtime'].min(), 1.1*tf['runtime'].max()])
+# ax.set_ylim([0.9*tf['runtime'].min(), 100*tf['runtime'].min()])
 ax.set_ylabel('time per search [s]')
 
 # Plot total runtimes
-fig = plt.figure(2, clear=True)
-ax = fig.add_subplot()
-ax.plot(Ns, tots.xs(['SequentialSearchST', 'get'], level=['ST', 'op']), 'x-', label='SequentialSearchST')
-ax.plot(Ns, tots.xs(['BinarySearchST', 'get'], level=['ST', 'op']), 'x-', label='BinarySearchST')
-ax.set(xlabel='N',
-       ylabel='Runtime [s]')
-ax.legend()
+fignum = 2
+for op in ['put', 'get']:
+    fig = plt.figure(fignum, clear=True)
+    ax = fig.add_subplot()
+    ax.plot(Ns, tots.xs(['SequentialSearchST', op], level=['ST', 'op']),
+            'x-', label='SequentialSearchST')
+    ax.plot(Ns, tots.xs(['BinarySearchST', op], level=['ST', 'op']),
+            'x-', label='BinarySearchST')
+    ax.set(title=f'`{op}()` operations',
+           xlabel='N',
+           ylabel='Runtime [s]',
+           xscale='log',
+           yscale='log')
+    ax.legend()
+    fignum += 1
 
 plt.show()
 # =============================================================================
