@@ -17,6 +17,7 @@
 """
 # =============================================================================
 
+import os
 import pickle
 import time
 
@@ -34,7 +35,7 @@ zipf = False
 
 def H_N(N):
     """Harmonic number `N`."""
-    return np.array([np.sum([1.0 / i  for i in np.arange(1, n)]) 
+    return np.array([1 + np.sum([1.0 / i  for i in np.arange(1, n)]) 
                      for n in np.asarray(N)])
 
 def find_nearest(a, v):
@@ -48,61 +49,66 @@ Ns = [int(x) for x in [10, 1e2, 1e3, 2e3, 5e3, 1e4]]
 
 N_s = 100  # number of search times to sample
 
-# Store the individual search runtimes
-ST_names = [x.__name__ for x in [SequentialSearchST, BinarySearchST]]
+zz = '_zipf' if zipf else ''
+filename = f"./pkl/runtimes{zz}.pkl"
 
-cols = pd.MultiIndex.from_product([ST_names, ['put', 'get'], Ns],
-                                  names=['ST', 'op', 'N'])
-data = np.empty((N_s, len(ST_names)*len(Ns)))
+if os.path.exists(filename):
+    df, tots = pickle.load(open(filename, 'rb'))
+else:
+    # Store the individual search runtimes
+    ST_names = [x.__name__ for x in [SequentialSearchST, BinarySearchST]]
 
-df = pd.DataFrame(columns=cols.droplevel('op').unique(), data=data)
-tots = pd.Series(index=cols)
+    cols = pd.MultiIndex.from_product([ST_names, ['put', 'get'], Ns],
+                                    names=['ST', 'op', 'N'])
+    data = np.empty((N_s, len(ST_names)*len(Ns)))
 
-for N in Ns:
-    M = 10*N
+    df = pd.DataFrame(columns=cols.droplevel('op').unique(), data=data)
+    tots = pd.Series(index=cols)
 
-    for ST in [SequentialSearchST, BinarySearchST]:
-        print(f"Filling table with {N} keys...")
-        put_tic = time.perf_counter()
-        keys = np.arange(N)
-        np.random.shuffle(keys)  # random insertion order
+    for N in Ns:
+        M = 10*N
 
-        # Fill the symbol table with keys (no values needed)
-        t = ST([(k, None) for k in keys], cache=isinstance(ST, SequentialSearchST))
+        for ST in [SequentialSearchST, BinarySearchST]:
+            print(f"Filling table with {N} keys...")
+            put_tic = time.perf_counter()
+            keys = np.arange(N)
+            np.random.shuffle(keys)  # random insertion order
 
-        # Time the insertions separately
-        put_toc = time.perf_counter()
-        tots[(t.__class__.__name__, 'put', N)] = put_toc - put_tic
+            # Fill the symbol table with keys (no values needed)
+            t = ST([(k, None) for k in keys], cache=isinstance(ST, SequentialSearchST))
 
-        # Pre-determined probability of searching for key `i`
-        keys.sort()
-        if zipf:
-            probs = 1 / ((keys+1.0) * H_N(keys))
-        else:
-            probs = 1 / (2.0**(keys + 1.0))
+            # Time the insertions separately
+            put_toc = time.perf_counter()
+            tots[(t.__class__.__name__, 'put', N)] = put_toc - put_tic
 
-        probs /= np.sum(probs)  # normalize to 1
+            # Pre-determined probability of searching for key `i`
+            keys.sort()
+            if zipf:
+                probs = 1 / ((keys+1.0) * H_N(keys))
+            else:
+                probs = 1 / (2.0**(keys + 1.0))
 
-        print(f"Performing 10N successful searches...")
-        runtimes = np.empty(M)
-        get_tic = time.perf_counter()
-        for i in tqdm(range(M), total=M):
-            k = np.random.choice(keys, p=probs)
+            probs /= np.sum(probs)  # normalize to 1
 
-            tic = time.perf_counter()
-            x = t[k]  # perform get operation
-            toc = time.perf_counter()
+            print(f"Performing 10N successful searches...")
+            runtimes = np.empty(M)
+            get_tic = time.perf_counter()
+            for i in tqdm(range(M), total=M):
+                k = np.random.choice(keys, p=probs)
 
-            runtimes[i] = toc - tic
-        get_toc = time.perf_counter()
+                tic = time.perf_counter()
+                x = t[k]  # perform get operation
+                toc = time.perf_counter()
 
-        # Randomly sample the search times for easier plotting
-        idx = np.random.randint(0, M, size=N_s)
-        df[(t.__class__.__name__, N)] = runtimes[idx]
-        tots[(t.__class__.__name__, 'get', N)] = get_toc - get_tic
+                runtimes[i] = toc - tic
+            get_toc = time.perf_counter()
 
-pickle.dump((df, tots), open('runtimes.pkl', 'wb'))
-# df = pickle.load(open('runtimes.pkl', 'rb'))
+            # Randomly sample the search times for easier plotting
+            idx = np.random.randint(0, M, size=N_s)
+            df[(t.__class__.__name__, N)] = runtimes[idx]
+            tots[(t.__class__.__name__, 'get', N)] = get_toc - get_tic
+
+    pickle.dump((df, tots), open(filename, 'wb'))
 
 # ----------------------------------------------------------------------------- 
 #         Plots
@@ -129,9 +135,9 @@ ax.legend(h[2:], l[2:], title='Symbol Table',
           loc='upper left', frameon=True)
 
 ax.ticklabel_format(axis='y', style='sci', scilimits=(-2,2))
-ax.set_ylim([0.9*tf['runtime'].min(), 1.1*tf['runtime'].max()])
-# ax.set_ylim([0.9*tf['runtime'].min(), 100*tf['runtime'].min()])
-ax.set_ylabel('time per search [s]')
+ax.set(ylim=[0.9*tf['runtime'].min(), 1.1*tf['runtime'].max()],
+       ylabel='time per search [s]',
+       yscale='log')
 
 # Plot total runtimes
 fignum = 2
