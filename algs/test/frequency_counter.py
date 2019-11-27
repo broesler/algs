@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # =============================================================================
-#     File: test_search.py
+#     File: frequency_counter.py
 #  Created: 2019-11-06 21:53
 #   Author: Bernie Roesler
 #

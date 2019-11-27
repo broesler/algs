@@ -14,7 +14,7 @@ import pandas as pd
 import pickle
 
 from algs.search import SequentialSearchST, BinarySearchST
-from test_search import FrequencyCounter
+from frequency_counter import FrequencyCounter
 
 filenames = ['data/tiny_tale.txt',  # 292
              'data/tale.txt']       # 779K

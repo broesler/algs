@@ -17,7 +17,7 @@ import pickle
 from matplotlib.gridspec import GridSpec
 
 from algs.search import SequentialSearchST, BinarySearchST
-from test_search import FrequencyCounter
+from frequency_counter import FrequencyCounter
 
 # filename = 'data/tiny_tale.txt'  # 292
 filename = 'data/tale.txt'       # 779K
