@@ -24,10 +24,18 @@ class FrequencyCounter():
     **kwargs : dict-like
         Any additional parameters will be passed to `ST`.
 
-    Returns
-    -------
-    result : (M, N) ndarray
-        Matrix of M vectors in K dimensions
+    Attributes
+    ----------
+    t : symbol table
+        The symbol table where keys are words, and values are frequency counts.
+    N : int
+        The total number of words seen in the input.
+    max_word : str
+        The word with the highest frequency count. `self.t[max_word]` gives the
+        count.
+    cost : list
+        A cumulative list of the number of compares/array accesses per `put`
+        operation in `t`.
     """
     # split on non-alphabet chars and underscores
     pat = re.compile(r"[a-zA-Z']+")

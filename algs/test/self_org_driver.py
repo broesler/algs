@@ -17,145 +17,178 @@
 """
 # =============================================================================
 
-import os
 import pickle
 import time
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
 
-from matplotlib.gridspec import GridSpec
+from pathlib import Path
 from tqdm import tqdm
 
 from algs.search import SequentialSearchST, BinarySearchST
 
-zipf = False
+class SelfOrganizingDriver():
+    """Class to test self-organizing SequentialSearchST.
 
-def H_N(N):
-    """Harmonic number `N`."""
-    return np.array([1 + np.sum([1.0 / i  for i in np.arange(1, n)]) 
-                     for n in np.asarray(N)])
+    Parameters
+    ----------
+    ST : symbol table class
+        The class of symbol table that will be used to store the frequencies.
+    cache : bool
+        If True, use self-organizing search in the symbol table to cahce the
+        results. Otherwise, leave the table unordered. Does not affect
+        `BinarySearchST`, or other ordered symbol table classes.
+    zipf : bool
+        If True, choose the key for which to search with probability
+        defined by the Zipf distribution::
 
-def find_nearest(a, v):
-    """Find the value in `a` nearest to `v`."""
-    a = np.asarray(a)
-    idx = (np.abs(a - v)).argmin()
-    return a[idx]
+            P(i) = 1 / (i * H_N(N))
 
-# Define sequence of N to test
-Ns = [int(x) for x in [10, 1e2, 1e3, 2e3, 5e3, 1e4]]
+        where `H_N` is the `N`th harmonic number. Otherwise, use the
+        distribution::
+        
+            P(i) = `1/2^i`
 
-N_s = 100  # number of search times to sample
+    **kwargs : dict-like
+        Any additional parameters will be passed to `ST`.
 
-zz = '_zipf' if zipf else ''
-filename = f"./pkl/runtimes{zz}.pkl"
+    Attributes
+    ----------
+    t : symbol table
+        The symbol table where keys are words, and values are frequency counts.
+    """
+    def __init__(self, ST, cache=False, zipf=False):
+        self.t= ST
+        self.cache = cache
+        self.zipf = zipf
+        self.put_time = np.nan
+        self.get_time = np.nan
+        self.runtimes = np.empty((1,))
 
-if os.path.exists(filename):
-    df, tots = pickle.load(open(filename, 'rb'))
-else:
-    # Store the individual search runtimes
-    ST_names = [x.__name__ for x in [SequentialSearchST, BinarySearchST]]
+    @staticmethod
+    @np.vectorize
+    def H_N(N):
+        """Harmonic number `N`.
 
-    cols = pd.MultiIndex.from_product([ST_names, ['put', 'get'], Ns],
-                                    names=['ST', 'op', 'N'])
-    data = np.empty((N_s, len(ST_names)*len(Ns)))
+        Parameters
+        ----------
+        N : array-like
+            `N`th harmonic(s) desired.
+        
+        .. math::
+            H_N = \sum\limits_{i=1}^N 1/i, \forall N = 1, 2, \dots, \infty
 
-    df = pd.DataFrame(columns=cols.droplevel('op').unique(), data=data)
-    tots = pd.Series(index=cols)
+        Returns
+        -------
+        result : np.ndarray(float)
+            `N`th harmonic numbers.
+        """
+        if N < 1:
+            raise ValueError(f'H_N not defined for `N` < 1!')
+        return np.sum([(1.0 / i) for i in np.arange(1, N+1)]) 
+
+    def run_test(self, N, samples=None, verbose=False):
+        """Run the actual test by inserting `N` keys into the table, then
+        performing `10N` successful searches.
+
+        Parameters
+        ----------
+        N : int
+            Number of keys to insert into the table.
+        samples : int, optional, default=None
+            Only store a random sample of the runtimes to save memory.
+        verbose : bool
+            Print extra messages and progress bars if True.
+        """
+        if verbose:
+            print(f"Filling table with {N} keys...")
+
+        keys = np.arange(1, N+1)  # skip 0 for probability functions
+
+        # Pre-determined probability of searching for key `i`
+        if self.zipf:
+            probs = 1 / (keys * self.H_N(keys))
+        else:
+            probs = 1 / (2.0**keys)
+
+        probs /= np.sum(probs)  # normalize to 1
+
+        np.random.shuffle(keys)        # random insertion order
+        put_tic = time.perf_counter()  # time the insertions separately
+
+        # Fill the symbol table with keys (no values needed)
+        self.t = self.t([(k, None) for k in keys], cache=self.cache)
+
+        put_toc = time.perf_counter()
+        self.put_time = put_toc - put_tic
+
+        if verbose:
+            print(f"Performing 10N successful searches...")
+        M = 10*N
+        self.runtimes = np.empty(M)
+
+        iterator = tqdm(range(M), total=M) if verbose else range(M) 
+        get_tic = time.perf_counter()
+        for i in iterator:
+            k = np.random.choice(keys, p=probs)
+
+            tic = time.perf_counter()
+            x = self.t[k]  # perform get operation
+            toc = time.perf_counter()
+
+            self.runtimes[i] = toc - tic
+
+        get_toc = time.perf_counter()
+        self.get_time = get_toc - get_tic
+
+        # only store subset of runtimes values
+        if samples and samples <= M:
+            idx = np.random.randint(0, M, size=samples)
+            self.runtimes = self.runtimes[idx]
+
+
+if __name__ == '__main__':
+    # TODO move df, tots, etc. to plotting script, just store drivers in
+    # dictionary by tuple
+
+    # Define sequence of N to test
+    # Ns = [int(x) for x in [10, 1e2, 1e3, 2e3, 5e3, 1e4]]
+    Ns = [int(x) for x in [10, 1e2, 1e3]]
+    N_s = 100  # number of search times to sample
+
+    STs = [SequentialSearchST, SequentialSearchST, BinarySearchST]
+    ST_names = ['SST', 'SST_cached', 'BinarySearchST']
+    caches = [False, True, False]
+
+    # # Store the individual search runtimes
+    # cols = pd.MultiIndex.from_product([['p', 'zipf'], ST_names, ['put', 'get'], Ns],
+    #                                 names=['dist', 'ST', 'op', 'N'])
+    # data = np.empty((N_s, len(ST_names)*len(Ns)*2))
+    #
+    # df = pd.DataFrame(columns=cols.droplevel('op').unique(), data=data)
+    # tots = pd.Series(index=cols)
+
+    drivers = dict()
 
     for N in Ns:
         M = 10*N
+        for zipf in [False, True]:
+            for ST, ST_name, cache in zip(STs, ST_names, caches):
+                driver = SelfOrganizingDriver(ST, zipf=zipf, cache=cache)
+                driver.run_test(N, samples=N_s, verbose=True)
 
-        for ST in [SequentialSearchST, BinarySearchST]:
-            print(f"Filling table with {N} keys...")
-            put_tic = time.perf_counter()
-            keys = np.arange(N)
-            np.random.shuffle(keys)  # random insertion order
+                # Store data
+                z = 'zipf' if zipf else 'p'
+                drivers[(z, ST_name, N)] = driver
+                # tots[(z, ST_name, 'put', N)] = driver.put_time
+                # tots[(z, ST_name, 'get', N)] = driver.get_time
+                # df[(z, ST_name, N)] = driver.runtimes
 
-            # Fill the symbol table with keys (no values needed)
-            t = ST([(k, None) for k in keys], cache=isinstance(ST, SequentialSearchST))
+    # Write data to file
+    filename = Path(f"./pkl/self_org_drivers.pkl")
+    with open(filename, 'wb') as f:
+        pickle.dump(drivers, f)
 
-            # Time the insertions separately
-            put_toc = time.perf_counter()
-            tots[(t.__class__.__name__, 'put', N)] = put_toc - put_tic
-
-            # Pre-determined probability of searching for key `i`
-            keys.sort()
-            if zipf:
-                probs = 1 / ((keys+1.0) * H_N(keys))
-            else:
-                probs = 1 / (2.0**(keys + 1.0))
-
-            probs /= np.sum(probs)  # normalize to 1
-
-            print(f"Performing 10N successful searches...")
-            runtimes = np.empty(M)
-            get_tic = time.perf_counter()
-            for i in tqdm(range(M), total=M):
-                k = np.random.choice(keys, p=probs)
-
-                tic = time.perf_counter()
-                x = t[k]  # perform get operation
-                toc = time.perf_counter()
-
-                runtimes[i] = toc - tic
-            get_toc = time.perf_counter()
-
-            # Randomly sample the search times for easier plotting
-            idx = np.random.randint(0, M, size=N_s)
-            df[(t.__class__.__name__, N)] = runtimes[idx]
-            tots[(t.__class__.__name__, 'get', N)] = get_toc - get_tic
-
-    pickle.dump((df, tots), open(filename, 'wb'))
-
-# ----------------------------------------------------------------------------- 
-#         Plots
-# -----------------------------------------------------------------------------
-tf = df.melt(value_name='runtime')
-
-# Plot distributions of runtimes
-fig = plt.figure(1, clear=True)
-ax = fig.add_subplot()
-
-# Plot the runtime distributions
-sns.stripplot(data=tf, x='N', y='runtime', hue='ST',
-              dodge=True, jitter=True, alpha=0.25, zorder=1)
-
-# PLot the means of each group
-sns.pointplot(data=tf, x='N', y='runtime', hue='ST',
-              dodge=0.4, join=False, markers='d',
-              palette='dark')
-
-# Nice legend
-h, l = ax.get_legend_handles_labels()
-ax.legend(h[2:], l[2:], title='Symbol Table',
-          handletextpad=0, labelspacing=1,
-          loc='upper left', frameon=True)
-
-ax.ticklabel_format(axis='y', style='sci', scilimits=(-2,2))
-ax.set(ylim=[0.9*tf['runtime'].min(), 1.1*tf['runtime'].max()],
-       ylabel='time per search [s]',
-       yscale='log')
-
-# Plot total runtimes
-fignum = 2
-for op in ['put', 'get']:
-    fig = plt.figure(fignum, clear=True)
-    ax = fig.add_subplot()
-    ax.plot(Ns, tots.xs(['SequentialSearchST', op], level=['ST', 'op']),
-            'x-', label='SequentialSearchST')
-    ax.plot(Ns, tots.xs(['BinarySearchST', op], level=['ST', 'op']),
-            'x-', label='BinarySearchST')
-    ax.set(title=f'`{op}()` operations',
-           xlabel='N',
-           ylabel='Runtime [s]',
-           xscale='log',
-           yscale='log')
-    ax.legend()
-    fignum += 1
-
-plt.show()
 # =============================================================================
 # =============================================================================
