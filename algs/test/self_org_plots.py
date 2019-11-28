@@ -19,12 +19,39 @@ import seaborn as sns
 from matplotlib.gridspec import GridSpec
 from pathlib import Path
 
-filename = Path(f"./pkl/runtimes.pkl")
+from self_org_driver import SelfOrganizingDriver
+
+filename = Path(f"./pkl/self_org_drivers.pkl")
 
 with open(filename, 'rb') as f:
-    df, tots, keys, Ns = pickle.load(f)
+    drivers = pickle.load(f)
 
-ST_names = df.columns.get_level_values('ST').unique()
+# Reorganize data to plot
+dists = set()
+ST_names = set()
+for k in drivers:
+    dists.add(k[0])
+    ST_names.add(k[1])
+
+dists = list(dists)
+ST_names = list(ST_names)
+ops = ['put', 'get']
+Ns = np.unique([v.t.size for k, v in drivers.items()])
+
+N_s = drivers[(dists[0], ST_names[0], Ns[0])].runtimes.size
+
+# Store the individual search runtimes
+cols = pd.MultiIndex.from_product([dists, ST_names, ops, Ns],
+                                names=['dist', 'ST', 'op', 'N'])
+data = np.empty((N_s, len(ST_names)*len(Ns)*2))
+
+df = pd.DataFrame(columns=cols.droplevel('op').unique(), data=data)
+tots = pd.Series(index=cols)
+
+for (d, ST_name, N), driver in drivers.items():
+    tots[(d, ST_name, 'put', N)] = driver.put_time
+    tots[(d, ST_name, 'get', N)] = driver.get_time
+    df[(d, ST_name, N)] = driver.runtimes
 
 # ----------------------------------------------------------------------------- 
 #         Plots
@@ -58,7 +85,7 @@ ax.grid()
 fig.tight_layout()
 
 # Plot total runtimes
-fig = plt.figure(2, clear=True)
+fig = plt.figure(2, clear=True, figsize=(12, 6))
 gs = GridSpec(nrows=1, ncols=2)
 for i, dist in enumerate(['p', 'zipf']):
     ax = fig.add_subplot(gs[i])
@@ -78,14 +105,14 @@ for i, dist in enumerate(['p', 'zipf']):
     ax.legend()
 
 # Plot keys vs. index
-fig = plt.figure(3, clear=True)
+fig = plt.figure(3, clear=True, figsize=(12, 6))
 ax = fig.add_subplot()
 N = 1000
 gs = GridSpec(nrows=1, ncols=2)
 for i, dist in enumerate(['p', 'zipf']):
     ax = fig.add_subplot(gs[i])
     for name in ST_names:
-        ax.scatter(np.arange(N), keys[(dist, name, N)],
+        ax.scatter(np.arange(N), drivers[(dist, name, N)].t.keys(),
                 alpha=0.5,
                 label=name)
     ax.set(title='Zipf' if dist == 'zipf' else '$1/2^i$',

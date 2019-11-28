@@ -149,41 +149,27 @@ class SelfOrganizingDriver():
 
 
 if __name__ == '__main__':
-    # TODO move df, tots, etc. to plotting script, just store drivers in
-    # dictionary by tuple
-
     # Define sequence of N to test
     # Ns = [int(x) for x in [10, 1e2, 1e3, 2e3, 5e3, 1e4]]
     Ns = [int(x) for x in [10, 1e2, 1e3]]
     N_s = 100  # number of search times to sample
 
+    dists = ['p', 'zipf']
     STs = [SequentialSearchST, SequentialSearchST, BinarySearchST]
     ST_names = ['SST', 'SST_cached', 'BinarySearchST']
     caches = [False, True, False]
 
-    # # Store the individual search runtimes
-    # cols = pd.MultiIndex.from_product([['p', 'zipf'], ST_names, ['put', 'get'], Ns],
-    #                                 names=['dist', 'ST', 'op', 'N'])
-    # data = np.empty((N_s, len(ST_names)*len(Ns)*2))
-    #
-    # df = pd.DataFrame(columns=cols.droplevel('op').unique(), data=data)
-    # tots = pd.Series(index=cols)
-
     drivers = dict()
 
     for N in Ns:
-        M = 10*N
-        for zipf in [False, True]:
+        for d in dists:
             for ST, ST_name, cache in zip(STs, ST_names, caches):
+                zipf = True if d == 'zipf' else 'p'
                 driver = SelfOrganizingDriver(ST, zipf=zipf, cache=cache)
                 driver.run_test(N, samples=N_s, verbose=True)
 
                 # Store data
-                z = 'zipf' if zipf else 'p'
-                drivers[(z, ST_name, N)] = driver
-                # tots[(z, ST_name, 'put', N)] = driver.put_time
-                # tots[(z, ST_name, 'get', N)] = driver.get_time
-                # df[(z, ST_name, N)] = driver.runtimes
+                drivers[(d, ST_name, N)] = driver
 
     # Write data to file
     filename = Path(f"./pkl/self_org_drivers.pkl")
