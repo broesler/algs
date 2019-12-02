@@ -106,7 +106,6 @@ for i, dist in enumerate(['p', 'zipf']):
 
 # Plot keys vs. index
 fig = plt.figure(3, clear=True, figsize=(12, 6))
-ax = fig.add_subplot()
 N = 1000
 gs = GridSpec(nrows=1, ncols=2)
 for i, dist in enumerate(['p', 'zipf']):

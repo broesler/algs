@@ -57,11 +57,20 @@ class SelfOrganizingDriver():
     ----------
     t : symbol table
         The symbol table where keys are words, and values are frequency counts.
+    put_time : float
+        The time it takes to `put` N items into the symbol table using the
+        `run_test` method.
+    get_time : float
+        The time it takes to `get` 10*N items from the symbol table using the
+        `run_test` method.
+    runtimes : ndarray of floats
+        The runtime of each `get` call performed during `run_test`. May be
+        downsampled using the `samples` argument.  
     """
     def __init__(self, ST, cache=False, zipf=False):
-        self.t= ST
-        self.cache = cache
-        self.zipf = zipf
+        self.t = ST
+        self._cache = cache  # turn on caching in the symbol table.
+        self._zipf = zipf    # choose probability distribution
         self.put_time = np.nan
         self.get_time = np.nan
         self.runtimes = np.empty((1,))
@@ -97,9 +106,16 @@ class SelfOrganizingDriver():
         N : int
             Number of keys to insert into the table.
         samples : int, optional, default=None
-            Only store a random sample of the runtimes to save memory.
+            Only store a random sample of the runtimes to save memory. The
+            default stores all 10*N samples.
         verbose : bool
             Print extra messages and progress bars if True.
+
+        Returns
+        -------
+        runtimes : ndarray, shape (samples, 1)
+            The runtime of each `get` call performed. May be downsampled using
+            the `samples` argument.  
         """
         if verbose:
             print(f"Filling table with {N} keys...")
@@ -107,7 +123,7 @@ class SelfOrganizingDriver():
         keys = np.arange(1, N+1)  # skip 0 for probability functions
 
         # Pre-determined probability of searching for key `i`
-        if self.zipf:
+        if self._zipf:
             probs = 1 / (keys * self.H_N(keys))
         else:
             probs = 1 / (2.0**keys)
@@ -118,7 +134,7 @@ class SelfOrganizingDriver():
         put_tic = time.perf_counter()  # time the insertions separately
 
         # Fill the symbol table with keys (no values needed)
-        self.t = self.t([(k, None) for k in keys], cache=self.cache)
+        self.t = self.t([(k, None) for k in keys], cache=self._cache)
 
         put_toc = time.perf_counter()
         self.put_time = put_toc - put_tic
@@ -146,6 +162,8 @@ class SelfOrganizingDriver():
         if samples and samples <= M:
             idx = np.random.randint(0, M, size=samples)
             self.runtimes = self.runtimes[idx]
+
+        return self.runtimes  # also include return value
 
 
 if __name__ == '__main__':
