@@ -17,6 +17,7 @@
 """
 # =============================================================================
 
+import gzip
 import pickle
 import time
 
@@ -144,15 +145,17 @@ class SelfOrganizingDriver():
         M = 10*N
         self.runtimes = np.empty(M)
 
-        iterator = tqdm(range(M), total=M) if verbose else range(M) 
-        get_tic = time.perf_counter()
-        for i in iterator:
-            k = np.random.choice(keys, p=probs)
+        # Choose from keys in sorted order
+        ks = np.random.choice(np.sort(keys), p=probs, size=M)
+        iterator = tqdm(ks, total=M) if verbose else ks
 
+        get_tic = time.perf_counter()
+
+        # Search for 10*N keys
+        for i, k in enumerate(iterator):
             tic = time.perf_counter()
             x = self.t[k]  # perform get operation
             toc = time.perf_counter()
-
             self.runtimes[i] = toc - tic
 
         get_toc = time.perf_counter()
@@ -168,8 +171,8 @@ class SelfOrganizingDriver():
 
 if __name__ == '__main__':
     # Define sequence of N to test
-    # Ns = [int(x) for x in [10, 1e2, 1e3, 2e3, 5e3, 1e4]]
-    Ns = [int(x) for x in [10, 1e2, 1e3]]
+    Ns = [int(x) for x in [1e2, 3e2, 1e3, 3e3, 1e4, 3e4, 1e5, 3e5, 1e6]]
+    # Ns = [int(x) for x in [1e2, 1e3, 3e3]]
     N_s = 100  # number of search times to sample
 
     dists = ['p', 'zipf']
@@ -189,10 +192,12 @@ if __name__ == '__main__':
                 # Store data
                 drivers[(d, ST_name, N)] = driver
 
-    # Write data to file
-    filename = Path(f"./pkl/self_org_drivers.pkl")
-    with open(filename, 'wb') as f:
-        pickle.dump(drivers, f)
+        # Write data to file (overwrite each loop in case it breaks)
+        filename = Path(f"./pkl/self_org_drivers.pkl.gz")
+        print(f"Writing to {filename}...", end='')
+        with gzip.open(filename, 'wb') as f:
+            pickle.dump(drivers, f)
+        print('done.')
 
 # =============================================================================
 # =============================================================================
