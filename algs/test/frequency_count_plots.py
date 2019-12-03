@@ -20,7 +20,9 @@ from pathlib import Path
 from algs.search import SequentialSearchST, BinarySearchST
 from frequency_counter import FrequencyCounter
 
-SAVE_FIGS = True
+SAVE_FIGS = False
+if SAVE_FIGS:
+    plt.close('all')
 
 # filename = Path('data/tiny_tale.txt')  # 292
 filename = Path('data/tale.txt')       # 779K
@@ -30,7 +32,6 @@ tag = filename.stem
 
 minlen = 8
 
-plt.close('all')
 fig = plt.figure(0, figsize=(12, 8), clear=True)
 fig.suptitle(f"{filename.name}, minlen={minlen}")
 gs = GridSpec(nrows=2, ncols=1)
@@ -68,7 +69,7 @@ for i, ST_name in enumerate(['SequentialSearchST', 'BinarySearchST']):
 gs.tight_layout(fig, rect=(0, 0, 1, 0.96))
 
 if SAVE_FIGS:
-    figname = Path(f"./figures/{tag}_frequency_count.png")
+    figname = Path(f"./figures/{tag}_frequency_count.pdf")
     fig.savefig(figname)
 
 plt.show()

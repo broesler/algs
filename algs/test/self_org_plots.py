@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # =============================================================================
-#     File: self_org_driver.py
+#     File: self_org_plots.py
 #  Created: 2019-11-17 11:28
 #   Author: Bernie Roesler
 #
@@ -9,6 +9,7 @@
 """
 # =============================================================================
 
+import gzip
 import pickle
 
 import matplotlib.pyplot as plt
@@ -21,20 +22,24 @@ from pathlib import Path
 
 from self_org_driver import SelfOrganizingDriver
 
-filename = Path(f"./pkl/self_org_drivers.pkl")
+SAVE_FIGS = True
+if SAVE_FIGS:
+    plt.close('all')
+    fig_dir = Path('./figures/')
 
-with open(filename, 'rb') as f:
+# Load the data
+filename = Path('./pkl/self_org_drivers_SMALL.pkl.gz')
+
+with gzip.open(filename, 'rb') as f:
     drivers = pickle.load(f)
 
 # Reorganize data to plot
-dists = set()
-ST_names = set()
+dists, ST_names = set(), set()
 for k in drivers:
     dists.add(k[0])
     ST_names.add(k[1])
 
-dists = list(dists)
-ST_names = list(ST_names)
+dists, ST_names = list(dists), list(ST_names)
 ops = ['put', 'get']
 Ns = np.unique([v.t.size for k, v in drivers.items()])
 
@@ -43,22 +48,24 @@ N_s = drivers[(dists[0], ST_names[0], Ns[0])].runtimes.size
 # Store the individual search runtimes
 cols = pd.MultiIndex.from_product([dists, ST_names, ops, Ns],
                                 names=['dist', 'ST', 'op', 'N'])
-data = np.empty((N_s, len(ST_names)*len(Ns)*2))
+data = np.empty((N_s, len(dists)*len(ST_names)*len(Ns)*2))
 
-df = pd.DataFrame(columns=cols.droplevel('op').unique(), data=data)
-tots = pd.Series(index=cols)
+df = pd.DataFrame(columns=cols.droplevel('op').unique(),
+                  data=data[:, :data.shape[1]//len(dists)])
+tots = pd.Series(index=cols, name='runtime [s]')
 
 for (d, ST_name, N), driver in drivers.items():
     tots[(d, ST_name, 'put', N)] = driver.put_time
     tots[(d, ST_name, 'get', N)] = driver.get_time
     df[(d, ST_name, N)] = driver.runtimes
 
+
 # ----------------------------------------------------------------------------- 
-#         Plots
+#         Plot distributions of runtimes
 # -----------------------------------------------------------------------------
+# TODO facetgrid of regular vs zipf?
 tf = df.melt(value_name='runtime')
 
-# Plot distributions of runtimes
 fig = plt.figure(1, clear=True)
 ax = fig.add_subplot()
 
@@ -81,30 +88,28 @@ ax.ticklabel_format(axis='y', style='sci', scilimits=(-2,2))
 ax.set(ylim=[0.9*tf['runtime'].min(), 1.1*tf['runtime'].max()],
        ylabel='time per search [s]',
        yscale='log')
-ax.grid()
+ax.grid('on')
 fig.tight_layout()
 
-# Plot total runtimes
-fig = plt.figure(2, clear=True, figsize=(12, 6))
-gs = GridSpec(nrows=1, ncols=2)
-for i, dist in enumerate(['p', 'zipf']):
-    ax = fig.add_subplot(gs[i])
-    for op, m in zip(['put', 'get'], ['x', 'o']):
-        for i, name in enumerate(ST_names):
-            ax.plot(Ns, tots.xs([dist, name, op], 
-                    level=['dist', 'ST', 'op']),
-                    c=f"C{i}", marker=m, ls='-',
-                    label=f"{name}: {op}")
+if SAVE_FIGS:
+    fig.savefig(fig_dir.joinpath('self_org_timedists.pdf'))
 
-    ax.set(title='Zipf' if dist == 'zipf' else '$1/2^i$',
-           xlabel='N',
-           ylabel='Runtime [s]',
-           xscale='log',
-           yscale='log')
-    ax.grid()
-    ax.legend()
+# ----------------------------------------------------------------------------- 
+#         Plot total runtimes
+# -----------------------------------------------------------------------------
+g = sns.FacetGrid(tots.reset_index(), row='dist', col='op', hue='ST',
+                  margin_titles=True)
+g.set(xscale='log',
+      yscale='log')
+g.map(plt.plot, 'N', 'runtime [s]', marker='o')
+g.add_legend()
 
-# Plot keys vs. index
+if SAVE_FIGS:
+    g.savefig(fig_dir.joinpath('self_org_tots.pdf'))
+
+# ----------------------------------------------------------------------------- 
+#         Plot keys vs. index
+# -----------------------------------------------------------------------------
 fig = plt.figure(3, clear=True, figsize=(12, 6))
 N = 1000
 gs = GridSpec(nrows=1, ncols=2)
@@ -112,13 +117,41 @@ for i, dist in enumerate(['p', 'zipf']):
     ax = fig.add_subplot(gs[i])
     for name in ST_names:
         ax.scatter(np.arange(N), drivers[(dist, name, N)].t.keys(),
-                alpha=0.5,
-                label=name)
+                   alpha=0.5,
+                   label=name)
     ax.set(title='Zipf' if dist == 'zipf' else '$1/2^i$',
            xlabel='index',
            ylabel='key')
+    ax.grid('on')
     ax.legend(loc='lower right')
 
+if SAVE_FIGS:
+    fig.savefig(fig_dir.joinpath('self_org_keys.pdf'))
+
+# ----------------------------------------------------------------------------- 
+#         Plot the probability distributions
+# -----------------------------------------------------------------------------
+N = 1000
+keys = np.arange(1, N+1)  # function of N alone
+
+p = 1 / (2.0**keys)
+zipf = 1 / (keys * SelfOrganizingDriver.H_N(keys))
+
+fig = plt.figure(4, clear=True)
+ax = fig.add_subplot()
+ax.plot(keys, p, label=r'$\frac{1}{2^i}$')
+ax.plot(keys, zipf, label=r'$\frac{1}{i H_N}$')
+ax.set(xlabel=r'$i^{th}$ key',
+       ylabel='P(i)',
+       yscale='log',
+       ylim=(1e-12, 1))
+ax.legend(fontsize=16)
+
+if SAVE_FIGS:
+    fig.savefig(fig_dir.joinpath('self_org_dists.pdf'))
+
+
 plt.show()
+
 # =============================================================================
 # =============================================================================
