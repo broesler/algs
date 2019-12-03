@@ -96,7 +96,7 @@ class SelfOrganizingDriver():
         """
         if N < 1:
             raise ValueError(f'H_N not defined for `N` < 1!')
-        return np.sum([(1.0 / i) for i in np.arange(1, N+1)]) 
+        return np.sum(1.0 / np.arange(1, N+1)) 
 
     def run_test(self, N, samples=None, verbose=False):
         """Run the actual test by inserting `N` keys into the table, then
