@@ -9,10 +9,10 @@
 """
 # =============================================================================
 
-from recordclass import recordclass
+from recordclass import recordclass as _recordclass
 
-from algs.basics import Queue, _empty_check
-from algs.sort import mergesort
+from algs.basics import Queue as _Queue, _empty_check
+from algs.sort import mergesort as _mergesort
 
 __all__ = ['SequentialSearchST', 'BinarySearchST', 'BST']
 
@@ -21,7 +21,7 @@ __all__ = ['SequentialSearchST', 'BinarySearchST', 'BST']
 #   * use collections.abc.[Keys|Values|Items]View classes?
 
 # Private class of key/value pairs (a mutable tuple)
-Item = recordclass('Item', ['key', 'value'])
+_Item = _recordclass('Item', ['key', 'value'])
 
 
 class SequentialSearchST():
@@ -78,7 +78,7 @@ class SequentialSearchST():
                 return
         else:
             self._cost = self.size          # tested all the keys!
-            self._items.append(Item(k, v))  # add new key to end of list O(1)
+            self._items.append(_Item(k, v))  # add new key to end of list O(1)
 
     def __getitem__(self, k):
         """Return the value associated with the given key `k`."""
@@ -162,7 +162,7 @@ class BinarySearchST():
         # Initialize the symbol table
         try:
             # sort by keys so we get O(N log N) construction vs O(N^2)
-            for k, v in mergesort(items):
+            for k, v in _mergesort(items):
                 self.__setitem__(k, v)
         except ValueError:
             raise ValueError(f"{self.__class__.__name__} expects a `list` of tuples input.")
@@ -187,7 +187,7 @@ class BinarySearchST():
         # If key is largest in table, slap it on the end! This feature makes
         # construction with a sorted list O(n).
         if not self.is_empty and k > self.max():
-            self._items.append(Item(k, v))
+            self._items.append(_Item(k, v))
 
         # Perform binary search O(lg N)
         i = self.rank(k)
@@ -198,7 +198,7 @@ class BinarySearchST():
             return
         else:
             # create new Item in the table
-            self._items.insert(i, Item(k, v))
+            self._items.insert(i, _Item(k, v))
             self._cost += self.size - i  # Θ(n-i) to move list elements
             # self._assert_integrity()
 
@@ -366,7 +366,7 @@ class BinarySearchST():
                 if h < self.size and self._items[h].key == hi:
                     h += 1
 
-            q = Queue()
+            q = _Queue()
             for x in self._items[l:h]:
                 q.enqueue(x.key if rtype == 'keys' else 
                           (x.value if rtype == 'values' else x))
@@ -727,25 +727,25 @@ class BST():
         return iterator
 
     def _iterate(self, lo, hi, x=None, q=None, rtype='keys'):
-        """Recursively add items to the given queue."""
+        """Recursively add items to the given _Queue."""
         # Defaults
         if x is None:
             return
         if q is None:
-            q = Queue()
+            q = _Queue()
         # Enqueue by key order
         if lo < x.key:
             self._iterate(lo, hi, x.left, q, rtype)
         if lo <= x.key and hi >= x.key:
-            q.enqueue(x.key if rtype == 'keys' else (x.val if rtype == 'values' else Item(x.key, x.val)))
+            q.enqueue(x.key if rtype == 'keys' else (x.val if rtype == 'values' else _Item(x.key, x.val)))
         if hi > x.key:
             self._iterate(lo, hi, x.right, q, rtype)
         return list(q)
 
     def _level_order(self):
         """Return an iterator over the keys in level-order (breadth-first)."""
-        keys = Queue()
-        q = Queue()
+        keys = _Queue()
+        q = _Queue()
         q.enqueue(self._root)
         while q:
             x = q.dequeue()
