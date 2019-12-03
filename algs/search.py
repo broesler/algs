@@ -774,6 +774,8 @@ class BST():
 # -----------------------------------------------------------------------------
 # TODO move to proper unit testing script
 if __name__ == '__main__':
+    import numpy as np
+
     # Define test counts
     tests = fails = 0
 
@@ -932,6 +934,14 @@ if __name__ == '__main__':
     should_be(BinarySearchST(data), SequentialSearchST(data))
     should_be(BinarySearchST(data), BST(data))
     should_be(BST(data), BinarySearchST(data))
+
+    # Test self-organizing search
+    tc = SequentialSearchST(data, cache=True)
+    for k in np.random.choice(tc.keys(), size=tc.size):
+        tc[k]                       # search for the key
+        should_be(tc.keys()[0], k)  # should get moved to front
+        tc[k]                       # search again
+        should_be(tc._cost, 1)      # test cost
 
     # Summary
     if fails > 0:
