@@ -15,21 +15,25 @@ import os
 import pickle
 
 from matplotlib.gridspec import GridSpec
+from pathlib import Path
 
 from algs.search import SequentialSearchST, BinarySearchST
 from frequency_counter import FrequencyCounter
 
-# filename = 'data/tiny_tale.txt'  # 292
-filename = 'data/tale.txt'       # 779K
-# filename = 'data/leipzig1m.txt'  # 124M
+SAVE_FIGS = True
 
-tag = os.path.splitext(os.path.basename(filename))[0]
+# filename = Path('data/tiny_tale.txt')  # 292
+filename = Path('data/tale.txt')       # 779K
+# filename = Path('data/leipzig1m.txt')  # 124M
+
+tag = filename.stem
 
 minlen = 8
 
-fig = plt.figure(0, figsize=(12, 6), clear=True)
-fig.suptitle(f"{os.path.basename(filename)}, minlen={minlen}", y=0.99)
-gs = GridSpec(nrows=1, ncols=2)
+plt.close('all')
+fig = plt.figure(0, figsize=(12, 8), clear=True)
+fig.suptitle(f"{filename.name}, minlen={minlen}")
+gs = GridSpec(nrows=2, ncols=1)
 
 pad = 5  # position labels
 
@@ -61,7 +65,11 @@ for i, ST_name in enumerate(['SequentialSearchST', 'BinarySearchST']):
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
 
-gs.tight_layout(fig)
+gs.tight_layout(fig, rect=(0, 0, 1, 0.96))
+
+if SAVE_FIGS:
+    figname = Path(f"./figures/{tag}_frequency_count.png")
+    fig.savefig(figname)
 
 plt.show()
 
