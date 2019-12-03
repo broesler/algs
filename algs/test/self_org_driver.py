@@ -131,7 +131,12 @@ class SelfOrganizingDriver():
 
         probs /= np.sum(probs)  # normalize to 1
 
-        np.random.shuffle(keys)        # random insertion order
+        # Choose from keys in sorted order
+        M = 10*N
+        ks = np.random.choice(keys, p=probs, size=M)
+
+        # Insert in random order
+        np.random.shuffle(keys)
         put_tic = time.perf_counter()  # time the insertions separately
 
         # Fill the symbol table with keys (no values needed)
@@ -142,16 +147,12 @@ class SelfOrganizingDriver():
 
         if verbose:
             print(f"Performing 10N successful searches...")
-        M = 10*N
         self.runtimes = np.empty(M)
 
-        # Choose from keys in sorted order
-        ks = np.random.choice(np.sort(keys), p=probs, size=M)
+        # Search for 10*N keys
         iterator = tqdm(ks, total=M) if verbose else ks
-
         get_tic = time.perf_counter()
 
-        # Search for 10*N keys
         for i, k in enumerate(iterator):
             tic = time.perf_counter()
             x = self.t[k]  # perform get operation
@@ -193,11 +194,11 @@ if __name__ == '__main__':
                 drivers[(d, ST_name, N)] = driver
 
         # Write data to file (overwrite each loop in case it breaks)
-        filename = Path(f"./pkl/self_org_drivers.pkl.gz")
-        print(f"Writing to {filename}...", end='')
-        with gzip.open(filename, 'wb') as f:
-            pickle.dump(drivers, f)
-        print('done.')
+        # filename = Path(f"./pkl/self_org_drivers.pkl.gz")
+        # print(f"Writing to {filename}...", end='')
+        # with gzip.open(filename, 'wb') as f:
+        #     pickle.dump(drivers, f)
+        # print('done.')
 
 # =============================================================================
 # =============================================================================

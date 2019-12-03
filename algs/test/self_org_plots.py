@@ -39,7 +39,7 @@ for k in drivers:
     dists.add(k[0])
     ST_names.add(k[1])
 
-dists, ST_names = list(dists), list(ST_names)
+dists, ST_names = sorted(dists), sorted(ST_names)
 ops = ['put', 'get']
 Ns = np.unique([v.t.size for k, v in drivers.items()])
 
@@ -63,7 +63,6 @@ for (d, ST_name, N), driver in drivers.items():
 # ----------------------------------------------------------------------------- 
 #         Plot distributions of runtimes
 # -----------------------------------------------------------------------------
-# TODO facetgrid of regular vs zipf?
 tf = df.melt(value_name='runtime')
 
 fig = plt.figure(1, clear=True)

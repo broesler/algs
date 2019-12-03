@@ -21,7 +21,7 @@ __all__ = ['SequentialSearchST', 'BinarySearchST', 'BST']
 #   * use collections.abc.[Keys|Values|Items]View classes?
 
 # Private class of key/value pairs (a mutable tuple)
-_Item = _recordclass('Item', ['key', 'value'])
+_Item = _recordclass('_Item', ['key', 'value'])
 
 
 class SequentialSearchST():
