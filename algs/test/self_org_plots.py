@@ -22,13 +22,13 @@ from pathlib import Path
 
 from self_org_driver import SelfOrganizingDriver
 
-SAVE_FIGS = True
+SAVE_FIGS = False
 if SAVE_FIGS:
     plt.close('all')
     fig_dir = Path('./figures/')
 
 # Load the data
-filename = Path('./pkl/self_org_drivers_SMALL.pkl.gz')
+filename = Path('./pkl/self_org_drivers.pkl.gz')
 
 with gzip.open(filename, 'rb') as f:
     drivers = pickle.load(f)
@@ -84,8 +84,9 @@ ax.legend(h[3:], l[3:], title='Symbol Table',
           handletextpad=0, labelspacing=1,
           loc='upper left', frameon=True)
 
-ax.ticklabel_format(axis='y', style='sci', scilimits=(-2,2))
-ax.set(ylim=[0.9*tf['runtime'].min(), 1.1*tf['runtime'].max()],
+# Tidy up axes limits and labels
+ax.ticklabel_format(axis='y', style='sci', scilimits=(-3,3))
+ax.set(ylim=[0.5*tf['runtime'].min(), 5*tf['runtime'].max()],
        ylabel='time per search [s]',
        yscale='log')
 ax.grid('on')
@@ -97,8 +98,8 @@ if SAVE_FIGS:
 # ----------------------------------------------------------------------------- 
 #         Plot total runtimes
 # -----------------------------------------------------------------------------
-g = sns.FacetGrid(tots.reset_index(), row='dist', col='op', hue='ST',
-                  margin_titles=True)
+g = sns.FacetGrid(tots.reset_index(), row='op', col='dist', hue='ST',
+                  margin_titles=True, height=4)
 g.set(xscale='log',
       yscale='log')
 g.map(plt.plot, 'N', 'runtime [s]', marker='o')
@@ -131,6 +132,7 @@ if SAVE_FIGS:
 # ----------------------------------------------------------------------------- 
 #         Plot the probability distributions
 # -----------------------------------------------------------------------------
+# TODO count inversions in each array to determine "sortedness"
 N = 1000
 keys = np.arange(1, N+1)  # function of N alone
 

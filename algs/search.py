@@ -407,18 +407,6 @@ class BST():
         Number of items on the tree.
     is_empty : bool
         True if `size == 0`.
-
-    Example
-    -------
-    >>> t = BST()
-    >>> t['A'] = 0
-    >>> t['B'] = 1
-    >>> t['C'] = 2
-    >>> t['A'] = 10
-    >>> t.min()
-    'A'
-    >>> t['A']
-    10
     """
     # Private Node class
     class _Node():
@@ -830,7 +818,7 @@ if __name__ == '__main__':
         try:
             t = ST(list('BADEXAMPLE'))
         except ValueError:
-            should_be(True, True)
+            should_be(True, True)  # hack to make sure we get here
         else:
             should_be(True, False)
 
