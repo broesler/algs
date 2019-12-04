@@ -935,7 +935,17 @@ class BST_nr():
         else:  # k > p.key
             p.right = self._Node(k, v)
 
-        # TODO Need 2nd pass to update _Node count
+        # Need 2nd pass to update _Node counts
+        x = self._root
+        while x:
+            if k == x.key:
+                return
+            elif k < x.key:
+                x.N += 1
+                x = x.left
+            else:
+                x.N += 1
+                x = x.right
 
     def __delitem__(self, k):
         """Delete the node associated with `k`."""
@@ -1342,9 +1352,9 @@ if __name__ == '__main__':
 
         # Binary Search Tree:
         #  height
-        #  6         S
-        #           / \
-        #  5      E    X
+        #  6        S
+        #          / \
+        #  5      E   X
         #      /    \
         #  4  A      R
         #      \    /
