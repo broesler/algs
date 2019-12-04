@@ -476,7 +476,7 @@ class BST():
         return sorted(self.items()) == sorted(other.items())
 
     def __str__(self):
-        return str(self._root)
+        return str(dict(self.items()))
 
     def __repr__(self):
         return f"<{self.__class__.__name__}: {self.__str__()}>"
@@ -489,10 +489,12 @@ class BST():
     # definition.
     def min(self):
         """Return the minimum key in the tree."""
+        _empty_check(self)
         return self._min(self._root).key
 
     def max(self):
         """Return the maximum key in the tree."""
+        _empty_check(self)
         return self._max(self._root).key
 
     def floor(self, k):
@@ -567,12 +569,15 @@ class BST():
     def _make_inorder_iterator(self, rtype):
         """Create an iterator over the desired type."""
         def iterator(self, lo=None, hi=None):
+            try:
             if lo is None:
                 lo = self.min()
             if hi is None:
                 hi = self.max()
-            q = self._iterate(lo, hi, x=self._root, rtype=rtype)
-            return q
+            except IndexError:
+                return list()
+            else:
+                return self._iterate(lo, hi, x=self._root, rtype=rtype)
         return iterator
 
     def _iterate(self, lo, hi, x=None, q=None, rtype='keys'):
