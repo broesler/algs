@@ -99,9 +99,9 @@ class SequentialSearchST():
         k in self.keys()
 
     def __delitem__(self, k):
-        """Delete the item associated with `k`. 
-        
-        Raises 
+        """Delete the item associated with `k`.
+
+        Raises
         ------
         KeyError
             If `k` is not in the table.
@@ -210,7 +210,7 @@ class BinarySearchST():
 
     def __getitem__(self, k):
         """Return the value associated with the given key `k`.
-        
+
         Raises
         ------
         KeyError
@@ -238,7 +238,7 @@ class BinarySearchST():
 
     def __delitem__(self, k):
         """Delete the item associated with `k`.
-        
+
         Raises
         ------
         KeyError
@@ -299,7 +299,7 @@ class BinarySearchST():
 
     def select(self, r):
         """Return the key of rank `r`.
-        
+
         Raises
         ------
         IndexError
@@ -364,9 +364,9 @@ class BinarySearchST():
         func = self._make_inorder_iterator(rtype='items')
         return func(self, lo, hi)
 
-    keys.__doc__   = docstring.format(rtype = 'keys')
-    values.__doc__ = docstring.format(rtype = 'values')
-    items.__doc__  = docstring.format(rtype = 'items')
+    keys.__doc__   = docstring.format(rtype='keys')
+    values.__doc__ = docstring.format(rtype='values')
+    items.__doc__  = docstring.format(rtype='items')
 
     def __iter__(self):
         """Return an iterator of all of the keys in the table."""
@@ -541,7 +541,7 @@ class BST():
 
     def select(self, r):
         """Return the key of rank `r`.
-        
+
         Raises
         ------
         IndexError
@@ -594,9 +594,9 @@ class BST():
         func = self._make_inorder_iterator(rtype='items')
         return func(self, lo, hi)
 
-    keys.__doc__   = docstring.format(rtype = 'keys')
-    values.__doc__ = docstring.format(rtype = 'values')
-    items.__doc__  = docstring.format(rtype = 'items')
+    keys.__doc__   = docstring.format(rtype='keys')
+    values.__doc__ = docstring.format(rtype='values')
+    items.__doc__  = docstring.format(rtype='items')
 
     def __iter__(self):
         yield from self.keys()
@@ -648,7 +648,7 @@ class BST():
             key for which to search
         x : _Node, optional
             root of the subtree at which to begin search
-        
+
         Raises
         ------
         KeyError
@@ -729,7 +729,7 @@ class BST():
         """Return the Node that has rank `r` in the subtree rooted at `x`.
 
         .. note:: `select` is the inverse of `rank`.
-        
+
         Raises
         ------
         IndexError
@@ -893,7 +893,7 @@ class BST_nr():
 
     def __getitem__(self, k):
         """Return the value associated with the given `k`.
-        
+
         Raises
         ------
         KeyError
@@ -1043,9 +1043,9 @@ class BST_nr():
         func = self._make_inorder_iterator(rtype='items')
         return func(self, lo, hi)
 
-    keys.__doc__   = docstring.format(rtype = 'keys')
-    values.__doc__ = docstring.format(rtype = 'values')
-    items.__doc__  = docstring.format(rtype = 'items')
+    keys.__doc__   = docstring.format(rtype='keys')
+    values.__doc__ = docstring.format(rtype='values')
+    items.__doc__  = docstring.format(rtype='items')
 
     def __iter__(self):
         yield from self.keys()
@@ -1122,7 +1122,7 @@ class BST_nr():
         """Return the Node that has rank `r` in the subtree rooted at `x`.
 
         .. note:: `select` is the inverse of `rank`.
-        
+
         Raises
         ------
         IndexError
@@ -1221,6 +1221,7 @@ class BST_nr():
             q.enqueue(x.right)
         return list(keys)
 
+
 # -----------------------------------------------------------------------------
 #         Test Functions
 # -----------------------------------------------------------------------------
@@ -1254,10 +1255,10 @@ if __name__ == '__main__':
         op : str
             attribute name of method to test
         *args : list
-            arguments to `op`. 
+            arguments to `op`.
         err_type : Exception, optional
             error type that object is expected to raise
-        
+
         Raises
         ------
         Exception
@@ -1274,7 +1275,6 @@ if __name__ == '__main__':
                 fails += 1
                 print(f"Raised: {repr(err)}, Expected: {err_type}")
                 raise err
-
 
     # Prepare test data
     test_str = 'SEARCHEXAMPLE'
@@ -1325,8 +1325,8 @@ if __name__ == '__main__':
         should_be(tc._cost, 1)      # test cost
 
     # ---------- Test Ordered STs ----------
-    for ST in [BinarySearchST, BST, BST_nr]:
     # for ST in [BST_nr]:  # BST
+    for ST in [BinarySearchST, BST, BST_nr]:
         t = ST()
         # Test bad input type
         err_test(t, '__init__', list('BADEXAMPLE'), err_type=ValueError)
