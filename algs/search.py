@@ -16,7 +16,7 @@ from algs.sort import mergesort as _mergesort
 
 __all__ = ['SequentialSearchST', 'BinarySearchST', 'BST']
 
-# TODO 
+# TODO
 #   * make ST(ABC) to hold things like `size`, `is_empty`, `__len__` for all?
 #   * use collections.abc.[Keys|Values|Items]View classes?
 
@@ -62,7 +62,7 @@ class SequentialSearchST():
     def is_empty(self):
         return self.size == 0
 
-    # ------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #         Public API
     # -------------------------------------------------------------------------
     def __len__(self):
@@ -118,7 +118,7 @@ class SequentialSearchST():
     def __repr__(self):
         return f"<{self.__class__.__name__}: {self.__str__()}>"
 
-    # ------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #         Iterator methods
     # -------------------------------------------------------------------------
     def keys(self):
@@ -167,7 +167,7 @@ class BinarySearchST():
         except ValueError:
             raise ValueError(f"{self.__class__.__name__} expects a `list` of tuples input.")
 
-    # ------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #         Public API
     # -------------------------------------------------------------------------
     @property
@@ -285,7 +285,7 @@ class BinarySearchST():
         """Return the number of keys strictly less than `k`."""
         # Non-recursive binary search algorithm
         self._cost = 0
-        lo = 0 
+        lo = 0
         hi = self.size - 1
         while lo <= hi:
             mid = (hi + lo) // 2
@@ -307,7 +307,7 @@ class BinarySearchST():
     def __repr__(self):
         return f"<{self.__class__.__name__}: {self.__str__()}>"
 
-    # ------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #         Iterator functions
     # -------------------------------------------------------------------------
     docstring = """Return an in-order iterator over the {rtype} between the keys `lo`
@@ -346,7 +346,7 @@ class BinarySearchST():
         """Return an iterator of all of the keys in the table."""
         yield from self.keys()
 
-    # ------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #         Private API
     # -------------------------------------------------------------------------
     def _make_inorder_iterator(self, rtype):
@@ -368,12 +368,12 @@ class BinarySearchST():
 
             q = _Queue()
             for x in self._items[l:h]:
-                q.enqueue(x.key if rtype == 'keys' else 
+                q.enqueue(x.key if rtype == 'keys' else
                           (x.value if rtype == 'values' else x))
             return list(q)
         return iterator
 
-    # ------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #         Data Integrity Checks
     # -------------------------------------------------------------------------
     # NOTE integrity checks are O(N)!! They break the O(Lg N) search...
@@ -454,7 +454,7 @@ class BST():
 
     def __len__(self):
         return self.size
-    
+
     def __getitem__(self, k):
         """Return the value associated with the given `k`."""
         return self._get(k, self._root)
@@ -527,7 +527,7 @@ class BST():
         """Determine the height of the BST recursively, in O(n) time."""
         return self._height_r(self._root)
 
-    # ------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #         Iterator functions
     # -------------------------------------------------------------------------
     docstring = """Return an in-order iterator over the {rtype} between the keys `lo`
@@ -570,10 +570,10 @@ class BST():
         """Create an iterator over the desired type."""
         def iterator(self, lo=None, hi=None):
             try:
-            if lo is None:
-                lo = self.min()
-            if hi is None:
-                hi = self.max()
+                if lo is None:
+                    lo = self.min()
+                if hi is None:
+                    hi = self.max()
             except IndexError:
                 return list()
             else:
@@ -781,6 +781,380 @@ class BST():
         return list(keys)
 
 
+class BST_nr():
+    """Implements a binary search tree data structure, non-recursively.
+
+    Parameters
+    ----------
+    items : mapping, dict-like
+        Iterable of (key, value) tuples to be put onto the tree.
+
+    Attributes
+    ----------
+    size : int
+        Number of items on the tree.
+    is_empty : bool
+        True if `size == 0`.
+    """
+    # Private Node class
+    class _Node():
+        """Internal node object to hold key, value, and two children."""
+        def __init__(self, key, value=None):
+            self.key = key
+            self.val = value
+            self.left = self.right = None
+            self.N = 1       # nodes in subtree rooted here
+            self.height = 1  # height of the tree rooted at this _Node
+
+        def __str__(self):
+            # Avoid recursion through entire tree!! Just print each child
+            left_str = f"{{{repr(self.left.key)}: {repr(self.left.val)}}}" if self.left else 'None'
+            right_str = f"{{{repr(self.right.key)}: {repr(self.right.val)}}}" if self.right else 'None'
+            return f"{{{repr(self.key)}: {repr(self.val)}}}, L:{left_str}, R:{right_str}, N={self.N}"
+
+        def __repr__(self):
+            return f"<{self.__class__.__name__}: {self.__str__()}>"
+
+    # -------------------------------------------------------------------------
+    #         Public API
+    # -------------------------------------------------------------------------
+    def __init__(self, items=list()):
+        self._root = None
+        try:
+            for k, v in items:
+                self._root = self.__setitem__(k, v)
+            return
+        except ValueError:
+            raise ValueError(f"{self.__class__.__name__} expects a `list` of tuples input.")
+
+    @property
+    def size(self):
+        return self._size(self._root)
+
+    @property
+    def height(self):
+        """Return the height of the BST in O(1) time."""
+        return self._height(self._root)
+
+    @property
+    def is_empty(self):
+        return self.size == 0
+
+    def __len__(self):
+        return self.size
+
+    def __getitem__(self, k):
+        """Return the value associated with the given `k`."""
+        x = self._root
+        while x:
+            if k == x.key:
+                return x.val
+            elif k < x.key:
+                x = x.left
+            else:
+                x = x.right
+        raise KeyError(k)
+
+    def __setitem__(self, k, v):
+        """Add a new node to subtree at `x`, associating `k` with `v`.
+        If `k` is in subtree rooted at `x`, change its value to `v`."""
+        return self._set(k, v, self._root)
+
+    def __delitem__(self, k):
+        """Delete the node associated with `k`."""
+        self._root = self._delete(k, self._root)
+
+    def __contains__(self, k):
+        """Return True if `k` is present in the tree, False otherwise."""
+        return self.__getitem__(k) is not None
+
+    def __eq__(self, other):
+        return sorted(self.items()) == sorted(other.items())
+
+    def __str__(self):
+        return str(dict(self.items()))
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__}: {self.__str__()}>"
+
+    # -------------------------------------------------------------------------
+    #         Other Public Methods
+    # -------------------------------------------------------------------------
+    # TODO refactor s.t. min/max/floor/ceil all return Nodes. Client can choose
+    # to use key or value. Returning Nodes will save a separate private method
+    # definition.
+    def min(self):
+        """Return the minimum key in the tree."""
+        _empty_check(self)
+        return self._min(self._root).key
+
+    def max(self):
+        """Return the maximum key in the tree."""
+        _empty_check(self)
+        return self._max(self._root).key
+
+    def floor(self, k):
+        """Return the largest key less than or equal to `k`."""
+        x = self._floor(k, self._root)  # self._floor returns a Node
+        return x.key if x else None
+
+    def ceil(self, k):
+        """Return the smallest key greater than or equal to `k`."""
+        x = self._ceil(k, self._root)  # self._ceil returns a Node
+        return x.key if x else None
+
+    def rank(self, k):
+        """Return the number of keys less than `k`."""
+        return self._rank(k, self._root)
+
+    def select(self, r):
+        """Return the key of rank `r`."""
+        return self._select(r, self._root).key
+
+    def delete_min(self):
+        """Delete the smallest key."""
+        self._root = self._delete_min(self._root)
+
+    def delete_max(self):
+        """Delete the largest key."""
+        self._root = self._delete_max(self._root)
+
+    def height_r(self):
+        """Determine the height of the BST recursively, in O(n) time."""
+        return self._height_r(self._root)
+
+    # -------------------------------------------------------------------------
+    #         Iterator functions
+    # -------------------------------------------------------------------------
+    docstring = """Return an in-order iterator over the {rtype} between the keys `lo`
+    and `hi`, inclusive. Guaranteed to be the same order as `BST.keys()`.
+
+    Parameters
+    ----------
+    lo : key
+        Minimum key over which to search, inclusive.
+    hi : key
+        Maximum key over which to search, inclusive.
+
+    Returns
+    -------
+    q : iterator
+        iterator over the {rtype} between `lo` and `hi`, inclusive.
+    """
+
+    def keys(self, lo=None, hi=None):
+        func = self._make_inorder_iterator(rtype='keys')
+        return func(self, lo, hi)
+
+    def values(self, lo=None, hi=None):
+        func = self._make_inorder_iterator(rtype='values')
+        return func(self, lo, hi)
+
+    def items(self, lo=None, hi=None):
+        func = self._make_inorder_iterator(rtype='items')
+        return func(self, lo, hi)
+
+    keys.__doc__   = docstring.format(rtype = 'keys')
+    values.__doc__ = docstring.format(rtype = 'values')
+    items.__doc__  = docstring.format(rtype = 'items')
+
+    def __iter__(self):
+        yield from self.keys()
+
+    # factory for generic in-order iteration over keys
+    def _make_inorder_iterator(self, rtype):
+        """Create an iterator over the desired type."""
+        def iterator(self, lo=None, hi=None):
+            try:
+                if lo is None:
+                    lo = self.min()
+                if hi is None:
+                    hi = self.max()
+            except IndexError:
+                return list()
+            else:
+                return self._iterate(lo, hi, x=self._root, rtype=rtype)
+        return iterator
+
+    def _iterate(self, lo, hi, x=None, q=None, rtype='keys'):
+        """Recursively add items to the given _Queue."""
+        # Defaults
+        if x is None:
+            return
+        if q is None:
+            q = _Queue()
+        # Enqueue by key order
+        if lo < x.key:
+            self._iterate(lo, hi, x.left, q, rtype)
+        if lo <= x.key and hi >= x.key:
+            q.enqueue(x.key if rtype == 'keys' else (x.val if rtype == 'values' else _Item(x.key, x.val)))
+        if hi > x.key:
+            self._iterate(lo, hi, x.right, q, rtype)
+        return list(q)
+
+    # -------------------------------------------------------------------------
+    #         Private API
+    # -------------------------------------------------------------------------
+    def _size(self, x=None):
+        """Return the size of the subtree rooted at Node `x`."""
+        return 0 if x is None else x.N
+
+    def _set(self, k, v, x=None):
+        """Add a new node to subtree at `x`, associating `k` with `v`.
+        If `k` is in subtree rooted at `x`, change its value to `v`.
+
+        Parameters
+        ----------
+        k : key
+            key for which to search
+        v : value
+            object to be associated with key `k`
+        x : _Node, optional
+            root of the subtree at which to begin search
+        """
+        # subtree is empty, create a new node
+        if x is None:
+            return self._Node(k, v)
+
+        # create a child, or update the value
+        if k < x.key:
+            x.left = self._set(k, v, x.left)
+        elif k > x.key:
+            x.right = self._set(k, v, x.right)
+        else:  # k == x.key
+            x.val = v  # update the value
+
+        # Update the size of the subtree located at the given root
+        x.N = self._size(x.left) + self._size(x.right) + 1
+        x.height = max(self._height(x.left), self._height(x.right)) + 1
+        return x
+
+    def _min(self, x=None):
+        """Return the minimum key in the subtree rooted at `x`."""
+        return x if x.left is None else self._min(x.left)
+
+    def _max(self, x=None):
+        return x if x.right is None else self._max(x.right)
+
+    def _floor(self, k, x=None):
+        """Return the Node with key that is the floor of `k`."""
+        if x is None:
+            return
+        if k == x.key:
+            return x                       # floor may be exactly k
+        if k < x.key:
+            return self._floor(k, x.left)  # floor must be in left subtree
+        t = self._floor(k, x.right)        # floor might be in right subtree
+        return t if t else x
+
+    def _ceil(self, k, x=None):
+        """Return the Node with key that is the ceiling of `k`."""
+        # Note: _ceil is just _floor, interchange < <-> >, left <-> right
+        if x is None:
+            return
+        if k == x.key:
+            return x                       # ceil may be exactly k
+        if k > x.key:
+            return self._ceil(k, x.right)  # ceil must be in right subtree
+        t = self._ceil(k, x.left)          # ceil might be in left subtree
+        return t if t else x
+
+    def _select(self, r, x=None):
+        """Return the Node that has rank `r` in the subtree rooted at `x`.
+
+        .. note:: `select` is the inverse of `rank`."""
+        if x is None:
+            raise KeyError(r)
+        t = self._size(x.left)
+        if t > r:
+            return self._select(r, x.left)
+        elif t < r:
+            return self._select(r-t-1, x.right)
+        else:
+            return x
+
+    def _rank(self, k, x=None):
+        """Return the rank of key `k` in the subtree rooted at `x`.
+
+        .. note:: `rank` is the inverse of `select`."""
+        if x is None:
+            raise KeyError(k)
+        if k < x.key:
+            return self._rank(k, x.left)
+        elif k > x.key:
+            return 1 + self._size(x.left) + self._rank(k, x.right)
+        else:
+            return self._size(x.left)
+
+    def _delete_min(self, x=None):
+        """Delete the minimum key in the subtree rooted at `x`."""
+        if x.left is None:
+            return x.right
+        x.left = self._delete_min(x.left)
+        # Update the size of the subtree located at the given root
+        x.N = self._size(x.left) + self._size(x.right) + 1
+        return x
+
+    def _delete_max(self, x=None):
+        """Delete the maximum key in the subtree rooted at `x`."""
+        if x.right is None:
+            return x.left
+        x.right = self._delete_max(x.right)
+        # Update the size of the subtree located at the given root
+        x.N = self._size(x.left) + self._size(x.right) + 1
+        return x
+
+    def _delete(self, k, x=None):
+        """Delete the node associated with `k` using eager Hibbard deletion."""
+        if x is None:
+            return
+        # Update links and node counts as we go vs.:
+        #   t = self._get(k, self._root)
+        if k < x.key:
+            x.left = self._delete(k, x.left)
+        elif k > x.key:
+            x.right = self._delete(k, x.right)
+        else:
+            if x.left is None:
+                return x.right
+            if x.right is None:
+                return x.left
+            # save pointer to Node to be deleted
+            t = x
+            # Get the successor to the node to be deleted
+            x = self._min(t.right)
+            x.right = self._delete_min(t.right)
+            x.left = t.left
+        # Update the size of the subtree located at the given root
+        x.N = self._size(x.left) + self._size(x.right) + 1
+        return x
+
+    def _height_r(self, x=None):
+        """Return the height of the tree rooted at `x`."""
+        if x is None:
+            return 0
+        lmax = self._height_r(x.left)
+        rmax = self._height_r(x.right)
+        return max(lmax, rmax) + 1
+
+    def _height(self, x=None):
+        """Return the height of the tree rooted at `x`."""
+        return 0 if x is None else x.height
+
+    def _level_order(self):
+        """Return an iterator over the keys in level-order (breadth-first)."""
+        keys = _Queue()
+        q = _Queue()
+        q.enqueue(self._root)
+        while q:
+            x = q.dequeue()
+            if x is None:
+                continue
+            keys.enqueue(x.key)
+            q.enqueue(x.left)
+            q.enqueue(x.right)
+        return list(keys)
+
 # -----------------------------------------------------------------------------
 #         Test Functions
 # -----------------------------------------------------------------------------
@@ -837,7 +1211,8 @@ if __name__ == '__main__':
     st['A'] = v
 
     # ---------- Test Ordered STs ----------
-    for ST in [BinarySearchST, BST]:  # BST
+    # for ST in [BinarySearchST, BST, BST_nr]:  # BST
+    for ST in [BST_nr]:  # BST
         # Test bad input type
         try:
             t = ST(list('BADEXAMPLE'))
@@ -856,14 +1231,14 @@ if __name__ == '__main__':
         #  6         S
         #           / \
         #  5      E    X
-        #      /    \   
-        #  4  A      R   
+        #      /    \
+        #  4  A      R
         #      \    /
         #  3    C  H
         #           \
         #  2         M
         #           / \
-        #  1       L   P 
+        #  1       L   P
 
         should_be(len(t), len(test_set))  # test __len__
         should_be(len(t), t.size)
