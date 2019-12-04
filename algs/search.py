@@ -414,15 +414,15 @@ class BST():
         def __init__(self, key, value=None):
             self.key = key
             self.val = value
-            self.left = None
-            self.right = None
-            self.N = 1  # nodes in subtree rooted here
+            self.left = self.right = None
+            self.N = 1       # nodes in subtree rooted here
+            self.height = 1  # height of the tree rooted at this _Node
 
         def __str__(self):
             # Avoid recursion through entire tree!! Just print each child
-            left_str = f"({self.left.key}, {self.left.val})" if self.left else 'None'
-            right_str = f"({self.right.key}, {self.right.val})" if self.right else 'None'
-            return f"({self.key}, {self.val}), L:{left_str}, R:{right_str}, N={self.N}"
+            left_str = f"{{{repr(self.left.key)}: {repr(self.left.val)}}}" if self.left else 'None'
+            right_str = f"{{{repr(self.right.key)}: {repr(self.right.val)}}}" if self.right else 'None'
+            return f"{{{repr(self.key)}: {repr(self.val)}}}, L:{left_str}, R:{right_str}, N={self.N}"
 
         def __repr__(self):
             return f"<{self.__class__.__name__}: {self.__str__()}>"
@@ -442,6 +442,11 @@ class BST():
     @property
     def size(self):
         return self._size(self._root)
+
+    @property
+    def height(self):
+        """Return the height of the BST in O(1) time."""
+        return self._height(self._root)
 
     @property
     def is_empty(self):
@@ -516,6 +521,10 @@ class BST():
         """Delete the largest key."""
         self._root = self._delete_max(self._root)
 
+    def height_r(self):
+        """Determine the height of the BST recursively, in O(n) time."""
+        return self._height_r(self._root)
+
     # ------------------------------------------------------------------------- 
     #         Iterator functions
     # -------------------------------------------------------------------------
@@ -554,15 +563,40 @@ class BST():
     def __iter__(self):
         yield from self.keys()
 
+    # factory for generic in-order iteration over keys
+    def _make_inorder_iterator(self, rtype):
+        """Create an iterator over the desired type."""
+        def iterator(self, lo=None, hi=None):
+            if lo is None:
+                lo = self.min()
+            if hi is None:
+                hi = self.max()
+            q = self._iterate(lo, hi, x=self._root, rtype=rtype)
+            return q
+        return iterator
+
+    def _iterate(self, lo, hi, x=None, q=None, rtype='keys'):
+        """Recursively add items to the given _Queue."""
+        # Defaults
+        if x is None:
+            return
+        if q is None:
+            q = _Queue()
+        # Enqueue by key order
+        if lo < x.key:
+            self._iterate(lo, hi, x.left, q, rtype)
+        if lo <= x.key and hi >= x.key:
+            q.enqueue(x.key if rtype == 'keys' else (x.val if rtype == 'values' else _Item(x.key, x.val)))
+        if hi > x.key:
+            self._iterate(lo, hi, x.right, q, rtype)
+        return list(q)
+
     # -------------------------------------------------------------------------
     #         Private API
     # -------------------------------------------------------------------------
     def _size(self, x=None):
         """Return the size of the subtree rooted at Node `x`."""
-        if x is None:
-            return 0
-        else:
-            return x.N
+        return 0 if x is None else x.N
 
     def _get(self, k, x=None):
         """Return the value associated with the given `k`.
@@ -612,6 +646,7 @@ class BST():
 
         # Update the size of the subtree located at the given root
         x.N = self._size(x.left) + self._size(x.right) + 1
+        x.height = max(self._height(x.left), self._height(x.right)) + 1
         return x
 
     def _min(self, x=None):
@@ -714,33 +749,17 @@ class BST():
         x.N = self._size(x.left) + self._size(x.right) + 1
         return x
 
-    # factory for generic in-order iteration over keys
-    def _make_inorder_iterator(self, rtype):
-        """Create an iterator over the desired type."""
-        def iterator(self, lo=None, hi=None):
-            if lo is None:
-                lo = self.min()
-            if hi is None:
-                hi = self.max()
-            q = self._iterate(lo, hi, x=self._root, rtype=rtype)
-            return q
-        return iterator
-
-    def _iterate(self, lo, hi, x=None, q=None, rtype='keys'):
-        """Recursively add items to the given _Queue."""
-        # Defaults
+    def _height_r(self, x=None):
+        """Return the height of the tree rooted at `x`."""
         if x is None:
-            return
-        if q is None:
-            q = _Queue()
-        # Enqueue by key order
-        if lo < x.key:
-            self._iterate(lo, hi, x.left, q, rtype)
-        if lo <= x.key and hi >= x.key:
-            q.enqueue(x.key if rtype == 'keys' else (x.val if rtype == 'values' else _Item(x.key, x.val)))
-        if hi > x.key:
-            self._iterate(lo, hi, x.right, q, rtype)
-        return list(q)
+            return 0
+        lmax = self._height_r(x.left)
+        rmax = self._height_r(x.right)
+        return max(lmax, rmax) + 1
+
+    def _height(self, x=None):
+        """Return the height of the tree rooted at `x`."""
+        return 0 if x is None else x.height
 
     def _level_order(self):
         """Return an iterator over the keys in level-order (breadth-first)."""
@@ -813,7 +832,7 @@ if __name__ == '__main__':
     st['A'] = v
 
     # ---------- Test Ordered STs ----------
-    for ST in [BinarySearchST]:  # BST
+    for ST in [BinarySearchST, BST]:  # BST
         # Test bad input type
         try:
             t = ST(list('BADEXAMPLE'))
@@ -827,18 +846,19 @@ if __name__ == '__main__':
         # Test construction by list of tuples
         t = ST(data)
 
-        # Binary Search Tree looks like:
-        #            S
+        # Binary Search Tree:
+        #  height
+        #  6         S
         #           / \
-        #         E    X
+        #  5      E    X
         #      /    \   
-        #     A      R   
+        #  4  A      R   
         #      \    /
-        #       C  H
+        #  3    C  H
         #           \
-        #            M
+        #  2         M
         #           / \
-        #          L   P 
+        #  1       L   P 
 
         should_be(len(t), len(test_set))  # test __len__
         should_be(len(t), t.size)
@@ -866,8 +886,10 @@ if __name__ == '__main__':
             should_be(t.select(i), c)
             should_be(t.rank(c), i)
 
-        # Level-order traversal (BST-specific)
-        if isinstance(ST, BST):
+        # BST-specific tests
+        if isinstance(t, BST):
+            should_be(t.height, 6)      # Node attribute method, as a property
+            should_be(t.height_r(), 6)  # recursive method
             should_be(list(t._level_order()), list('SEXARCHMLP'))
 
         # In-order traversal
@@ -910,7 +932,7 @@ if __name__ == '__main__':
             should_be(True, False)  # fail if we didn't actually delete the key!
         t['E'] = v
 
-        if isinstance(ST, BST):
+        if isinstance(t, BST):
             # delete the root
             v = t['S']
             del t['S']
