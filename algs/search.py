@@ -99,7 +99,13 @@ class SequentialSearchST():
         k in self.keys()
 
     def __delitem__(self, k):
-        """Delete the item associated with `k`. Raises KeyError."""
+        """Delete the item associated with `k`. 
+        
+        Raises 
+        ------
+        KeyError
+            If `k` is not in the table.
+        """
         for i, item in enumerate(self._items):
             if k == item.key:
                 self._cost = i + 1
@@ -203,7 +209,13 @@ class BinarySearchST():
             # self._assert_integrity()
 
     def __getitem__(self, k):
-        """Return the value associated with the given key `k`."""
+        """Return the value associated with the given key `k`.
+        
+        Raises
+        ------
+        KeyError
+            If `k` is not in the table.
+        """
         # See if we have cached the key
         if self._CACHE_FLAG and self._cache and self._cache.key == k:
             return self._cache.value
@@ -225,7 +237,13 @@ class BinarySearchST():
             return False
 
     def __delitem__(self, k):
-        """Delete the item associated with `k`."""
+        """Delete the item associated with `k`.
+        
+        Raises
+        ------
+        KeyError
+            If `k` is not in the table.
+        """
         i = self.rank(k)
         if i < self.size and self._items[i].key == k:
             # Clear cache of item if necessary
@@ -260,7 +278,8 @@ class BinarySearchST():
         # self._assert_integrity()
 
     def floor(self, k):
-        """Return the largest key less than or equal to `k`."""
+        """Return the largest key less than or equal to `k`, or None if `k` is
+        less than the smallest key in the table."""
         i = self.rank(k)
         if i < self.size and self._items[i].key == k:
             return self._items[i].key
@@ -270,7 +289,8 @@ class BinarySearchST():
             return None
 
     def ceil(self, k):
-        """Return the smallest key greater than or equal to `k`."""
+        """Return the smallest key greater than or equal to `k`, or None if `k`
+        is greater than the largest key in the table."""
         i = self.rank(k)
         if i < self.size:
             return self._items[i].key
@@ -278,7 +298,13 @@ class BinarySearchST():
             return None
 
     def select(self, r):
-        """Return the key of rank `r`."""
+        """Return the key of rank `r`.
+        
+        Raises
+        ------
+        IndexError
+            If there are fewer than `r`+1 keys in the table.
+        """
         return self._items[r].key
 
     def rank(self, k):
@@ -376,7 +402,7 @@ class BinarySearchST():
     # -------------------------------------------------------------------------
     #         Data Integrity Checks
     # -------------------------------------------------------------------------
-    # NOTE integrity checks are O(N)!! They break the O(Lg N) search...
+    # NOTE integrity checks are O(N)!! They break the O(lg N) search...
     def _assert_integrity(self):
         assert self._rank_check() and self._is_sorted()
 
@@ -498,29 +524,39 @@ class BST():
         return self._max(self._root).key
 
     def floor(self, k):
-        """Return the largest key less than or equal to `k`."""
+        """Return the largest key less than or equal to `k`, or None if `k` is
+        less than the smallest key in the table."""
         x = self._floor(k, self._root)  # self._floor returns a Node
         return x.key if x else None
 
     def ceil(self, k):
-        """Return the smallest key greater than or equal to `k`."""
+        """Return the smallest key greater than or equal to `k`, or None if `k`
+        is greater than the largest key in the table."""
         x = self._ceil(k, self._root)  # self._ceil returns a Node
         return x.key if x else None
 
     def rank(self, k):
-        """Return the number of keys less than `k`."""
+        """Return the number of keys strictly less than `k`."""
         return self._rank(k, self._root)
 
     def select(self, r):
-        """Return the key of rank `r`."""
+        """Return the key of rank `r`.
+        
+        Raises
+        ------
+        IndexError
+            If there are fewer than `r`+1 keys in the table.
+        """
         return self._select(r, self._root).key
 
     def delete_min(self):
         """Delete the smallest key."""
+        _empty_check(self)
         self._root = self._delete_min(self._root)
 
     def delete_max(self):
         """Delete the largest key."""
+        _empty_check(self)
         self._root = self._delete_max(self._root)
 
     def height_r(self):
@@ -612,6 +648,11 @@ class BST():
             key for which to search
         x : _Node, optional
             root of the subtree at which to begin search
+        
+        Raises
+        ------
+        KeyError
+            If `k` is not in the table.
         """
         # got to the bottom of the tree, key not found
         if x is None:
@@ -687,9 +728,15 @@ class BST():
     def _select(self, r, x=None):
         """Return the Node that has rank `r` in the subtree rooted at `x`.
 
-        .. note:: `select` is the inverse of `rank`."""
+        .. note:: `select` is the inverse of `rank`.
+        
+        Raises
+        ------
+        IndexError
+            If there are fewer than `r`+1 keys in the table.
+        """
         if x is None:
-            raise KeyError(r)
+            raise IndexError(r)
         t = self._size(x.left)
         if t > r:
             return self._select(r, x.left)
@@ -701,9 +748,10 @@ class BST():
     def _rank(self, k, x=None):
         """Return the rank of key `k` in the subtree rooted at `x`.
 
-        .. note:: `rank` is the inverse of `select`."""
+        .. note:: `rank` is the inverse of `select`.
+        """
         if x is None:
-            raise KeyError(k)
+            return 0
         if k < x.key:
             return self._rank(k, x.left)
         elif k > x.key:
@@ -844,7 +892,13 @@ class BST_nr():
         return self.size
 
     def __getitem__(self, k):
-        """Return the value associated with the given `k`."""
+        """Return the value associated with the given `k`.
+        
+        Raises
+        ------
+        KeyError
+            If `k` is not in the table.
+        """
         x = self._root
         while x:
             if k == x.key:
@@ -857,23 +911,25 @@ class BST_nr():
 
     def __setitem__(self, k, v):
         """Add a new node to subtree at `x`, associating `k` with `v`.
-        If `k` is in subtree rooted at `x`, change its value to `v`."""
-        x = self._root
-        if x is None:
+        If `k` is in subtree rooted at `x`, change its value to `v`.
+        """
+        if self._root is None:
             self._root = self._Node(k, v)
             return
 
+        # Search for the key
+        x = self._root
         while x:
             p = x  # track parent node
             if k == x.key:
-                x.val = v
+                x.val = v  # update the value if found
                 return
             elif k < x.key:
                 x = x.left
             else:
                 x = x.right
 
-        # Insert new node as child of parent
+        # Insert new node as child of parent if key not found
         if k < p.key:
             p.left = self._Node(k, v)
         else:  # k > p.key
@@ -934,10 +990,12 @@ class BST_nr():
 
     def delete_min(self):
         """Delete the smallest key."""
+        _empty_check(self)
         self._root = self._delete_min(self._root)
 
     def delete_max(self):
         """Delete the largest key."""
+        _empty_check(self)
         self._root = self._delete_max(self._root)
 
     def height_r(self):
@@ -1053,9 +1111,15 @@ class BST_nr():
     def _select(self, r, x=None):
         """Return the Node that has rank `r` in the subtree rooted at `x`.
 
-        .. note:: `select` is the inverse of `rank`."""
+        .. note:: `select` is the inverse of `rank`.
+        
+        Raises
+        ------
+        IndexError
+            If there are fewer than `r`+1 keys in the table.
+        """
         if x is None:
-            raise KeyError(r)
+            raise IndexError(r)
         t = self._size(x.left)
         if t > r:
             return self._select(r, x.left)
@@ -1067,9 +1131,10 @@ class BST_nr():
     def _rank(self, k, x=None):
         """Return the rank of key `k` in the subtree rooted at `x`.
 
-        .. note:: `rank` is the inverse of `select`."""
+        .. note:: `rank` is the inverse of `select`.
+        """
         if x is None:
-            raise KeyError(k)
+            return 0
         if k < x.key:
             return self._rank(k, x.left)
         elif k > x.key:
@@ -1169,6 +1234,39 @@ if __name__ == '__main__':
             print(f"[{name}]: Got: {a}, Expected: {b}")
             raise e
 
+    def err_test(container, op, *args, err_type=IndexError):
+        """Test for raising a given error type.
+
+        Parameters
+        ----------
+        container : list-like container data type instance
+            A class instance to be tested.
+        op : str
+            attribute name of method to test
+        *args : list
+            arguments to `op`. 
+        err_type : Exception, optional
+            error type that object is expected to raise
+        
+        Raises
+        ------
+        Exception
+            If error raised is not of type `err_type`.
+        """
+        global tests, fails
+        tests += 1
+        while True:
+            try:
+                getattr(container, op)(*args)  # call the method
+            except err_type:
+                return
+            except Exception as err:
+                fails += 1
+                print(f"Raised: {repr(err)}, Expected: {err_type}")
+                raise err
+
+
+    # Prepare test data
     test_str = 'SEARCHEXAMPLE'
     test_set = set(test_str)
     data = [(c, i) for i, c in enumerate(test_str)]
@@ -1179,7 +1277,12 @@ if __name__ == '__main__':
 
     # ---------- Test SequentialSearchST ----------
     # TODO implement tests for t._cost after various operations
-    should_be(SequentialSearchST().is_empty, True)
+    st = SequentialSearchST()
+    should_be(st.size, 0)
+    should_be(st.is_empty, True)
+    should_be(st.keys(),   [])
+    should_be(st.values(), [])
+    should_be(st.items(),  [])
 
     st = SequentialSearchST(data)
     for k, v in data:
@@ -1192,30 +1295,50 @@ if __name__ == '__main__':
     should_be(len(st), st.size)
     # st.keys() not guaranteed in order, so these tests are weak
     should_be(sorted(st.keys()), sorted(test_set))
-    should_be((st.keys() == sorted(test_set)), False)
+    should_be((st.keys() == sorted(test_set)), False)  # not inserted in order
     should_be(sorted(st.values()), sorted([v for k, v in data_set]))
     should_be(sorted([(x.key, x.value) for x in st.items()]), sorted(data_set))
+
+    err_test(st, '__getitem__', 'Z', err_type=KeyError)
 
     v = st['A']
     del st['A']
     should_be(sorted(st.keys()), sorted(test_set - set('A')))
     st['A'] = v
 
-    # ---------- Test Ordered STs ----------
-    # for ST in [BinarySearchST, BST, BST_nr]:  # BST
-    for ST in [BST_nr]:  # BST
-        # Test bad input type
-        try:
-            t = ST(list('BADEXAMPLE'))
-        except ValueError:
-            should_be(True, True)  # hack to make sure we get here
-        else:
-            should_be(True, False)
+    # Test self-organizing search
+    tc = SequentialSearchST(data, cache=True)
+    for k in np.random.choice(tc.keys(), size=tc.size):
+        tc[k]                       # search for the key
+        should_be(tc.keys()[0], k)  # should get moved to front
+        tc[k]                       # search again
+        should_be(tc._cost, 1)      # test cost
 
-        should_be(ST().is_empty, True)
+    # ---------- Test Ordered STs ----------
+    for ST in [BinarySearchST, BST, BST_nr]:
+    # for ST in [BST_nr]:  # BST
+        t = ST()
+        # Test bad input type
+        err_test(t, '__init__', list('BADEXAMPLE'), err_type=ValueError)
+        # Test empty table operations
+        should_be(t.size, 0)
+        should_be(t.is_empty, True)
+        should_be(t.keys(),   [])
+        should_be(t.values(), [])
+        should_be(t.items(),  [])
+        err_test(t, '__getitem__', 'A', err_type=KeyError)
+        err_test(t, 'min', err_type=IndexError)
+        err_test(t, 'max', err_type=IndexError)
+        err_test(t, 'delete_min', err_type=IndexError)
+        err_test(t, 'delete_max', err_type=IndexError)
+        should_be(t.floor('A'),  None)
+        should_be(t.ceil('A'),  None)
+        should_be(t.rank('A'),  0)
+        err_test(t, 'select', 0, err_type=IndexError)
 
         # Test construction by list of tuples
         t = ST(data)
+        # t._assert_integrity()  # TODO implement for BST(_nr)?
 
         # Binary Search Tree:
         #  height
@@ -1295,12 +1418,7 @@ if __name__ == '__main__':
         v = t['E']
         del t['E']
         should_be(len(t), len(test_set)-1)
-        try:
-            t['E']
-        except KeyError:
-            should_be(True, True)   # pass if we get a KeyError as expected
-        else:
-            should_be(True, False)  # fail if we didn't actually delete the key!
+        err_test(t, '__getitem__', 'E', err_type=KeyError)
         t['E'] = v
 
         if isinstance(t, BST):
@@ -1315,14 +1433,6 @@ if __name__ == '__main__':
     should_be(BinarySearchST(data), SequentialSearchST(data))
     should_be(BinarySearchST(data), BST(data))
     should_be(BST(data), BinarySearchST(data))
-
-    # Test self-organizing search
-    tc = SequentialSearchST(data, cache=True)
-    for k in np.random.choice(tc.keys(), size=tc.size):
-        tc[k]                       # search for the key
-        should_be(tc.keys()[0], k)  # should get moved to front
-        tc[k]                       # search again
-        should_be(tc._cost, 1)      # test cost
 
     # Summary
     if fails > 0:
