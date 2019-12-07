@@ -279,7 +279,8 @@ class BinarySearchST():
 
     def floor(self, k):
         """Return the largest key less than or equal to `k`, or None if `k` is
-        less than the smallest key in the table."""
+        less than the smallest key in the table.
+        """
         i = self.rank(k)
         if i < self.size and self._items[i].key == k:
             return self._items[i].key
@@ -290,7 +291,8 @@ class BinarySearchST():
 
     def ceil(self, k):
         """Return the smallest key greater than or equal to `k`, or None if `k`
-        is greater than the largest key in the table."""
+        is greater than the largest key in the table.
+        """
         i = self.rank(k)
         if i < self.size:
             return self._items[i].key
@@ -981,14 +983,38 @@ class BST_nr():
         return x.key
 
     def floor(self, k):
-        """Return the largest key less than or equal to `k`."""
-        x = self._floor(k, self._root)  # self._floor returns a Node
-        return x.key if x else None
+        """Return the largest key less than or equal to `k`, or None if `k` is
+        less than the smallest key in the table.
+        """
+        x = self._root
+        p = None  # pointer to the floor Node
+        while x:
+            if k == x.key:
+                p = x
+                break
+            elif k < x.key:
+                x = x.left  # floor must be in left subtree
+            else:
+                p = x       # keep pointer to parent
+                x = x.right
+        return p.key if p else None
 
     def ceil(self, k):
-        """Return the smallest key greater than or equal to `k`."""
-        x = self._ceil(k, self._root)  # self._ceil returns a Node
-        return x.key if x else None
+        """Return the smallest key greater than or equal to `k`, or None if `k`
+        is greater than the largest key in the table.
+        """
+        x = self._root
+        p = None  # pointer to the floor Node
+        while x:
+            if k == x.key:
+                p = x
+                break
+            elif k > x.key:
+                x = x.right  # floor must be in right subtree
+            else:
+                p = x       # keep pointer to parent
+                x = x.left
+        return p.key if p else None
 
     def rank(self, k):
         """Return the number of keys less than `k`."""
@@ -1092,29 +1118,6 @@ class BST_nr():
     def _min(self, x=None):
         """Return the minimum key in the subtree rooted at `x`."""
         return x if x.left is None else self._min(x.left)
-
-    def _floor(self, k, x=None):
-        """Return the Node with key that is the floor of `k`."""
-        if x is None:
-            return
-        if k == x.key:
-            return x                       # floor may be exactly k
-        if k < x.key:
-            return self._floor(k, x.left)  # floor must be in left subtree
-        t = self._floor(k, x.right)        # floor might be in right subtree
-        return t if t else x
-
-    def _ceil(self, k, x=None):
-        """Return the Node with key that is the ceiling of `k`."""
-        # Note: _ceil is just _floor, interchange < <-> >, left <-> right
-        if x is None:
-            return
-        if k == x.key:
-            return x                       # ceil may be exactly k
-        if k > x.key:
-            return self._ceil(k, x.right)  # ceil must be in right subtree
-        t = self._ceil(k, x.left)          # ceil might be in left subtree
-        return t if t else x
 
     def _select(self, r, x=None):
         """Return the Node that has rank `r` in the subtree rooted at `x`.
