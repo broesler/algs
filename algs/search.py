@@ -848,7 +848,22 @@ class BST_nr():
     """
     # Private Node class
     class _Node():
-        """Internal node object to hold key, value, and two children."""
+        """Internal node object to hold key, value, and two children.
+
+        Attributes
+        ----------
+        key : object
+            Any hashable value.
+        val : object
+            Any object to be associated with the key.
+        left, right : _Node
+            Pointers to children nodes in the tree.
+        N : int
+            The number of nodes in the subtree rooted at this node.
+        height : int
+            The height of subtree rooted at this node. Height is defined by the
+            longest path from root to leaf, O(lg N).
+        """
         def __init__(self, key, value=None):
             self.key = key
             self.val = value
@@ -879,12 +894,13 @@ class BST_nr():
 
     @property
     def size(self):
+        """Return the number of nodes in the BST."""
         return self._size(self._root)
 
     @property
     def height(self):
         """Return the height of the BST in O(1) time."""
-        return self._height(self._root)
+        return 0 if self._root is None else self._root.height
 
     @property
     def is_empty(self):
@@ -1093,7 +1109,6 @@ class BST_nr():
         """Return the size of the subtree rooted at Node `x`."""
         return 0 if x is None else x.N
 
-    # TODO remove this method once delete is non-recursive
     def _min(self, x=None):
         """Return the minimum key in the subtree rooted at `x`."""
         return x if x.left is None else self._min(x.left)
@@ -1107,6 +1122,9 @@ class BST_nr():
         x.N = self._size(x.left) + self._size(x.right) + 1
         return x
 
+    # TODO
+    #   * implement `delete` non-recursively
+    #   * delete `_min`, `_delete_min` methods
     def _delete(self, k, x=None):
         """Delete the node associated with `k` using eager Hibbard deletion."""
         if x is None:
@@ -1132,10 +1150,7 @@ class BST_nr():
         x.N = self._size(x.left) + self._size(x.right) + 1
         return x
 
-    def _height(self, x=None):
-        """Return the height of the tree rooted at `x`."""
-        return 0 if x is None else x.height
-
+    # TODO implement pre- and post-order traversals
     def _level_order(self):
         """Return an iterator over the keys in level-order (breadth-first)."""
         keys = _Queue()
