@@ -1018,7 +1018,18 @@ class BST_nr():
 
     def rank(self, k):
         """Return the number of keys less than `k`."""
-        return self._rank(k, self._root)
+        r = 0
+        x = self._root
+        while x:
+            if k == x.key:
+                r += self._size(x.left)
+                break
+            elif k < x.key:
+                x = x.left
+            else:
+                r += 1 + self._size(x.left)
+                x = x.right
+        return r
 
     def select(self, r):
         """Return the key of rank `r`."""
