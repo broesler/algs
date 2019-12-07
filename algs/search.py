@@ -1027,16 +1027,30 @@ class BST_nr():
     def delete_min(self):
         """Delete the smallest key."""
         _empty_check(self)
-        self._root = self._delete_min(self._root)
+        x = self._root
+        if x.left is None:  # the min is the root
+            self._root = x.right
+            return
+        # find the min and delete the pointer to it
+        while x.left:
+            p = x
+            p.N -= 1
+            x = x.left
+        p.left = x.right
 
     def delete_max(self):
         """Delete the largest key."""
         _empty_check(self)
-        self._root = self._delete_max(self._root)
-
-    def height_r(self):
-        """Determine the height of the BST recursively, in O(n) time."""
-        return self._height_r(self._root)
+        x = self._root
+        if x.right is None:  # the max is the root
+            self._root = x.left
+            return
+        # find the max and delete the pointer to it
+        while x.right:
+            p = x
+            p.N -= 1
+            x = x.right
+        p.right = x.left
 
     # -------------------------------------------------------------------------
     #         Iterator functions
