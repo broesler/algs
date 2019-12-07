@@ -1017,7 +1017,9 @@ class BST_nr():
         return p.key if p else None
 
     def rank(self, k):
-        """Return the number of keys less than `k`."""
+        """Return the number of keys less than `k`.
+        .. note:: `rank` is the inverse of `select`.
+        """
         r = 0
         x = self._root
         while x:
@@ -1032,8 +1034,29 @@ class BST_nr():
         return r
 
     def select(self, r):
-        """Return the key of rank `r`."""
-        return self._select(r, self._root).key
+        """Return the key of rank `r`.
+
+        .. note:: `select` is the inverse of `rank`.
+
+        Raises
+        ------
+        IndexError
+            If there are fewer than `r`+1 keys in the table.
+        """
+        _empty_check(self)
+        x = self._root
+        rank = r
+        while x:
+            t = self._size(x.left)
+            if t > rank:
+                x = x.left
+            elif t < rank:
+                rank -= (t + 1)
+                x = x.right
+            else:
+                return x.key
+        else:
+            raise IndexError(r)
 
     def delete_min(self):
         """Delete the smallest key."""
@@ -1074,40 +1097,6 @@ class BST_nr():
     def _min(self, x=None):
         """Return the minimum key in the subtree rooted at `x`."""
         return x if x.left is None else self._min(x.left)
-
-    def _select(self, r, x=None):
-        """Return the Node that has rank `r` in the subtree rooted at `x`.
-
-        .. note:: `select` is the inverse of `rank`.
-
-        Raises
-        ------
-        IndexError
-            If there are fewer than `r`+1 keys in the table.
-        """
-        if x is None:
-            raise IndexError(r)
-        t = self._size(x.left)
-        if t > r:
-            return self._select(r, x.left)
-        elif t < r:
-            return self._select(r-t-1, x.right)
-        else:
-            return x
-
-    def _rank(self, k, x=None):
-        """Return the rank of key `k` in the subtree rooted at `x`.
-
-        .. note:: `rank` is the inverse of `select`.
-        """
-        if x is None:
-            return 0
-        if k < x.key:
-            return self._rank(k, x.left)
-        elif k > x.key:
-            return 1 + self._size(x.left) + self._rank(k, x.right)
-        else:
-            return self._size(x.left)
 
     def _delete_min(self, x=None):
         """Delete the minimum key in the subtree rooted at `x`."""
@@ -1405,9 +1394,12 @@ if __name__ == '__main__':
         should_be(t.floor(chr(ord('A') - 1)), None)  # char < t.min()
         should_be(t.ceil('Z'), None)                 # char > t.max()
 
+        # Select and Rank tests
+        err_test(t, 'select', -1, err_type=IndexError)  # too small
         for i, c in enumerate(sorted(test_set)):
             should_be(t.select(i), c)
             should_be(t.rank(c), i)
+        err_test(t, 'select', 99, err_type=IndexError)  # too large
 
         # BST-specific tests
         if isinstance(t, BST):
