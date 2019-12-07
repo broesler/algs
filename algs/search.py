@@ -1152,14 +1152,6 @@ class BST_nr():
         x.N = self._size(x.left) + self._size(x.right) + 1
         return x
 
-    def _height_r(self, x=None):
-        """Return the height of the tree rooted at `x`."""
-        if x is None:
-            return 0
-        lmax = self._height_r(x.left)
-        rmax = self._height_r(x.right)
-        return max(lmax, rmax) + 1
-
     def _height(self, x=None):
         """Return the height of the tree rooted at `x`."""
         return 0 if x is None else x.height
