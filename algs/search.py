@@ -963,18 +963,22 @@ class BST_nr():
     # -------------------------------------------------------------------------
     #         Other Public Methods
     # -------------------------------------------------------------------------
-    # TODO refactor s.t. min/max/floor/ceil all return Nodes. Client can choose
-    # to use key or value. Returning Nodes will save a separate private method
-    # definition.
+    # TODO refactor s.t. min/max/floor/ceil all return Nodes. 
     def min(self):
         """Return the minimum key in the tree."""
         _empty_check(self)
-        return self._min(self._root).key
+        x = self._root
+        while x.left:
+            x = x.left
+        return x.key
 
     def max(self):
         """Return the maximum key in the tree."""
         _empty_check(self)
-        return self._max(self._root).key
+        x = self._root
+        while x.right:
+            x = x.right
+        return x.key
 
     def floor(self, k):
         """Return the largest key less than or equal to `k`."""
@@ -1321,8 +1325,8 @@ if __name__ == '__main__':
         should_be(tc._cost, 1)      # test cost
 
     # ---------- Test Ordered STs ----------
-    # for ST in [BST_nr]:  # BST
-    for ST in [BinarySearchST, BST, BST_nr]:
+    for ST in [BST_nr]:  # BST
+    # for ST in [BinarySearchST, BST, BST_nr]:
         t = ST()
         # Test bad input type
         err_test(t, '__init__', list('BADEXAMPLE'), err_type=ValueError)
