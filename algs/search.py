@@ -299,7 +299,7 @@ class BinarySearchST():
         return lo
 
     def __eq__(self, other):
-        return sorted(self.items()) == sorted(other.items())
+        return self.items() == sorted(other.items())
 
     def __str__(self):
         return str(dict(self._items))
@@ -473,7 +473,7 @@ class BST():
         return self.__getitem__(k) is not None
 
     def __eq__(self, other):
-        return sorted(self.items()) == sorted(other.items())
+        return self.items() == sorted(other.items())
 
     def __str__(self):
         return str(dict(self.items()))
@@ -858,11 +858,7 @@ class BST_nr():
     def __setitem__(self, k, v):
         """Add a new node to subtree at `x`, associating `k` with `v`.
         If `k` is in subtree rooted at `x`, change its value to `v`."""
-        x = self._root
-        if x is None:
-            self._root = self._Node(k, v)
-            return
-
+        x = p = self._root
         while x:
             p = x  # track parent node
             if k == x.key:
@@ -874,9 +870,11 @@ class BST_nr():
                 x = x.right
 
         # Insert new node as child of parent
-        if k < p.key:
+        if p is None:
+            self._root = self._Node(k, v)
+        elif k < p.key:
             p.left = self._Node(k, v)
-        else:  # k > p.key
+        else:
             p.right = self._Node(k, v)
 
         # TODO Need 2nd pass to update _Node count
@@ -890,7 +888,7 @@ class BST_nr():
         return self.__getitem__(k) is not None
 
     def __eq__(self, other):
-        return sorted(self.items()) == sorted(other.items())
+        return self.items() == sorted(other.items())
 
     def __str__(self):
         return str(dict(self.items()))
