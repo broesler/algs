@@ -566,75 +566,6 @@ class BST():
         return self._height_r(self._root)
 
     # -------------------------------------------------------------------------
-    #         Iterator functions
-    # -------------------------------------------------------------------------
-    docstring = """Return an in-order iterator over the {rtype} between the keys `lo`
-    and `hi`, inclusive. Guaranteed to be the same order as `BST.keys()`.
-
-    Parameters
-    ----------
-    lo : key
-        Minimum key over which to search, inclusive.
-    hi : key
-        Maximum key over which to search, inclusive.
-
-    Returns
-    -------
-    q : iterator
-        iterator over the {rtype} between `lo` and `hi`, inclusive.
-    """
-
-    def keys(self, lo=None, hi=None):
-        func = self._make_inorder_iterator(rtype='keys')
-        return func(self, lo, hi)
-
-    def values(self, lo=None, hi=None):
-        func = self._make_inorder_iterator(rtype='values')
-        return func(self, lo, hi)
-
-    def items(self, lo=None, hi=None):
-        func = self._make_inorder_iterator(rtype='items')
-        return func(self, lo, hi)
-
-    keys.__doc__   = docstring.format(rtype='keys')
-    values.__doc__ = docstring.format(rtype='values')
-    items.__doc__  = docstring.format(rtype='items')
-
-    def __iter__(self):
-        yield from self.keys()
-
-    # factory for generic in-order iteration over keys
-    def _make_inorder_iterator(self, rtype):
-        """Create an iterator over the desired type."""
-        def iterator(self, lo=None, hi=None):
-            try:
-                if lo is None:
-                    lo = self.min()
-                if hi is None:
-                    hi = self.max()
-            except IndexError:
-                return list()
-            else:
-                return self._iterate(lo, hi, x=self._root, rtype=rtype)
-        return iterator
-
-    def _iterate(self, lo, hi, x=None, q=None, rtype='keys'):
-        """Recursively add items to the given _Queue."""
-        # Defaults
-        if x is None:
-            return
-        if q is None:
-            q = _Queue()
-        # Enqueue by key order
-        if lo < x.key:
-            self._iterate(lo, hi, x.left, q, rtype)
-        if lo <= x.key and hi >= x.key:
-            q.enqueue(x.key if rtype == 'keys' else (x.val if rtype == 'values' else _Item(x.key, x.val)))
-        if hi > x.key:
-            self._iterate(lo, hi, x.right, q, rtype)
-        return list(q)
-
-    # -------------------------------------------------------------------------
     #         Private API
     # -------------------------------------------------------------------------
     def _size(self, x=None):
@@ -829,6 +760,75 @@ class BST():
             q.enqueue(x.left)
             q.enqueue(x.right)
         return list(keys)
+
+    # -------------------------------------------------------------------------
+    #         Iterator functions
+    # -------------------------------------------------------------------------
+    docstring = """Return an in-order iterator over the {rtype} between the keys `lo`
+    and `hi`, inclusive. Guaranteed to be the same order as `BST.keys()`.
+
+    Parameters
+    ----------
+    lo : key
+        Minimum key over which to search, inclusive.
+    hi : key
+        Maximum key over which to search, inclusive.
+
+    Returns
+    -------
+    q : iterator
+        iterator over the {rtype} between `lo` and `hi`, inclusive.
+    """
+
+    def keys(self, lo=None, hi=None):
+        func = self._make_inorder_iterator(rtype='keys')
+        return func(self, lo, hi)
+
+    def values(self, lo=None, hi=None):
+        func = self._make_inorder_iterator(rtype='values')
+        return func(self, lo, hi)
+
+    def items(self, lo=None, hi=None):
+        func = self._make_inorder_iterator(rtype='items')
+        return func(self, lo, hi)
+
+    keys.__doc__   = docstring.format(rtype='keys')
+    values.__doc__ = docstring.format(rtype='values')
+    items.__doc__  = docstring.format(rtype='items')
+
+    def __iter__(self):
+        yield from self.keys()
+
+    # factory for generic in-order iteration over keys
+    def _make_inorder_iterator(self, rtype):
+        """Create an iterator over the desired type."""
+        def iterator(self, lo=None, hi=None):
+            try:
+                if lo is None:
+                    lo = self.min()
+                if hi is None:
+                    hi = self.max()
+            except IndexError:
+                return list()
+            else:
+                return self._iterate(lo, hi, x=self._root, rtype=rtype)
+        return iterator
+
+    def _iterate(self, lo, hi, x=None, q=None, rtype='keys'):
+        """Recursively add items to the given _Queue."""
+        # Defaults
+        if x is None:
+            return
+        if q is None:
+            q = _Queue()
+        # Enqueue by key order
+        if lo < x.key:
+            self._iterate(lo, hi, x.left, q, rtype)
+        if lo <= x.key and hi >= x.key:
+            q.enqueue(x.key if rtype == 'keys' else (x.val if rtype == 'values' else _Item(x.key, x.val)))
+        if hi > x.key:
+            self._iterate(lo, hi, x.right, q, rtype)
+        return list(q)
 
 
 class BST_nr():
@@ -1053,75 +1053,6 @@ class BST_nr():
         p.right = x.left
 
     # -------------------------------------------------------------------------
-    #         Iterator functions
-    # -------------------------------------------------------------------------
-    docstring = """Return an in-order iterator over the {rtype} between the keys `lo`
-    and `hi`, inclusive. Guaranteed to be the same order as `BST.keys()`.
-
-    Parameters
-    ----------
-    lo : key
-        Minimum key over which to search, inclusive.
-    hi : key
-        Maximum key over which to search, inclusive.
-
-    Returns
-    -------
-    q : iterator
-        iterator over the {rtype} between `lo` and `hi`, inclusive.
-    """
-
-    def keys(self, lo=None, hi=None):
-        func = self._make_inorder_iterator(rtype='keys')
-        return func(self, lo, hi)
-
-    def values(self, lo=None, hi=None):
-        func = self._make_inorder_iterator(rtype='values')
-        return func(self, lo, hi)
-
-    def items(self, lo=None, hi=None):
-        func = self._make_inorder_iterator(rtype='items')
-        return func(self, lo, hi)
-
-    keys.__doc__   = docstring.format(rtype='keys')
-    values.__doc__ = docstring.format(rtype='values')
-    items.__doc__  = docstring.format(rtype='items')
-
-    def __iter__(self):
-        yield from self.keys()
-
-    # factory for generic in-order iteration over keys
-    def _make_inorder_iterator(self, rtype):
-        """Create an iterator over the desired type."""
-        def iterator(self, lo=None, hi=None):
-            try:
-                if lo is None:
-                    lo = self.min()
-                if hi is None:
-                    hi = self.max()
-            except IndexError:
-                return list()
-            else:
-                return self._iterate(lo, hi, x=self._root, rtype=rtype)
-        return iterator
-
-    def _iterate(self, lo, hi, x=None, q=None, rtype='keys'):
-        """Recursively add items to the given _Queue."""
-        # Defaults
-        if x is None:
-            return
-        if q is None:
-            q = _Queue()
-        # Enqueue by key order
-        if lo < x.key:
-            self._iterate(lo, hi, x.left, q, rtype)
-        if lo <= x.key and hi >= x.key:
-            q.enqueue(x.key if rtype == 'keys' else (x.val if rtype == 'values' else _Item(x.key, x.val)))
-        if hi > x.key:
-            self._iterate(lo, hi, x.right, q, rtype)
-        return list(q)
-
-    # -------------------------------------------------------------------------
     #         Private API
     # -------------------------------------------------------------------------
     def _size(self, x=None):
@@ -1235,6 +1166,76 @@ class BST_nr():
             q.enqueue(x.left)
             q.enqueue(x.right)
         return list(keys)
+
+    # -------------------------------------------------------------------------
+    #         Iterator functions
+    # -------------------------------------------------------------------------
+    docstring = """Return an in-order iterator over the {rtype} between the keys `lo`
+    and `hi`, inclusive. Guaranteed to be the same order as `BST.keys()`.
+
+    Parameters
+    ----------
+    lo : key
+        Minimum key over which to search, inclusive.
+    hi : key
+        Maximum key over which to search, inclusive.
+
+    Returns
+    -------
+    q : iterator
+        iterator over the {rtype} between `lo` and `hi`, inclusive.
+    """
+
+    def keys(self, lo=None, hi=None):
+        func = self._make_inorder_iterator(rtype='keys')
+        return func(self, lo, hi)
+
+    def values(self, lo=None, hi=None):
+        func = self._make_inorder_iterator(rtype='values')
+        return func(self, lo, hi)
+
+    def items(self, lo=None, hi=None):
+        func = self._make_inorder_iterator(rtype='items')
+        return func(self, lo, hi)
+
+    keys.__doc__   = docstring.format(rtype='keys')
+    values.__doc__ = docstring.format(rtype='values')
+    items.__doc__  = docstring.format(rtype='items')
+
+    def __iter__(self):
+        yield from self.keys()
+
+    # factory for generic in-order iteration over keys
+    def _make_inorder_iterator(self, rtype):
+        """Create an iterator over the desired type."""
+        def iterator(self, lo=None, hi=None):
+            try:
+                if lo is None:
+                    lo = self.min()
+                if hi is None:
+                    hi = self.max()
+            except IndexError:
+                return list()
+            else:
+                return self._iterate(lo, hi, x=self._root, rtype=rtype)
+        return iterator
+
+    def _iterate(self, lo, hi, x=None, q=None, rtype='keys'):
+        """Recursively add items to the given _Queue."""
+        # Defaults
+        if x is None:
+            return
+        if q is None:
+            q = _Queue()
+        # Enqueue by key order
+        if lo < x.key:
+            self._iterate(lo, hi, x.left, q, rtype)
+        if lo <= x.key and hi >= x.key:
+            q.enqueue(x.key if rtype == 'keys' else (x.val if rtype == 'values' else _Item(x.key, x.val)))
+        if hi > x.key:
+            self._iterate(lo, hi, x.right, q, rtype)
+        return list(q)
+
 
 
 # -----------------------------------------------------------------------------
