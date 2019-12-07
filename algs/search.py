@@ -1088,12 +1088,10 @@ class BST_nr():
         """Return the size of the subtree rooted at Node `x`."""
         return 0 if x is None else x.N
 
+    # TODO remove this method once delete is non-recursive
     def _min(self, x=None):
         """Return the minimum key in the subtree rooted at `x`."""
         return x if x.left is None else self._min(x.left)
-
-    def _max(self, x=None):
-        return x if x.right is None else self._max(x.right)
 
     def _floor(self, k, x=None):
         """Return the Node with key that is the floor of `k`."""
