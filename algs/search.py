@@ -1107,15 +1107,6 @@ class BST_nr():
         x.N = self._size(x.left) + self._size(x.right) + 1
         return x
 
-    def _delete_max(self, x=None):
-        """Delete the maximum key in the subtree rooted at `x`."""
-        if x.right is None:
-            return x.left
-        x.right = self._delete_max(x.right)
-        # Update the size of the subtree located at the given root
-        x.N = self._size(x.left) + self._size(x.right) + 1
-        return x
-
     def _delete(self, k, x=None):
         """Delete the node associated with `k` using eager Hibbard deletion."""
         if x is None:
