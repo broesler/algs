@@ -307,7 +307,10 @@ class BinarySearchST():
         IndexError
             If there are fewer than `r`+1 keys in the table.
         """
-        return self._items[r].key
+        if 0 <= r and r < self.size:
+            return self._items[r].key
+        else:
+            raise IndexError(r)
 
     def rank(self, k):
         """Return the number of keys strictly less than `k`."""
@@ -498,7 +501,11 @@ class BST():
 
     def __contains__(self, k):
         """Return True if `k` is present in the tree, False otherwise."""
-        return self.__getitem__(k) is not None
+        try:
+            self.__getitem__(k)
+            return True
+        except KeyError:
+            return False
 
     def __eq__(self, other):
         return self.items() == sorted(other.items())
@@ -961,13 +968,18 @@ class BST_nr():
                 x.N += 1
                 x = x.right
 
+    # TODO implement non-recursively (see below)
     def __delitem__(self, k):
         """Delete the node associated with `k`."""
         self._root = self._delete(k, self._root)
 
     def __contains__(self, k):
         """Return True if `k` is present in the tree, False otherwise."""
-        return self.__getitem__(k) is not None
+        try:
+            self.__getitem__(k)
+            return True
+        except KeyError:
+            return False
 
     def __eq__(self, other):
         return self.items() == sorted(other.items())
@@ -1280,15 +1292,18 @@ if __name__ == '__main__':
         """
         global tests, fails
         tests += 1
-        while True:
-            try:
-                getattr(container, op)(*args)  # call the method
-            except err_type:
-                return
-            except Exception as err:
-                fails += 1
-                print(f"Raised: {repr(err)}, Expected: {err_type}")
-                raise err
+        try:
+            getattr(container, op)(*args)  # call the method
+        except err_type:
+            return
+        except Exception as err:
+            fails += 1
+            print(f"Raised: {repr(err)}, Expected: {err_type}")
+            raise err
+        else:
+            fails += 1
+            print(f"No error raised! Expected: {err_type}")
+            raise
 
     # Prepare test data
     test_str = 'SEARCHEXAMPLE'
@@ -1339,8 +1354,8 @@ if __name__ == '__main__':
         should_be(tc._cost, 1)      # test cost
 
     # ---------- Test Ordered STs ----------
-    for ST in [BST_nr]:  # BST
-    # for ST in [BinarySearchST, BST, BST_nr]:
+    # for ST in [BST_nr]:  # BST
+    for ST in [BinarySearchST, BST, BST_nr]:
         t = ST()
         # Test bad input type
         err_test(t, '__init__', list('BADEXAMPLE'), err_type=ValueError)
@@ -1382,13 +1397,17 @@ if __name__ == '__main__':
         should_be(len(t), t.size)
 
         for k, v in data:
-            should_be(k in t, True)  # test __contains__
+            # test __contains__
+            should_be(k in t, True)
 
-            # test __get__
+            # test __getitem__
             if k == 'E' or k == 'A':
                 should_be(t[k], max([v for key, v in data if key == k]))
             else:
                 should_be(t[k], v)
+
+        # Test __contains__ for item *not* in table
+        should_be('B' in t, False)
 
         should_be(t.min(), 'A')
         should_be(t.max(), 'X')
