@@ -815,10 +815,9 @@ class BST():
                     lo = self.min()
                 if hi is None:
                     hi = self.max()
+                return self._iterate(lo, hi, x=self._root, rtype=rtype)
             except IndexError:
                 return list()
-            else:
-                return self._iterate(lo, hi, x=self._root, rtype=rtype)
         return iterator
 
     def _iterate(self, lo, hi, x=None, q=None, rtype='keys'):
@@ -832,7 +831,8 @@ class BST():
         if lo < x.key:
             self._iterate(lo, hi, x.left, q, rtype)
         if lo <= x.key and hi >= x.key:
-            q.enqueue(x.key if rtype == 'keys' else (x.val if rtype == 'values' else _Item(x.key, x.val)))
+            q.enqueue(x.key if rtype == 'keys' else 
+                        (x.val if rtype == 'values' else _Item(x.key, x.val)))
         if hi > x.key:
             self._iterate(lo, hi, x.right, q, rtype)
         return list(q)
@@ -1040,24 +1040,25 @@ class BST_nr():
             elif k > x.key:
                 x = x.right  # floor must be in right subtree
             else:
-                p = x       # keep pointer to parent
+                p = x        # keep pointer to parent
                 x = x.left
         return p.key if p else None
 
     def rank(self, k):
         """Return the number of keys less than `k`.
+
         .. note:: `rank` is the inverse of `select`.
         """
         r = 0
         x = self._root
         while x:
             if k == x.key:
-                r += self._size(x.left)
+                r += self._size(x.left)      # count all left of this node
                 break
             elif k < x.key:
-                x = x.left
+                x = x.left                   # no change to the count
             else:
-                r += 1 + self._size(x.left)
+                r += 1 + self._size(x.left)  # count this node + all left of it
                 x = x.right
         return r
 
@@ -1072,17 +1073,17 @@ class BST_nr():
             If there are fewer than `r`+1 keys in the table.
         """
         _empty_check(self)
+        rank = r  # track desired rank
         x = self._root
-        rank = r
         while x:
             t = self._size(x.left)
-            if t > rank:
-                x = x.left
-            elif t < rank:
-                rank -= (t + 1)
-                x = x.right
-            else:
+            if t == rank:           # found the right number!
                 return x.key
+            elif t > rank:          # there are more nodes left than we want
+                x = x.left
+            else:                   # there are fewer nodes left than we want
+                rank -= (t + 1)     # reset desired rank in new subtree
+                x = x.right
         else:
             raise IndexError(r)
 
@@ -1240,12 +1241,12 @@ class BST_nr():
                 s.push(x)
                 x = x.left
             else:
-        if x is None:
+                if x is None:
                     x = s.pop()
-        if lo <= x.key and hi >= x.key:
+                if lo <= x.key and hi >= x.key:
                     q.enqueue(x.key if rtype == 'keys' else
                                 (x.val if rtype == 'values' else _Item(x.key, x.val)))
-        if hi > x.key:
+                if hi > x.key:
                     x = x.right
                 else:
                     break
