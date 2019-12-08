@@ -11,7 +11,7 @@
 
 from recordclass import recordclass as _recordclass
 
-from algs.basics import Queue as _Queue, _empty_check
+from algs.basics import Stack as _Stack, Queue as _Queue, _empty_check
 from algs.sort import mergesort as _mergesort
 
 __all__ = ['SequentialSearchST', 'BinarySearchST', 'BST']
@@ -1219,33 +1219,37 @@ class BST_nr():
     def _make_inorder_iterator(self, rtype):
         """Create an iterator over the desired type."""
         def iterator(self, lo=None, hi=None):
+            # Set the `lo` and `hi` values if none are given, then iterate.
             try:
                 if lo is None:
                     lo = self.min()
                 if hi is None:
                     hi = self.max()
+                return self._iterate(lo, hi, rtype=rtype)
             except IndexError:
                 return list()
-            else:
-                return self._iterate(lo, hi, x=self._root, rtype=rtype)
         return iterator
 
-    def _iterate(self, lo, hi, x=None, q=None, rtype='keys'):
-        """Recursively add items to the given _Queue."""
-        # Defaults
+    def _iterate(self, lo, hi, rtype='keys'):
+        """Add items to a Queue, in key-order from `lo` to `hi`."""
+        q = _Queue()  # the output queue
+        s = _Stack()  # visited nodes so we can pop back up the tree
+        x = self._root
+        while s or x:
+            if x is not None and lo < x.key:
+                s.push(x)
+                x = x.left
+            else:
         if x is None:
-            return
-        if q is None:
-            q = _Queue()
-        # Enqueue by key order
-        if lo < x.key:
-            self._iterate(lo, hi, x.left, q, rtype)
+                    x = s.pop()
         if lo <= x.key and hi >= x.key:
-            q.enqueue(x.key if rtype == 'keys' else (x.val if rtype == 'values' else _Item(x.key, x.val)))
+                    q.enqueue(x.key if rtype == 'keys' else
+                                (x.val if rtype == 'values' else _Item(x.key, x.val)))
         if hi > x.key:
-            self._iterate(lo, hi, x.right, q, rtype)
+                    x = x.right
+                else:
+                    break
         return list(q)
-
 
 
 # -----------------------------------------------------------------------------
@@ -1479,6 +1483,8 @@ if __name__ == '__main__':
     should_be(BinarySearchST(data), SequentialSearchST(data))
     should_be(BinarySearchST(data), BST(data))
     should_be(BST(data), BinarySearchST(data))
+    should_be(BST(data), BST_nr(data))
+    should_be(BST_nr(data), BST(data))
 
     # Summary
     if fails > 0:
