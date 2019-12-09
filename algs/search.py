@@ -968,10 +968,51 @@ class BST_nr():
                 x.N += 1
                 x = x.right
 
-    # TODO implement non-recursively (see below)
     def __delitem__(self, k):
-        """Delete the node associated with `k`."""
-        self._root = self._delete(k, self._root)
+        """Delete the node associated with `k`.
+
+        ..note:: Implements eager Hibbard deletion.
+        """
+        _empty_check(self)
+        s = _Stack()  # stack of visited nodes to update counts
+
+        # find node to delete
+        t = p = self._root
+        while t:
+            if k == t.key:
+                break
+            elif k < t.key:
+                s.push(t)
+                p = t  # keep pointer to parent
+                t = t.left
+            else:
+                s.push(t)
+                p = t
+                t = t.right
+        else:
+            raise KeyError(k)
+
+        # find its successor
+        x = self._min(t.right)
+        s.push(x)
+
+        # Reassign links
+        x.right = self._delete_min(t.right)
+        x.left = t.left
+
+        # Update parent link
+        if k == p.key:
+            self._root = x
+        elif k < p.key:
+            p.left = x
+        else:
+            p.right = x
+
+        # Update _Node counts from successor on up the stack
+        #   (_delete_min operation updates the counts in the right subtree)
+        while s:
+            t = s.pop()
+            t.N = 1 + self._size(t.left) + self._size(t.right)
 
     def __contains__(self, k):
         """Return True if `k` is present in the tree, False otherwise."""
@@ -997,18 +1038,12 @@ class BST_nr():
     def min(self):
         """Return the minimum key in the tree."""
         _empty_check(self)
-        x = self._root
-        while x.left:
-            x = x.left
-        return x.key
+        return self._min(self._root).key
 
     def max(self):
         """Return the maximum key in the tree."""
         _empty_check(self)
-        x = self._root
-        while x.right:
-            x = x.right
-        return x.key
+        return self._max(self._root).key
 
     def floor(self, k):
         """Return the largest key less than or equal to `k`, or None if `k` is
@@ -1090,30 +1125,12 @@ class BST_nr():
     def delete_min(self):
         """Delete the smallest key."""
         _empty_check(self)
-        x = self._root
-        if x.left is None:  # the min is the root
-            self._root = x.right
-            return
-        # find the min and delete the pointer to it
-        while x.left:
-            p = x
-            p.N -= 1
-            x = x.left
-        p.left = x.right
+        self._root = self._delete_min(self._root)
 
     def delete_max(self):
         """Delete the largest key."""
         _empty_check(self)
-        x = self._root
-        if x.right is None:  # the max is the root
-            self._root = x.left
-            return
-        # find the max and delete the pointer to it
-        while x.right:
-            p = x
-            p.N -= 1
-            x = x.right
-        p.right = x.left
+        self._root = self._delete_max(self._root)
 
     # -------------------------------------------------------------------------
     #         Private API
@@ -1122,46 +1139,63 @@ class BST_nr():
         """Return the size of the subtree rooted at Node `x`."""
         return 0 if x is None else x.N
 
-    def _min(self, x=None):
-        """Return the minimum key in the subtree rooted at `x`."""
-        return x if x.left is None else self._min(x.left)
+    def _min(self, x):
+        """Return the node with the minimum key in the subtree rooted at `x`."""
+        while x.left:
+            x = x.left
+        return x
+
+    def _max(self, x):
+        """Return the node with the maximum key in the subtree rooted at `x`."""
+        while x.right:
+            x = x.right
+        return x
 
     def _delete_min(self, x=None):
-        """Delete the minimum key in the subtree rooted at `x`."""
-        if x.left is None:
-            return x.right
-        x.left = self._delete_min(x.left)
-        # Update the size of the subtree located at the given root
-        x.N = self._size(x.left) + self._size(x.right) + 1
-        return x
+        """Delete the smallest key from the subtree rooted at `x`.
 
-    # TODO
-    #   * implement `delete` non-recursively
-    #   * delete `_min`, `_delete_min` methods
-    def _delete(self, k, x=None):
-        """Delete the node associated with `k` using eager Hibbard deletion."""
+        Returns
+        -------
+        r : _Node
+            The root of the subtree. Will not be equal to `x` if `x` is the
+            minimum key in the subtree.
+        """
         if x is None:
-            return
-        # Update links and node counts as we go vs.:
-        #   t = self._get(k, self._root)
-        if k < x.key:
-            x.left = self._delete(k, x.left)
-        elif k > x.key:
-            x.right = self._delete(k, x.right)
-        else:
-            if x.left is None:
-                return x.right
-            if x.right is None:
-                return x.left
-            # save pointer to Node to be deleted
-            t = x
-            # Get the successor to the node to be deleted
-            x = self._min(t.right)
-            x.right = self._delete_min(t.right)
-            x.left = t.left
-        # Update the size of the subtree located at the given root
-        x.N = self._size(x.left) + self._size(x.right) + 1
-        return x
+            x = self._root
+        r = x  # keep pointer to the root
+        if x.left is None:  # the min is the root
+            r = x.right
+            return r
+        # find the min
+        while x.left:
+            p = x         # pointer to the parent
+            p.N -= 1      # decrement node counts
+            x = x.left
+        p.left = x.right  # delete the pointer to the min 
+        return r
+
+    def _delete_max(self, x=None):
+        """Delete the smallest key from the subtree rooted at `x`.
+
+        Returns
+        -------
+        r : _Node
+            The root of the subtree. Will not be equal to `x` if `x` is the
+            minimum key in the subtree.
+        """
+        if x is None:
+            x = self._root
+        r = x
+        if x.right is None:  # the max is the root
+            r = x.left
+            return r
+        # find the max
+        while x.right:
+            p = x         # pointer to the parent
+            p.N -= 1      # decrement node counts
+            x = x.right
+        p.right = x.left  # delete the pointer to it
+        return r
 
     # TODO implement pre- and post-order traversals
     def _level_order(self):
@@ -1181,8 +1215,10 @@ class BST_nr():
     # -------------------------------------------------------------------------
     #         Iterator functions
     # -------------------------------------------------------------------------
-    docstring = """Return an in-order iterator over the {rtype} between the keys `lo`
-    and `hi`, inclusive. Guaranteed to be the same order as `BST.keys()`.
+    docstring = """Return an in-order iterator over the {rtype} between the
+    keys `lo` and `hi`, inclusive.
+
+    ..note:: Guaranteed to be the same order as `BST.keys()`.
 
     Parameters
     ----------
@@ -1233,8 +1269,8 @@ class BST_nr():
 
     def _iterate(self, lo, hi, rtype='keys'):
         """Add items to a Queue, in key-order from `lo` to `hi`."""
-        q = _Queue()  # the output queue
-        s = _Stack()  # visited nodes so we can pop back up the tree
+        q = _Queue()    # the output queue
+        s = _Stack()    # visited nodes so we can pop back up the tree
         x = self._root
         while s or x:
             if x is not None and lo < x.key:
@@ -1432,7 +1468,7 @@ if __name__ == '__main__':
         err_test(t, 'select', 99, err_type=IndexError)  # too large
 
         # BST-specific tests
-        if isinstance(t, BST):
+        if isinstance(t, BST): # or isinstance(t, BST_nr):
             should_be(t.height, 6)      # Node attribute method, as a property
             should_be(t.height_r(), 6)  # recursive method
             should_be(list(t._level_order()), list('SEXARCHMLP'))
@@ -1472,10 +1508,11 @@ if __name__ == '__main__':
         err_test(t, '__getitem__', 'E', err_type=KeyError)
         t['E'] = v
 
-        if isinstance(t, BST):
+        if isinstance(t, BST) or isinstance(t, BST_nr):
             # delete the root
             v = t['S']
             del t['S']
+            should_be(len(t), len(test_set)-1)
             should_be(t._root.key, 'X')
             t['S'] = v
 
