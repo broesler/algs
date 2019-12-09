@@ -461,8 +461,10 @@ class BST():
     # -------------------------------------------------------------------------
     #         Public API
     # -------------------------------------------------------------------------
-    def __init__(self, items=list()):
+    def __init__(self, items=list(), cache=False):
         self._root = None
+        self._CACHE_FLAG = cache
+        self._cache = None  # store the most recently accessed Node.
         try:
             for k, v in items:
                 self._root = self._set(k, v, self._root)
@@ -488,16 +490,28 @@ class BST():
 
     def __getitem__(self, k):
         """Return the value associated with the given `k`."""
-        return self._get(k, self._root)
+        if self._CACHE_FLAG and self._cache and k == self._cache.key:
+            return self._cache.val
+        else:
+            x = self._get(k, self._root)
+            if self._CACHE_FLAG:
+                self._cache = x
+            return x.val
 
     def __setitem__(self, k, v):
         """Add a new node to subtree at `x`, associating `k` with `v`.
         If `k` is in subtree rooted at `x`, change its value to `v`."""
-        return self._set(k, v, self._root)
+        if self._CACHE_FLAG and self._cache and k == self._cache.key:
+            self._cache.val = v
+            return
+        else:
+            self._set(k, v, self._root)
 
     def __delitem__(self, k):
         """Delete the node associated with `k`."""
         self._root = self._delete(k, self._root)
+        if self._CACHE_FLAG and self._cache and k == self._cache.key:
+            self._cache = None
 
     def __contains__(self, k):
         """Return True if `k` is present in the tree, False otherwise."""
@@ -562,11 +576,15 @@ class BST():
         """Delete the smallest key."""
         _empty_check(self)
         self._root = self._delete_min(self._root)
+        if self._CACHE_FLAG:
+            self._cache = None
 
     def delete_max(self):
         """Delete the largest key."""
         _empty_check(self)
         self._root = self._delete_max(self._root)
+        if self._CACHE_FLAG:
+            self._cache = None
 
     def height_r(self):
         """Determine the height of the BST recursively, in O(n) time."""
@@ -603,7 +621,7 @@ class BST():
         elif k > x.key:
             return self._get(k, x.right)
         else:  # k == root.key!
-            return x.val
+            return x
 
     def _set(self, k, v, x=None):
         """Add a new node to subtree at `x`, associating `k` with `v`.
@@ -890,8 +908,10 @@ class BST_nr():
     # -------------------------------------------------------------------------
     #         Public API
     # -------------------------------------------------------------------------
-    def __init__(self, items=list()):
+    def __init__(self, items=list(), cache=False):
         self._root = None
+        self._CACHE_FLAG = cache
+        self._cache = None  # store the most recently accessed Node.
         try:
             for k, v in items:
                 self.__setitem__(k, v)
@@ -924,19 +944,29 @@ class BST_nr():
         KeyError
             If `k` is not in the table.
         """
+        if self._CACHE_FLAG and self._cache and k == self._cache.key:
+            return self._cache.val
+
         x = self._root
         while x:
             if k == x.key:
+                if self._CACHE_FLAG:
+                    self._cache = x
                 return x.val
             elif k < x.key:
                 x = x.left
             else:
                 x = x.right
-        raise KeyError(k)
+        else:
+            raise KeyError(k)
 
     def __setitem__(self, k, v):
         """Add a new node to subtree at `x`, associating `k` with `v`.
         If `k` is in subtree rooted at `x`, change its value to `v`."""
+        if self._CACHE_FLAG and self._cache and k == self._cache.key:
+            self._cache.val = v
+            return
+
         x = p = self._root
         while x:
             p = x  # track parent node
@@ -1013,6 +1043,9 @@ class BST_nr():
         while s:
             t = s.pop()
             t.N = 1 + self._size(t.left) + self._size(t.right)
+
+        if self._CACHE_FLAG and self._cache and k == self._cache.key:
+            self._cache = None
 
     def __contains__(self, k):
         """Return True if `k` is present in the tree, False otherwise."""
@@ -1126,11 +1159,15 @@ class BST_nr():
         """Delete the smallest key."""
         _empty_check(self)
         self._root = self._delete_min(self._root)
+        if self._CACHE_FLAG:
+            self._cache = None
 
     def delete_max(self):
         """Delete the largest key."""
         _empty_check(self)
         self._root = self._delete_max(self._root)
+        if self._CACHE_FLAG:
+            self._cache = None
 
     # -------------------------------------------------------------------------
     #         Private API
@@ -1395,126 +1432,126 @@ if __name__ == '__main__':
         should_be(tc._cost, 1)      # test cost
 
     # ---------- Test Ordered STs ----------
-    # for ST in [BST_nr]:  # BST
     for ST in [BinarySearchST, BST, BST_nr]:
-        t = ST()
-        # Test bad input type
-        err_test(t, '__init__', list('BADEXAMPLE'), err_type=ValueError)
-        # Test empty table operations
-        should_be(t.size, 0)
-        should_be(t.is_empty, True)
-        should_be(t.keys(),   [])
-        should_be(t.values(), [])
-        should_be(t.items(),  [])
-        err_test(t, '__getitem__', 'A', err_type=KeyError)
-        err_test(t, 'min', err_type=IndexError)
-        err_test(t, 'max', err_type=IndexError)
-        err_test(t, 'delete_min', err_type=IndexError)
-        err_test(t, 'delete_max', err_type=IndexError)
-        should_be(t.floor('A'),  None)
-        should_be(t.ceil('A'),  None)
-        should_be(t.rank('A'),  0)
-        err_test(t, 'select', 0, err_type=IndexError)
+        for cache in [False, True]:
+            t = ST()
+            # Test bad input type
+            err_test(t, '__init__', list('BADEXAMPLE'), err_type=ValueError)
+            # Test empty table operations
+            should_be(t.size, 0)
+            should_be(t.is_empty, True)
+            should_be(t.keys(),   [])
+            should_be(t.values(), [])
+            should_be(t.items(),  [])
+            err_test(t, '__getitem__', 'A', err_type=KeyError)
+            err_test(t, 'min', err_type=IndexError)
+            err_test(t, 'max', err_type=IndexError)
+            err_test(t, 'delete_min', err_type=IndexError)
+            err_test(t, 'delete_max', err_type=IndexError)
+            should_be(t.floor('A'),  None)
+            should_be(t.ceil('A'),  None)
+            should_be(t.rank('A'),  0)
+            err_test(t, 'select', 0, err_type=IndexError)
 
-        # Test construction by list of tuples
-        t = ST(data)
-        # t._assert_integrity()  # TODO implement for BST(_nr)?
+            # Test construction by list of tuples
+            t = ST(data, cache=cache)
+            # t._assert_integrity()  # TODO implement for BST(_nr)?
 
-        # Binary Search Tree:
-        #  height
-        #  6        S
-        #          / \
-        #  5      E   X
-        #      /    \
-        #  4  A      R
-        #      \    /
-        #  3    C  H
-        #           \
-        #  2         M
-        #           / \
-        #  1       L   P
+            # Binary Search Tree:
+            #  height
+            #  6        S
+            #          / \
+            #  5      E   X
+            #      /    \
+            #  4  A      R
+            #      \    /
+            #  3    C  H
+            #           \
+            #  2         M
+            #           / \
+            #  1       L   P
 
-        should_be(len(t), len(test_set))  # test __len__
-        should_be(len(t), t.size)
+            should_be(len(t), len(test_set))  # test __len__
+            should_be(len(t), t.size)
 
-        for k, v in data:
-            # test __contains__
-            should_be(k in t, True)
+            for k, v in data:
+                # test __contains__
+                should_be(k in t, True)
 
-            # test __getitem__
-            if k == 'E' or k == 'A':
-                should_be(t[k], max([v for key, v in data if key == k]))
-            else:
-                should_be(t[k], v)
+                # test __getitem__
+                if k == 'E' or k == 'A':
+                    should_be(t[k], max([v for key, v in data if key == k]))
+                else:
+                    should_be(t[k], v)
 
-        # Test __contains__ for item *not* in table
-        should_be('B' in t, False)
+            # Test __contains__ for item *not* in table
+            should_be('B' in t, False)
 
-        should_be(t.min(), 'A')
-        should_be(t.max(), 'X')
+            should_be(t.min(), 'A')
+            should_be(t.max(), 'X')
 
-        should_be(t.floor('H'), 'H')  # key in table
-        should_be(t.ceil('H'),  'H')
-        should_be(t.floor('Q'), 'P')  # key not in table
-        should_be(t.ceil('Q'),  'R')
-        should_be(t.floor(chr(ord('A') - 1)), None)  # char < t.min()
-        should_be(t.ceil('Z'), None)                 # char > t.max()
+            should_be(t.floor('H'), 'H')  # key in table
+            should_be(t.ceil('H'),  'H')
+            should_be(t.floor('Q'), 'P')  # key not in table
+            should_be(t.ceil('Q'),  'R')
+            should_be(t.floor(chr(ord('A') - 1)), None)  # char < t.min()
+            should_be(t.ceil('Z'), None)                 # char > t.max()
 
-        # Select and Rank tests
-        err_test(t, 'select', -1, err_type=IndexError)  # too small
-        for i, c in enumerate(sorted(test_set)):
-            should_be(t.select(i), c)
-            should_be(t.rank(c), i)
-        err_test(t, 'select', 99, err_type=IndexError)  # too large
+            # Select and Rank tests
+            err_test(t, 'select', -1, err_type=IndexError)  # too small
+            for i, c in enumerate(sorted(test_set)):
+                should_be(t.select(i), c)
+                should_be(t.rank(c), i)
+            err_test(t, 'select', 99, err_type=IndexError)  # too large
 
-        # BST-specific tests
-        if isinstance(t, BST): # or isinstance(t, BST_nr):
-            should_be(t.height, 6)      # Node attribute method, as a property
-            should_be(t.height_r(), 6)  # recursive method
-            should_be(list(t._level_order()), list('SEXARCHMLP'))
+            # BST-specific tests
+            if isinstance(t, BST): # or isinstance(t, BST_nr):
+                should_be(t.height, 6)      # Node attribute method, as a property
+                should_be(t.height_r(), 6)  # recursive method
+                should_be(list(t._level_order()), list('SEXARCHMLP'))
 
-        # In-order traversal
-        should_be(list(t.keys()), sorted(test_set))
-        should_be(list(t.keys(lo='P')), list('PRSX'))
-        should_be(list(t.keys('F', 'Q')), list('HLMP'))  # subset of keys
-        should_be(list(t.keys(hi='P')), list('ACEHLMP'))
+            # In-order traversal
+            should_be(list(t.keys()), sorted(test_set))
+            should_be(list(t.keys(lo='P')), list('PRSX'))
+            should_be(list(t.keys('F', 'Q')), list('HLMP'))  # subset of keys
+            should_be(list(t.keys(hi='P')), list('ACEHLMP'))
 
-        should_be(list(t.values()), [v for k, v in sorted(data_set)])
-        should_be(list(t.items()), sorted(data_set))
+            should_be(list(t.values()), [v for k, v in sorted(data_set)])
+            should_be(list(t.items()), sorted(data_set))
 
-        # Test deletion and reinsertion
-        k, v = t.min(), t[t.min()]
-        t.delete_min()  # remove 'A'
-        should_be(t.min(), 'C')
-        # Test updated ranks
-        for i, c in enumerate(sorted(test_set - set('A'))):
-            should_be(t.select(i), c)
-            should_be(t.rank(c), i)
-        t[k] = v  # replace value
+            # Test deletion and reinsertion
+            k, v = t.min(), t[t.min()]
+            t.delete_min()  # remove 'A'
+            should_be(t.min(), 'C')
+            # Test updated ranks
+            for i, c in enumerate(sorted(test_set - set('A'))):
+                should_be(t.select(i), c)
+                should_be(t.rank(c), i)
+            t[k] = v  # replace value
 
-        k, v = t.max(), t[t.max()]
-        t.delete_max()  # remove 'X'
-        should_be(t.max(), 'S')
-        # Test updated ranks
-        for i, c in enumerate(sorted(test_set - set('X'))):
-            should_be(t.select(i), c)
-            should_be(t.rank(c), i)
-        t[k] = v  # replace value
+            k, v = t.max(), t[t.max()]
+            t.delete_max()  # remove 'X'
+            should_be(t.max(), 'S')
+            # Test updated ranks
+            for i, c in enumerate(sorted(test_set - set('X'))):
+                should_be(t.select(i), c)
+                should_be(t.rank(c), i)
+            t[k] = v  # replace value
 
-        # Delete arbitrary key
-        v = t['E']
-        del t['E']
-        should_be(len(t), len(test_set)-1)
-        err_test(t, '__getitem__', 'E', err_type=KeyError)
-        t['E'] = v
-
-        if isinstance(t, BST) or isinstance(t, BST_nr):
-            # delete the root
-            v = t['S']
-            del t['S']
+            # Delete arbitrary key
+            v = t['E']
+            del t['E']
             should_be(len(t), len(test_set)-1)
-            should_be(t._root.key, 'X')
-            t['S'] = v
+            err_test(t, '__getitem__', 'E', err_type=KeyError)
+            t['E'] = v
+
+            if isinstance(t, BST) or isinstance(t, BST_nr):
+                # delete the root
+                v = t['S']
+                del t['S']
+                should_be(len(t), len(test_set)-1)
+                should_be(t._root.key, 'X')
+                t['S'] = v
 
     # Test comparisons between objects (in *both* directions)
     should_be(SequentialSearchST(data), BinarySearchST(data))
