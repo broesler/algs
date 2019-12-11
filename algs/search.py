@@ -857,6 +857,55 @@ class BST():
             self._iterate(lo, hi, x.right, q, rtype)
         return list(q)
 
+    # ------------------------------------------------------------------------- 
+    #         Certification
+    # -------------------------------------------------------------------------
+    def isBST(self):
+        """Assert that all of the binary search tree properties hold."""
+        return self.is_binary_tree() and \
+               self.is_ordered() and \
+               self.has_no_duplicates()
+
+    def is_binary_tree(self):
+        """Return True if BST is indeed binary and acyclic."""
+        return self._is_binary_tree(self._root)
+
+    def _is_binary_tree(self, x=None):
+        """Return True if the subtree count field `N` is consistent in the data
+        structure rooted at Node `x`.
+        """
+        if x is None:
+            return True
+        elif self._size(x) != 1 + self._size(x.left) + self._size(x.right):
+            return False
+        else:
+            return self._is_binary_tree(x.left) and self._is_binary_tree(x.right)
+
+    def is_ordered(self):
+        """Return True if all keys in the tree are in order."""
+        return self._is_ordered(lo=self.min(), hi=self.max(), x=self._root)
+
+    def _is_ordered(self, lo=None, hi=None, x=None):
+        """Return True if all keys in the tree are between the `min` and `max`
+        values in the tree, and the BST ordering property holds for all keys.
+        """
+        if x is None:
+            return True
+        elif (lo is not None and self._min(x).key < lo) or \
+             (hi is not None and self._max(x).key > hi):
+            return False
+        else:
+            return self._is_ordered(lo, x.key, x.left) and \
+                   self._is_ordered(x.key, hi, x.right)
+
+    def has_no_duplicates(self):
+        """Return True if there are no equal keys in the BST."""
+        for i, k in enumerate(self.keys()):
+            if i > 0 and p > k:
+                return False
+            p = k  # track perviously seen key
+        return True
+
 
 class BST_nr():
     """Implements a binary search tree data structure, non-recursively.
@@ -1512,6 +1561,11 @@ if __name__ == '__main__':
             # BST-specific tests
             if isinstance(t, BST): # or isinstance(t, BST_nr):
                 should_be(t.height_r(), 6)  # recursive method
+                should_be(t.is_binary_tree(), True)
+                should_be(t.is_ordered(), True)
+                should_be(t.has_no_duplicates(), True)
+                should_be(t.isBST(), True)
+
             if isinstance(t, BST) or isinstance(t, BST_nr):
                 should_be(t.height, 6)      # Node attribute method, as a property
                 should_be(list(t._level_order()), list('SEXARCHMLP'))
