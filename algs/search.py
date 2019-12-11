@@ -907,7 +907,7 @@ class BST():
         return True
 
 
-class BST_nr():
+class BST_nr(BST):
     """Implements a binary search tree data structure, non-recursively.
 
     Parameters
@@ -924,71 +924,9 @@ class BST_nr():
     is_empty : bool
         True if `size == 0`.
     """
-    # Private Node class
-    class _Node():
-        """Internal node object to hold key, value, and two children.
+    # __init__() inherited
 
-        Attributes
-        ----------
-        key : object
-            Any hashable value.
-        val : object
-            Any object to be associated with the key.
-        left, right : _Node
-            Pointers to children nodes in the tree.
-        N : int
-            The number of nodes in the subtree rooted at this node.
-        height : int
-            The height of subtree rooted at this node. Height is defined by the
-            longest path from root to leaf, O(lg N).
-        """
-        def __init__(self, key, value=None):
-            self.key = key
-            self.val = value
-            self.left = self.right = None
-            self.N = 1       # nodes in subtree rooted here
-            self.height = 1  # height of the tree rooted at this _Node
-
-        def __str__(self):
-            # Avoid recursion through entire tree!! Just print each child
-            left_str = f"{{{repr(self.left.key)}: {repr(self.left.val)}}}" if self.left else 'None'
-            right_str = f"{{{repr(self.right.key)}: {repr(self.right.val)}}}" if self.right else 'None'
-            return f"{{{repr(self.key)}: {repr(self.val)}}}, L:{left_str}, R:{right_str}, N={self.N}"
-
-        def __repr__(self):
-            return f"<{self.__class__.__name__}: {self.__str__()}>"
-
-    # -------------------------------------------------------------------------
-    #         Public API
-    # -------------------------------------------------------------------------
-    def __init__(self, items=list(), cache=False):
-        self._root = None
-        self._CACHE_FLAG = cache
-        self._cache = None  # store the most recently accessed Node.
-        try:
-            for k, v in items:
-                self.__setitem__(k, v)
-            return
-        except ValueError:
-            raise ValueError(f"{self.__class__.__name__} expects a `list` of tuples input.")
-
-    @property
-    def size(self):
-        """Return the number of nodes in the BST."""
-        return self._size(self._root)
-
-    @property
-    def height(self):
-        """Return the height of the BST in O(1) time."""
-        return self._height(self._root)
-
-    @property
-    def is_empty(self):
-        return self.size == 0
-
-    def __len__(self):
-        return self.size
-
+    # Implement get, set, etc. non-recursively
     def __getitem__(self, k):
         """Return the value associated with the given `k`.
 
@@ -1097,37 +1035,9 @@ class BST_nr():
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
             self._cache = None
 
-    def __contains__(self, k):
-        """Return True if `k` is present in the tree, False otherwise."""
-        try:
-            self.__getitem__(k)
-            return True
-        except KeyError:
-            return False
-
-    def __eq__(self, other):
-        return self.items() == sorted(other.items())
-
-    def __str__(self):
-        return str(dict(self.items()))
-
-    def __repr__(self):
-        return f"<{self.__class__.__name__}: {self.__str__()}>"
-
     # -------------------------------------------------------------------------
     #         Other Public Methods
     # -------------------------------------------------------------------------
-    # TODO refactor s.t. min/max/floor/ceil all return Nodes. 
-    def min(self):
-        """Return the minimum key in the tree."""
-        _empty_check(self)
-        return self._min(self._root).key
-
-    def max(self):
-        """Return the maximum key in the tree."""
-        _empty_check(self)
-        return self._max(self._root).key
-
     def floor(self, k):
         """Return the largest key less than or equal to `k`, or None if `k` is
         less than the smallest key in the table.
@@ -1205,31 +1115,9 @@ class BST_nr():
         else:
             raise IndexError(r)
 
-    def delete_min(self):
-        """Delete the smallest key."""
-        _empty_check(self)
-        self._root = self._delete_min(self._root)
-        if self._CACHE_FLAG:
-            self._cache = None
-
-    def delete_max(self):
-        """Delete the largest key."""
-        _empty_check(self)
-        self._root = self._delete_max(self._root)
-        if self._CACHE_FLAG:
-            self._cache = None
-
     # -------------------------------------------------------------------------
     #         Private API
     # -------------------------------------------------------------------------
-    def _size(self, x=None):
-        """Return the size of the subtree rooted at Node `x`."""
-        return 0 if x is None else x.N
-
-    def _height(self, x=None):
-        """Return the height of the tree rooted at `x`."""
-        return 0 if x is None else x.height
-
     def _min(self, x):
         """Return the node with the minimum key in the subtree rooted at `x`."""
         while x.left:
@@ -1288,77 +1176,10 @@ class BST_nr():
         p.right = x.left  # delete the pointer to it
         return r
 
-    # TODO implement pre- and post-order traversals
-    def _level_order(self):
-        """Return an iterator over the keys in level-order (breadth-first)."""
-        keys = _Queue()
-        q = _Queue()
-        q.enqueue(self._root)
-        while q:
-            x = q.dequeue()
-            if x is None:
-                continue
-            keys.enqueue(x.key)
-            q.enqueue(x.left)
-            q.enqueue(x.right)
-        return list(keys)
-
     # -------------------------------------------------------------------------
     #         Iterator functions
     # -------------------------------------------------------------------------
-    docstring = """Return an in-order iterator over the {rtype} between the
-    keys `lo` and `hi`, inclusive.
-
-    ..note:: Guaranteed to be the same order as `BST.keys()`.
-
-    Parameters
-    ----------
-    lo : key
-        Minimum key over which to search, inclusive.
-    hi : key
-        Maximum key over which to search, inclusive.
-
-    Returns
-    -------
-    q : iterator
-        iterator over the {rtype} between `lo` and `hi`, inclusive.
-    """
-
-    def keys(self, lo=None, hi=None):
-        func = self._make_inorder_iterator(rtype='keys')
-        return func(self, lo, hi)
-
-    def values(self, lo=None, hi=None):
-        func = self._make_inorder_iterator(rtype='values')
-        return func(self, lo, hi)
-
-    def items(self, lo=None, hi=None):
-        func = self._make_inorder_iterator(rtype='items')
-        return func(self, lo, hi)
-
-    keys.__doc__   = docstring.format(rtype='keys')
-    values.__doc__ = docstring.format(rtype='values')
-    items.__doc__  = docstring.format(rtype='items')
-
-    def __iter__(self):
-        yield from self.keys()
-
-    # factory for generic in-order iteration over keys
-    def _make_inorder_iterator(self, rtype):
-        """Create an iterator over the desired type."""
-        def iterator(self, lo=None, hi=None):
-            # Set the `lo` and `hi` values if none are given, then iterate.
-            try:
-                if lo is None:
-                    lo = self.min()
-                if hi is None:
-                    hi = self.max()
-                return self._iterate(lo, hi, rtype=rtype)
-            except IndexError:
-                return list()
-        return iterator
-
-    def _iterate(self, lo, hi, rtype='keys'):
+    def _iterate(self, lo, hi, rtype='keys', **kwargs):
         """Add items to a Queue, in key-order from `lo` to `hi`."""
         q = _Queue()    # the output queue
         s = _Stack()    # visited nodes so we can pop back up the tree
