@@ -436,6 +436,8 @@ class BST():
     ----------
     size : int
         Number of items on the tree.
+    height : int
+        The height of the binary tree == maximum path length ~ lg N
     is_empty : bool
         True if `size == 0`.
     """
@@ -868,6 +870,8 @@ class BST_nr():
     ----------
     size : int
         Number of items on the tree.
+    height : int
+        The height of the binary tree == maximum path length ~ lg N
     is_empty : bool
         True if `size == 0`.
     """
@@ -927,7 +931,7 @@ class BST_nr():
     @property
     def height(self):
         """Return the height of the BST in O(1) time."""
-        return 0 if self._root is None else self._root.height
+        return self._height(self._root)
 
     @property
     def is_empty(self):
@@ -967,6 +971,7 @@ class BST_nr():
             self._cache.val = v
             return
 
+        s = _Stack()  # track all nodes on path for updates
         x = p = self._root
         while x:
             p = x  # track parent node
@@ -974,8 +979,10 @@ class BST_nr():
                 x.val = v  # update the value if found
                 return
             elif k < x.key:
+                s.push(x)
                 x = x.left
             else:
+                s.push(x)
                 x = x.right
 
         # Insert new node as child of parent
@@ -986,17 +993,11 @@ class BST_nr():
         else:
             p.right = self._Node(k, v)
 
-        # Need 2nd pass to update _Node counts
-        x = self._root
-        while x:
-            if k == x.key:
-                return
-            elif k < x.key:
+        # Update node counts and heights on path traveled
+        while s:
+            x = s.pop()
                 x.N += 1
-                x = x.left
-            else:
-                x.N += 1
-                x = x.right
+            x.height = max(self._height(x.left), self._height(x.right)) + 1
 
     def __delitem__(self, k):
         """Delete the node associated with `k`.
@@ -1175,6 +1176,10 @@ class BST_nr():
     def _size(self, x=None):
         """Return the size of the subtree rooted at Node `x`."""
         return 0 if x is None else x.N
+
+    def _height(self, x=None):
+        """Return the height of the tree rooted at `x`."""
+        return 0 if x is None else x.height
 
     def _min(self, x):
         """Return the node with the minimum key in the subtree rooted at `x`."""
@@ -1506,8 +1511,9 @@ if __name__ == '__main__':
 
             # BST-specific tests
             if isinstance(t, BST): # or isinstance(t, BST_nr):
-                should_be(t.height, 6)      # Node attribute method, as a property
                 should_be(t.height_r(), 6)  # recursive method
+            if isinstance(t, BST) or isinstance(t, BST_nr):
+                should_be(t.height, 6)      # Node attribute method, as a property
                 should_be(list(t._level_order()), list('SEXARCHMLP'))
 
             # In-order traversal
