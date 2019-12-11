@@ -965,11 +965,12 @@ class BST_nr(BST):
             if k == x.key:
                 x.val = v  # update the value if found
                 return
-            elif k < x.key:
+            else:
+                # Move down the tree
                 s.push(x)
+                if k < x.key:
                 x = x.left
             else:
-                s.push(x)
                 x = x.right
 
         # Insert new node as child of parent
@@ -980,10 +981,10 @@ class BST_nr(BST):
         else:
             p.right = self._Node(k, v)
 
-        # Update node counts and heights on path traveled
+        # Update node counts and heights on path traveled back up the tree
         while s:
             x = s.pop()
-                x.N += 1
+            x.N = 1 + self._size(x.left) + self._size(x.right)
             x.height = max(self._height(x.left), self._height(x.right)) + 1
 
     def __delitem__(self, k):
@@ -999,13 +1000,13 @@ class BST_nr(BST):
         while t:
             if k == t.key:
                 break
-            elif k < t.key:
+            else:
+                # Move down the tree
                 s.push(t)
                 p = t  # keep pointer to parent
+                if k < t.key:
                 t = t.left
             else:
-                s.push(t)
-                p = t
                 t = t.right
         else:
             raise KeyError(k)
@@ -1026,12 +1027,14 @@ class BST_nr(BST):
         else:
             p.right = x
 
-        # Update _Node counts from successor on up the stack
+        # Update node counts from successor back up the tree
         #   (_delete_min operation updates the counts in the right subtree)
         while s:
             t = s.pop()
             t.N = 1 + self._size(t.left) + self._size(t.right)
+            t.height = max(self._size(t.left), self._size(t.right)) + 1
 
+        # Clear the cache if necessary
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
             self._cache = None
 
@@ -1380,15 +1383,13 @@ if __name__ == '__main__':
             err_test(t, 'select', 99, err_type=IndexError)  # too large
 
             # BST-specific tests
-            if isinstance(t, BST): # or isinstance(t, BST_nr):
+            if isinstance(t, BST):
+                should_be(t.height, 6)      # Node attribute method, as a property
                 should_be(t.height_r(), 6)  # recursive method
                 should_be(t.is_binary_tree(), True)
                 should_be(t.is_ordered(), True)
                 should_be(t.has_no_duplicates(), True)
                 should_be(t.isBST(), True)
-
-            if isinstance(t, BST) or isinstance(t, BST_nr):
-                should_be(t.height, 6)      # Node attribute method, as a property
                 should_be(list(t._level_order()), list('SEXARCHMLP'))
 
             # In-order traversal
@@ -1426,7 +1427,7 @@ if __name__ == '__main__':
             err_test(t, '__getitem__', 'E', err_type=KeyError)
             t['E'] = v
 
-            if isinstance(t, BST) or isinstance(t, BST_nr):
+            if isinstance(t, BST):
                 # delete the root
                 v = t['S']
                 del t['S']
