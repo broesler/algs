@@ -1317,8 +1317,7 @@ if __name__ == '__main__':
         should_be(tc._cost, 1)      # test cost
 
     # ---------- Test Ordered STs ----------
-    # for ST in [BinarySearchST, BST, BST_nr]:
-    for ST in [BinarySearchST]:
+    for ST in [BinarySearchST, BST, BST_nr]:
         for cache in [False, True]:
             t = ST()
             # Test bad input type
