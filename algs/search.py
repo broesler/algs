@@ -11,10 +11,12 @@
 
 from recordclass import recordclass as _recordclass
 
-from algs.basics import Stack as _Stack, Queue as _Queue, _empty_check
+from algs.basics import Stack as _Stack, \
+                        Queue as _Queue, \
+                        _empty_check
 from algs.sort import mergesort as _mergesort
 
-__all__ = ['SequentialSearchST', 'BinarySearchST', 'BST']
+__all__ = ['SequentialSearchST', 'BinarySearchST', 'BST', 'BST_nr']
 
 # TODO
 #   * make ST(ABC) to hold things like `size`, `is_empty`, `__len__` for all?
@@ -129,15 +131,15 @@ class SequentialSearchST():
     # -------------------------------------------------------------------------
     def keys(self):
         """Return an iterator of all of the keys in the table."""
-        return [item.key for item in self._items]
+        return [x.key for x in self._items]
 
     def values(self):
         """Return an iterator of all of the values in the table."""
-        return [item.value for item in self._items]
+        return [x.value for x in self._items]
 
     def items(self):
         """Return an iterator of all of the items in the table."""
-        return self._items
+        return [(x.key, x.value) for x in self._items]
 
     def __iter__(self):
         """Return an iterator of all of the keys in the table."""
@@ -170,6 +172,7 @@ class BinarySearchST():
             # sort by keys so we get O(N log N) construction vs O(N^2)
             for k, v in _mergesort(items):
                 self.__setitem__(k, v)
+            self._assert_integrity()
         except ValueError:
             raise ValueError(f"{self.__class__.__name__} expects a `list` of tuples input.")
 
@@ -400,7 +403,7 @@ class BinarySearchST():
             q = _Queue()
             for x in self._items[l:h]:
                 q.enqueue(x.key if rtype == 'keys' else
-                          (x.value if rtype == 'values' else x))
+                          (x.value if rtype == 'values' else (x.key, x.value)))
             return list(q)
         return iterator
 
@@ -409,7 +412,7 @@ class BinarySearchST():
     # -------------------------------------------------------------------------
     # NOTE integrity checks are O(N)!! They break the O(lg N) search...
     def _assert_integrity(self):
-        assert self._rank_check() and self._is_sorted()
+        assert self._is_sorted() and self._rank_check() 
 
     def _rank_check(self):
         for i in range(self.size):
@@ -550,13 +553,15 @@ class BST():
 
     def floor(self, k):
         """Return the largest key less than or equal to `k`, or None if `k` is
-        less than the smallest key in the table."""
+        less than the smallest key in the table.
+        """
         x = self._floor(k, self._root)  # self._floor returns a Node
         return x.key if x else None
 
     def ceil(self, k):
         """Return the smallest key greater than or equal to `k`, or None if `k`
-        is greater than the largest key in the table."""
+        is greater than the largest key in the table.
+        """
         x = self._ceil(k, self._root)  # self._ceil returns a Node
         return x.key if x else None
 
@@ -791,8 +796,9 @@ class BST():
     # -------------------------------------------------------------------------
     #         Iterator functions
     # -------------------------------------------------------------------------
-    docstring = """Return an in-order iterator over the {rtype} between the keys `lo`
-    and `hi`, inclusive. Guaranteed to be the same order as `BST.keys()`.
+    docstring = """Return an in-order iterator over the {rtype} between the
+    keys `lo` and `hi`, inclusive. Guaranteed to be the same order as
+    `BST.keys()`.
 
     Parameters
     ----------
@@ -852,7 +858,7 @@ class BST():
             self._iterate(lo, hi, x.left, q, rtype)
         if lo <= x.key and hi >= x.key:
             q.enqueue(x.key if rtype == 'keys' else 
-                        (x.val if rtype == 'values' else _Item(x.key, x.val)))
+                        (x.val if rtype == 'values' else (x.key, x.val)))
         if hi > x.key:
             self._iterate(lo, hi, x.right, q, rtype)
         return list(q)
@@ -862,15 +868,15 @@ class BST():
     # -------------------------------------------------------------------------
     def isBST(self):
         """Assert that all of the binary search tree properties hold."""
-        return self.is_binary_tree() and \
-               self.is_ordered() and \
-               self.has_no_duplicates()
+        return self._is_binary_tree() and \
+               self._is_ordered() and \
+               self._has_no_duplicates()
 
-    def is_binary_tree(self):
+    def _is_binary_tree(self):
         """Return True if BST is indeed binary and acyclic."""
-        return self._is_binary_tree(self._root)
+        return self.__is_binary_tree(self._root)
 
-    def _is_binary_tree(self, x=None):
+    def __is_binary_tree(self, x=None):
         """Return True if the subtree count field `N` is consistent in the data
         structure rooted at Node `x`.
         """
@@ -879,13 +885,14 @@ class BST():
         elif self._size(x) != 1 + self._size(x.left) + self._size(x.right):
             return False
         else:
-            return self._is_binary_tree(x.left) and self._is_binary_tree(x.right)
+            return self.__is_binary_tree(x.left) and \
+                   self.__is_binary_tree(x.right)
 
-    def is_ordered(self):
+    def _is_ordered(self):
         """Return True if all keys in the tree are in order."""
-        return self._is_ordered(lo=self.min(), hi=self.max(), x=self._root)
+        return self.__is_ordered(lo=self.min(), hi=self.max(), x=self._root)
 
-    def _is_ordered(self, lo=None, hi=None, x=None):
+    def __is_ordered(self, lo=None, hi=None, x=None):
         """Return True if all keys in the tree are between the `min` and `max`
         values in the tree, and the BST ordering property holds for all keys.
         """
@@ -895,10 +902,10 @@ class BST():
              (hi is not None and self._max(x).key > hi):
             return False
         else:
-            return self._is_ordered(lo, x.key, x.left) and \
-                   self._is_ordered(x.key, hi, x.right)
+            return self.__is_ordered(lo, x.key, x.left) and \
+                   self.__is_ordered(x.key, hi, x.right)
 
-    def has_no_duplicates(self):
+    def _has_no_duplicates(self):
         """Return True if there are no equal keys in the BST."""
         for i, k in enumerate(self.keys()):
             if i > 0 and p > k:
@@ -969,9 +976,9 @@ class BST_nr(BST):
                 # Move down the tree
                 s.push(x)
                 if k < x.key:
-                x = x.left
-            else:
-                x = x.right
+                    x = x.left
+                else:
+                    x = x.right
 
         # Insert new node as child of parent
         if p is None:
@@ -1005,9 +1012,9 @@ class BST_nr(BST):
                 s.push(t)
                 p = t  # keep pointer to parent
                 if k < t.key:
-                t = t.left
-            else:
-                t = t.right
+                    t = t.left
+                else:
+                    t = t.right
         else:
             raise KeyError(k)
 
@@ -1196,7 +1203,7 @@ class BST_nr(BST):
                     x = s.pop()
                 if lo <= x.key and hi >= x.key:
                     q.enqueue(x.key if rtype == 'keys' else
-                                (x.val if rtype == 'values' else _Item(x.key, x.val)))
+                                (x.val if rtype == 'values' else (x.key, x.val)))
                 if hi > x.key:
                     x = x.right
                 else:
@@ -1292,7 +1299,7 @@ if __name__ == '__main__':
     should_be(sorted(st.keys()), sorted(test_set))
     should_be((st.keys() == sorted(test_set)), False)  # not inserted in order
     should_be(sorted(st.values()), sorted([v for k, v in data_set]))
-    should_be(sorted([(x.key, x.value) for x in st.items()]), sorted(data_set))
+    should_be(sorted(st.items()), sorted(data_set))
 
     err_test(st, '__getitem__', 'Z', err_type=KeyError)
 
@@ -1310,7 +1317,8 @@ if __name__ == '__main__':
         should_be(tc._cost, 1)      # test cost
 
     # ---------- Test Ordered STs ----------
-    for ST in [BinarySearchST, BST, BST_nr]:
+    # for ST in [BinarySearchST, BST, BST_nr]:
+    for ST in [BinarySearchST]:
         for cache in [False, True]:
             t = ST()
             # Test bad input type
@@ -1333,7 +1341,9 @@ if __name__ == '__main__':
 
             # Test construction by list of tuples
             t = ST(data, cache=cache)
-            # t._assert_integrity()  # TODO implement for BST(_nr)?
+
+            if isinstance(t, BinarySearchST):
+                should_be(t._assert_integrity(), None)
 
             # Binary Search Tree:
             #  height
@@ -1386,9 +1396,6 @@ if __name__ == '__main__':
             if isinstance(t, BST):
                 should_be(t.height, 6)      # Node attribute method, as a property
                 should_be(t.height_r(), 6)  # recursive method
-                should_be(t.is_binary_tree(), True)
-                should_be(t.is_ordered(), True)
-                should_be(t.has_no_duplicates(), True)
                 should_be(t.isBST(), True)
                 should_be(list(t._level_order()), list('SEXARCHMLP'))
 
