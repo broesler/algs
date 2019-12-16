@@ -38,7 +38,7 @@ class Bag():
     Parameters
     ----------
     items : iterable
-        List of items on the stack, in FIFO order.
+        List of items in the bag.
 
     Attributes
     -------
@@ -96,7 +96,7 @@ class Stack():
     """
     def __init__(self, items=list()):
         # _items[-1] is "top" of stack
-        self._items = list(items[::-1])
+        self._items = list(reversed(items))
 
     @property
     def size(self):
@@ -122,7 +122,7 @@ class Stack():
 
     # dunder(-mifflin) methods
     def __iter__(self):
-        yield from self._items[::-1]
+        yield from reversed(self._items)
 
     def __len__(self):
         return self.size
@@ -134,7 +134,7 @@ class Stack():
         return '<{}: {}>'.format(self.__class__.__name__, self.__str__())
 
     def __str__(self):
-        return str(list(self._items))
+        return str(list(reversed(self._items)))
 
 
 class Queue():
@@ -187,7 +187,6 @@ class Queue():
 
     def __len__(self):
         return self.size
-
 
     def __repr__(self):
         return '<{}: {}>'.format(self.__class__.__name__, self.__str__())
