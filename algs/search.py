@@ -176,9 +176,6 @@ class BinarySearchST():
         except ValueError:
             raise ValueError(f"{self.__class__.__name__} expects a `list` of tuples input.")
 
-    # -------------------------------------------------------------------------
-    #         Public API
-    # -------------------------------------------------------------------------
     @property
     def size(self):
         return len(self._items)
@@ -187,12 +184,16 @@ class BinarySearchST():
     def is_empty(self):
         return self.size == 0
 
+    # -------------------------------------------------------------------------
+    #         Public API
+    # -------------------------------------------------------------------------
     def __len__(self):
         return self.size
 
     def __setitem__(self, k, v):
         """Insert a new value `v` associated with key `k`.
-        If `k` is in the table, change its value to `v`."""
+        If `k` is in the table, change its value to `v`.
+        """
         # If key is largest in table, slap it on the end! This feature makes
         # construction with a sorted list O(n).
         if not self.is_empty and k > self.max():
@@ -259,23 +260,47 @@ class BinarySearchST():
         # self._assert_integrity()
 
     def min(self):
-        """Return the minimum key in the table."""
+        """Return the minimum key in the table.
+
+        Raises
+        ------
+        KeyError
+            If the table is empty.
+        """
         _empty_check(self)
         return self._items[0].key
 
     def max(self):
-        """Return the maximum key in the table."""
+        """Return the maximum key in the table.
+
+        Raises
+        ------
+        KeyError
+            If the table is empty.
+        """
         _empty_check(self)
         return self._items[-1].key
 
     def delete_min(self):
-        """Delete the smallest key."""
+        """Delete the smallest key.
+
+        Raises
+        ------
+        KeyError
+            If the table is empty.
+        """
         _empty_check(self)
         del self._items[0]
         # self._assert_integrity()
 
     def delete_max(self):
-        """Delete the largest key."""
+        """Delete the largest key.
+
+        Raises
+        ------
+        KeyError
+            If the table is empty.
+        """
         _empty_check(self)
         del self._items[-1]
         # self._assert_integrity()
@@ -538,16 +563,25 @@ class BST():
     # -------------------------------------------------------------------------
     #         Other Public Methods
     # -------------------------------------------------------------------------
-    # TODO refactor s.t. min/max/floor/ceil all return Nodes. Client can choose
-    # to use key or value. Returning Nodes will save a separate private method
-    # definition.
     def min(self):
-        """Return the minimum key in the tree."""
+        """Return the minimum key in the tree.
+
+        Raises
+        ------
+        KeyError
+            If the table is empty.
+        """
         _empty_check(self)
         return self._min(self._root).key
 
     def max(self):
-        """Return the maximum key in the tree."""
+        """Return the maximum key in the tree.
+
+        Raises
+        ------
+        KeyError
+            If the table is empty.
+        """
         _empty_check(self)
         return self._max(self._root).key
 
@@ -580,14 +614,26 @@ class BST():
         return self._select(r, self._root).key
 
     def delete_min(self):
-        """Delete the smallest key."""
+        """Delete the smallest key.
+
+        Raises
+        ------
+        KeyError
+            If the table is empty.
+        """
         _empty_check(self)
         self._root = self._delete_min(self._root)
         if self._CACHE_FLAG:
             self._cache = None
 
     def delete_max(self):
-        """Delete the largest key."""
+        """Delete the largest key.
+
+        Raises
+        ------
+        KeyError
+            If the table is empty.
+        """
         _empty_check(self)
         self._root = self._delete_max(self._root)
         if self._CACHE_FLAG:
@@ -931,11 +977,13 @@ class BST_nr(BST):
     is_empty : bool
         True if `size == 0`.
     """
-    # __init__() inherited
-
     # Implement get, set, etc. non-recursively
     def __getitem__(self, k):
-        """Return the value associated with the given `k`.
+        """Return the value associated with the given `k`."""
+        return self._get(k).val
+
+    def _get(self, k):
+        """Return the Node associated with the given key `k`.
 
         Raises
         ------
@@ -943,14 +991,14 @@ class BST_nr(BST):
             If `k` is not in the table.
         """
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
-            return self._cache.val
+            return self._cache
 
         x = self._root
         while x:
             if k == x.key:
                 if self._CACHE_FLAG:
                     self._cache = x
-                return x.val
+                return x
             elif k < x.key:
                 x = x.left
             else:
@@ -960,7 +1008,8 @@ class BST_nr(BST):
 
     def __setitem__(self, k, v):
         """Add a new node to subtree at `x`, associating `k` with `v`.
-        If `k` is in subtree rooted at `x`, change its value to `v`."""
+        If `k` is in subtree rooted at `x`, change its value to `v`.
+        """
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
             self._cache.val = v
             return
@@ -998,6 +1047,11 @@ class BST_nr(BST):
         """Delete the node associated with `k`.
 
         ..note:: Implements eager Hibbard deletion.
+
+        Raises
+        ------
+        KeyError
+            If `k` is not in the table.
         """
         _empty_check(self)
         s = _Stack()  # stack of visited nodes to update counts
@@ -1048,11 +1102,11 @@ class BST_nr(BST):
     # -------------------------------------------------------------------------
     #         Other Public Methods
     # -------------------------------------------------------------------------
-    def floor(self, k):
-        """Return the largest key less than or equal to `k`, or None if `k` is
-        less than the smallest key in the table.
+    def _floor(self, k, x):
+        """Return the Node corresponding to the largest key less than or equal
+        to `k` in the subtree rooted at `x`, or None if `k` is less than the
+        smallest key in the table.
         """
-        x = self._root
         p = None  # pointer to the floor Node
         while x:
             if k == x.key:
@@ -1063,13 +1117,13 @@ class BST_nr(BST):
             else:
                 p = x       # keep pointer to parent
                 x = x.right
-        return p.key if p else None
+        return p
 
-    def ceil(self, k):
-        """Return the smallest key greater than or equal to `k`, or None if `k`
-        is greater than the largest key in the table.
+    def _ceil(self, k, x):
+        """Return the Node corresponding to the smallest key greater than or
+        equal to `k` in the subtree rooted at `x`, or None if `k` is greater
+        than the largest key in the table.
         """
-        x = self._root
         p = None  # pointer to the floor Node
         while x:
             if k == x.key:
@@ -1080,15 +1134,14 @@ class BST_nr(BST):
             else:
                 p = x        # keep pointer to parent
                 x = x.left
-        return p.key if p else None
+        return p
 
-    def rank(self, k):
-        """Return the number of keys less than `k`.
+    def _rank(self, k, x):
+        """Return the number of keys less than `k` in the subtree rooted at `x`.
 
         .. note:: `rank` is the inverse of `select`.
         """
         r = 0
-        x = self._root
         while x:
             if k == x.key:
                 r += self._size(x.left)      # count all left of this node
@@ -1100,8 +1153,9 @@ class BST_nr(BST):
                 x = x.right
         return r
 
-    def select(self, r):
-        """Return the key of rank `r`.
+    def _select(self, r, x):
+        """Return the Node corresponding to the key of rank `r` in the subtree
+        rooted at `x`.
 
         .. note:: `select` is the inverse of `rank`.
 
@@ -1112,11 +1166,10 @@ class BST_nr(BST):
         """
         _empty_check(self)
         rank = r  # track desired rank
-        x = self._root
         while x:
             t = self._size(x.left)
             if t == rank:           # found the right number!
-                return x.key
+                return x
             elif t > rank:          # there are more nodes left than we want
                 x = x.left
             else:                   # there are fewer nodes left than we want
