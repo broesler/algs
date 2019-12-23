@@ -1251,13 +1251,67 @@ class BST_nr(BST):
                     x = s.pop()
                 if lo <= x.key and hi >= x.key:
                     q.enqueue(x.key if rtype == 'keys' else
-                                (x.val if rtype == 'values' else (x.key, x.val)))
+                              (x.val if rtype == 'values' else (x.key, x.val)))
                 # Move right until `hi` is found
                 if hi > x.key:
                     x = x.right
                 else:
                     break
         return list(q)
+
+
+# Exercise 3.2.34 extended API
+class ThreadedST(BST_nr):
+    """Implements an extended binary search tree data structure, where the
+    nodes contain pointers to their successor and predecessor.
+
+    Parameters
+    ----------
+    items : mapping, dict-like
+        Iterable of (key, value) tuples to be put onto the tree.
+
+    Attributes
+    ----------
+    size : int
+        Number of items on the tree.
+    height : int
+        The height of the binary tree == maximum path length ~ lg N
+    is_empty : bool
+        True if `size == 0`.
+    """
+    # Add predecessor and successor nodes
+    class _Node(BST._Node):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.next = None
+            self.prev = None
+
+    # IDEAS:
+    # x.next = self._min(x.right) or pop until p.key > x.key
+    # x.prev = self._max(x.left)  or pop until p.key < x.key
+    # x.next = self._ceil(x.key)... but ceil must have strict `>`
+    # x.prev = self._floor(x.key)... but floor must have strict `<`
+
+    # def __setitem__():
+    #     pass
+
+    # def __delitem__():
+    #     pass
+
+    def delete_min():
+        pass
+
+    def delete_max():
+        pass
+
+    def next(self, k):
+        """Return the key that follows `k`, None if `k` is the maximum."""
+        return self._get(k).next
+
+    def prev(self, k):
+        """Return the key that precedes `k`, None if `k` is the minimum."""
+        return self._get(k).prev
+
 
 
 # -----------------------------------------------------------------------------
