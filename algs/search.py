@@ -978,22 +978,15 @@ class BST_nr(BST):
         True if `size == 0`.
     """
     # Implement get, set, etc. non-recursively
-    def __getitem__(self, k):
-        """Return the value associated with the given `k`."""
-        return self._get(k).val
-
-    def _get(self, k):
-        """Return the Node associated with the given key `k`.
+    def _get(self, k, x):
+        """Return the Node associated with the given key `k` in the subtree
+        rooted at `x`.
 
         Raises
         ------
         KeyError
             If `k` is not in the table.
         """
-        if self._CACHE_FLAG and self._cache and k == self._cache.key:
-            return self._cache
-
-        x = self._root
         while x:
             if k == x.key:
                 if self._CACHE_FLAG:
@@ -1006,6 +999,7 @@ class BST_nr(BST):
         else:
             raise KeyError(k)
 
+    # TODO rewrite as `_set(k, v, x)` so BST() defines the public API.
     def __setitem__(self, k, v):
         """Add a new node to subtree at `x`, associating `k` with `v`.
         If `k` is in subtree rooted at `x`, change its value to `v`.
@@ -1130,7 +1124,7 @@ class BST_nr(BST):
                 p = x
                 break
             elif k > x.key:
-                x = x.right  # floor must be in right subtree
+                x = x.right  # ceil must be in right subtree
             else:
                 p = x        # keep pointer to parent
                 x = x.left
@@ -1240,7 +1234,7 @@ class BST_nr(BST):
         return r
 
     # -------------------------------------------------------------------------
-    #         Iterator functions
+    #         Iterator
     # -------------------------------------------------------------------------
     def _iterate(self, lo, hi, rtype='keys', **kwargs):
         """Add items to a Queue, in key-order from `lo` to `hi`."""
@@ -1248,6 +1242,7 @@ class BST_nr(BST):
         s = _Stack()    # visited nodes so we can pop back up the tree
         x = self._root
         while s or x:
+            # Move left until `lo` is found
             if x is not None and lo < x.key:
                 s.push(x)
                 x = x.left
@@ -1257,6 +1252,7 @@ class BST_nr(BST):
                 if lo <= x.key and hi >= x.key:
                     q.enqueue(x.key if rtype == 'keys' else
                                 (x.val if rtype == 'values' else (x.key, x.val)))
+                # Move right until `hi` is found
                 if hi > x.key:
                     x = x.right
                 else:
