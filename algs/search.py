@@ -1051,10 +1051,12 @@ class BST_nr(BST):
 
         return self._root
 
-    def __delitem__(self, k):
+    def _delete(self, k, t):
         """Delete the node associated with `k`.
 
         ..note:: Implements eager Hibbard deletion.
+        ..note:: in the non-recursive implementation, `t` will always be
+            `self._root`, as called from the BST parent class.
 
         Raises
         ------
@@ -1065,7 +1067,7 @@ class BST_nr(BST):
         s = _Stack()  # stack of visited nodes to update counts
 
         # find node to delete
-        t = p = self._root
+        p = t
         while t:
             if k == t.key:
                 break
@@ -1107,8 +1109,10 @@ class BST_nr(BST):
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
             self._cache = None
 
+        return self._root
+
     # -------------------------------------------------------------------------
-    #         Other Public Methods
+    #         Other Private Methods
     # -------------------------------------------------------------------------
     def _floor(self, k, x):
         """Return the Node corresponding to the largest key less than or equal
@@ -1186,9 +1190,6 @@ class BST_nr(BST):
         else:
             raise IndexError(r)
 
-    # -------------------------------------------------------------------------
-    #         Private API
-    # -------------------------------------------------------------------------
     def _min(self, x):
         """Return the node with the minimum key in the subtree rooted at `x`."""
         while x.left:
@@ -1297,34 +1298,92 @@ class ThreadedST(BST_nr):
     class _Node(BST._Node):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
-            self.next = None
-            self.prev = None
+            self.next = None  # in-order successor
+            self.prev = None  # in-order predecessor
 
-    # IDEAS:
-    # x.next = self._min(x.right) or pop until p.key > x.key
-    # x.prev = self._max(x.left)  or pop until p.key < x.key
-    # x.next = self._ceil(x.key)... but ceil must have strict `>`
-    # x.prev = self._floor(x.key)... but floor must have strict `<`
-
-    # def __setitem__():
+    # TODO update methods to maintain `next` and `prev` fields
+    # def _set(self, k, v, x):
     #     pass
-
-    # def __delitem__():
+    #
+    # def _delete():
     #     pass
-
-    def delete_min():
-        pass
-
-    def delete_max():
-        pass
+    #
+    # def delete_min():
+    #     pass
+    #
+    # def delete_max():
+    #     pass
 
     def next(self, k):
         """Return the key that follows `k`, None if `k` is the maximum."""
-        return self._get(k).next
+        x = self._find_next(k)
+        if x is None:
+            return None
+        else:
+            return x.key
 
     def prev(self, k):
         """Return the key that precedes `k`, None if `k` is the minimum."""
-        return self._get(k).prev
+        x = self._find_prev(k)
+        if x is None:
+            return None
+        else:
+            return x.key
+
+    # ------------------------------------------------------------------------- 
+    #         Private API
+    # -------------------------------------------------------------------------
+    def _find_next(self, k):
+        """Return the Node that follows `k`, None if `k` is the maximum."""
+        s = _Stack()  # track all nodes on path for updates
+        x = p = self._root
+        while x:
+            p = x  # track parent node
+            if k == x.key:
+                break
+            else:
+                # Move down the tree
+                s.push(x)
+                if k < x.key:
+                    x = x.left
+                else:
+                    x = x.right
+
+        # `p` is the node to be updated
+        if p.right:
+            return self._min(p.right)
+        else:
+            # search for maximum parent node
+            while s:
+                x = s.pop()
+                if x.key > p.key:
+                    return x
+
+    def _find_prev(self, k):
+        """Return the Node that precedes `k`, None if `k` is the minimum."""
+        s = _Stack()  # track all nodes on path for updates
+        x = p = self._root
+        while x:
+            p = x  # track parent node
+            if k == x.key:
+                break
+            else:
+                # Move down the tree
+                s.push(x)
+                if k < x.key:
+                    x = x.left
+                else:
+                    x = x.right
+
+        # `p` is the node to be updated
+        if p.left:
+            return self._max(p.left)
+        else:
+            # search for minimum parent node
+            while s:
+                x = s.pop()
+                if x.key < p.key:
+                    return x
 
 
 
@@ -1435,7 +1494,9 @@ if __name__ == '__main__':
 
     # ---------- Test Ordered STs ----------
     for ST in [BinarySearchST, BST, BST_nr]:
+    # for ST in [BST_nr]:
         for cache in [False, True]:
+        # for cache in [False]:
             t = ST()
             # Test bad input type
             err_test(t, '__init__', list('BADEXAMPLE'), err_type=ValueError)
@@ -1565,6 +1626,21 @@ if __name__ == '__main__':
     should_be(BST(data), BinarySearchST(data))
     should_be(BST(data), BST_nr(data))
     should_be(BST_nr(data), BST(data))
+
+    # ------------------------------------------------------------------------- 
+    #         Test ThreadedST
+    # -------------------------------------------------------------------------
+    tt = ThreadedST(data)
+    # TODO update with public method once attributes are up-to-date
+    keys = sorted(test_set)
+    for i, k in enumerate(keys[:-1]):
+        should_be(tt.next(k), keys[i+1])
+    should_be(tt.next(keys[-1]), None)
+
+    keys = sorted(test_set, reverse=True)
+    for i, k in enumerate(keys[:-1]):
+        should_be(tt.prev(k), keys[i+1])
+    should_be(tt.prev(keys[-1]), None)
 
     # Summary
     if fails > 0:
