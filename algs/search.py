@@ -538,7 +538,15 @@ class BST():
             self._set(k, v, self._root)
 
     def __delitem__(self, k):
-        """Delete the node associated with `k`."""
+        """Delete the node associated with `k`.
+
+        ..note:: Implements eager Hibbard deletion.
+
+        Raises
+        ------
+        KeyError
+            If `k` is not in the table.
+        """
         self._root = self._delete(k, self._root)
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
             self._cache = None
@@ -651,7 +659,7 @@ class BST():
         return 0 if x is None else x.N
 
     def _get(self, k, x=None):
-        """Return the value associated with the given `k`.
+        """Return the node associated with the given `k`.
 
         Parameters
         ----------
@@ -977,7 +985,9 @@ class BST_nr(BST):
     is_empty : bool
         True if `size == 0`.
     """
-    # Implement get, set, etc. non-recursively
+    # ------------------------------------------------------------------------- 
+    #         Implement get, set, delete non-recursively
+    # -------------------------------------------------------------------------
     def _get(self, k, x):
         """Return the Node associated with the given key `k` in the subtree
         rooted at `x`.
@@ -999,22 +1009,24 @@ class BST_nr(BST):
         else:
             raise KeyError(k)
 
-    # TODO rewrite as `_set(k, v, x)` so BST() defines the public API.
-    def __setitem__(self, k, v):
+    def _set(self, k, v, x):
         """Add a new node to subtree at `x`, associating `k` with `v`.
         If `k` is in subtree rooted at `x`, change its value to `v`.
+
+        ..note:: in the non-recursive implementation, `x` will always be
+            `self._root`, as called from the BST parent class.
         """
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
             self._cache.val = v
-            return
+            return self._root
 
         s = _Stack()  # track all nodes on path for updates
-        x = p = self._root
+        p = self._root
         while x:
             p = x  # track parent node
             if k == x.key:
                 x.val = v  # update the value if found
-                return
+                return self._root
             else:
                 # Move down the tree
                 s.push(x)
@@ -1036,6 +1048,8 @@ class BST_nr(BST):
             x = s.pop()
             x.N = 1 + self._size(x.left) + self._size(x.right)
             x.height = max(self._height(x.left), self._height(x.right)) + 1
+
+        return self._root
 
     def __delitem__(self, k):
         """Delete the node associated with `k`.
