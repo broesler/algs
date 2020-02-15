@@ -1277,7 +1277,7 @@ class BST_nr(BST):
 
 
 # Exercise 3.2.34 extended API
-class ThreadedST(BST_nr):
+class ThreadedST_nr(BST_nr):
     """Implements an extended binary search tree data structure, where the
     nodes contain pointers to their successor and predecessor.
 
@@ -1302,7 +1302,6 @@ class ThreadedST(BST_nr):
             self.next = None  # in-order successor
             self.prev = None  # in-order predecessor
 
-    # TODO update methods to maintain `next` and `prev` fields
     def _set(self, k, v, x):
         """Add a new node to subtree at `x`, associating `k` with `v`.
         If `k` is in subtree rooted at `x`, change its value to `v`.
@@ -1354,18 +1353,124 @@ class ThreadedST(BST_nr):
 
         return self._root
 
-    def _delete():
-        pass
+    def _delete(self, k, t):
+        """Delete the node associated with `k`.
 
-    def delete_min():
-        pass
+        ..note:: Implements eager Hibbard deletion.
+        ..note:: in the non-recursive implementation, `t` will always be
+            `self._root`, as called from the BST parent class.
 
-    def delete_max():
-        pass
+        Raises
+        ------
+        KeyError
+            If `k` is not in the table.
+        """
+        _empty_check(self)
+        s = _Stack()  # stack of visited nodes to update counts
+
+        # find node to delete
+        p = t
+        while t:
+            if k == t.key:
+                break
+            else:
+                # Move down the tree
+                s.push(t)
+                p = t  # keep pointer to parent
+                if k < t.key:
+                    t = t.left
+                else:
+                    t = t.right
+        else:
+            raise KeyError(k)
+
+        # find its successor
+        x = self._min(t.right)
+        s.push(x)
+
+        # Reassign links
+        x.right = self._delete_min(t.right)
+        x.left = t.left
+
+        # Update parent link
+        if k == p.key:
+            self._root = x
+        elif k < p.key:
+            p.left = x
+        else:
+            p.right = x
+
+        # Update node counts from successor back up the tree
+        #   (_delete_min operation updates the counts in the right subtree)
+        while s:
+            t = s.pop()
+            t.N = 1 + self._size(t.left) + self._size(t.right)
+            t.height = max(self._size(t.left), self._size(t.right)) + 1
+            t.next = self._find_next(t.key)
+            t.prev = self._find_prev(t.key)
+
+        # Clear the cache if necessary
+        if self._CACHE_FLAG and self._cache and k == self._cache.key:
+            self._cache = None
+
+        return self._root
+
+    def _delete_min(self, x=None):
+        """Delete the smallest key from the subtree rooted at `x`.
+
+        Returns
+        -------
+        r : _Node
+            The root of the subtree. Will not be equal to `x` if `x` is the
+            minimum key in the subtree.
+        """
+        if x is None:
+            x = self._root
+        r = x  # keep pointer to the root
+        if x.left is None:  # the min is the root
+            r = x.right
+            if x.next:
+                x.next.prev = None  # former "next" is now the min
+            return r
+        # find the min
+        while x.left:
+            p = x           # pointer to the parent
+            p.N -= 1        # decrement node counts
+            x = x.left
+        p.left = x.right    # delete the pointer to the min 
+        if x.next:
+            x.next.prev = None  # former `next` is now the min
+        return r
+
+    def _delete_max(self, x=None):
+        """Delete the smallest key from the subtree rooted at `x`.
+
+        Returns
+        -------
+        r : _Node
+            The root of the subtree. Will not be equal to `x` if `x` is the
+            minimum key in the subtree.
+        """
+        if x is None:
+            x = self._root
+        r = x
+        if x.right is None:  # the max is the root
+            r = x.left
+            if x.prev:
+                x.prev.next = None  # former `prev` is now the max
+            return r
+        # find the max
+        while x.right:
+            p = x               # pointer to the parent
+            p.N -= 1            # decrement node counts
+            x = x.right
+        p.right = x.left        # delete the pointer to it
+        if x.prev:
+            x.prev.next = None  # former `prev` is now the max
+        return r
 
     def next(self, k):
         """Return the key that follows `k`, None if `k` is the maximum."""
-        # x = self._find_next(k)
         x = self._get(k, self._root).next
         if x is None:
             return None
@@ -1374,7 +1479,6 @@ class ThreadedST(BST_nr):
 
     def prev(self, k):
         """Return the key that precedes `k`, None if `k` is the minimum."""
-        # x = self._find_prev(k)
         x = self._get(k, self._root).prev
         if x is None:
             return None
@@ -1544,8 +1648,10 @@ if __name__ == '__main__':
         should_be(tc._cost, 1)      # test cost
 
     # ---------- Test Ordered STs ----------
-    for ST in [BinarySearchST, BST, BST_nr]:
-        for cache in [False, True]:
+    # for ST in [BinarySearchST, BST, BST_nr, ThreadedST_nr]:
+    for ST in [ThreadedST_nr]:
+        # for cache in [False, True]:
+        for cache in [False]:
             t = ST()
             # Test bad input type
             err_test(t, '__init__', list('BADEXAMPLE'), err_type=ValueError)
@@ -1677,18 +1783,33 @@ if __name__ == '__main__':
     should_be(BST_nr(data), BST(data))
 
     # ------------------------------------------------------------------------- 
-    #         Test ThreadedST
+    #         Test ThreadedST methods
     # -------------------------------------------------------------------------
-    tt = ThreadedST(data)
-    keys = sorted(test_set)
-    for i, k in enumerate(keys[:-1]):
-        should_be(tt.next(k), keys[i+1])
-    should_be(tt.next(keys[-1]), None)
+    def test_threads(t, test_set):
+        keys = sorted(test_set)
+        for i, k in enumerate(keys[:-1]):
+            should_be(t.next(k), keys[i+1])
+        should_be(t.next(keys[-1]), None)
 
-    keys = sorted(test_set, reverse=True)
-    for i, k in enumerate(keys[:-1]):
-        should_be(tt.prev(k), keys[i+1])
-    should_be(tt.prev(keys[-1]), None)
+        keys = sorted(test_set, reverse=True)
+        for i, k in enumerate(keys[:-1]):
+            should_be(t.prev(k), keys[i+1])
+        should_be(t.prev(keys[-1]), None)
+
+    tt = ThreadedST_nr(data)
+    test_threads(tt, test_set)
+
+    tt._delete_min()  # remove 'A'
+    test_threads(tt, sorted(test_set - set('A')))
+    tt['A'] = 8
+
+    tt._delete_max()  # remove 'X'
+    test_threads(tt, sorted(test_set - set('X')))
+    tt['X'] = 7
+
+    # del tt['M']
+    # test_threads(tt, sorted(test_set - set('M')))
+    # tt['M'] = 9
 
     # Summary
     if fails > 0:
