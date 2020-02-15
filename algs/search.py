@@ -19,6 +19,7 @@ from algs.sort import mergesort as _mergesort
 __all__ = ['SequentialSearchST', 'BinarySearchST', 'BST', 'BST_nr']
 
 # TODO
+#   * Remove `_recordclass` dependency. Create our own `Item` class.
 #   * make ST(ABC) to hold things like `size`, `is_empty`, `__len__` for all?
 #   * use collections.abc.[Keys|Values|Items]View classes?
 
@@ -1302,21 +1303,70 @@ class ThreadedST(BST_nr):
             self.prev = None  # in-order predecessor
 
     # TODO update methods to maintain `next` and `prev` fields
-    # def _set(self, k, v, x):
-    #     pass
-    #
-    # def _delete():
-    #     pass
-    #
-    # def delete_min():
-    #     pass
-    #
-    # def delete_max():
-    #     pass
+    def _set(self, k, v, x):
+        """Add a new node to subtree at `x`, associating `k` with `v`.
+        If `k` is in subtree rooted at `x`, change its value to `v`.
+
+        ..note:: in the non-recursive implementation, `x` will always be
+            `self._root`, as called from the BST parent class.
+        """
+        if self._CACHE_FLAG and self._cache and k == self._cache.key:
+            self._cache.val = v
+            return self._root
+
+        s = _Stack()  # track all nodes on path for updates
+        p = self._root
+        while x:
+            p = x  # track parent node
+            if k == x.key:
+                x.val = v  # update the value if found
+                return self._root
+            else:
+                # Move down the tree
+                s.push(x)
+                if k < x.key:
+                    x = x.left
+                else:
+                    x = x.right
+
+        # Insert new node as child of parent
+        if p is None:
+            self._root = self._Node(k, v)
+            return self._root
+        elif k < p.key:
+            p.left = self._Node(k, v)
+            x = p.left
+        else:
+            p.right = self._Node(k, v)
+            x = p.right
+
+        # Initialize next/prev pointers of newly added node
+        x.next = self._find_next(x.key)
+        x.prev = self._find_prev(x.key)
+
+        # Update node counts and heights on path traveled back up the tree
+        while s:
+            x = s.pop()
+            x.N = 1 + self._size(x.left) + self._size(x.right)
+            x.height = max(self._height(x.left), self._height(x.right)) + 1
+            x.next = self._find_next(x.key)
+            x.prev = self._find_prev(x.key)
+
+        return self._root
+
+    def _delete():
+        pass
+
+    def delete_min():
+        pass
+
+    def delete_max():
+        pass
 
     def next(self, k):
         """Return the key that follows `k`, None if `k` is the maximum."""
-        x = self._find_next(k)
+        # x = self._find_next(k)
+        x = self._get(k, self._root).next
         if x is None:
             return None
         else:
@@ -1324,7 +1374,8 @@ class ThreadedST(BST_nr):
 
     def prev(self, k):
         """Return the key that precedes `k`, None if `k` is the minimum."""
-        x = self._find_prev(k)
+        # x = self._find_prev(k)
+        x = self._get(k, self._root).prev
         if x is None:
             return None
         else:
@@ -1494,9 +1545,7 @@ if __name__ == '__main__':
 
     # ---------- Test Ordered STs ----------
     for ST in [BinarySearchST, BST, BST_nr]:
-    # for ST in [BST_nr]:
         for cache in [False, True]:
-        # for cache in [False]:
             t = ST()
             # Test bad input type
             err_test(t, '__init__', list('BADEXAMPLE'), err_type=ValueError)
@@ -1631,7 +1680,6 @@ if __name__ == '__main__':
     #         Test ThreadedST
     # -------------------------------------------------------------------------
     tt = ThreadedST(data)
-    # TODO update with public method once attributes are up-to-date
     keys = sorted(test_set)
     for i, k in enumerate(keys[:-1]):
         should_be(tt.next(k), keys[i+1])
