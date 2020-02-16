@@ -1464,18 +1464,13 @@ class ThreadedST_nr(BST_nr):
         r = x  # keep pointer to the root
         if x.left is None:  # the min is the root
             r = x.right
-            # Update threads
-            if x.next:
-                x.next.prev = x.prev
-            if x.prev:
-                x.prev.next = x.next
-            return r
-        # find the min
-        while x.left:
-            p = x           # pointer to the parent
-            p.N -= 1        # decrement node counts
-            x = x.left
-        p.left = x.right    # delete the pointer to the min
+        else:
+            # find the min
+            while x.left:
+                p = x           # pointer to the parent
+                p.N -= 1        # decrement node counts
+                x = x.left
+            p.left = x.right    # delete the pointer to the min
         # Update threads
         if x.next:
             x.next.prev = x.prev
@@ -1497,17 +1492,18 @@ class ThreadedST_nr(BST_nr):
         r = x
         if x.right is None:  # the max is the root
             r = x.left
-            if x.prev:
-                x.prev.next = None  # former `prev` is now the max
-            return r
-        # find the max
-        while x.right:
-            p = x               # pointer to the parent
-            p.N -= 1            # decrement node counts
-            x = x.right
-        p.right = x.left        # delete the pointer to it
+        else:
+            # find the max
+            while x.right:
+                p = x               # pointer to the parent
+                p.N -= 1            # decrement node counts
+                x = x.right
+            p.right = x.left        # delete the pointer to it
+        # Update threads
+        if x.next:
+            x.next.prev = x.prev
         if x.prev:
-            x.prev.next = None  # former `prev` is now the max
+            x.prev.next = x.next
         return r
 
     def next(self, k):
