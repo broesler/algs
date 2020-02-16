@@ -1402,26 +1402,27 @@ class ThreadedST_nr(BST_nr):
             raise KeyError(k)
 
         # find its successor
+        has_two_children = False
         if t.left is None:
             x = t.right
-            # Update threads
-            if t.next:
-                t.next.prev = t.prev
-            if t.prev:
-                t.prev.next = t.next
         elif t.right is None:
             x = t.left
-            # Update threads
+        else:
+            has_two_children = True
+            x = self._min(t.right)
+            s.push(x)
+            x.right = self._delete_min(t.right)
+            x.left = t.left
+
+        # Update threads
+        if not has_two_children:
+            # No need to touch x, may not be successor
             if t.next:
                 t.next.prev = t.prev
             if t.prev:
                 t.prev.next = t.next
         else:
-            x = self._min(t.right)
-            s.push(x)
-            x.right = self._delete_min(t.right)
-            x.left = t.left
-            # Update threads (_delete_min frees x, so reattach it)
+            # _delete_min frees x, so reattach it
             x.next = t.next
             x.prev = t.prev
             if t.next:
