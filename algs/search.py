@@ -438,7 +438,7 @@ class BinarySearchST():
     # -------------------------------------------------------------------------
     # NOTE integrity checks are O(N)!! They break the O(lg N) search...
     def _assert_integrity(self):
-        assert self._is_sorted() and self._rank_check() 
+        assert self._is_sorted() and self._rank_check()
 
     def _rank_check(self):
         for i in range(self.size):
@@ -926,13 +926,13 @@ class BST():
         if lo < x.key:
             self._iterate(lo, hi, x.left, q, rtype)
         if lo <= x.key and hi >= x.key:
-            q.enqueue(x.key if rtype == 'keys' else 
+            q.enqueue(x.key if rtype == 'keys' else
                         (x.val if rtype == 'values' else (x.key, x.val)))
         if hi > x.key:
             self._iterate(lo, hi, x.right, q, rtype)
         return list(q)
 
-    # ------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #         Certification
     # -------------------------------------------------------------------------
     def isBST(self):
@@ -1000,7 +1000,7 @@ class BST_nr(BST):
     is_empty : bool
         True if `size == 0`.
     """
-    # ------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #         Implement get, set, delete non-recursively
     # -------------------------------------------------------------------------
     def _get(self, k, x):
@@ -1240,7 +1240,7 @@ class BST_nr(BST):
             p = x         # pointer to the parent
             p.N -= 1      # decrement node counts
             x = x.left
-        p.left = x.right  # delete the pointer to the min 
+        p.left = x.right  # delete the pointer to the min
         return r
 
     def _delete_max(self, x=None):
@@ -1404,23 +1404,30 @@ class ThreadedST_nr(BST_nr):
         # find its successor
         if t.left is None:
             x = t.right
+            # Update threads
+            if t.next:
+                t.next.prev = t.prev
+            if t.prev:
+                t.prev.next = t.next
         elif t.right is None:
             x = t.left
+            # Update threads
+            if t.next:
+                t.next.prev = t.prev
+            if t.prev:
+                t.prev.next = t.next
         else:
             x = self._min(t.right)
             s.push(x)
             x.right = self._delete_min(t.right)
             x.left = t.left
-
-        # TODO fix for Nodes < 2 children
-        # Update threads
-        if x:
+            # Update threads (_delete_min frees x, so reattach it)
             x.next = t.next
             x.prev = t.prev
-        if t.next:
-            t.next.prev = x
-        if t.prev:
-            t.prev.next = x
+            if t.next:
+                t.next.prev = x
+            if t.prev:
+                t.prev.next = x
 
         # Update parent link
         if k == p.key:
@@ -1468,7 +1475,7 @@ class ThreadedST_nr(BST_nr):
             p = x           # pointer to the parent
             p.N -= 1        # decrement node counts
             x = x.left
-        p.left = x.right    # delete the pointer to the min 
+        p.left = x.right    # delete the pointer to the min
         # Update threads
         if x.next:
             x.next.prev = x.prev
@@ -1519,7 +1526,7 @@ class ThreadedST_nr(BST_nr):
         else:
             return x.key
 
-    # ------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #         Private API
     # -------------------------------------------------------------------------
     def _find_next(self, k):
@@ -1819,10 +1826,11 @@ if __name__ == '__main__':
     should_be(BST(data), BST_nr(data))
     should_be(BST_nr(data), BST(data))
 
-    # ------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #         Test ThreadedST methods
     # -------------------------------------------------------------------------
     def test_threads(t, test_set):
+        """Test that the next/prev attributes are set properly."""
         keys = sorted(test_set)
         for i, k in enumerate(keys[:-1]):
             should_be(t.next(k), keys[i+1])
@@ -1832,6 +1840,12 @@ if __name__ == '__main__':
         for i, k in enumerate(keys[:-1]):
             should_be(t.prev(k), keys[i+1])
         should_be(t.prev(keys[-1]), None)
+
+    def print_threads(t):
+        """Print the next/prev nodes for each key in the tree."""
+        for k in t.keys():
+            print("{:40} || {:40}".format(str(t._get(k, t._root).next),
+                                          str(t._get(k, t._root).prev)))
 
     t = ThreadedST_nr(data)
     test_threads(t, test_set)
