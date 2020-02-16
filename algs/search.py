@@ -1098,12 +1098,15 @@ class BST_nr(BST):
             raise KeyError(k)
 
         # find its successor
-        x = self._min(t.right)
-        s.push(x)
-
-        # Reassign links
-        x.right = self._delete_min(t.right)
-        x.left = t.left
+        if t.left is None:
+            x = t.right
+        elif t.right is None:
+            x = t.left
+        else:
+            x = self._min(t.right)
+            s.push(x)
+            x.right = self._delete_min(t.right)
+            x.left = t.left
 
         # Update parent link
         if k == p.key:
@@ -1399,16 +1402,21 @@ class ThreadedST_nr(BST_nr):
             raise KeyError(k)
 
         # find its successor
-        x = self._min(t.right)
-        s.push(x)
+        if t.left is None:
+            x = t.right
+        elif t.right is None:
+            x = t.left
+        else:
+            x = self._min(t.right)
+            s.push(x)
+            x.right = self._delete_min(t.right)
+            x.left = t.left
 
-        # Reassign links
-        x.right = self._delete_min(t.right)
-        x.left = t.left
-
+        # TODO fix for Nodes < 2 children
         # Update threads
-        x.next = t.next
-        x.prev = t.prev
+        if x:
+            x.next = t.next
+            x.prev = t.prev
         if t.next:
             t.next.prev = x
         if t.prev:
@@ -1674,10 +1682,10 @@ if __name__ == '__main__':
         should_be(tc._cost, 1)      # test cost
 
     # ---------- Test Ordered STs ----------
-    # for ST in [BinarySearchST, BST, BST_nr, ThreadedST_nr]:
-    for ST in [ThreadedST_nr]:
-        # for cache in [False, True]:
-        for cache in [False]:
+    for ST in [BinarySearchST, BST, BST_nr, ThreadedST_nr]:
+    # for ST in [BST_nr]:
+        for cache in [False, True]:
+        # for cache in [False]:
             t = ST()
             # Test bad input type
             err_test(t, '__init__', list('BADEXAMPLE'), err_type=ValueError)
@@ -1785,15 +1793,18 @@ if __name__ == '__main__':
                 should_be(t.rank(c), i)
             t[k] = v  # replace value
 
-            # Delete arbitrary key
-            v = t['E']
-            del t['E']
-            should_be(len(t), len(test_set)-1)
-            err_test(t, '__getitem__', 'E', err_type=KeyError)
-            t['E'] = v
+            # Delete arbitrary key, starting with same tree
+            for k in test_set:
+                t = ST(data)
+                v = t[k]
+                del t[k]
+                should_be(len(t), len(test_set)-1)
+                err_test(t, '__getitem__', k, err_type=KeyError)
 
             if isinstance(t, BST):
+                t = ST(data)  # reset tree
                 # delete the root
+                should_be(t._root.key, 'S')
                 v = t['S']
                 del t['S']
                 should_be(len(t), len(test_set)-1)
@@ -1826,20 +1837,21 @@ if __name__ == '__main__':
     test_threads(t, test_set)
 
     k, v = t.min(), t[t.min()]
-    t._delete_min()  # remove 'A'
+    t.delete_min()  # remove 'A'
     test_threads(t, sorted(test_set - set(k)))
     t[k] = v
 
     k, v = t.max(), t[t.max()]
-    t._delete_max()  # remove 'X'
+    t.delete_max()  # remove 'X'
     test_threads(t, sorted(test_set - set(k)))
     t[k] = v
 
-    k = 'E'
-    v = t[k]
-    del t[k]
-    test_threads(t, sorted(test_set - set(k)))
-    t[k] = v
+    # Delete arbitrary key, starting with same tree
+    for k in test_set:
+        t = ThreadedST_nr(data)
+        v = t[k]
+        del t[k]
+        test_threads(t, sorted(test_set - set(k)))
 
     # Summary
     if fails > 0:
