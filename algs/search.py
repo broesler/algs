@@ -780,7 +780,14 @@ class BST():
             return self._size(x.left)
 
     def _delete_min(self, x=None):
-        """Delete the minimum key in the subtree rooted at `x`."""
+        """Delete the minimum key in the subtree rooted at `x`.
+
+        Returns
+        -------
+        x : _Node
+            The root of the subtree. Will not be equal to `x` if `x` is the
+            minimum key in the subtree.
+        """
         if x.left is None:
             return x.right
         x.left = self._delete_min(x.left)
@@ -789,7 +796,14 @@ class BST():
         return x
 
     def _delete_max(self, x=None):
-        """Delete the maximum key in the subtree rooted at `x`."""
+        """Delete the maximum key in the subtree rooted at `x`.
+
+        Returns
+        -------
+        x : _Node
+            The root of the subtree. Will not be equal to `x` if `x` is the
+            minimum key in the subtree.
+        """
         if x.right is None:
             return x.left
         x.right = self._delete_max(x.right)
@@ -1392,6 +1406,14 @@ class ThreadedST_nr(BST_nr):
         x.right = self._delete_min(t.right)
         x.left = t.left
 
+        # Update threads
+        x.next = t.next
+        x.prev = t.prev
+        if t.next:
+            t.next.prev = x
+        if t.prev:
+            t.prev.next = x
+
         # Update parent link
         if k == p.key:
             self._root = x
@@ -1406,8 +1428,6 @@ class ThreadedST_nr(BST_nr):
             t = s.pop()
             t.N = 1 + self._size(t.left) + self._size(t.right)
             t.height = max(self._size(t.left), self._size(t.right)) + 1
-            t.next = self._find_next(t.key)
-            t.prev = self._find_prev(t.key)
 
         # Clear the cache if necessary
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
@@ -1429,6 +1449,7 @@ class ThreadedST_nr(BST_nr):
         r = x  # keep pointer to the root
         if x.left is None:  # the min is the root
             r = x.right
+            # Update threads
             if x.next:
                 x.next.prev = x.prev
             if x.prev:
@@ -1440,6 +1461,7 @@ class ThreadedST_nr(BST_nr):
             p.N -= 1        # decrement node counts
             x = x.left
         p.left = x.right    # delete the pointer to the min 
+        # Update threads
         if x.next:
             x.next.prev = x.prev
         if x.prev:
@@ -1749,7 +1771,7 @@ if __name__ == '__main__':
             t.delete_min()  # remove 'A'
             should_be(t.min(), 'C')
             # Test updated ranks
-            for i, c in enumerate(sorted(test_set - set('A'))):
+            for i, c in enumerate(sorted(test_set - set(k))):
                 should_be(t.select(i), c)
                 should_be(t.rank(c), i)
             t[k] = v  # replace value
@@ -1758,7 +1780,7 @@ if __name__ == '__main__':
             t.delete_max()  # remove 'X'
             should_be(t.max(), 'S')
             # Test updated ranks
-            for i, c in enumerate(sorted(test_set - set('X'))):
+            for i, c in enumerate(sorted(test_set - set(k))):
                 should_be(t.select(i), c)
                 should_be(t.rank(c), i)
             t[k] = v  # replace value
@@ -1800,20 +1822,24 @@ if __name__ == '__main__':
             should_be(t.prev(k), keys[i+1])
         should_be(t.prev(keys[-1]), None)
 
-    tt = ThreadedST_nr(data)
-    test_threads(tt, test_set)
+    t = ThreadedST_nr(data)
+    test_threads(t, test_set)
 
-    tt._delete_min()  # remove 'A'
-    test_threads(tt, sorted(test_set - set('A')))
-    tt['A'] = 8
+    k, v = t.min(), t[t.min()]
+    t._delete_min()  # remove 'A'
+    test_threads(t, sorted(test_set - set(k)))
+    t[k] = v
 
-    tt._delete_max()  # remove 'X'
-    test_threads(tt, sorted(test_set - set('X')))
-    tt['X'] = 7
+    k, v = t.max(), t[t.max()]
+    t._delete_max()  # remove 'X'
+    test_threads(t, sorted(test_set - set(k)))
+    t[k] = v
 
-    # del tt['M']
-    # test_threads(tt, sorted(test_set - set('M')))
-    # tt['M'] = 9
+    k = 'E'
+    v = t[k]
+    del t[k]
+    test_threads(t, sorted(test_set - set(k)))
+    t[k] = v
 
     # Summary
     if fails > 0:
