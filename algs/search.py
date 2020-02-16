@@ -1430,7 +1430,9 @@ class ThreadedST_nr(BST_nr):
         if x.left is None:  # the min is the root
             r = x.right
             if x.next:
-                x.next.prev = None  # former "next" is now the min
+                x.next.prev = x.prev
+            if x.prev:
+                x.prev.next = x.next
             return r
         # find the min
         while x.left:
@@ -1439,11 +1441,13 @@ class ThreadedST_nr(BST_nr):
             x = x.left
         p.left = x.right    # delete the pointer to the min 
         if x.next:
-            x.next.prev = None  # former `next` is now the min
+            x.next.prev = x.prev
+        if x.prev:
+            x.prev.next = x.next
         return r
 
     def _delete_max(self, x=None):
-        """Delete the smallest key from the subtree rooted at `x`.
+        """Delete the largest key from the subtree rooted at `x`.
 
         Returns
         -------
