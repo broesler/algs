@@ -1578,6 +1578,24 @@ class ThreadedST_nr(BST_nr):
                 if x.key < p.key:
                     return x
 
+    # -------------------------------------------------------------------------
+    #         Iterator
+    # -------------------------------------------------------------------------
+    def _iterate(self, lo, hi, rtype='keys', **kwargs):
+        """Add items to a Queue, in key-order from `lo` to `hi`."""
+        q = _Queue()               # the output queue
+        x = self._min(self._root)  # get the minimum Node
+        while x:
+            if lo > x.key:
+                x = x.next
+            else:
+                if lo <= x.key and hi >= x.key:
+                    q.enqueue(x.key if rtype == 'keys' else
+                                (x.val if rtype == 'values' else (x.key, x.val)))
+                    x = x.next
+                else:
+                    break
+        return list(q)
 
 
 # -----------------------------------------------------------------------------
