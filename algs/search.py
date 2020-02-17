@@ -548,6 +548,7 @@ class BST():
         KeyError
             If `k` is not in the table.
         """
+        _empty_check(self)
         self._root = self._delete(k, self._root)
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
             self._cache = None
@@ -1031,10 +1032,6 @@ class BST_nr(BST):
         ..note:: in the non-recursive implementation, `x` will always be
             `self._root`, as called from the BST parent class.
         """
-        if self._CACHE_FLAG and self._cache and k == self._cache.key:
-            self._cache.val = v
-            return self._root
-
         s = _Stack()  # track all nodes on path for updates
         p = self._root
         while x:
@@ -1078,7 +1075,6 @@ class BST_nr(BST):
         KeyError
             If `k` is not in the table.
         """
-        _empty_check(self)
         s = _Stack()  # stack of visited nodes to update counts
 
         # find node to delete
@@ -1122,10 +1118,6 @@ class BST_nr(BST):
             t = s.pop()
             t.N = 1 + self._size(t.left) + self._size(t.right)
             t.height = max(self._size(t.left), self._size(t.right)) + 1
-
-        # Clear the cache if necessary
-        if self._CACHE_FLAG and self._cache and k == self._cache.key:
-            self._cache = None
 
         return self._root
 
@@ -1194,7 +1186,6 @@ class BST_nr(BST):
         IndexError
             If there are fewer than `r`+1 keys in the table.
         """
-        _empty_check(self)
         rank = r  # track desired rank
         while x:
             t = self._size(x.left)
@@ -1326,10 +1317,6 @@ class ThreadedST_nr(BST_nr):
         ..note:: in the non-recursive implementation, `x` will always be
             `self._root`, as called from the BST parent class.
         """
-        if self._CACHE_FLAG and self._cache and k == self._cache.key:
-            self._cache.val = v
-            return self._root
-
         s = _Stack()  # track all nodes on path for updates
         p = self._root
         while x:
@@ -1382,7 +1369,6 @@ class ThreadedST_nr(BST_nr):
         KeyError
             If `k` is not in the table.
         """
-        _empty_check(self)
         s = _Stack()  # stack of visited nodes to update counts
 
         # find node to delete
@@ -1444,10 +1430,6 @@ class ThreadedST_nr(BST_nr):
             t = s.pop()
             t.N = 1 + self._size(t.left) + self._size(t.right)
             t.height = max(self._size(t.left), self._size(t.right)) + 1
-
-        # Clear the cache if necessary
-        if self._CACHE_FLAG and self._cache and k == self._cache.key:
-            self._cache = None
 
         return self._root
 
