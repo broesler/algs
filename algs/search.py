@@ -848,11 +848,14 @@ class BST():
         """Return the height of the tree rooted at `x`."""
         return 0 if x is None else x.height
 
-    def _level_order(self):
+    # Exercise 3.2.37
+    def level_order(self, x=None):
         """Return an iterator over the keys in level-order (breadth-first)."""
+        if x is None:
+            x = self._root
         keys = _Queue()
         q = _Queue()
-        q.enqueue(self._root)
+        q.enqueue(x)
         while q:
             x = q.dequeue()
             if x is None:
