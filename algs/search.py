@@ -1046,10 +1046,6 @@ class BST_nr(BST):
         ..note:: in the non-recursive implementation, `x` will always be
             `self._root`, as called from the BST parent class.
         """
-        if self._CACHE_FLAG and self._cache and k == self._cache.key:
-            self._cache.val = v
-            return self._root
-
         s = _Stack()  # track all nodes on path for updates
         p = self._root
         while x:
@@ -1093,7 +1089,6 @@ class BST_nr(BST):
         KeyError
             If `k` is not in the table.
         """
-        _empty_check(self)
         s = _Stack()  # stack of visited nodes to update counts
 
         # find node to delete
@@ -1137,10 +1132,6 @@ class BST_nr(BST):
             t = s.pop()
             t.N = 1 + self._size(t.left) + self._size(t.right)
             t.height = max(self._size(t.left), self._size(t.right)) + 1
-
-        # Clear the cache if necessary
-        if self._CACHE_FLAG and self._cache and k == self._cache.key:
-            self._cache = None
 
         return self._root
 
@@ -1284,6 +1275,7 @@ class BST_nr(BST):
     # -------------------------------------------------------------------------
     #         Iterator
     # -------------------------------------------------------------------------
+    # Exercise 3.2.36
     def _iterate(self, lo, hi, rtype='keys', **kwargs):
         """Add items to a Queue, in key-order from `lo` to `hi`."""
         q = _Queue()    # the output queue
@@ -1341,10 +1333,6 @@ class ThreadedST_nr(BST_nr):
         ..note:: in the non-recursive implementation, `x` will always be
             `self._root`, as called from the BST parent class.
         """
-        if self._CACHE_FLAG and self._cache and k == self._cache.key:
-            self._cache.val = v
-            return self._root
-
         s = _Stack()  # track all nodes on path for updates
         p = self._root
         while x:
@@ -1397,7 +1385,6 @@ class ThreadedST_nr(BST_nr):
         KeyError
             If `k` is not in the table.
         """
-        _empty_check(self)
         s = _Stack()  # stack of visited nodes to update counts
 
         # find node to delete
@@ -1459,10 +1446,6 @@ class ThreadedST_nr(BST_nr):
             t = s.pop()
             t.N = 1 + self._size(t.left) + self._size(t.right)
             t.height = max(self._size(t.left), self._size(t.right)) + 1
-
-        # Clear the cache if necessary
-        if self._CACHE_FLAG and self._cache and k == self._cache.key:
-            self._cache = None
 
         return self._root
 
@@ -1800,7 +1783,7 @@ if __name__ == '__main__':
                 should_be(t.height, 6)      # Node attribute method, as a property
                 should_be(t.height_r(), 6)  # recursive method
                 should_be(t.isBST(), True)
-                should_be(list(t._level_order()), list('SEXARCHMLP'))
+                should_be(list(t.level_order()), list('SEXARCHMLP'))
 
             # In-order traversal
             should_be(list(t.keys()), sorted(test_set))
