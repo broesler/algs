@@ -16,7 +16,8 @@ from algs.basics import Stack as _Stack, \
                         _empty_check
 from algs.sort import mergesort as _mergesort
 
-__all__ = ['SequentialSearchST', 'BinarySearchST', 'BST', 'BST_nr']
+__all__ = ['SequentialSearchST', 'BinarySearchST', 'BST', 'BST_nr', 
+           'ThreadedST_nr']
 
 # TODO
 #   * Remove `_recordclass` dependency. Create our own `Item` class.
@@ -1326,6 +1327,19 @@ class ThreadedST_nr(BST_nr):
             self.next = None  # in-order successor
             self.prev = None  # in-order predecessor
 
+    def next(self, k):
+        """Return the key that follows `k`, None if `k` is the maximum."""
+        x = self._get(k, self._root).next
+        return x.key if x else None
+
+    def prev(self, k):
+        """Return the key that precedes `k`, None if `k` is the minimum."""
+        x = self._get(k, self._root).prev
+        return x.key if x else None
+
+    # -------------------------------------------------------------------------
+    #         Private API
+    # -------------------------------------------------------------------------
     def _set(self, k, v, x):
         """Add a new node to subtree at `x`, associating `k` with `v`.
         If `k` is in subtree rooted at `x`, change its value to `v`.
@@ -1505,25 +1519,6 @@ class ThreadedST_nr(BST_nr):
             x.prev.next = x.next
         return r
 
-    def next(self, k):
-        """Return the key that follows `k`, None if `k` is the maximum."""
-        x = self._get(k, self._root).next
-        if x is None:
-            return None
-        else:
-            return x.key
-
-    def prev(self, k):
-        """Return the key that precedes `k`, None if `k` is the minimum."""
-        x = self._get(k, self._root).prev
-        if x is None:
-            return None
-        else:
-            return x.key
-
-    # -------------------------------------------------------------------------
-    #         Private API
-    # -------------------------------------------------------------------------
     def _find_next(self, k):
         """Return the Node that follows `k`, None if `k` is the maximum."""
         s = _Stack()  # track all nodes on path for updates
