@@ -999,6 +999,154 @@ class BST():
         return True
 
 
+# Exercise 3.2.34 extended API
+class ThreadedST(BST):
+    """Implements an extended binary search tree data structure, where the
+    nodes contain pointers to their successor and predecessor.
+
+    Parameters
+    ----------
+    items : mapping, dict-like
+        Iterable of (key, value) tuples to be put onto the tree.
+
+    Attributes
+    ----------
+    size : int
+        Number of items on the tree.
+    height : int
+        The height of the binary tree == maximum path length ~ lg N
+    is_empty : bool
+        True if `size == 0`.
+    """
+    # Add predecessor and successor nodes
+    class _Node(BST._Node):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.next = None  # in-order successor
+            self.prev = None  # in-order predecessor
+
+    def next(self, k):
+        """Return the key that follows `k`, None if `k` is the maximum."""
+        # x = self._get(k, self._root).next
+        x = self._find_next(k, self._root)
+        return x.key if x else None
+
+    def prev(self, k):
+        """Return the key that precedes `k`, None if `k` is the minimum."""
+        # x = self._get(k, self._root).prev
+        x = self._find_prev(k, self._root)
+        return x.key if x else None
+
+    # -------------------------------------------------------------------------
+    #         Private API
+    # -------------------------------------------------------------------------
+    # def _set(self, k, v, x):
+    #     """Add a new node to subtree at `x`, associating `k` with `v`.
+    #     If `k` is in subtree rooted at `x`, change its value to `v`.
+    #
+    #     ..note:: in the non-recursive implementation, `x` will always be
+    #         `self._root`, as called from the BST parent class.
+    #     """
+    #     pass
+    #
+    # def _delete(self, k, t):
+    #     """Delete the node associated with `k`.
+    #
+    #     ..note:: Implements eager Hibbard deletion.
+    #     ..note:: in the non-recursive implementation, `t` will always be
+    #         `self._root`, as called from the BST parent class.
+    #
+    #     Raises
+    #     ------
+    #     KeyError
+    #         If `k` is not in the table.
+    #     """
+    #     pass
+    #
+    # def _delete_min(self, x=None):
+    #     """Delete the smallest key from the subtree rooted at `x`.
+    #
+    #     Returns
+    #     -------
+    #     r : _Node
+    #         The root of the subtree. Will not be equal to `x` if `x` is the
+    #         minimum key in the subtree.
+    #     """
+    #     pass
+    #
+    # def _delete_max(self, x=None):
+    #     """Delete the largest key from the subtree rooted at `x`.
+    #
+    #     Returns
+    #     -------
+    #     r : _Node
+    #         The root of the subtree. Will not be equal to `x` if `x` is the
+    #         minimum key in the subtree.
+    #     """
+    #     pass
+
+    def _find_next(self, k, x=None, s=None):
+        """Return the Node that follows `k`, None if `k` is the maximum.
+            
+        Parameters
+        ----------
+        k : key
+            key for which to find the successor Node
+        x : _Node, optional
+            root of the subtree at which to begin search
+        s : _Node, optional
+            pointer to successor of Node `k`. Used for recursion only.
+
+        Returns
+        -------
+        s : _Node
+            in-order successor of Node `k`.
+        """
+        if x is None:
+            return None
+
+        if k == x.key:
+            if x.right:
+                return self._min(x.right)  # successor is min of right subtree
+            else:
+                return s
+        elif k < x.key:
+            return self._find_next(k, x.left, x)  # update successor pointer
+        else:  # k > x.key
+            return self._find_next(k, x.right, s)
+
+    def _find_prev(self, k, x=None, s=None):
+        """Return the Node that precedes `k`, None if `k` is the minimum.
+            
+        Parameters
+        ----------
+        k : key
+            key for which to find the successor Node
+        x : _Node, optional
+            root of the subtree at which to begin search
+        s : _Node, optional
+            pointer to successor of Node `k`. Used for recursion only.
+
+        Returns
+        -------
+        s : _Node
+            in-order successor of Node `k`.
+        """
+        if x is None:
+            return None
+
+        if k == x.key:
+            if x.left:
+                return self._max(x.left)  # predecessor is max of left subtree
+            else:
+                return s
+        elif k < x.key:
+            return self._find_prev(k, x.left, s)
+        else:  # k > x.key
+            return self._find_prev(k, x.right, x)  # update predecessor pointer
+
+
+
 class BST_nr(BST):
     """Implements a binary search tree data structure, non-recursively.
 
@@ -1697,7 +1845,7 @@ if __name__ == '__main__':
         should_be(tc._cost, 1)      # test cost
 
     # ---------- Test Ordered STs ----------
-    for ST in [BinarySearchST, BST, BST_nr, ThreadedST_nr]:
+    for ST in [BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr]:
     # for ST in [BST_nr]:
         for cache in [False, True]:
         # for cache in [False]:
@@ -1855,25 +2003,27 @@ if __name__ == '__main__':
             print("{:40} || {:40}".format(str(t._get(k, t._root).next),
                                           str(t._get(k, t._root).prev)))
 
-    t = ThreadedST_nr(data)
-    test_threads(t, test_set)
+    for ST in [ThreadedST, ThreadedST_nr]:
+    # for ST in [ThreadedST]:
+        t = ST(data)
+        test_threads(t, test_set)
 
-    k, v = t.min(), t[t.min()]
-    t.delete_min()  # remove 'A'
-    test_threads(t, sorted(test_set - set(k)))
-    t[k] = v
-
-    k, v = t.max(), t[t.max()]
-    t.delete_max()  # remove 'X'
-    test_threads(t, sorted(test_set - set(k)))
-    t[k] = v
-
-    # Delete arbitrary key, starting with same tree
-    for k in test_set:
-        t = ThreadedST_nr(data)
-        v = t[k]
-        del t[k]
+        k, v = t.min(), t[t.min()]
+        t.delete_min()  # remove 'A'
         test_threads(t, sorted(test_set - set(k)))
+        t[k] = v
+
+        k, v = t.max(), t[t.max()]
+        t.delete_max()  # remove 'X'
+        test_threads(t, sorted(test_set - set(k)))
+        t[k] = v
+
+        # Delete arbitrary key, starting with same tree
+        for k in test_set:
+            t = ST(data)
+            v = t[k]
+            del t[k]
+            test_threads(t, sorted(test_set - set(k)))
 
     # Summary
     if fails > 0:
