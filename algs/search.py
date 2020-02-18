@@ -901,9 +901,6 @@ class BST():
     values.__doc__ = docstring.format(rtype='values')
     items.__doc__  = docstring.format(rtype='items')
 
-    def __iter__(self):
-        yield from self.keys()
-
     # factory for generic in-order iteration over keys
     def _make_inorder_iterator(self, rtype):
         """Create an iterator over the desired type."""
@@ -919,8 +916,7 @@ class BST():
         return iterator
 
     def _iterate(self, lo, hi, x=None, q=None, rtype='keys'):
-        """Recursively add items to the given _Queue."""
-        # Defaults
+        """Recursively range search the BST for keys between `lo` and `hi`."""
         if x is None:
             return
         if q is None:
@@ -934,6 +930,22 @@ class BST():
         if hi > x.key:
             self._iterate(lo, hi, x.right, q, rtype)
         return list(q)
+
+    # iterate as a generator function
+    #   * more efficient than `yield from self.keys()` for entire traversal
+    #     since we don't have to find the min or max keys
+    #   * also neat pythonic code!
+    def __iter__(self):
+        return self._iterate_keys(self._root)
+
+    def _iterate_keys(self, x=None):
+        """Recursively traverse the tree in order."""
+        if x is None:
+            return
+        # Yield keys in order
+        yield from self._iterate_keys(x.left)
+        yield x.key
+        yield from self._iterate_keys(x.right)
 
     # -------------------------------------------------------------------------
     #         Certification
