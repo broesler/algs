@@ -1448,6 +1448,10 @@ class BST_nr(BST):
                     break
         return list(q)
 
+    # Overwrite BST._iterate_keys recursive call
+    def __iter__(self):
+        yield from self.keys()
+
 
 # Exercise 3.2.34 extended API
 class ThreadedST_nr(BST_nr):
@@ -2004,7 +2008,6 @@ if __name__ == '__main__':
                                           str(t._get(k, t._root).prev)))
 
     for ST in [ThreadedST, ThreadedST_nr]:
-    # for ST in [ThreadedST]:
         t = ST(data)
         test_threads(t, test_set)
 
