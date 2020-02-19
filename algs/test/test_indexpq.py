@@ -37,7 +37,7 @@ def merge(streams):
 
 
 if __name__ == '__main__':
-    files = sys.argv[1:] if len(sys.argv) > 1 else sorted(glob.glob(f"test_data/m?.txt"))
+    files = sys.argv[1:] if len(sys.argv) > 1 else sorted(glob.glob(f"../data/m?.txt"))
     streams = list()
     for f in files:
         streams.append(open(f, 'r'))  # turn into stream read from file
