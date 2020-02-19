@@ -1041,15 +1041,43 @@ class ThreadedST(BST):
     # -------------------------------------------------------------------------
     #         Private API
     # -------------------------------------------------------------------------
-    # def _set(self, k, v, x):
-    #     """Add a new node to subtree at `x`, associating `k` with `v`.
-    #     If `k` is in subtree rooted at `x`, change its value to `v`.
-    #
-    #     ..note:: in the non-recursive implementation, `x` will always be
-    #         `self._root`, as called from the BST parent class.
-    #     """
-    #     pass
-    #
+    def _set(self, k, v, x=None):
+        """Add a new node to subtree at `x`, associating `k` with `v`.
+        If `k` is in subtree rooted at `x`, change its value to `v`.
+
+        Parameters
+        ----------
+        k : key
+            key for which to search
+        v : value
+            object to be associated with key `k`
+        x : _Node, optional
+            root of the subtree at which to begin search
+        """
+        # subtree is empty, create a new node
+        if x is None:
+            return self._Node(k, v)
+
+        # create a child, or update the value
+        if k < x.key:
+            x.left = self._set(k, v, x.left)
+            x.left.next = self._find_next(x.left.key, self._root)
+            x.left.prev = self._find_prev(x.left.key, self._root)
+        elif k > x.key:
+            x.right = self._set(k, v, x.right)
+            x.right.next = self._find_next(x.right.key, self._root)
+            x.right.prev = self._find_prev(x.right.key, self._root)
+        else:  # k == x.key
+            x.val = v  # update the value
+
+        # Update the size of the subtree located at the given root
+        x.N = self._size(x.left) + self._size(x.right) + 1
+        x.height = max(self._height(x.left), self._height(x.right)) + 1
+        x.next = self._find_next(x.key, self._root)
+        x.prev = self._find_prev(x.key, self._root)
+        return x
+
+
     # def _delete(self, k, t):
     #     """Delete the node associated with `k`.
     #
