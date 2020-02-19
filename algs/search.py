@@ -17,13 +17,12 @@ from algs.basics import Stack as _Stack, \
 from algs.sort import mergesort as _mergesort
 
 __all__ = ['SequentialSearchST', 'BinarySearchST', 'BST', 'BST_nr', 
-           'ThreadedST_nr']
+           'ThreadedST', 'ThreadedST_nr']
 
 # TODO
 #   * Remove `_recordclass` dependency. Create our own `Item` class.
 #   * make ST(ABC) to hold things like `size`, `is_empty`, `__len__` for all?
 #   * use collections.abc.[Keys|Values|Items]View classes?
-#   * BST implement `get` and `remove` methods like dictionaries
 
 # Private class of key/value pairs (a mutable tuple)
 _Item = _recordclass('_Item', ['key', 'value'])
@@ -372,7 +371,7 @@ class BinarySearchST():
     # -------------------------------------------------------------------------
     #         Iterator functions
     # -------------------------------------------------------------------------
-    docstring = """Return an in-order iterator over the {rtype} between the keys `lo`
+    _docstring = """Return an in-order iterator over the {rtype} between the keys `lo`
     and `hi`, inclusive. Guaranteed to be the same order as `BST.keys()`.
 
     Parameters
@@ -400,9 +399,9 @@ class BinarySearchST():
         func = self._make_inorder_iterator(rtype='items')
         return func(self, lo, hi)
 
-    keys.__doc__   = docstring.format(rtype='keys')
-    values.__doc__ = docstring.format(rtype='values')
-    items.__doc__  = docstring.format(rtype='items')
+    keys.__doc__   = _docstring.format(rtype='keys')
+    values.__doc__ = _docstring.format(rtype='values')
+    items.__doc__  = _docstring.format(rtype='items')
 
     def __iter__(self):
         """Return an iterator of all of the keys in the table."""
@@ -871,7 +870,7 @@ class BST():
     # -------------------------------------------------------------------------
     #         Iterator functions
     # -------------------------------------------------------------------------
-    docstring = """Return an in-order iterator over the {rtype} between the
+    _docstring = """Return an in-order iterator over the {rtype} between the
     keys `lo` and `hi`, inclusive. Guaranteed to be the same order as
     `BST.keys()`.
 
@@ -900,9 +899,9 @@ class BST():
         func = self._make_inorder_iterator(rtype='items')
         return func(self, lo, hi)
 
-    keys.__doc__   = docstring.format(rtype='keys')
-    values.__doc__ = docstring.format(rtype='values')
-    items.__doc__  = docstring.format(rtype='items')
+    keys.__doc__   = _docstring.format(rtype='keys')
+    values.__doc__ = _docstring.format(rtype='values')
+    items.__doc__  = _docstring.format(rtype='items')
 
     # factory for generic in-order iteration over keys
     def _make_inorder_iterator(self, rtype):
