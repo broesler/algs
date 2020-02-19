@@ -24,9 +24,9 @@ SAVE_FIGS = False
 if SAVE_FIGS:
     plt.close('all')
 
-# filename = Path('data/tiny_tale.txt')  # 292
-filename = Path('data/tale.txt')       # 779K
-# filename = Path('data/leipzig1m.txt')  # 124M
+# filename = Path('../data/tiny_tale.txt')  # 292
+filename = Path('../data/tale.txt')       # 779K
+# filename = Path('../data/leipzig1m.txt')  # 124M
 
 tag = filename.stem
 

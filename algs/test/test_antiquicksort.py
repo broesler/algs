@@ -18,13 +18,13 @@ import matplotlib.pyplot as plt
 from algs.sort import is_sorted, quicksort
 
 # TODO separate data building from timing.
-files = [('test_data/antiquicksort10K.txt',     10_000),
-         ('test_data/antiquicksort20K.txt',     20_000),
-         ('test_data/antiquicksort50K.txt',     50_000),
-         ('test_data/antiquicksort100K.txt',   100_000)] #,
-         # ('test_data/antiquicksort250K.txt',   250_000),
-         # ('test_data/antiquicksort500K.txt',   500_000),
-         # ('test_data/antiquicksort1M.txt',   1_000_000)]
+files = [('../data/antiquicksort10K.txt',     10_000),
+         ('../data/antiquicksort20K.txt',     20_000),
+         ('../data/antiquicksort50K.txt',     50_000),
+         ('../data/antiquicksort100K.txt',   100_000)] #,
+         # ('../data/antiquicksort250K.txt',   250_000),
+         # ('../data/antiquicksort500K.txt',   500_000),
+         # ('../data/antiquicksort1M.txt',   1_000_000)]
 
 runtimes = np.zeros([len(files), 2])
 for i, f in enumerate(files):

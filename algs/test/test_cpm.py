@@ -11,7 +11,7 @@
 
 from algs import Digraph, AcyclicPath
 
-filename = 'test_data/jobsPC.txt'
+filename = '../data/jobsPC.txt'
 
 G = Digraph()
 with open(filename, 'r') as file:

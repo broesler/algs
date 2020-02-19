@@ -29,8 +29,8 @@ def load_graph(filename):
 
 # Load test file
 # TODO loop over all test files
-G = load_graph('test_data/tinyDG.txt')
-# G = load_graph('test_data/mediumDG.txt')
+G = load_graph('../data/tinyDG.txt')
+# G = load_graph('../data/mediumDG.txt')
 
 sources = G.roots()
 # assert s == 7  # only for tinyDG.txt
@@ -66,13 +66,13 @@ bfs_o = BreadthFirstSearch(G, [s], ordered=True)
 # bfs_o.print_paths()
 
 # Test TopologicalOrder
-DAG = load_graph('test_data/tinyDAG.txt')
+DAG = load_graph('../data/tinyDAG.txt')
 topo = TopologicalOrder(DAG)
 assert topo
 print('order: ', topo)
 
 # Test EWD
-EG = load_graph('test_data/tinyEWDAG.txt')
+EG = load_graph('../data/tinyEWDAG.txt')
 s = EG.roots()
 assert len(s) == 1
 ap = AcyclicPath(EG, s[0], kind='max')

@@ -16,9 +16,9 @@ import pickle
 from algs.search import SequentialSearchST, BinarySearchST
 from frequency_counter import FrequencyCounter
 
-filenames = ['data/tiny_tale.txt',  # 292
-             'data/tale.txt']       # 779K
-             # 'data/leipzig1m.txt']  # 124M
+filenames = ['../data/tiny_tale.txt',  # 292
+             '../data/tale.txt']       # 779K
+             # '../data/leipzig1m.txt']  # 124M
 
 tags = [os.path.splitext(os.path.basename(x))[0] for x in filenames]
 cols = pd.MultiIndex.from_product([tags, ['words', 'distinct', 'max_word', 'max_freq']])
