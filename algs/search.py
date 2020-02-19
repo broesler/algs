@@ -16,7 +16,8 @@ from algs.basics import Stack as _Stack, \
                         _empty_check
 from algs.sort import mergesort as _mergesort
 
-__all__ = ['SequentialSearchST', 'BinarySearchST', 'BST', 'BST_nr']
+__all__ = ['SequentialSearchST', 'BinarySearchST', 'BST', 'BST_nr', 
+           'ThreadedST_nr']
 
 # TODO
 #   * Remove `_recordclass` dependency. Create our own `Item` class.
@@ -849,11 +850,14 @@ class BST():
         """Return the height of the tree rooted at `x`."""
         return 0 if x is None else x.height
 
-    def _level_order(self):
+    # Exercise 3.2.37
+    def level_order(self, x=None):
         """Return an iterator over the keys in level-order (breadth-first)."""
+        if x is None:
+            x = self._root
         keys = _Queue()
         q = _Queue()
-        q.enqueue(self._root)
+        q.enqueue(x)
         while q:
             x = q.dequeue()
             if x is None:
@@ -899,9 +903,6 @@ class BST():
     values.__doc__ = docstring.format(rtype='values')
     items.__doc__  = docstring.format(rtype='items')
 
-    def __iter__(self):
-        yield from self.keys()
-
     # factory for generic in-order iteration over keys
     def _make_inorder_iterator(self, rtype):
         """Create an iterator over the desired type."""
@@ -917,8 +918,7 @@ class BST():
         return iterator
 
     def _iterate(self, lo, hi, x=None, q=None, rtype='keys'):
-        """Recursively add items to the given _Queue."""
-        # Defaults
+        """Recursively range search the BST for keys between `lo` and `hi`."""
         if x is None:
             return
         if q is None:
@@ -932,6 +932,22 @@ class BST():
         if hi > x.key:
             self._iterate(lo, hi, x.right, q, rtype)
         return list(q)
+
+    # iterate as a generator function
+    #   * more efficient than `yield from self.keys()` for entire traversal
+    #     since we don't have to find the min or max keys
+    #   * also neat pythonic code!
+    def __iter__(self):
+        return self._iterate_keys(self._root)
+
+    def _iterate_keys(self, x=None):
+        """Recursively traverse the tree in order."""
+        if x is None:
+            return
+        # Yield keys in order
+        yield from self._iterate_keys(x.left)
+        yield x.key
+        yield from self._iterate_keys(x.right)
 
     # -------------------------------------------------------------------------
     #         Certification
@@ -982,6 +998,154 @@ class BST():
                 return False
             p = k  # track perviously seen key
         return True
+
+
+# Exercise 3.2.34 extended API
+class ThreadedST(BST):
+    """Implements an extended binary search tree data structure, where the
+    nodes contain pointers to their successor and predecessor.
+
+    Parameters
+    ----------
+    items : mapping, dict-like
+        Iterable of (key, value) tuples to be put onto the tree.
+
+    Attributes
+    ----------
+    size : int
+        Number of items on the tree.
+    height : int
+        The height of the binary tree == maximum path length ~ lg N
+    is_empty : bool
+        True if `size == 0`.
+    """
+    # Add predecessor and successor nodes
+    class _Node(BST._Node):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.next = None  # in-order successor
+            self.prev = None  # in-order predecessor
+
+    def next(self, k):
+        """Return the key that follows `k`, None if `k` is the maximum."""
+        # x = self._get(k, self._root).next
+        x = self._find_next(k, self._root)
+        return x.key if x else None
+
+    def prev(self, k):
+        """Return the key that precedes `k`, None if `k` is the minimum."""
+        # x = self._get(k, self._root).prev
+        x = self._find_prev(k, self._root)
+        return x.key if x else None
+
+    # -------------------------------------------------------------------------
+    #         Private API
+    # -------------------------------------------------------------------------
+    # def _set(self, k, v, x):
+    #     """Add a new node to subtree at `x`, associating `k` with `v`.
+    #     If `k` is in subtree rooted at `x`, change its value to `v`.
+    #
+    #     ..note:: in the non-recursive implementation, `x` will always be
+    #         `self._root`, as called from the BST parent class.
+    #     """
+    #     pass
+    #
+    # def _delete(self, k, t):
+    #     """Delete the node associated with `k`.
+    #
+    #     ..note:: Implements eager Hibbard deletion.
+    #     ..note:: in the non-recursive implementation, `t` will always be
+    #         `self._root`, as called from the BST parent class.
+    #
+    #     Raises
+    #     ------
+    #     KeyError
+    #         If `k` is not in the table.
+    #     """
+    #     pass
+    #
+    # def _delete_min(self, x=None):
+    #     """Delete the smallest key from the subtree rooted at `x`.
+    #
+    #     Returns
+    #     -------
+    #     r : _Node
+    #         The root of the subtree. Will not be equal to `x` if `x` is the
+    #         minimum key in the subtree.
+    #     """
+    #     pass
+    #
+    # def _delete_max(self, x=None):
+    #     """Delete the largest key from the subtree rooted at `x`.
+    #
+    #     Returns
+    #     -------
+    #     r : _Node
+    #         The root of the subtree. Will not be equal to `x` if `x` is the
+    #         minimum key in the subtree.
+    #     """
+    #     pass
+
+    def _find_next(self, k, x=None, s=None):
+        """Return the Node that follows `k`, None if `k` is the maximum.
+            
+        Parameters
+        ----------
+        k : key
+            key for which to find the successor Node
+        x : _Node, optional
+            root of the subtree at which to begin search
+        s : _Node, optional
+            pointer to successor of Node `k`. Used for recursion only.
+
+        Returns
+        -------
+        s : _Node
+            in-order successor of Node `k`.
+        """
+        if x is None:
+            return None
+
+        if k == x.key:
+            if x.right:
+                return self._min(x.right)  # successor is min of right subtree
+            else:
+                return s
+        elif k < x.key:
+            return self._find_next(k, x.left, x)  # update successor pointer
+        else:  # k > x.key
+            return self._find_next(k, x.right, s)
+
+    def _find_prev(self, k, x=None, s=None):
+        """Return the Node that precedes `k`, None if `k` is the minimum.
+            
+        Parameters
+        ----------
+        k : key
+            key for which to find the successor Node
+        x : _Node, optional
+            root of the subtree at which to begin search
+        s : _Node, optional
+            pointer to successor of Node `k`. Used for recursion only.
+
+        Returns
+        -------
+        s : _Node
+            in-order successor of Node `k`.
+        """
+        if x is None:
+            return None
+
+        if k == x.key:
+            if x.left:
+                return self._max(x.left)  # predecessor is max of left subtree
+            else:
+                return s
+        elif k < x.key:
+            return self._find_prev(k, x.left, s)
+        else:  # k > x.key
+            return self._find_prev(k, x.right, x)  # update predecessor pointer
+
 
 
 class BST_nr(BST):
@@ -1260,6 +1424,7 @@ class BST_nr(BST):
     # -------------------------------------------------------------------------
     #         Iterator
     # -------------------------------------------------------------------------
+    # Exercise 3.2.36
     def _iterate(self, lo, hi, rtype='keys', **kwargs):
         """Add items to a Queue, in key-order from `lo` to `hi`."""
         q = _Queue()    # the output queue
@@ -1282,6 +1447,10 @@ class BST_nr(BST):
                 else:
                     break
         return list(q)
+
+    # Overwrite BST._iterate_keys recursive call
+    def __iter__(self):
+        yield from self.keys()
 
 
 # Exercise 3.2.34 extended API
@@ -1310,6 +1479,19 @@ class ThreadedST_nr(BST_nr):
             self.next = None  # in-order successor
             self.prev = None  # in-order predecessor
 
+    def next(self, k):
+        """Return the key that follows `k`, None if `k` is the maximum."""
+        x = self._get(k, self._root).next
+        return x.key if x else None
+
+    def prev(self, k):
+        """Return the key that precedes `k`, None if `k` is the minimum."""
+        x = self._get(k, self._root).prev
+        return x.key if x else None
+
+    # -------------------------------------------------------------------------
+    #         Private API
+    # -------------------------------------------------------------------------
     def _set(self, k, v, x):
         """Add a new node to subtree at `x`, associating `k` with `v`.
         If `k` is in subtree rooted at `x`, change its value to `v`.
@@ -1489,25 +1671,6 @@ class ThreadedST_nr(BST_nr):
             x.prev.next = x.next
         return r
 
-    def next(self, k):
-        """Return the key that follows `k`, None if `k` is the maximum."""
-        x = self._get(k, self._root).next
-        if x is None:
-            return None
-        else:
-            return x.key
-
-    def prev(self, k):
-        """Return the key that precedes `k`, None if `k` is the minimum."""
-        x = self._get(k, self._root).prev
-        if x is None:
-            return None
-        else:
-            return x.key
-
-    # -------------------------------------------------------------------------
-    #         Private API
-    # -------------------------------------------------------------------------
     def _find_next(self, k):
         """Return the Node that follows `k`, None if `k` is the maximum."""
         s = _Stack()  # track all nodes on path for updates
@@ -1686,7 +1849,7 @@ if __name__ == '__main__':
         should_be(tc._cost, 1)      # test cost
 
     # ---------- Test Ordered STs ----------
-    for ST in [BinarySearchST, BST, BST_nr, ThreadedST_nr]:
+    for ST in [BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr]:
     # for ST in [BST_nr]:
         for cache in [False, True]:
         # for cache in [False]:
@@ -1767,7 +1930,7 @@ if __name__ == '__main__':
                 should_be(t.height, 6)      # Node attribute method, as a property
                 should_be(t.height_r(), 6)  # recursive method
                 should_be(t.isBST(), True)
-                should_be(list(t._level_order()), list('SEXARCHMLP'))
+                should_be(list(t.level_order()), list('SEXARCHMLP'))
 
             # In-order traversal
             should_be(list(t.keys()), sorted(test_set))
@@ -1844,25 +2007,26 @@ if __name__ == '__main__':
             print("{:40} || {:40}".format(str(t._get(k, t._root).next),
                                           str(t._get(k, t._root).prev)))
 
-    t = ThreadedST_nr(data)
-    test_threads(t, test_set)
+    for ST in [ThreadedST, ThreadedST_nr]:
+        t = ST(data)
+        test_threads(t, test_set)
 
-    k, v = t.min(), t[t.min()]
-    t.delete_min()  # remove 'A'
-    test_threads(t, sorted(test_set - set(k)))
-    t[k] = v
-
-    k, v = t.max(), t[t.max()]
-    t.delete_max()  # remove 'X'
-    test_threads(t, sorted(test_set - set(k)))
-    t[k] = v
-
-    # Delete arbitrary key, starting with same tree
-    for k in test_set:
-        t = ThreadedST_nr(data)
-        v = t[k]
-        del t[k]
+        k, v = t.min(), t[t.min()]
+        t.delete_min()  # remove 'A'
         test_threads(t, sorted(test_set - set(k)))
+        t[k] = v
+
+        k, v = t.max(), t[t.max()]
+        t.delete_max()  # remove 'X'
+        test_threads(t, sorted(test_set - set(k)))
+        t[k] = v
+
+        # Delete arbitrary key, starting with same tree
+        for k in test_set:
+            t = ST(data)
+            v = t[k]
+            del t[k]
+            test_threads(t, sorted(test_set - set(k)))
 
     # Summary
     if fails > 0:
