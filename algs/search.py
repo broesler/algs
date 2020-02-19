@@ -21,7 +21,10 @@ __all__ = ['SequentialSearchST', 'BinarySearchST', 'BST', 'BST_nr',
 
 # TODO
 #   * Remove `_recordclass` dependency. Create our own `Item` class.
-#   * make ST(ABC) to hold things like `size`, `is_empty`, `__len__` for all?
+#   * make ST(ABC) out of MutableMapping? to hold things like `size`,
+#     `is_empty`, `__len__` for all?
+#   * implement `clear`, `copy`, `get`, `popitem`, `__reverse__`,
+#     `setdefault`, and `update` like true dictionaries
 #   * use collections.abc.[Keys|Values|Items]View classes?
 
 # Private class of key/value pairs (a mutable tuple)
