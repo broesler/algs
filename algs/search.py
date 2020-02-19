@@ -1028,14 +1028,12 @@ class ThreadedST(BST):
 
     def next(self, k):
         """Return the key that follows `k`, None if `k` is the maximum."""
-        # x = self._get(k, self._root).next
-        x = self._find_next(k, self._root)
+        x = self._get(k, self._root).next
         return x.key if x else None
 
     def prev(self, k):
         """Return the key that precedes `k`, None if `k` is the minimum."""
-        # x = self._get(k, self._root).prev
-        x = self._find_prev(k, self._root)
+        x = self._get(k, self._root).prev
         return x.key if x else None
 
     # -------------------------------------------------------------------------
@@ -1091,28 +1089,48 @@ class ThreadedST(BST):
     #         If `k` is not in the table.
     #     """
     #     pass
-    #
-    # def _delete_min(self, x=None):
-    #     """Delete the smallest key from the subtree rooted at `x`.
-    #
-    #     Returns
-    #     -------
-    #     r : _Node
-    #         The root of the subtree. Will not be equal to `x` if `x` is the
-    #         minimum key in the subtree.
-    #     """
-    #     pass
-    #
-    # def _delete_max(self, x=None):
-    #     """Delete the largest key from the subtree rooted at `x`.
-    #
-    #     Returns
-    #     -------
-    #     r : _Node
-    #         The root of the subtree. Will not be equal to `x` if `x` is the
-    #         minimum key in the subtree.
-    #     """
-    #     pass
+    
+    def _delete_min(self, x=None):
+        """Delete the smallest key from the subtree rooted at `x`.
+
+        Returns
+        -------
+        r : _Node
+            The root of the subtree. Will not be equal to `x` if `x` is the
+            minimum key in the subtree.
+        """
+        if x.left is None:
+            # Update threads
+            if x.next:
+                x.next.prev = x.prev
+            if x.prev:
+                x.prev.next = x.next
+            return x.right
+        x.left = self._delete_min(x.left)
+        # Update the size of the subtree located at the given root
+        x.N = self._size(x.left) + self._size(x.right) + 1
+        return x
+
+    def _delete_max(self, x=None):
+        """Delete the largest key from the subtree rooted at `x`.
+
+        Returns
+        -------
+        r : _Node
+            The root of the subtree. Will not be equal to `x` if `x` is the
+            minimum key in the subtree.
+        """
+        if x.right is None:
+            # Update threads
+            if x.next:
+                x.next.prev = x.prev
+            if x.prev:
+                x.prev.next = x.next
+            return x.left
+        x.right = self._delete_max(x.right)
+        # Update the size of the subtree located at the given root
+        x.N = self._size(x.left) + self._size(x.right) + 1
+        return x
 
     def _find_next(self, k, x=None, s=None):
         """Return the Node that follows `k`, None if `k` is the maximum.
