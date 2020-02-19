@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #==============================================================================
-#     File: test_indexpq.py
+#     File: indexpq_merge.py
 #  Created: 2019-05-22 23:07
 #   Author: Bernie Roesler
 #
