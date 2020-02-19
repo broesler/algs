@@ -1105,15 +1105,14 @@ class ThreadedST(BST):
         """
         if x is None:
             return None
-
-        if k == x.key:
+        if k < x.key:
+            return self._find_next(k, x.left, x)  # update successor pointer
+        elif k == x.key:
             if x.right:
                 return self._min(x.right)  # successor is min of right subtree
             else:
                 return s
-        elif k < x.key:
-            return self._find_next(k, x.left, x)  # update successor pointer
-        else:  # k > x.key
+        else:  # k > x.key:
             return self._find_next(k, x.right, s)
 
     def _find_prev(self, k, x=None, s=None):
@@ -1135,17 +1134,15 @@ class ThreadedST(BST):
         """
         if x is None:
             return None
-
-        if k == x.key:
+        if k < x.key:
+            return self._find_prev(k, x.left, s)
+        elif k == x.key:
             if x.left:
                 return self._max(x.left)  # predecessor is max of left subtree
             else:
                 return s
-        elif k < x.key:
-            return self._find_prev(k, x.left, s)
         else:  # k > x.key
             return self._find_prev(k, x.right, x)  # update predecessor pointer
-
 
 
 class BST_nr(BST):
@@ -1850,9 +1847,7 @@ if __name__ == '__main__':
 
     # ---------- Test Ordered STs ----------
     for ST in [BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr]:
-    # for ST in [BST_nr]:
         for cache in [False, True]:
-        # for cache in [False]:
             t = ST()
             # Test bad input type
             err_test(t, '__init__', list('BADEXAMPLE'), err_type=ValueError)
