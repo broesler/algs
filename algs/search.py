@@ -23,6 +23,7 @@ __all__ = ['SequentialSearchST', 'BinarySearchST', 'BST', 'BST_nr',
 #   * Remove `_recordclass` dependency. Create our own `Item` class.
 #   * make ST(ABC) to hold things like `size`, `is_empty`, `__len__` for all?
 #   * use collections.abc.[Keys|Values|Items]View classes?
+#   * BST implement `get` and `remove` methods like dictionaries
 
 # Private class of key/value pairs (a mutable tuple)
 _Item = _recordclass('_Item', ['key', 'value'])
@@ -1076,19 +1077,53 @@ class ThreadedST(BST):
         return x
 
 
-    # def _delete(self, k, t):
-    #     """Delete the node associated with `k`.
-    #
-    #     ..note:: Implements eager Hibbard deletion.
-    #     ..note:: in the non-recursive implementation, `t` will always be
-    #         `self._root`, as called from the BST parent class.
-    #
-    #     Raises
-    #     ------
-    #     KeyError
-    #         If `k` is not in the table.
-    #     """
-    #     pass
+    def _delete(self, k, x=None):
+        """Delete the node associated with `k`.
+
+        ..note:: Implements eager Hibbard deletion.
+
+        Raises
+        ------
+        KeyError
+            If `k` is not in the table.
+        """
+        if x is None:
+            return
+        if k < x.key:
+            x.left = self._delete(k, x.left)
+        elif k > x.key:
+            x.right = self._delete(k, x.right)
+        else:
+            if x.left is None:
+                # Update threads
+                if x.next:
+                    x.next.prev = x.prev
+                if x.prev:
+                    x.prev.next = x.next
+                return x.right
+            if x.right is None:
+                # Update threads
+                if x.next:
+                    x.next.prev = x.prev
+                if x.prev:
+                    x.prev.next = x.next
+                return x.left
+            # save pointer to Node to be deleted
+            t = x
+            # Get the successor to the node to be deleted
+            x = self._min(t.right)
+            x.right = self._delete_min(t.right)
+            x.left = t.left
+            # Update Threads: _delete_min frees x, so reattach it
+            x.next = t.next
+            x.prev = t.prev
+            if t.next:
+                t.next.prev = x
+            if t.prev:
+                t.prev.next = x
+        # Update the size of the subtree located at the given root
+        x.N = self._size(x.left) + self._size(x.right) + 1
+        return x
     
     def _delete_min(self, x=None):
         """Delete the smallest key from the subtree rooted at `x`.
