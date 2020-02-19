@@ -624,12 +624,38 @@ class BST():
         """
         return self._select(r, self._root).key
 
+    def pop(self, k, *args):
+        """Delete the node associated with `k`, and return its value. If the
+        key is not in the table, return the given default value.
+
+        ..note:: Implements eager Hibbard deletion.
+
+        Raises
+        ------
+        KeyError
+            If `k` is not in the table, and default is not given.
+        """
+        try:
+            _empty_check(self)
+            v = self.__getitem__(k)
+            self._root = self._delete(k, self._root)
+            if self._CACHE_FLAG and self._cache and k == self._cache.key:
+                self._cache = None
+            return v
+        except (IndexError, KeyError) as e:
+            if len(args) == 0:
+                raise e
+            elif len(args) == 1:
+                return args[0]
+            else:  # len(args) > 0
+                raise TypeError(f"pop expected at most 2 arguments, got {len(args)+1}")
+
     def delete_min(self):
         """Delete the smallest key.
 
         Raises
         ------
-        KeyError
+        IndexError
             If the table is empty.
         """
         _empty_check(self)
@@ -642,7 +668,7 @@ class BST():
 
         Raises
         ------
-        KeyError
+        IndexError
             If the table is empty.
         """
         _empty_check(self)
