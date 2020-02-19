@@ -39,6 +39,7 @@ class MedianPQ():
         self._v = None  # the median item
         self._large = _PQ(kind='min')  # store items > self._v
         self._small = _PQ(kind='max')  # store items < self._v
+        self._key = key or (lambda x: x)
         for k in items:
             self.enqueue(k)
 
@@ -64,13 +65,13 @@ class MedianPQ():
             self._v = k
             return
 
-        if k < self._v:
+        if self._key(k) < self._key(self._v):
             self._small.enqueue(k)
             if self._small.size > self._large.size:
                 # shift values to the right
                 self._large.enqueue(self._v)
                 self._v = self._small.dequeue()
-        elif k > self._v:
+        elif self._key(k) > self._key(self._v):
             self._large.enqueue(k)
             if self._large.size > self._small.size:
                 # shift values to the left
@@ -139,6 +140,7 @@ if __name__ == '__main__':
             raise e
 
     # m = MedianPQ(string.ascii_uppercase[:11])
+    # TODO test with, say, tuples as input to use key for sorting
     m = MedianPQ(range(11))
     should_be(m.is_empty, False)
     should_be(len(m), 11)
