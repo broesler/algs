@@ -1065,6 +1065,14 @@ class ThreadedST(BST):
         x = self._get(k, self._root).prev
         return x.key if x else None
 
+    def print_threads(self):
+        """Print the next/prev nodes for each key in the tree."""
+        print("k  {:40}    {:40}".format('prev', 'next'))
+        for k in self.keys():
+            print("{}: {:40} || {:40}"
+                    .format(k, str(self._get(k, self._root).prev),
+                               str(self._get(k, self._root).next)))
+
     # -------------------------------------------------------------------------
     #         Private API
     # -------------------------------------------------------------------------
@@ -1595,6 +1603,14 @@ class ThreadedST_nr(BST_nr):
         x = self._get(k, self._root).prev
         return x.key if x else None
 
+    def print_threads(self):
+        """Print the next/prev nodes for each key in the tree."""
+        print("k  {:40}    {:40}".format('prev', 'next'))
+        for k in self.keys():
+            print("{}: {:40} || {:40}"
+                    .format(k, str(self._get(k, self._root).prev),
+                               str(self._get(k, self._root).next)))
+
     # -------------------------------------------------------------------------
     #         Private API
     # -------------------------------------------------------------------------
@@ -1847,7 +1863,6 @@ class ThreadedST_nr(BST_nr):
                 else:
                     break
         return list(q)
-
 
 # -----------------------------------------------------------------------------
 #         Test Functions
@@ -2104,12 +2119,6 @@ if __name__ == '__main__':
         for i, k in enumerate(keys[:-1]):
             should_be(t.prev(k), keys[i+1])
         should_be(t.prev(keys[-1]), None)
-
-    def print_threads(t):
-        """Print the next/prev nodes for each key in the tree."""
-        for k in t.keys():
-            print("{:40} || {:40}".format(str(t._get(k, t._root).next),
-                                          str(t._get(k, t._root).prev)))
 
     for ST in [ThreadedST, ThreadedST_nr]:
         t = ST(data)
