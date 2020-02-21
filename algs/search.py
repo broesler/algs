@@ -25,6 +25,7 @@ __all__ = ['SequentialSearchST', 'BinarySearchST', 'BST', 'BST_nr',
 #     `is_empty`, `__len__` for all?
 #   * implement `clear`, `copy`, `get`, `popitem`, `__reverse__`,
 #     `setdefault`, and `update` like true dictionaries
+#   * implement `t.put(k, v)` method instead of just t[k] = v assignment
 #   * use collections.abc.[Keys|Values|Items]View classes?
 
 # Private class of key/value pairs (a mutable tuple)
@@ -540,7 +541,7 @@ class BST():
             self._cache.val = v
             return
         else:
-            self._set(k, v, self._root)
+            self._root = self._set(k, v, self._root)
 
     def __delitem__(self, k):
         """Delete the node associated with `k`.
@@ -1990,6 +1991,10 @@ if __name__ == '__main__':
             should_be(t.ceil('A'),  None)
             should_be(t.rank('A'),  0)
             err_test(t, 'select', 0, err_type=IndexError)
+
+            # Test insert/get single node
+            t['A'] = 0
+            should_be(t['A'], 0)
 
             # Test construction by list of tuples
             t = ST(data, cache=cache)
