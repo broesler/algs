@@ -1587,30 +1587,12 @@ class ThreadedST_nr(BST_nr):
     is_empty : bool
         True if `size == 0`.
     """
-    # Add predecessor and successor nodes
-    class _Node(BST._Node):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-            self.next = None  # in-order successor
-            self.prev = None  # in-order predecessor
-
-    def next(self, k):
-        """Return the key that follows `k`, None if `k` is the maximum."""
-        x = self._get(k, self._root).next
-        return x.key if x else None
-
-    def prev(self, k):
-        """Return the key that precedes `k`, None if `k` is the minimum."""
-        x = self._get(k, self._root).prev
-        return x.key if x else None
-
-    def print_threads(self):
-        """Print the next/prev nodes for each key in the tree."""
-        print("k  {:40}    {:40}".format('prev', 'next'))
-        for k in self.keys():
-            print("{}: {:40} || {:40}"
-                    .format(k, str(self._get(k, self._root).prev),
-                               str(self._get(k, self._root).next)))
+    # Re-use classes/methods from ThreadedST, but do *not* sub-class so we
+    # retain non-recursive methods from BST_nr.
+    _Node = ThreadedST._Node
+    next = ThreadedST.next
+    prev = ThreadedST.prev
+    print_threads = ThreadedST.print_threads
 
     # -------------------------------------------------------------------------
     #         Private API
