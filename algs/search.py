@@ -882,7 +882,7 @@ class BST():
 
     # Exercise 3.2.37
     def level_order(self, x=None):
-        """Return an iterator over the keys in level-order (breadth-first)."""
+        """Iterate over the keys in level-order (breadth-first)."""
         if x is None:
             x = self._root
         keys = _Queue()
