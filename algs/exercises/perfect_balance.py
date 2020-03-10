@@ -58,6 +58,8 @@ if __name__ == '__main__':
     t = make_balanced_tree(a)
     print(t.level_order())
     assert(t.height == 5)
+    # Make sure the tree is balanced
+    assert(abs(t._size(t._root.left) - t._size(t._root.right)) < 2)
 
 # =============================================================================
 # =============================================================================
