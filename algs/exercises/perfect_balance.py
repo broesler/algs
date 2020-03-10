@@ -12,6 +12,7 @@
 from algs.search import BST
 from algs.sort import qsort
 
+
 def make_balanced_tree(a):
     """Return a perfectly balanced BST of the items in `a`."""
     return _make_balanced_tree(qsort(a), 0, len(a)-1)
@@ -48,6 +49,24 @@ def _make_balanced_tree(a, lo, hi, t=None):
     return t
 
 
+def is_balanced(t=None):
+    """Return True if `t` is perfectly balanced."""
+    return _is_balanced(t._root)
+
+
+def _is_balanced(x=None):
+    """Return True if subtree rooted at `x` is perfectly balanced."""
+    if x is None:
+        return True
+
+    if (abs(BST._size(x.left) - BST._size(x.right)) < 2
+       and _is_balanced(x.left)
+       and _is_balanced(x.right)):
+        return True
+
+    return False
+
+
 if __name__ == '__main__':
     import string
     from random import shuffle
@@ -59,7 +78,7 @@ if __name__ == '__main__':
     print(t.level_order())
     assert(t.height == 5)
     # Make sure the tree is balanced
-    assert(abs(t._size(t._root.left) - t._size(t._root.right)) < 2)
+    assert(is_balanced(t))
 
 # =============================================================================
 # =============================================================================
