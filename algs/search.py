@@ -680,9 +680,32 @@ class BST():
         if self._CACHE_FLAG:
             self._cache = None
 
+    # Exercise 3.2.6
     def height_r(self):
         """Determine the height of the BST recursively, in O(n) time."""
         return self._height_r(self._root)
+
+    # Exercise 3.2.25
+    def is_balanced(self):
+        """Return True if tree is perfectly balanced."""
+        return self._is_balanced(self._root)
+
+    # Exercise 3.2.37
+    def level_order(self, x=None):
+        """Iterate over the keys in level-order (breadth-first)."""
+        if x is None:
+            x = self._root
+        keys = _Queue()
+        q = _Queue()
+        q.enqueue(x)
+        while q:
+            x = q.dequeue()
+            if x is None:
+                continue
+            keys.enqueue(x.key)
+            q.enqueue(x.left)
+            q.enqueue(x.right)
+        return list(keys)
 
     # -------------------------------------------------------------------------
     #         Private API
@@ -880,11 +903,6 @@ class BST():
         """Return the height of the tree rooted at `x`."""
         return 0 if x is None else x.height
 
-    # Exercise 3.2.25 helper
-    def is_balanced(self):
-        """Return True if tree is perfectly balanced."""
-        return self._is_balanced(self._root)
-
     def _is_balanced(self, x=None):
         """Return True if subtree rooted at `x` is perfectly balanced."""
         if x is None:
@@ -894,22 +912,6 @@ class BST():
         else:
             return self._is_balanced(x.left) and self._is_balanced(x.right)
 
-    # Exercise 3.2.37
-    def level_order(self, x=None):
-        """Iterate over the keys in level-order (breadth-first)."""
-        if x is None:
-            x = self._root
-        keys = _Queue()
-        q = _Queue()
-        q.enqueue(x)
-        while q:
-            x = q.dequeue()
-            if x is None:
-                continue
-            keys.enqueue(x.key)
-            q.enqueue(x.left)
-            q.enqueue(x.right)
-        return list(keys)
 
     # -------------------------------------------------------------------------
     #         Iterator functions
