@@ -690,6 +690,17 @@ class BST():
         """Return True if tree is perfectly balanced."""
         return self._is_balanced(self._root)
 
+    def center_of_mass(self):
+        """Return the left-to-right 'center of mass' of the tree.
+        
+        .. note:: negative values count nodes to the left of the root, positive
+            values count nodes to the right of the root. Values of {-1, 0, 1}
+            do *not* necessarily mean a balanced tree. Draw the tree with the
+            input string 'AXCSERH' as an example.
+        """
+        _empty_check(self)
+        return self._center_of_mass(self._root) / (t.size - 1)
+
     # Exercise 3.2.37
     def level_order(self, x=None):
         """Iterate over the keys in level-order (breadth-first)."""
@@ -912,6 +923,15 @@ class BST():
         else:
             return self._is_balanced(x.left) and self._is_balanced(x.right)
 
+    def _center_of_mass(self, x=None, c=0):
+        """Return the center of mass of the subtree rooted at `x`."""
+        if x is None:
+            return 0
+        L = 0 if x.left is None else  x.left.N
+        R = 0 if x.right is None else x.right.N
+        return (R - L
+                + self._center_of_mass(x.left) 
+                + self._center_of_mass(x.right))
 
     # -------------------------------------------------------------------------
     #         Iterator functions
