@@ -880,6 +880,20 @@ class BST():
         """Return the height of the tree rooted at `x`."""
         return 0 if x is None else x.height
 
+    # Exercise 3.2.25 helper
+    def is_balanced(self):
+        """Return True if tree is perfectly balanced."""
+        return self._is_balanced(self._root)
+
+    def _is_balanced(self, x=None):
+        """Return True if subtree rooted at `x` is perfectly balanced."""
+        if x is None:
+            return True
+        elif abs(self._size(x.left) - self._size(x.right)) > 1:
+            return False
+        else:
+            return self._is_balanced(x.left) and self._is_balanced(x.right)
+
     # Exercise 3.2.37
     def level_order(self, x=None):
         """Iterate over the keys in level-order (breadth-first)."""
@@ -980,7 +994,7 @@ class BST():
         yield from self._iterate_keys(x.right)
 
     # -------------------------------------------------------------------------
-    #         Certification
+    #         Certification (see Exercises 3.2.29 -- 3.2.32)
     # -------------------------------------------------------------------------
     def isBST(self):
         """Assert that all of the binary search tree properties hold."""
@@ -1026,7 +1040,7 @@ class BST():
         for i, k in enumerate(self.keys()):
             if i > 0 and p > k:
                 return False
-            p = k  # track perviously seen key
+            p = k  # track previously seen key
         return True
 
 

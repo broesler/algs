@@ -5,7 +5,7 @@
 #   Author: Bernie Roesler
 #
 """
-  Description: Insert items into a BST with "perfect" balance.
+  Description: Insert items into a BST with "perfect" balance. Exercise 3.2.25.
 """
 # =============================================================================
 
@@ -48,37 +48,12 @@ def _make_balanced_tree(a, lo, hi, t=None):
     _make_balanced_tree(a, mid + 1, hi, t)
     return t
 
-
-def is_balanced(t=None):
-    """Return True if `t` is perfectly balanced."""
-    return _is_balanced(t._root)
-
-
-def _is_balanced(x=None):
-    """Return True if subtree rooted at `x` is perfectly balanced."""
-    if x is None:
-        return True
-
-    if (abs(BST._size(x.left) - BST._size(x.right)) < 2
-       and _is_balanced(x.left)
-       and _is_balanced(x.right)):
-        return True
-
-    return False
-
-
 if __name__ == '__main__':
-    import string
-    from random import shuffle
-
-    a = list(string.ascii_uppercase)
-    shuffle(a)  # start with random list
-
+    a = 'SEARCHX'
     t = make_balanced_tree(a)
-    print(t.level_order())
-    assert(t.height == 5)
-    # Make sure the tree is balanced
-    assert(is_balanced(t))
+    assert(t.is_balanced())  # make sure the tree is balanced
+    assert(t.level_order() == list('HCSAERX'))  # See Algorithms text p. 403
+    # print(t.level_order())
 
 # =============================================================================
 # =============================================================================
