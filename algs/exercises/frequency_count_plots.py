@@ -5,7 +5,8 @@
 #   Author: Bernie Roesler
 #
 """
-  Description: Plot amortized cost of various types of searches.
+  Description: Plot amortized cost of various types of searches. 
+    See pages 377 and 384 in the text for examples.
 """
 # =============================================================================
 
@@ -14,6 +15,7 @@ import numpy as np
 import os
 import pickle
 
+from matplotlib import ticker
 from matplotlib.gridspec import GridSpec
 from pathlib import Path
 
@@ -26,7 +28,7 @@ if SAVE_FIGS:
 
 # filename = Path('../data/tiny_tale.txt')  # 292
 filename = Path('../data/tale.txt')       # 779K
-# filename = Path('../data/leipzig1m.txt')  # 124M
+# filename = Path('../data/leipzig1M.txt')  # 124M
 
 tag = filename.stem
 
@@ -57,8 +59,10 @@ for i, ST_name in enumerate(['SequentialSearchST', 'BinarySearchST']):
     ax.annotate(f"$\leftarrow$ {mean_cmp[-1]:.0f}", 
                 xy=(fc.N, mean_cmp[-1]),
                 ha='left', va='center', color='C3')
+
     ax.xaxis.label.set_color('C3')
     ax.yaxis.label.set_color('C3')
+    ax.xaxis.set_major_formatter(ticker.StrMethodFormatter("{x:d}"))
     ax.set_xlim([0, fc.N])
     ax.set_ylim([0, np.max(fc.cost)])
     ax.set_xticks([0, fc.N])

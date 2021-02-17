@@ -18,12 +18,13 @@ from frequency_counter import FrequencyCounter
 
 filenames = ['../data/tiny_tale.txt',  # 292
              '../data/tale.txt']       # 779K
-             # '../data/leipzig1m.txt']  # 124M
+             # '../data/leipzig1M.txt']  # 124M
 
 tags = [os.path.splitext(os.path.basename(x))[0] for x in filenames]
 cols = pd.MultiIndex.from_product([tags, ['words', 'distinct', 'max_word', 'max_freq']])
 
 for ST in [SequentialSearchST, BinarySearchST]:
+    print(f"Running {ST.__name__}...")
     df = pd.DataFrame(columns=cols)
     for i, f in enumerate(filenames):
         tag = tags[i]
