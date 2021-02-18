@@ -79,6 +79,7 @@ class SequentialSearchST():
     def __setitem__(self, k, v):
         """Insert a new value `v` associated with key `k`.
         If `k` is in the table, change its value to `v`."""
+        # Perform sequential search
         for i, item in enumerate(self._items):
             if k == item.key:
                 self._cost = i + 1
@@ -1958,10 +1959,16 @@ if __name__ == '__main__':
     should_be(st.values(), [])
     should_be(st.items(),  [])
 
+    # Test cost of `put()` operations into empty table
+    costs = [0, 1, 2, 3, 4, 5, 2, 6, 3, 7, 8, 9, 2]
+    for i, (c, n) in enumerate(zip('SEARCHEXAMPLE', costs)):
+        st[c] = i
+        should_be(st._cost, n)
+
     st = SequentialSearchST(data)
     for k, v in data:
         if k == 'E' or k == 'A':
-            should_be(st[k], max([v for key, v in data if key == k]))
+            should_be(st[k], max([val for key, val in data if key == k]))
         else:
             should_be(st[k], v)
 
