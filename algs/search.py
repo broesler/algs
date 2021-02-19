@@ -20,6 +20,7 @@ __all__ = ['SequentialSearchST', 'BinarySearchST', 'BST', 'BST_nr',
            'ThreadedST', 'ThreadedST_nr']
 
 # TODO
+#   * Separate `cache` from `selforg` flags.
 #   * Remove `_recordclass` dependency. Create our own `Item` class.
 #   * make ST(ABC) out of MutableMapping? to hold things like `size`,
 #     `is_empty`, `__len__` for all?
@@ -53,7 +54,8 @@ class SequentialSearchST():
     """
     def __init__(self, items=list(), cache=False):
         self._items = list()
-        self._CACHE_FLAG = cache  # control order of list
+        self._CACHE_FLAG = cache  # store latest search hit
+        self._cache = None
         self._cost = 0  # track cumulative number of compares of all operation
         # Initialize the symbol table
         try:
@@ -79,6 +81,12 @@ class SequentialSearchST():
     def __setitem__(self, k, v):
         """Insert a new value `v` associated with key `k`.
         If `k` is in the table, change its value to `v`."""
+        # Check the cache
+        if self._CACHE_FLAG and self._cache and k == self._cache.key:
+            self._cost = 1
+            self._cache.value = v
+            return
+
         # Perform sequential search
         for i, item in enumerate(self._items):
             if k == item.key:
@@ -88,17 +96,25 @@ class SequentialSearchST():
         else:
             self._cost = self.size          # tested all the keys!
             self._items.append(_Item(k, v))  # add new key to end of list O(1)
+            if self._CACHE_FLAG:
+                self._cache = self._items[-1]  # update the cache
 
     def __getitem__(self, k):
         """Return the value associated with the given key `k`."""
+        # Check the cache
+        if self._CACHE_FLAG and self._cache and k == self._cache.key:
+            self._cost = 1
+            return self._cache.value
+
         # Perform sequential search
         for i, item in enumerate(self._items):
             if k == item.key:
                 self._cost = i + 1
-                # FIXME? cache == self-organizing search here.
-                if self._CACHE_FLAG and i > 0:
-                    # move search hit to front of the list O(n)
-                    self._items.insert(0, self._items.pop(i))
+                if self._CACHE_FLAG:
+                    self._cache = self._items[i]
+                # # FIXME? cache == self-organizing search here.
+                #     # move search hit to front of the list O(n)
+                #     self._items.insert(0, self._items.pop(i))
                 return item.value
         else:
             self._cost = self.size  # tested all the keys!
@@ -120,6 +136,11 @@ class SequentialSearchST():
         KeyError
             If `k` is not in the table.
         """
+        # Check the cache
+        if self._CACHE_FLAG and self._cache and k == self._cache.key:
+            self._cache = None  # clear the cache
+
+        # Perform sequential search
         for i, item in enumerate(self._items):
             if k == item.key:
                 self._cost = i + 1
@@ -1994,13 +2015,20 @@ if __name__ == '__main__':
     should_be(sorted(st.keys()), sorted(test_set - set('A')))
     st['A'] = v
 
-    # Test self-organizing search
+    # Test caching
     tc = SequentialSearchST(data, cache=True)
-    for k in np.random.choice(tc.keys(), size=tc.size):
+    for k in st:
         tc[k]                       # search for the key
-        should_be(tc.keys()[0], k)  # should get moved to front
         tc[k]                       # search again
         should_be(tc._cost, 1)      # test cost
+
+    # Test self-organizing search
+    # tc = SequentialSearchST(data, selforg=True)
+    # for k in np.random.choice(tc.keys(), size=tc.size):
+    #     tc[k]                       # search for the key
+    #     should_be(tc.keys()[0], k)  # should get moved to front
+    #     tc[k]                       # search again
+    #     should_be(tc._cost, 1)      # test cost
 
     # ---------- Test Ordered STs ----------
     for ST in [BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr]:
