@@ -22,6 +22,7 @@ filenames = ['../data/tiny_tale.txt',  # 292
 
 tags = [os.path.splitext(os.path.basename(x))[0] for x in filenames]
 cols = pd.MultiIndex.from_product([tags, ['words', 'distinct', 'max_word', 'max_freq']])
+kind = 'ins'  # 'ins' or 'app' for `.insert(0, item)` vs. `.append(item)`
 
 for ST in [SequentialSearchST, BinarySearchST]:
     df = pd.DataFrame(columns=cols)
@@ -34,7 +35,8 @@ for ST in [SequentialSearchST, BinarySearchST]:
             df.loc[minlen, (tag, 'distinct')] = fc.t.size
             df.loc[minlen, (tag, 'max_word')] = fc.max_word
             df.loc[minlen, (tag, 'max_freq')] = fc.t[fc.max_word]
-            pickle.dump(fc, open(f"./pkl/{tag}_{ST.__name__}_m{minlen:02d}.pkl", 'wb'))
+            with open(f"./pkl/{tag}_{ST.__name__}_m{minlen:02d}_{kind}.pkl", 'wb') as fp:
+                pickle.dump(fc, fp)
 
     print(df)
 
