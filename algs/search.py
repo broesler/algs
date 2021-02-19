@@ -52,11 +52,13 @@ class SequentialSearchST():
         `floor`/`ceil`, etc. that the ordered symbol tables (BinarySearchST,
         BST, etc.) can efficiently implement.
     """
-    def __init__(self, items=list(), cache=False):
+    def __init__(self, items=list(), cache=False, selforg=False):
         self._items = list()
         self._CACHE_FLAG = cache  # store latest search hit
         self._cache = None
-        self._cost = 0  # track cumulative number of compares of all operation
+        self._SELF_ORG_FLAG = selforg  # reorganize most recent results
+        self._cost = 0                 # track cumulative number of compares of all operation
+
         # Initialize the symbol table
         try:
             for k, v in items:
@@ -92,10 +94,13 @@ class SequentialSearchST():
             if k == item.key:
                 self._cost = i + 1
                 item.value = v              # key exists, so update value
+                if self._SELF_ORG_FLAG:
+                    # move search hit to front of the list: O(n)
+                    self._items.insert(0, self._items.pop(i))
                 return
         else:
             self._cost = self.size          # tested all the keys!
-            self._items.append(_Item(k, v))  # add new key to end of list O(1)
+            self._items.append(_Item(k, v))  # add new key to end of list: O(1)
             if self._CACHE_FLAG:
                 self._cache = self._items[-1]  # update the cache
 
@@ -112,9 +117,9 @@ class SequentialSearchST():
                 self._cost = i + 1
                 if self._CACHE_FLAG:
                     self._cache = self._items[i]
-                # # FIXME? cache == self-organizing search here.
-                #     # move search hit to front of the list O(n)
-                #     self._items.insert(0, self._items.pop(i))
+                if self._SELF_ORG_FLAG:
+                    # move search hit to front of the list: O(n)
+                    self._items.insert(0, self._items.pop(i))
                 return item.value
         else:
             self._cost = self.size  # tested all the keys!
@@ -2023,12 +2028,12 @@ if __name__ == '__main__':
         should_be(tc._cost, 1)      # test cost
 
     # Test self-organizing search
-    # tc = SequentialSearchST(data, selforg=True)
-    # for k in np.random.choice(tc.keys(), size=tc.size):
-    #     tc[k]                       # search for the key
-    #     should_be(tc.keys()[0], k)  # should get moved to front
-    #     tc[k]                       # search again
-    #     should_be(tc._cost, 1)      # test cost
+    tc = SequentialSearchST(data, selforg=True)
+    for k in np.random.choice(tc.keys(), size=tc.size):
+        tc[k]                       # search for the key
+        should_be(tc.keys()[0], k)  # should get moved to front
+        tc[k]                       # search again
+        should_be(tc._cost, 1)      # test cost
 
     # ---------- Test Ordered STs ----------
     for ST in [BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr]:
