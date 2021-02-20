@@ -205,13 +205,12 @@ class BinarySearchST():
     """
     def __init__(self, items=list(), cache=False, **kwargs):
         self._items = list()
-        # "software cache" the most recently accessed key
-        self._CACHE_FLAG = cache  # client-controlled on/off switch
+        self._cost = 0              # track number of compares + array accesses
+        self._CACHE_FLAG = cache
         self._cache = None
-        self._cost = 0        # track number of compares + array accesses
         # Initialize the symbol table
         try:
-            # sort by keys so we get O(N log N) construction vs O(N^2)
+            # Ex 3.1.12(b) sort by keys so we get O(N log N) construction vs O(N^2)
             for k, v in _mergesort(items):
                 self.__setitem__(k, v)
             self._assert_integrity()
@@ -236,8 +235,13 @@ class BinarySearchST():
         """Insert a new value `v` associated with key `k`.
         If `k` is in the table, change its value to `v`.
         """
-        # If key is largest in table, slap it on the end! This feature makes
-        # construction with a sorted list O(n).
+        # Ex 3.1.25 Check the cache
+        if self._CACHE_FLAG and self._cache and k == self._cache.key:
+            self._cache.value = v
+            return
+
+        # Ex 3.1.28 If key is largest in table, slap it on the end! This
+        # feature makes construction with a sorted list O(n).
         if not self.is_empty and k > self.max():
             self._items.append(_Item(k, v))
 
@@ -245,14 +249,16 @@ class BinarySearchST():
         i = self.rank(k)
         # if key is in the table, update the value
         if i < self.size and self._items[i].key == k:
-            self._items[i].value = v
             self._cost += 1
-            return
+            self._items[i].value = v
         else:
             # create new Item in the table
-            self._items.insert(i, _Item(k, v))
             self._cost += self.size - i  # Θ(n-i) to move list elements
-            # self._assert_integrity()
+            self._items.insert(i, _Item(k, v))
+
+        if self._CACHE_FLAG:
+            self._cache = self._items[i]  # update the cache
+        # self._assert_integrity()
 
     def __getitem__(self, k):
         """Return the value associated with the given key `k`.
@@ -263,7 +269,7 @@ class BinarySearchST():
             If `k` is not in the table.
         """
         # See if we have cached the key
-        if self._CACHE_FLAG and self._cache and self._cache.key == k:
+        if self._CACHE_FLAG and self._cache and k == self._cache.key:
             return self._cache.value
 
         i = self.rank(k)
@@ -293,10 +299,11 @@ class BinarySearchST():
         i = self.rank(k)
         if i < self.size and self._items[i].key == k:
             # Clear cache of item if necessary
-            if self._CACHE_FLAG and self._cache and self._cache.key == k:
+            if self._CACHE_FLAG and self._cache and k == self._cache.key:
                 self._cache = None
             # Delete the item from the symbol table
             del self._items[i]
+            return
         else:
             raise KeyError(k)
         # self._assert_integrity()
@@ -332,6 +339,8 @@ class BinarySearchST():
             If the table is empty.
         """
         _empty_check(self)
+        if self._CACHE_FLAG and self._cache is self._items[0]:
+            self._cache = None
         del self._items[0]
         # self._assert_integrity()
 
@@ -344,6 +353,8 @@ class BinarySearchST():
             If the table is empty.
         """
         _empty_check(self)
+        if self._CACHE_FLAG and self._cache is self._items[-1]:
+            self._cache = None
         del self._items[-1]
         # self._assert_integrity()
 
@@ -377,7 +388,7 @@ class BinarySearchST():
         IndexError
             If there are fewer than `r`+1 keys in the table.
         """
-        if 0 <= r and r < self.size:
+        if 0 <= r < self.size:
             return self._items[r].key
         else:
             raise IndexError(r)
