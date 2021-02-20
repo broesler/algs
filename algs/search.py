@@ -97,10 +97,10 @@ class SequentialSearchST():
                 if self._CACHE_FLAG:
                     self._cache = self._items[i]
                 # Ex 3.1.22
-                if self._SELF_ORG_FLAG and i > 1:
+                if self._SELF_ORG_FLAG and i > 0:
                     # Move search hit to front of the list: O(n)
-                    # Cost of pop (n - i) + cost of insert(0) (n - 1)
-                    self._cost += (self.size - i) + (self.size - 1)
+                    # Cost of pop (n - (i+1)) + cost of insert(0) (n - 1)
+                    self._cost += 2*self.size - i - 2
                     self._items.insert(0, self._items.pop(i))
                 return
         else:
@@ -122,9 +122,9 @@ class SequentialSearchST():
                 self._cost = i + 1
                 if self._CACHE_FLAG:
                     self._cache = self._items[i]
-                if self._SELF_ORG_FLAG and i > 1:
+                if self._SELF_ORG_FLAG and i > 0:
                     # Move search hit to front of the list: O(n)
-                    self._cost += (self.size - i) + (self.size - 1)
+                    self._cost += 2*self.size - i - 2
                     self._items.insert(0, self._items.pop(i))
                 return item.value
         else:
@@ -205,7 +205,7 @@ class BinarySearchST():
     is_empty : bool
         True if `size == 0`.
     """
-    def __init__(self, items=list(), cache=False):
+    def __init__(self, items=list(), cache=False, **kwargs):
         self._items = list()
         # "software cache" the most recently accessed key
         self._CACHE_FLAG = cache  # client-controlled on/off switch
@@ -1927,6 +1927,7 @@ class ThreadedST_nr(BST_nr):
 # TODO move to proper unit testing script
 if __name__ == '__main__':
     import numpy as np
+    rng = np.random.default_rng(seed=565656)
 
     # Define test counts
     tests = fails = 0
@@ -2035,7 +2036,8 @@ if __name__ == '__main__':
 
     # Test self-organizing search (Exercise 3.1.22)
     tc = SequentialSearchST(data, selforg=True)
-    for k in np.random.choice(tc.keys(), size=tc.size):
+    rand_keys = rng.choice(tc.keys(), size=tc.size) 
+    for k in rand_keys:
         tc[k]                       # search for the key
         should_be(tc.keys()[0], k)  # should get moved to front
         tc[k]                       # search again

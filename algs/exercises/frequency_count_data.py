@@ -22,14 +22,20 @@ filenames = ['../data/tiny_tale.txt',  # 292
 
 tags = [os.path.splitext(os.path.basename(x))[0] for x in filenames]
 cols = pd.MultiIndex.from_product([tags, ['words', 'distinct', 'max_word', 'max_freq']])
-kind = 'ins'  # 'ins' or 'app' for `.insert(0, item)` vs. `.append(item)`
+kind = 'selforg'  # 'ins', 'app', 'selforg', 'cache' for `.insert(0, item)` vs. `.append(item)`
+
+selforg = cache = False
+if kind == 'selforg':
+    selforg = True
+if kind == 'cache':
+    cache = True
 
 for ST in [SequentialSearchST, BinarySearchST]:
     df = pd.DataFrame(columns=cols)
     for i, f in enumerate(filenames):
         tag = tags[i]
         for minlen in [1, 8, 10]:
-            fc = FrequencyCounter(ST)
+            fc = FrequencyCounter(ST, selforg=selforg, cache=cache)
             fc.count_frequencies(f, minlen)
             df.loc[minlen, (tag, 'words')] = fc.N
             df.loc[minlen, (tag, 'distinct')] = fc.t.size
