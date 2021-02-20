@@ -24,11 +24,8 @@ tags = [os.path.splitext(os.path.basename(x))[0] for x in filenames]
 cols = pd.MultiIndex.from_product([tags, ['words', 'distinct', 'max_word', 'max_freq']])
 kind = 'selforg'  # 'ins', 'app', 'selforg', 'cache' for `.insert(0, item)` vs. `.append(item)`
 
-selforg = cache = False
-if kind == 'selforg':
-    selforg = True
-if kind == 'cache':
-    cache = True
+selforg = True if kind == 'selforg' else False
+cache   = True if kind == 'cache'   else False
 
 for ST in [SequentialSearchST, BinarySearchST]:
     df = pd.DataFrame(columns=cols)

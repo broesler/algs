@@ -90,18 +90,18 @@ class SequentialSearchST():
             return
 
         # Perform sequential search
-        for i, item in enumerate(self._items):
+        for i, item in enumerate(reversed(self._items)):
+            j = -i - 1  # index from back of list
             if k == item.key:
                 self._cost = i + 1
                 item.value = v              # key exists, so update value
                 if self._CACHE_FLAG:
-                    self._cache = self._items[i]
+                    self._cache = self._items[j]
                 # Ex 3.1.22
                 if self._SELF_ORG_FLAG and i > 0:
-                    # Move search hit to front of the list: O(n)
-                    # Cost of pop (n - (i+1)) + cost of insert(0) (n - 1)
-                    self._cost += 2*self.size - i - 2
-                    self._items.insert(0, self._items.pop(i))
+                    # Move search hit to front of the list: O(n - i)
+                    self._cost += self.size - i - 1
+                    self._items.append(self._items.pop(j))
                 return
         else:
             self._cost = self.size          # tested all the keys!
@@ -117,15 +117,16 @@ class SequentialSearchST():
             return self._cache.value
 
         # Perform sequential search
-        for i, item in enumerate(self._items):
+        for i, item in enumerate(reversed(self._items)):
+            j = -i - 1  # index from back of list
             if k == item.key:
                 self._cost = i + 1
                 if self._CACHE_FLAG:
-                    self._cache = self._items[i]
+                    self._cache = self._items[j]
                 if self._SELF_ORG_FLAG and i > 0:
-                    # Move search hit to front of the list: O(n)
-                    self._cost += 2*self.size - i - 2
-                    self._items.insert(0, self._items.pop(i))
+                    # Move search hit to end of the list: O(n - i)
+                    self._cost += self.size - i - 1
+                    self._items.append(self._items.pop(j))
                 return item.value
         else:
             self._cost = self.size  # tested all the keys!
@@ -149,13 +150,14 @@ class SequentialSearchST():
             If `k` is not in the table.
         """
         # Perform sequential search
-        for i, item in enumerate(self._items):
+        for i, item in enumerate(reversed(self._items)):
+            j = -i - 1  # index from back of list
             if k == item.key:
                 self._cost = i + 1
                 # Clear the cache and remove the item
                 if self._CACHE_FLAG and self._cache and k == self._cache.key:
                     self._cache = None
-                del self._items[i]
+                del self._items[j]
                 return
         else:
             self._cost = self.size
@@ -175,15 +177,15 @@ class SequentialSearchST():
     # -------------------------------------------------------------------------
     def keys(self):
         """Return an iterator of all of the keys in the table."""
-        return [x.key for x in self._items]
+        return [x.key for x in reversed(self._items)]
 
     def values(self):
         """Return an iterator of all of the values in the table."""
-        return [x.value for x in self._items]
+        return [x.value for x in reversed(self._items)]
 
     def items(self):
         """Return an iterator of all of the items in the table."""
-        return [(x.key, x.value) for x in self._items]
+        return [(x.key, x.value) for x in reversed(self._items)]
 
     def __iter__(self):
         """Return an iterator of all of the keys in the table."""
@@ -2039,7 +2041,7 @@ if __name__ == '__main__':
     rand_keys = rng.choice(tc.keys(), size=tc.size) 
     for k in rand_keys:
         tc[k]                       # search for the key
-        should_be(tc.keys()[0], k)  # should get moved to front
+        should_be(tc.keys()[0], k)  # should get moved to end
         tc[k]                       # search again
         should_be(tc._cost, 1)      # test cost
 
