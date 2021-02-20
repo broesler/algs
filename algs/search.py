@@ -9,8 +9,6 @@
 """
 # =============================================================================
 
-from recordclass import recordclass as _recordclass
-
 from algs.basics import Stack as _Stack, \
                         Queue as _Queue, \
                         _empty_check
@@ -20,8 +18,6 @@ __all__ = ['SequentialSearchST', 'BinarySearchST', 'BST', 'BST_nr',
            'ThreadedST', 'ThreadedST_nr']
 
 # TODO
-#   * Separate `cache` from `selforg` flags.
-#   * Remove `_recordclass` dependency. Create our own `Item` class.
 #   * make ST(ABC) out of MutableMapping? to hold things like `size`,
 #     `is_empty`, `__len__` for all?
 #   * implement `clear`, `copy`, `get`, `popitem`, `__reverse__`,
@@ -29,8 +25,18 @@ __all__ = ['SequentialSearchST', 'BinarySearchST', 'BST', 'BST_nr',
 #   * implement `t.put(k, v)` method instead of just t[k] = v assignment
 #   * use collections.abc.[Keys|Values|Items]View classes?
 
-# Private class of key/value pairs (a mutable tuple)
-_Item = _recordclass('_Item', ['key', 'value'])
+# Private class of key/value pairs
+class _Item():
+    """Internal item object to hold key and value."""
+    def __init__(self, key, value):
+        self.key = key
+        self.value = value
+
+    def __str__(self):
+        return f"(key={repr(self.key)}, value={repr(self.value)})"
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__}: {self.__str__()}>"
 
 
 class SequentialSearchST():
