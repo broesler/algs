@@ -85,7 +85,6 @@ class SequentialSearchST():
         If `k` is in the table, change its value to `v`."""
         # Check the cache (Ex 3.1.25)
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
-            self._cost = 1
             self._cache.value = v
             return
 
@@ -113,7 +112,6 @@ class SequentialSearchST():
         """Return the value associated with the given key `k`."""
         # Check the cache
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
-            self._cost = 1
             return self._cache.value
 
         # Perform sequential search
@@ -2030,9 +2028,15 @@ if __name__ == '__main__':
     # Test caching
     tc = SequentialSearchST(data, cache=True)
     for k in st:
-        tc[k]                       # search for the key
-        tc[k]                       # search again
-        should_be(tc._cost, 1)      # test cost
+        v = tc[k]                       # __getitem__
+        should_be(tc._cache.key, k)
+        should_be(tc._cache.value, v)
+        tc[k] = 9                       # __setitem__
+        should_be(tc._cache.key, k)
+        should_be(tc._cache.value, 9)
+    del tc[k]
+    should_be(tc._cache, None)
+
 
     # Test self-organizing search (Exercise 3.1.22)
     tc = SequentialSearchST(data, selforg=True)

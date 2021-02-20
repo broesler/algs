@@ -20,7 +20,7 @@ from pathlib import Path
 from algs.search import SequentialSearchST, BinarySearchST
 from frequency_counter import FrequencyCounter
 
-SAVE_FIGS = True
+SAVE_FIGS = False
 
 MINLEN = 8
 
@@ -29,7 +29,7 @@ filename = Path('../data/tale.txt')       # 779K
 # filename = Path('../data/leipzig1m.txt')  # 124M
 
 tag = filename.stem
-kind = 'selforg'  # 'ins', 'app', 'selforg', 'cache', for `.insert(0, item)` vs. `.append(item)`
+kind = 'app'  # 'ins', 'app', 'selforg', 'cache', for `.insert(0, item)` vs. `.append(item)`
 
 fig = plt.figure(0, clear=True)
 fig.set_size_inches((8, 6), forward=True)

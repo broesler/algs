@@ -22,7 +22,7 @@ filenames = ['../data/tiny_tale.txt',  # 292
 
 tags = [os.path.splitext(os.path.basename(x))[0] for x in filenames]
 cols = pd.MultiIndex.from_product([tags, ['words', 'distinct', 'max_word', 'max_freq']])
-kind = 'selforg'  # 'ins', 'app', 'selforg', 'cache' for `.insert(0, item)` vs. `.append(item)`
+kind = 'cache'  # 'ins', 'app', 'selforg', 'cache' for `.insert(0, item)` vs. `.append(item)`
 
 selforg = cache = False
 if kind == 'selforg':
