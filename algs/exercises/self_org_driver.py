@@ -22,7 +22,7 @@ import pickle
 import time
 
 import numpy as np
-import pandas as pd
+# import pandas as pd
 
 from pathlib import Path
 from tqdm import tqdm
@@ -36,7 +36,7 @@ class SelfOrganizingDriver():
     ----------
     ST : symbol table class
         The class of symbol table that will be used to store the frequencies.
-    cache : bool
+    selforg : bool
         If True, use self-organizing search in the symbol table to cahce the
         results. Otherwise, leave the table unordered. Does not affect
         `BinarySearchST`, or other ordered symbol table classes.
@@ -48,7 +48,7 @@ class SelfOrganizingDriver():
 
         where `H_N` is the `N`th harmonic number. Otherwise, use the
         distribution::
-        
+
             P(i) = `1/2^i`
 
     **kwargs : dict-like
@@ -66,11 +66,11 @@ class SelfOrganizingDriver():
         `run_test` method.
     runtimes : ndarray of floats
         The runtime of each `get` call performed during `run_test`. May be
-        downsampled using the `samples` argument.  
+        downsampled using the `samples` argument.
     """
-    def __init__(self, ST, cache=False, zipf=False):
+    def __init__(self, ST, selforg=False, zipf=False):
         self.t = ST
-        self._cache = cache  # turn on caching in the symbol table.
+        self._selforg = selforg  # turn on caching in the symbol table.
         self._zipf = zipf    # choose probability distribution
         self.put_time = np.nan
         self.get_time = np.nan
@@ -79,13 +79,13 @@ class SelfOrganizingDriver():
     @staticmethod
     @np.vectorize
     def H_N(N):
-        """Harmonic number `N`.
+        r"""Harmonic number `N`.
 
         Parameters
         ----------
         N : array-like
             `N`th harmonic(s) desired.
-        
+
         .. math::
             H_N = \sum\limits_{i=1}^N 1/i, \forall N = 1, 2, \dots, \infty
 
@@ -95,8 +95,8 @@ class SelfOrganizingDriver():
             `N`th harmonic numbers.
         """
         if N < 1:
-            raise ValueError(f'H_N not defined for `N` < 1!')
-        return np.sum(1.0 / np.arange(1, N+1)) 
+            raise ValueError('H_N not defined for `N` < 1!')
+        return np.sum(1.0 / np.arange(1, N+1))
 
     def run_test(self, N, samples=None, verbose=False):
         """Run the actual test by inserting `N` keys into the table, then
@@ -116,7 +116,7 @@ class SelfOrganizingDriver():
         -------
         runtimes : ndarray, shape (samples, 1)
             The runtime of each `get` call performed. May be downsampled using
-            the `samples` argument.  
+            the `samples` argument.
         """
         if verbose:
             print(f"Filling table with {N} keys...")
@@ -140,13 +140,13 @@ class SelfOrganizingDriver():
         put_tic = time.perf_counter()  # time the insertions separately
 
         # Fill the symbol table with keys (no values needed)
-        self.t = self.t([(k, None) for k in keys], cache=self._cache)
+        self.t = self.t([(k, None) for k in keys], selforg=self._selforg)
 
         put_toc = time.perf_counter()
         self.put_time = put_toc - put_tic
 
         if verbose:
-            print(f"Performing 10N successful searches...")
+            print('Performing 10N successful searches...')
         self.runtimes = np.empty(M)
 
         # Search for 10*N keys
@@ -155,7 +155,7 @@ class SelfOrganizingDriver():
 
         for i, k in enumerate(iterator):
             tic = time.perf_counter()
-            x = self.t[k]  # perform get operation
+            self.t[k]  # perform get operation
             toc = time.perf_counter()
             self.runtimes[i] = toc - tic
 
@@ -178,27 +178,27 @@ if __name__ == '__main__':
 
     dists = ['p', 'zipf']
     STs = [SequentialSearchST, SequentialSearchST, BinarySearchST]
-    ST_names = ['SST', 'SST_cached', 'BinarySearchST']
-    caches = [False, True, False]
+    ST_names = ['SST', 'SST_selforg', 'BinarySearchST']
+    selforgs = [False, True, False]
 
     drivers = dict()
 
     for N in Ns:
         for d in dists:
-            for ST, ST_name, cache in zip(STs, ST_names, caches):
+            for ST, ST_name, selforg in zip(STs, ST_names, selforgs):
                 zipf = True if d == 'zipf' else 'p'
-                driver = SelfOrganizingDriver(ST, zipf=zipf, cache=cache)
+                driver = SelfOrganizingDriver(ST, zipf=zipf, selforg=selforg)
                 driver.run_test(N, samples=N_s, verbose=True)
 
                 # Store data
                 drivers[(d, ST_name, N)] = driver
 
         # Write data to file (overwrite each loop in case it breaks)
-        # filename = Path(f"./pkl/self_org_drivers.pkl.gz")
-        # print(f"Writing to {filename}...", end='')
-        # with gzip.open(filename, 'wb') as f:
-        #     pickle.dump(drivers, f)
-        # print('done.')
+        filename = Path('./pkl/self_org_drivers.pkl.gz')
+        print(f"Writing to {filename}...", end='')
+        with gzip.open(filename, 'wb') as f:
+            pickle.dump(drivers, f)
+        print('done.')
 
 # =============================================================================
 # =============================================================================
