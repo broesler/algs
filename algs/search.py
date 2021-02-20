@@ -53,11 +53,11 @@ class SequentialSearchST():
         BST, etc.) can efficiently implement.
     """
     def __init__(self, items=list(), cache=False, selforg=False):
-        self._items = list()
-        self._CACHE_FLAG = cache  # store latest search hit
-        self._cache = None
+        self._items = list()           # Ex 3.1.2 (ArrayST)
+        self._cost = 0                 # cost of previous get/put/delete
+        self._CACHE_FLAG = cache
+        self._cache = None             # store latest search hit
         self._SELF_ORG_FLAG = selforg  # reorganize most recent results
-        self._cost = 0                 # track cumulative number of compares of all operation
 
         # Initialize the symbol table
         try:
@@ -83,7 +83,7 @@ class SequentialSearchST():
     def __setitem__(self, k, v):
         """Insert a new value `v` associated with key `k`.
         If `k` is in the table, change its value to `v`."""
-        # Check the cache
+        # Check the cache (Ex 3.1.25)
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
             self._cost = 1
             self._cache.value = v
@@ -94,8 +94,13 @@ class SequentialSearchST():
             if k == item.key:
                 self._cost = i + 1
                 item.value = v              # key exists, so update value
-                if self._SELF_ORG_FLAG:
-                    # move search hit to front of the list: O(n)
+                if self._CACHE_FLAG:
+                    self._cache = self._items[i]
+                # Ex 3.1.22
+                if self._SELF_ORG_FLAG and i > 1:
+                    # Move search hit to front of the list: O(n)
+                    # Cost of pop (n - i) + cost of insert(0) (n - 1)
+                    self._cost += (self.size - i) + (self.size - 1)
                     self._items.insert(0, self._items.pop(i))
                 return
         else:
@@ -117,8 +122,9 @@ class SequentialSearchST():
                 self._cost = i + 1
                 if self._CACHE_FLAG:
                     self._cache = self._items[i]
-                if self._SELF_ORG_FLAG:
-                    # move search hit to front of the list: O(n)
+                if self._SELF_ORG_FLAG and i > 1:
+                    # Move search hit to front of the list: O(n)
+                    self._cost += (self.size - i) + (self.size - 1)
                     self._items.insert(0, self._items.pop(i))
                 return item.value
         else:
@@ -133,6 +139,7 @@ class SequentialSearchST():
         except KeyError:
             return False
 
+    # Exercise 3.1.5
     def __delitem__(self, k):
         """Delete the item associated with `k`.
 
@@ -141,16 +148,15 @@ class SequentialSearchST():
         KeyError
             If `k` is not in the table.
         """
-        # Check the cache
-        if self._CACHE_FLAG and self._cache and k == self._cache.key:
-            self._cache = None  # clear the cache
-
         # Perform sequential search
         for i, item in enumerate(self._items):
             if k == item.key:
                 self._cost = i + 1
+                # Clear the cache and remove the item
+                if self._CACHE_FLAG and self._cache and k == self._cache.key:
+                    self._cache = None
                 del self._items[i]
-                return True  # successful search
+                return
         else:
             self._cost = self.size
             raise KeyError(k)
@@ -2027,7 +2033,7 @@ if __name__ == '__main__':
         tc[k]                       # search again
         should_be(tc._cost, 1)      # test cost
 
-    # Test self-organizing search
+    # Test self-organizing search (Exercise 3.1.22)
     tc = SequentialSearchST(data, selforg=True)
     for k in np.random.choice(tc.keys(), size=tc.size):
         tc[k]                       # search for the key
