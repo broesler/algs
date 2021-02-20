@@ -91,8 +91,8 @@ class SequentialSearchST():
 
         # Perform sequential search
         for i, item in enumerate(reversed(self._items)):
-            j = -i - 1  # index from back of list
             if k == item.key:
+                j = -i - 1  # index from back of list
                 self._cost = i + 1
                 item.value = v              # key exists, so update value
                 if self._CACHE_FLAG:
@@ -118,15 +118,14 @@ class SequentialSearchST():
 
         # Perform sequential search
         for i, item in enumerate(reversed(self._items)):
-            j = -i - 1  # index from back of list
             if k == item.key:
                 self._cost = i + 1
                 if self._CACHE_FLAG:
-                    self._cache = self._items[j]
+                    self._cache = self._items[-i-1]
                 if self._SELF_ORG_FLAG and i > 0:
                     # Move search hit to end of the list: O(n - i)
                     self._cost += self.size - i - 1
-                    self._items.append(self._items.pop(j))
+                    self._items.append(self._items.pop(-i-1))
                 return item.value
         else:
             self._cost = self.size  # tested all the keys!
@@ -151,13 +150,12 @@ class SequentialSearchST():
         """
         # Perform sequential search
         for i, item in enumerate(reversed(self._items)):
-            j = -i - 1  # index from back of list
             if k == item.key:
                 self._cost = i + 1
                 # Clear the cache and remove the item
                 if self._CACHE_FLAG and self._cache and k == self._cache.key:
                     self._cache = None
-                del self._items[j]
+                del self._items[-i-1]
                 return
         else:
             self._cost = self.size
