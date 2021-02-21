@@ -52,7 +52,7 @@ data = np.empty((N_s, len(dists)*len(ST_names)*len(Ns)*2))
 
 df = pd.DataFrame(columns=cols.droplevel('op').unique(),
                   data=data[:, :data.shape[1]//len(dists)])
-tots = pd.Series(index=cols, name='runtime [s]')
+tots = pd.Series(index=cols, name='runtime [s]', dtype=float)
 
 for (d, ST_name, N), driver in drivers.items():
     tots[(d, ST_name, 'put', N)] = driver.put_time
@@ -84,7 +84,7 @@ ax.legend(h[3:], l[3:], title='Symbol Table',
           loc='upper left', frameon=True)
 
 # Tidy up axes limits and labels
-ax.ticklabel_format(axis='y', style='sci', scilimits=(-3,3))
+ax.ticklabel_format(axis='y', style='sci', scilimits=(-3, 3))
 ax.set(ylim=[0.5*tf['runtime'].min(), 5*tf['runtime'].max()],
        ylabel='time per search [s]',
        yscale='log')
@@ -103,6 +103,7 @@ g.set(xscale='log',
       yscale='log')
 g.map(plt.plot, 'N', 'runtime [s]', marker='o')
 g.add_legend()
+g.tight_layout()
 
 if SAVE_FIGS:
     g.savefig(fig_dir.joinpath('self_org_tots.pdf'))
@@ -125,6 +126,7 @@ for i, dist in enumerate(['p', 'zipf']):
     ax.grid('on')
     ax.legend(loc='lower right')
 
+gs.tight_layout(fig)
 if SAVE_FIGS:
     fig.savefig(fig_dir.joinpath('self_org_keys.pdf'))
 
@@ -144,9 +146,12 @@ ax.plot(keys, p, label=r'$\frac{1}{2^i}$')
 ax.plot(keys, zipf, label=r'$\frac{1}{i H_N}$')
 ax.set(xlabel=r'$i^{th}$ key',
        ylabel='P(i)',
+       xscale='log',
        yscale='log',
        ylim=(1e-12, 1))
 ax.legend(fontsize=16)
+ax.grid()
+fig.tight_layout()
 
 if SAVE_FIGS:
     fig.savefig(fig_dir.joinpath('self_org_dists.pdf'))

@@ -14,7 +14,7 @@ from algs.basics import Stack as _Stack, \
                         _empty_check
 from algs.sort import mergesort as _mergesort
 
-__all__ = ['SequentialSearchST', 'BinarySearchST', 'BST', 'BST_nr', 
+__all__ = ['SequentialSearchST', 'BinarySearchST', 'BST', 'BST_nr',
            'ThreadedST', 'ThreadedST_nr']
 
 # TODO
@@ -24,6 +24,7 @@ __all__ = ['SequentialSearchST', 'BinarySearchST', 'BST', 'BST_nr',
 #     `setdefault`, and `update` like true dictionaries
 #   * implement `t.put(k, v)` method instead of just t[k] = v assignment
 #   * use collections.abc.[Keys|Values|Items]View classes?
+
 
 # Private class of key/value pairs
 class _Item():
@@ -946,7 +947,7 @@ class BST():
 
     def center_of_mass(self):
         """Return the left-to-right 'center of mass' of the tree.
-        
+
         .. note:: negative values count nodes to the left of the root, positive
             values count nodes to the right of the root. Values of {-1, 0, 1}
             do *not* necessarily mean a balanced tree. Draw the tree with the
@@ -1184,7 +1185,7 @@ class BST():
         L = 0 if x.left is None else  x.left.N
         R = 0 if x.right is None else x.right.N
         return (R - L
-                + self._center_of_mass(x.left) 
+                + self._center_of_mass(x.left)
                 + self._center_of_mass(x.right))
 
     # -------------------------------------------------------------------------
@@ -1450,7 +1451,7 @@ class ThreadedST(BST):
         # Update the size of the subtree located at the given root
         x.N = self._size(x.left) + self._size(x.right) + 1
         return x
-    
+
     def _delete_min(self, x=None):
         """Delete the smallest key from the subtree rooted at `x`.
 
@@ -1495,7 +1496,7 @@ class ThreadedST(BST):
 
     def _find_next(self, k, x=None, s=None):
         """Return the Node that follows `k`, None if `k` is the maximum.
-            
+
         Parameters
         ----------
         k : key
@@ -1524,7 +1525,7 @@ class ThreadedST(BST):
 
     def _find_prev(self, k, x=None, s=None):
         """Return the Node that precedes `k`, None if `k` is the minimum.
-            
+
         Parameters
         ----------
         k : key
@@ -2205,6 +2206,7 @@ if __name__ == '__main__':
     data_set.remove(('A', 2))
     data_set.remove(('E', 6))
 
+    # TODO run these tests on *all* STs.
     # ---------- Test Unordered STs ----------
     for ST in [SequentialSearchST, ArrayST]:
         st = ST()
@@ -2260,7 +2262,7 @@ if __name__ == '__main__':
 
     # Test self-organizing search (Exercise 3.1.22)
     st = ArrayST(data, selforg=True)
-    rand_keys = rng.choice(st.keys(), size=st.size) 
+    rand_keys = rng.choice(st.keys(), size=st.size)
     for k in rand_keys:
         st[k]                       # search for the key
         should_be(st.keys()[0], k)  # should get moved to front

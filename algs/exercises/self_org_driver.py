@@ -22,15 +22,15 @@ import pickle
 import time
 
 import numpy as np
-# import pandas as pd
 
 from pathlib import Path
 from tqdm import tqdm
 
-from algs.search import SequentialSearchST, BinarySearchST
+from algs.search import ArrayST, BinarySearchST
+
 
 class SelfOrganizingDriver():
-    """Class to test self-organizing SequentialSearchST.
+    """Class to test self-organizing ArrayST.
 
     Parameters
     ----------
@@ -68,8 +68,9 @@ class SelfOrganizingDriver():
         The runtime of each `get` call performed during `run_test`. May be
         downsampled using the `samples` argument.
     """
-    def __init__(self, ST, selforg=False, zipf=False):
+    def __init__(self, ST, randinit=False, selforg=False, zipf=False):
         self.t = ST
+        self._randinit = randinit
         self._selforg = selforg  # turn on caching in the symbol table.
         self._zipf = zipf    # choose probability distribution
         self.put_time = np.nan
@@ -135,8 +136,9 @@ class SelfOrganizingDriver():
         M = 10*N
         ks = np.random.choice(keys, p=probs, size=M)
 
-        # Insert in random order
-        np.random.shuffle(keys)
+        if self._randinit:
+            np.random.shuffle(keys)     # insert in random order
+
         put_tic = time.perf_counter()  # time the insertions separately
 
         # Fill the symbol table with keys (no values needed)
@@ -172,12 +174,14 @@ class SelfOrganizingDriver():
 
 if __name__ == '__main__':
     # Define sequence of N to test
-    Ns = [int(x) for x in [1e2, 3e2, 1e3, 3e3, 1e4, 3e4, 1e5, 3e5, 1e6]]
-    # Ns = [int(x) for x in [1e2, 1e3, 3e3]]
-    N_s = 100  # number of search times to sample
+    # NOTE anything over ~1e4 takes almost untenably long. 1e5 takes 1.5 hrs.
+    # Ns = [int(x) for x in [1e3, 1e4, 1e5, 1e6]]  # book values
+    Ns = [int(x) for x in [1e2, 3e2, 1e3, 3e3, 1e4, 3e4, 1e5]]
+    N_s = 100  # number of search times to sample for statistics
 
+    # TODO add randomized insertions as parameter
     dists = ['p', 'zipf']
-    STs = [SequentialSearchST, SequentialSearchST, BinarySearchST]
+    STs = [ArrayST, ArrayST, BinarySearchST]
     ST_names = ['SST', 'SST_selforg', 'BinarySearchST']
     selforgs = [False, True, False]
 
