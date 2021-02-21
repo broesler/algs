@@ -28,6 +28,8 @@ from tqdm import tqdm
 
 from algs.search import ArrayST, BinarySearchST
 
+rng = np.random.default_rng(seed=565656)
+
 
 class SelfOrganizingDriver():
     """Class to test self-organizing ArrayST.
@@ -134,10 +136,10 @@ class SelfOrganizingDriver():
 
         # Choose from keys in sorted order
         M = 10*N
-        ks = np.random.choice(keys, p=probs, size=M)
+        ks = rng.choice(keys, p=probs, size=M)
 
         if self._randinit:
-            np.random.shuffle(keys)     # insert in random order
+            rng.shuffle(keys)     # insert in random order
 
         put_tic = time.perf_counter()  # time the insertions separately
 
@@ -166,7 +168,7 @@ class SelfOrganizingDriver():
 
         # only store subset of runtimes values
         if samples and samples <= M:
-            idx = np.random.randint(0, M, size=samples)
+            idx = rng.integers(0, M, size=samples)
             self.runtimes = self.runtimes[idx]
 
         return self.runtimes  # also include return value
@@ -179,7 +181,6 @@ if __name__ == '__main__':
     Ns = [int(x) for x in [1e2, 3e2, 1e3, 3e3, 1e4, 3e4, 1e5]]
     N_s = 100  # number of search times to sample for statistics
 
-    # TODO add randomized insertions as parameter
     dists = ['p', 'zipf']
     STs = [ArrayST, ArrayST, BinarySearchST]
     ST_names = ['SST', 'SST_selforg', 'BinarySearchST']

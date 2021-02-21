@@ -23,10 +23,13 @@ from pathlib import Path
 from self_org_driver import SelfOrganizingDriver
 
 SAVE_FIGS = False
+
 if SAVE_FIGS:
     plt.close('all')
     fig_dir = Path('./figures/')
 
+# TODO
+#   * add `_randinit` to df, plots as well for comparison
 # Load the data
 filename = Path('./pkl/self_org_drivers.pkl.gz')
 
