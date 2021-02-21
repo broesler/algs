@@ -31,10 +31,10 @@ class _Item():
     """Internal item object to hold key and value."""
     def __init__(self, key, value):
         self.key = key
-        self.value = value
+        self.val = value
 
     def __str__(self):
-        return f"(key={repr(self.key)}, value={repr(self.value)})"
+        return f"(key={repr(self.key)}, value={repr(self.val)})"
 
     def __repr__(self):
         return f"<{self.__class__.__name__}: {self.__str__()}>"
@@ -93,7 +93,7 @@ class SequentialSearchST():
         If `k` is in the table, change its value to `v`."""
         # Check the cache (Ex 3.1.25)
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
-            self._cache.value = v
+            self._cache.val = v
             return
 
         # Perform sequential search
@@ -102,7 +102,7 @@ class SequentialSearchST():
         while x:
             if k == x.key:
                 self._cost = i + 1
-                x.value = v              # key exists, so update value
+                x.val = v              # key exists, so update value
                 if self._CACHE_FLAG:
                     self._cache = x
                 return
@@ -122,7 +122,7 @@ class SequentialSearchST():
         """Return the value associated with the given key `k`."""
         # Check the cache
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
-            return self._cache.value
+            return self._cache.val
 
         # Perform sequential search
         x = self._first
@@ -132,7 +132,7 @@ class SequentialSearchST():
                 self._cost = i + 1
                 if self._CACHE_FLAG:
                     self._cache = x
-                return x.value
+                return x.val
             else:
                 i += 1
                 x = x.next
@@ -234,7 +234,7 @@ class SequentialSearchST():
             x = self._first
             while x:
                 q.enqueue(x.key if rtype == 'keys' else
-                          (x.value if rtype == 'values' else (x.key, x.value)))
+                          (x.val if rtype == 'values' else (x.key, x.val)))
                 x = x.next
             return list(q)
         return iterator
@@ -293,14 +293,14 @@ class ArrayST():
         If `k` is in the table, change its value to `v`."""
         # Check the cache (Ex 3.1.25)
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
-            self._cache.value = v
+            self._cache.val = v
             return
 
         # Perform sequential search
         for i, item in enumerate(self._items):
             if k == item.key:
                 self._cost = i + 1
-                item.value = v              # key exists, so update value
+                item.val = v              # key exists, so update value
                 if self._CACHE_FLAG:
                     self._cache = self._items[i]
                 # Ex 3.1.22
@@ -320,7 +320,7 @@ class ArrayST():
         """Return the value associated with the given key `k`."""
         # Check the cache
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
-            return self._cache.value
+            return self._cache.val
 
         # Perform sequential search
         for i, item in enumerate(self._items):
@@ -332,7 +332,7 @@ class ArrayST():
                     # Move search hit to front of the list: O(n)
                     self._cost += 2*self.size - i - 2
                     self._items.insert(0, self._items.pop(i))
-                return item.value
+                return item.val
         else:
             self._cost = self.size  # tested all the keys!
             raise KeyError(k)
@@ -385,11 +385,11 @@ class ArrayST():
 
     def values(self):
         """Return an iterator of all of the values in the table."""
-        return [x.value for x in self._items]
+        return [x.val for x in self._items]
 
     def items(self):
         """Return an iterator of all of the items in the table."""
-        return [(x.key, x.value) for x in self._items]
+        return [(x.key, x.val) for x in self._items]
 
     def __iter__(self):
         """Return an iterator of all of the keys in the table."""
@@ -444,7 +444,7 @@ class BinarySearchST():
         """
         # Ex 3.1.25 Check the cache
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
-            self._cache.value = v
+            self._cache.val = v
             return
 
         # Ex 3.1.28 If key is largest in table, slap it on the end! This
@@ -457,7 +457,7 @@ class BinarySearchST():
         # if key is in the table, update the value
         if i < self.size and self._items[i].key == k:
             self._cost += 1
-            self._items[i].value = v
+            self._items[i].val = v
         else:
             # create new Item in the table
             self._cost += self.size - i  # Θ(n-i) to move list elements
@@ -477,13 +477,13 @@ class BinarySearchST():
         """
         # See if we have cached the key
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
-            return self._cache.value
+            return self._cache.val
 
         i = self.rank(k)
         if i < self.size and self._items[i].key == k:
             if self._CACHE_FLAG:
                 self._cache = self._items[i]  # cache its location
-            return self._items[i].value
+            return self._items[i].val
         else:
             raise KeyError(k)
 
@@ -688,7 +688,7 @@ class BinarySearchST():
             q = _Queue()
             for x in self._items[l:h]:
                 q.enqueue(x.key if rtype == 'keys' else
-                          (x.value if rtype == 'values' else (x.key, x.value)))
+                          (x.val if rtype == 'values' else (x.key, x.val)))
             return list(q)
         return iterator
 
@@ -2206,22 +2206,15 @@ if __name__ == '__main__':
     data_set.remove(('A', 2))
     data_set.remove(('E', 6))
 
-    # TODO run these tests on *all* STs.
-    # ---------- Test Unordered STs ----------
-    for ST in [SequentialSearchST, ArrayST]:
+    # ---------- Test All STs ----------
+    for ST in [SequentialSearchST, ArrayST, BinarySearchST, BST, BST_nr, 
+               ThreadedST, ThreadedST_nr]:
         st = ST()
         should_be(st.size, 0)
         should_be(st.is_empty, True)
         should_be(st.keys(),   [])
         should_be(st.values(), [])
         should_be(st.items(),  [])
-
-        # Test cost of `put()` operations into empty table
-        # NOTE costs assume item is added to beginning of SequentialSearchST list
-        # costs = [0, 1, 2, 3, 4, 5, 5, 6, 5, 7, 8, 9, 9]
-        # for i, (c, n) in enumerate(zip('SEARCHEXAMPLE', costs)):
-        #     st[c] = i
-        #     should_be(st._cost, n)
 
         st = ST(data)
         for k, v in data:
@@ -2235,7 +2228,6 @@ if __name__ == '__main__':
         should_be(len(st), st.size)
         # st.keys() not guaranteed in order, so these tests are weak
         should_be(sorted(st.keys()), sorted(test_set))
-        should_be((st.keys() == sorted(test_set)), False)  # not inserted in order
         should_be(sorted(st.values()), sorted([v for k, v in data_set]))
         should_be(sorted(st.items()), sorted(data_set))
 
@@ -2253,10 +2245,10 @@ if __name__ == '__main__':
         for k in st:
             v = st[k]                       # __getitem__
             should_be(st._cache.key, k)
-            should_be(st._cache.value, v)
+            should_be(st._cache.val, v)
             st[k] = 56                       # __setitem__
             should_be(st._cache.key, k)
-            should_be(st._cache.value, 56)
+            should_be(st._cache.val, 56)
         del st[k]
         should_be(st._cache, None)
 
@@ -2269,7 +2261,7 @@ if __name__ == '__main__':
         st[k]                       # search again
         should_be(st._cost, 1)      # test cost
 
-    # ---------- Test Ordered STs ----------
+    # ---------- Test Ordered Operations ----------
     for ST in [BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr]:
         for cache in [False, True]:
             t = ST()
