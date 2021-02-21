@@ -58,6 +58,207 @@ class SequentialSearchST():
         `floor`/`ceil`, etc. that the ordered symbol tables (BinarySearchST,
         BST, etc.) can efficiently implement.
     """
+    class _Item(_Item):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.next = None  # pointer to next item
+
+    def __init__(self, items=list(), cache=False, **kwargs):
+        self.size = 0             # number of elements in the table
+        self._first = None
+        self._cost = 0            # cost of previous get/put/delete
+        self._CACHE_FLAG = cache
+        self._cache = None        # store latest search hit
+
+        # Initialize the symbol table
+        try:
+            for k, v in items:
+                self.__setitem__(k, v)
+        except ValueError:
+            raise ValueError(f"{self.__class__.__name__} expects a `list` of tuples input.")
+
+    @property
+    def is_empty(self):
+        return self.size == 0
+
+    # -------------------------------------------------------------------------
+    #         Public API
+    # -------------------------------------------------------------------------
+    def __len__(self):
+        return self.size
+
+    def __setitem__(self, k, v):
+        """Insert a new value `v` associated with key `k`.
+        If `k` is in the table, change its value to `v`."""
+        # Check the cache (Ex 3.1.25)
+        if self._CACHE_FLAG and self._cache and k == self._cache.key:
+            self._cache.value = v
+            return
+
+        # Perform sequential search
+        x = self._first
+        i = 0
+        while x:
+            if k == x.key:
+                self._cost = i + 1
+                x.value = v              # key exists, so update value
+                if self._CACHE_FLAG:
+                    self._cache = x
+                return
+            else:
+                i += 1
+                x = x.next
+        else:
+            self._cost = self.size   # tested all the keys!
+            item = self._Item(k, v)  # add new key to beginning of list: O(1)
+            item.next = self._first
+            self._first = item
+            self.size += 1
+            if self._CACHE_FLAG:
+                self._cache = self._first  # update the cache
+
+    def __getitem__(self, k):
+        """Return the value associated with the given key `k`."""
+        # Check the cache
+        if self._CACHE_FLAG and self._cache and k == self._cache.key:
+            return self._cache.value
+
+        # Perform sequential search
+        x = self._first
+        i = 0
+        while x:
+            if k == x.key:
+                self._cost = i + 1
+                if self._CACHE_FLAG:
+                    self._cache = x
+                return x.value
+            else:
+                i += 1
+                x = x.next
+        else:
+            self._cost = self.size  # tested all the keys!
+            raise KeyError(k)
+
+    def __contains__(self, k):
+        """Return True if `k` is present in the table, False otherwise."""
+        try:
+            self.__getitem__(k)
+            return True
+        except KeyError:
+            return False
+
+    # Exercise 3.1.5
+    def __delitem__(self, k):
+        """Delete the item associated with `k`.
+
+        Raises
+        ------
+        KeyError
+            If `k` is not in the table.
+        """
+        # Perform sequential search
+        x = self._first
+
+        # Check the first node
+        if k == x.key:
+            self._cost = 1
+            # Clear the cache and remove the item
+            if self._CACHE_FLAG and self._cache and k == self._cache.key:
+                self._cache = None
+            self._first = x.next
+            return
+
+        # Search
+        i = 0
+        while x.next:
+            if k == x.next.key:
+                self._cost = i + 1
+                # Clear the cache and remove the item
+                if self._CACHE_FLAG and self._cache and k == self._cache.key:
+                    self._cache = None
+                x.next = x.next.next  # unlink the node
+                return
+            else:
+                i += 1
+                x = x.next
+        else:
+            self._cost = self.size
+            raise KeyError(k)
+
+    def __eq__(self, other):
+        return sorted(self.items()) == sorted(other.items())
+
+    def __str__(self):
+        return str(self.items())
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__}: {self.__str__()}>"
+
+    # -------------------------------------------------------------------------
+    #         Iterator functions
+    # -------------------------------------------------------------------------
+    _docstring = """Return an in-order iterator over the {rtype}`.
+
+    Returns
+    -------
+    q : iterator
+        iterator over the {rtype}.
+    """
+
+    def keys(self):
+        return self._make_inorder_iterator(rtype='keys')(self)
+
+    def values(self):
+        return self._make_inorder_iterator(rtype='values')(self)
+
+    def items(self):
+        return self._make_inorder_iterator(rtype='items')(self)
+
+    keys.__doc__   = _docstring.format(rtype='keys')
+    values.__doc__ = _docstring.format(rtype='values')
+    items.__doc__  = _docstring.format(rtype='items')
+
+    def __iter__(self):
+        """Return an iterator of all of the keys in the table."""
+        yield from self.keys()
+
+    # -------------------------------------------------------------------------
+    #         Private API
+    # -------------------------------------------------------------------------
+    def _make_inorder_iterator(self, rtype):
+        """Return an iterator over all of the items in the table."""
+        def iterator(self, lo=None, hi=None):
+            """Iterate over items."""
+            q = _Queue()
+            x = self._first
+            while x:
+                q.enqueue(x.key if rtype == 'keys' else
+                          (x.value if rtype == 'values' else (x.key, x.value)))
+                x = x.next
+            return list(q)
+        return iterator
+
+
+# Ex 3.1.2 unordered search with an array
+class ArrayST():
+    """Implements an unordered symbol table with an array.
+
+    Parameters
+    ----------
+    items : mapping, dict-like
+        Iterable of (key, value) pairs to be put into the table.
+
+    Attributes
+    ----------
+    size : int
+        Number of items in the table.
+    is_empty : bool
+        True if `size == 0`.
+
+    .. note:: ArrayST lacks methods like `min`/`max`,
+        `floor`/`ceil`, etc. that the ordered symbol tables (BinarySearchST,
+        BST, etc.) can efficiently implement.
+    """
     def __init__(self, items=list(), cache=False, selforg=False):
         self._items = list()           # Ex 3.1.2 (ArrayST)
         self._cost = 0                 # cost of previous get/put/delete
@@ -169,7 +370,7 @@ class SequentialSearchST():
         return sorted(self.items()) == sorted(other.items())
 
     def __str__(self):
-        return str(dict(self._items))
+        return str(self._items)
 
     def __repr__(self):
         return f"<{self.__class__.__name__}: {self.__str__()}>"
@@ -192,7 +393,6 @@ class SequentialSearchST():
     def __iter__(self):
         """Return an iterator of all of the keys in the table."""
         yield from self.keys()
-
 
 class BinarySearchST():
     """Implements an ordered-array with binary search symbol table.
@@ -494,6 +694,7 @@ class BinarySearchST():
     # -------------------------------------------------------------------------
     #         Data Integrity Checks
     # -------------------------------------------------------------------------
+    # Ex 3.1.30
     # NOTE integrity checks are O(N)!! They break the O(lg N) search...
     def _assert_integrity(self):
         assert self._is_sorted() and self._rank_check()
@@ -1201,7 +1402,6 @@ class ThreadedST(BST):
         x.next = self._find_next(x.key, self._root)
         x.prev = self._find_prev(x.key, self._root)
         return x
-
 
     def _delete(self, k, x=None):
         """Delete the node associated with `k`.
@@ -1936,10 +2136,12 @@ class ThreadedST_nr(BST_nr):
                     break
         return list(q)
 
+
 # -----------------------------------------------------------------------------
 #         Test Functions
 # -----------------------------------------------------------------------------
 # TODO move to proper unit testing script
+# Ex 3.1.29 (and then some!)
 if __name__ == '__main__':
     import numpy as np
     rng = np.random.default_rng(seed=565656)
@@ -2003,66 +2205,67 @@ if __name__ == '__main__':
     data_set.remove(('A', 2))
     data_set.remove(('E', 6))
 
-    # ---------- Test SequentialSearchST ----------
-    # TODO implement tests for t._cost after various operations
-    st = SequentialSearchST()
-    should_be(st.size, 0)
-    should_be(st.is_empty, True)
-    should_be(st.keys(),   [])
-    should_be(st.values(), [])
-    should_be(st.items(),  [])
+    # ---------- Test Unordered STs ----------
+    for ST in [SequentialSearchST, ArrayST]:
+        st = ST()
+        should_be(st.size, 0)
+        should_be(st.is_empty, True)
+        should_be(st.keys(),   [])
+        should_be(st.values(), [])
+        should_be(st.items(),  [])
 
-    # Test cost of `put()` operations into empty table
-    # NOTE costs assume item is added to beginning of SequentialSearchST list
-    # costs = [0, 1, 2, 3, 4, 5, 5, 6, 5, 7, 8, 9, 9]
-    # for i, (c, n) in enumerate(zip('SEARCHEXAMPLE', costs)):
-    #     st[c] = i
-    #     should_be(st._cost, n)
+        # Test cost of `put()` operations into empty table
+        # NOTE costs assume item is added to beginning of SequentialSearchST list
+        # costs = [0, 1, 2, 3, 4, 5, 5, 6, 5, 7, 8, 9, 9]
+        # for i, (c, n) in enumerate(zip('SEARCHEXAMPLE', costs)):
+        #     st[c] = i
+        #     should_be(st._cost, n)
 
-    st = SequentialSearchST(data)
-    for k, v in data:
-        should_be(k in st, True)
-        if k == 'E' or k == 'A':
-            should_be(st[k], max([val for key, val in data if key == k]))
-        else:
-            should_be(st[k], v)
+        st = ST(data)
+        for k, v in data:
+            should_be(k in st, True)
+            if k == 'E' or k == 'A':
+                should_be(st[k], max([val for key, val in data if key == k]))
+            else:
+                should_be(st[k], v)
 
-    should_be(len(st), len(test_set))  # test __len__
-    should_be(len(st), st.size)
-    # st.keys() not guaranteed in order, so these tests are weak
-    should_be(sorted(st.keys()), sorted(test_set))
-    should_be((st.keys() == sorted(test_set)), False)  # not inserted in order
-    should_be(sorted(st.values()), sorted([v for k, v in data_set]))
-    should_be(sorted(st.items()), sorted(data_set))
+        should_be(len(st), len(test_set))  # test __len__
+        should_be(len(st), st.size)
+        # st.keys() not guaranteed in order, so these tests are weak
+        should_be(sorted(st.keys()), sorted(test_set))
+        should_be((st.keys() == sorted(test_set)), False)  # not inserted in order
+        should_be(sorted(st.values()), sorted([v for k, v in data_set]))
+        should_be(sorted(st.items()), sorted(data_set))
 
-    err_test(st, '__getitem__', 'Z', err_type=KeyError)
+        err_test(st, '__getitem__', 'Z', err_type=KeyError)
 
-    v = st['A']
-    del st['A']
-    should_be(sorted(st.keys()), sorted(test_set - set('A')))
-    st['A'] = v
+        test_keys = test_set.copy()
+        for k in st:
+            v = st[k]
+            del st[k]
+            test_keys -= set(k)
+            should_be(sorted(st.keys()), sorted(test_keys))
 
-    # Test caching
-    tc = SequentialSearchST(data, cache=True)
-    for k in st:
-        v = tc[k]                       # __getitem__
-        should_be(tc._cache.key, k)
-        should_be(tc._cache.value, v)
-        tc[k] = 9                       # __setitem__
-        should_be(tc._cache.key, k)
-        should_be(tc._cache.value, 9)
-    del tc[k]
-    should_be(tc._cache, None)
-
+        # Test caching
+        st = ST(data, cache=True)
+        for k in st:
+            v = st[k]                       # __getitem__
+            should_be(st._cache.key, k)
+            should_be(st._cache.value, v)
+            st[k] = 56                       # __setitem__
+            should_be(st._cache.key, k)
+            should_be(st._cache.value, 56)
+        del st[k]
+        should_be(st._cache, None)
 
     # Test self-organizing search (Exercise 3.1.22)
-    tc = SequentialSearchST(data, selforg=True)
-    rand_keys = rng.choice(tc.keys(), size=tc.size) 
+    st = ArrayST(data, selforg=True)
+    rand_keys = rng.choice(st.keys(), size=st.size) 
     for k in rand_keys:
-        tc[k]                       # search for the key
-        should_be(tc.keys()[0], k)  # should get moved to front
-        tc[k]                       # search again
-        should_be(tc._cost, 1)      # test cost
+        st[k]                       # search for the key
+        should_be(st.keys()[0], k)  # should get moved to front
+        st[k]                       # search again
+        should_be(st._cost, 1)      # test cost
 
     # ---------- Test Ordered STs ----------
     for ST in [BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr]:
