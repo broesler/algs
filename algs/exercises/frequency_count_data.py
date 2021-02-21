@@ -13,7 +13,7 @@ import os
 import pandas as pd
 import pickle
 
-from algs.search import SequentialSearchST, BinarySearchST
+from algs.search import ArrayST, BinarySearchST
 from frequency_counter import FrequencyCounter
 
 filenames = ['../data/tiny_tale.txt',  # 292
@@ -22,7 +22,8 @@ filenames = ['../data/tiny_tale.txt',  # 292
 
 tags = [os.path.splitext(os.path.basename(x))[0] for x in filenames]
 cols = pd.MultiIndex.from_product([tags, ['words', 'distinct', 'max_word', 'max_freq']])
-kind = 'cache'  # 'ins', 'app', 'selforg', 'cache' for `.insert(0, item)` vs. `.append(item)`
+kind = 'app'  # 'ins', 'app', 'selforg', 'cache', 'LL' 
+             #  for `.insert(0, item)` vs. `.append(item)`
 
 selforg = cache = False
 if kind == 'selforg':
@@ -30,7 +31,7 @@ if kind == 'selforg':
 if kind == 'cache':
     cache = True
 
-for ST in [SequentialSearchST, BinarySearchST]:
+for ST in [ArrayST, BinarySearchST]:
     df = pd.DataFrame(columns=cols)
     for i, f in enumerate(filenames):
         tag = tags[i]
