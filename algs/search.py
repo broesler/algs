@@ -959,6 +959,14 @@ class BST():
         _empty_check(self)
         return self._center_of_mass(self._root) / (t.size - 1)
 
+    # Ex 3.2.47
+    def internal_path_length_r(self):
+        """Compute the internal path length of the tree recursively.
+
+        ..note:: The IPL is defined as the sum of the depth of every node.
+        """
+        return self._internal_path_length_r(self._root, 0)
+
     # Exercise 3.2.37
     def level_order(self, x=None):
         """Iterate over the keys in level-order (breadth-first)."""
@@ -1174,6 +1182,14 @@ class BST():
     def _height(self, x=None):
         """Return the height of the tree rooted at `x`."""
         return 0 if x is None else x.height
+
+    def _internal_path_length_r(self, x=None, depth=0):
+        """Return the sum of the depths of all nodes in the tree."""
+        if x is None:
+            return 0
+        lpath = self._internal_path_length_r(x.left,  depth + 1)
+        rpath = self._internal_path_length_r(x.right, depth + 1)
+        return depth + lpath + rpath
 
     def _is_balanced(self, x=None):
         """Return True if subtree rooted at `x` is perfectly balanced."""
@@ -2385,6 +2401,7 @@ if __name__ == '__main__':
                 should_be(t.height_r(), 6)  # recursive method
                 should_be(t.isBST(), True)
                 should_be(list(t.level_order()), list('SEXARCHMLP'))
+                should_be(t.internal_path_length_r(), 26)
 
             # In-order traversal
             should_be(list(t.keys()), sorted(test_set))
