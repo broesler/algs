@@ -77,22 +77,22 @@ df = pd.DataFrame(index=Ns, columns=cols)
 comps = np.empty(N_trials)      # total number of compares to build table
 heights = np.empty(N_trials)    # height of tree after building
 for N in Ns:
+    print(f"N = {N}...")
     for i in tqdm(range(N_trials)):
         st = BST_nr()
         tot_comp = 0
-        # for k in tqdm(rng.integers(N, size=N)):
         for k in rng.integers(N, size=N):
             st[k] = 1  # set a arbitrary value
             tot_comp += st._cost
-        comps[i] = tot_comp / N  # cost of building table of size N
-        heights[i] = st.height   # 
+        comps[i] = tot_comp / N  # cost of building tree of size N
+        heights[i] = st.height   # height of tree of size N
 
     df.loc[N, ('compares', 'Experiment')] = comps.mean(), comps.std()
     df.loc[N, ('compares', 'Theory')]     = bst_avg_compares(N), None
     df.loc[N, ('height', 'Experiment')]   = heights.mean(), heights.std()
     df.loc[N, ('height', 'Theory')]       = bst_height(N), None
 
-# df.to_pickle
+df.to_pickle('pkl/bst_compares.pkl')
 print(df)
 
 # =============================================================================

@@ -798,7 +798,7 @@ class BST():
             self._cache.val = v
             return
         else:
-            self._cost = 0
+            self._cost = 0  # Ex 3.2.44
             self._root = self._set(k, v, self._root)
 
     def __delitem__(self, k):
