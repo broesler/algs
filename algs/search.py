@@ -1617,22 +1617,32 @@ class BST_nr(BST):
             p = x  # track parent node
             if k == x.key:
                 x.val = v  # update the value if found
+                if self._CACHE_FLAG:
+                    self._cache = x
                 return self._root
             else:
                 # Move down the tree
                 s.push(x)
                 if k < x.key:
+                    self._cost += 1
                     x = x.left
                 else:
+                    self._cost += 2
                     x = x.right
 
         # Insert new node as child of parent
         if p is None:
             self._root = self._Node(k, v)
+            cache = self._root
         elif k < p.key:
             p.left = self._Node(k, v)
+            cache = p.left
         else:
             p.right = self._Node(k, v)
+            cache = p.right
+
+        if self._CACHE_FLAG:
+            self._cache = cache
 
         # Update node counts and heights on path traveled back up the tree
         while s:
@@ -1660,6 +1670,8 @@ class BST_nr(BST):
         p = t
         while t:
             if k == t.key:
+                if self._CACHE_FLAG and self._cache and k == self._cache.key:
+                    self._cache = None
                 break
             else:
                 # Move down the tree
