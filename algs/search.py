@@ -2261,6 +2261,16 @@ if __name__ == '__main__':
         st[k]                       # search again
         should_be(st._cost, 1)      # test cost
 
+    # Test self-organizing search AND caching
+    st = ArrayST(data, selforg=True, cache=True)
+    rand_keys = rng.choice(st.keys(), size=st.size)
+    for k in rand_keys:
+        st[k]                       # search for the key
+        should_be(st.keys()[0], k)  # should get moved to front
+        should_be(st._cache.key, k)
+    del st[k]
+    should_be(st._cache, None)
+
     # ---------- Test Ordered Operations ----------
     for ST in [BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr]:
         for cache in [False, True]:
