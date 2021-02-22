@@ -16,7 +16,7 @@ import pickle
 from matplotlib.gridspec import GridSpec
 from pathlib import Path
 
-SAVE_FIGS = False
+SAVE_FIGS = True
 
 MINLEN = 8
 
@@ -24,15 +24,17 @@ MINLEN = 8
 filename = Path('../data/tale.txt')       # 779K
 # filename = Path('../data/leipzig1m.txt')  # 124M
 
+ST_names = ['ArrayST', 'BinarySearchST', 'BST']
+
 tag = filename.stem
 kind = 'app'  # 'ins', 'app', 'selforg', 'cache'
 
 fig = plt.figure(0, clear=True)
-fig.set_size_inches((8, 6), forward=True)
+fig.set_size_inches((8, max(6, 3*len(ST_names))), forward=True)
 fig.suptitle(f"{filename.name}, min. length = {MINLEN}")
-gs = GridSpec(nrows=2, ncols=1)
+gs = GridSpec(nrows=len(ST_names), ncols=1)
 
-for i, ST_name in enumerate(['ArrayST', 'BinarySearchST']):
+for i, ST_name in enumerate(ST_names):
     # Load the FrequencyCounter
     with open(f"./pkl/{tag}_{ST_name}_m{MINLEN:02d}_{kind}.pkl", 'rb') as fp:
         fc = pickle.load(fp)

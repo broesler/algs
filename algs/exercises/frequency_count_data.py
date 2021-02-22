@@ -13,7 +13,7 @@ import os
 import pandas as pd
 import pickle
 
-from algs.search import ArrayST, BinarySearchST
+from algs.search import ArrayST, BinarySearchST, BST
 from frequency_counter import FrequencyCounter
 
 filenames = ['../data/tiny_tale.txt',  # 292
@@ -31,12 +31,15 @@ if kind == 'selforg':
 if kind == 'cache':
     cache = True
 
-for ST in [ArrayST, BinarySearchST]:
+for ST in [ArrayST, BinarySearchST, BST]:
     df = pd.DataFrame(columns=cols)
     for i, f in enumerate(filenames):
         tag = tags[i]
         for minlen in [1, 8, 10]:
-            fc = FrequencyCounter(ST, selforg=selforg, cache=cache)
+            if ST is ArrayST:
+                fc = FrequencyCounter(ST, selforg=selforg, cache=cache)
+            else:
+                fc = FrequencyCounter(ST, cache=cache)
             fc.count_frequencies(f, minlen)
             df.loc[minlen, (tag, 'words')] = fc.N
             df.loc[minlen, (tag, 'distinct')] = fc.t.size

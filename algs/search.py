@@ -59,12 +59,14 @@ class SequentialSearchST():
         `floor`/`ceil`, etc. that the ordered symbol tables (BinarySearchST,
         BST, etc.) can efficiently implement.
     """
+    # Custom item for singly-linked list
     class _Item(_Item):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-            self.next = None  # pointer to next item
+        def __init__(self, key, value, next=None):
+            super().__init__(key, value)
+            self.next = next  # pointer to next item
 
-    def __init__(self, items=list(), cache=False, **kwargs):
+    # Initialize the symbol table
+    def __init__(self, items=list(), cache=False):
         self.size = 0             # number of elements in the table
         self._first = None
         self._cost = 0            # cost of previous get/put/delete
@@ -111,8 +113,7 @@ class SequentialSearchST():
                 x = x.next
         else:
             self._cost = self.size   # tested all the keys!
-            item = self._Item(k, v)  # add new key to beginning of list: O(1)
-            item.next = self._first
+            item = self._Item(k, v, self._first)  # add new key to beginning of list: O(1)
             self._first = item
             self.size += 1
             if self._CACHE_FLAG:
@@ -410,7 +411,7 @@ class BinarySearchST():
     is_empty : bool
         True if `size == 0`.
     """
-    def __init__(self, items=list(), cache=False, **kwargs):
+    def __init__(self, items=list(), cache=False):
         self._items = list()
         self._cost = 0              # track number of compares + array accesses
         self._CACHE_FLAG = cache
@@ -738,7 +739,7 @@ class BST():
             self.val = value
             self.left = self.right = None
             self.N = 1       # nodes in subtree rooted here
-            self.height = 1  # height of the tree rooted at this _Node
+            self.height = 1  # Ex 3.2.6(b) height of the tree rooted at this _Node
 
         def __str__(self):
             # Avoid recursion through entire tree!! Just print each child
@@ -754,8 +755,9 @@ class BST():
     # -------------------------------------------------------------------------
     def __init__(self, items=list(), cache=False):
         self._root = None
-        self._CACHE_FLAG = cache
+        self._CACHE_FLAG = cache  # Ex 3.2.28
         self._cache = None  # store the most recently accessed Node.
+        self._cost = 0            # Ex 3.2.39, 3.2.40, 3.2.44, 3.2.47
         try:
             for k, v in items:
                 self._root = self._set(k, v, self._root)
@@ -796,6 +798,7 @@ class BST():
             self._cache.val = v
             return
         else:
+            self._cost = 0
             self._root = self._set(k, v, self._root)
 
     def __delitem__(self, k):
@@ -935,7 +938,7 @@ class BST():
         if self._CACHE_FLAG:
             self._cache = None
 
-    # Exercise 3.2.6
+    # Exercise 3.2.6(a)
     def height_r(self):
         """Determine the height of the BST recursively, in O(n) time."""
         return self._height_r(self._root)
@@ -1025,10 +1028,13 @@ class BST():
 
         # create a child, or update the value
         if k < x.key:
+            self._cost += 1
             x.left = self._set(k, v, x.left)
         elif k > x.key:
+            self._cost += 2
             x.right = self._set(k, v, x.right)
         else:  # k == x.key
+            self._cost += 2
             x.val = v  # update the value
 
         # Update the size of the subtree located at the given root
@@ -1182,7 +1188,7 @@ class BST():
         """Return the center of mass of the subtree rooted at `x`."""
         if x is None:
             return 0
-        L = 0 if x.left is None else  x.left.N
+        L = 0 if x.left is None else x.left.N
         R = 0 if x.right is None else x.right.N
         return (R - L
                 + self._center_of_mass(x.left)
@@ -1273,12 +1279,14 @@ class BST():
     # -------------------------------------------------------------------------
     #         Certification (see Exercises 3.2.29 -- 3.2.32)
     # -------------------------------------------------------------------------
+    # Ex 3.2.32
     def isBST(self):
         """Assert that all of the binary search tree properties hold."""
         return self._is_binary_tree() and \
                self._is_ordered() and \
                self._has_no_duplicates()
 
+    # Ex 3.2.29
     def _is_binary_tree(self):
         """Return True if BST is indeed binary and acyclic."""
         return self.__is_binary_tree(self._root)
@@ -1295,6 +1303,7 @@ class BST():
             return self.__is_binary_tree(x.left) and \
                    self.__is_binary_tree(x.right)
 
+    # Ex 3.2.30
     def _is_ordered(self):
         """Return True if all keys in the tree are in order."""
         return self.__is_ordered(lo=self.min(), hi=self.max(), x=self._root)
@@ -1312,6 +1321,7 @@ class BST():
             return self.__is_ordered(lo, x.key, x.left) and \
                    self.__is_ordered(x.key, hi, x.right)
 
+    # Ex 3.2.31
     def _has_no_duplicates(self):
         """Return True if there are no equal keys in the BST."""
         for i, k in enumerate(self.keys()):
@@ -2349,6 +2359,13 @@ if __name__ == '__main__':
                 should_be(t.select(i), c)
                 should_be(t.rank(c), i)
             err_test(t, 'select', 99, err_type=IndexError)  # too large
+
+            # Ex 3.2.33
+            for i in range(t.size):
+                should_be(t.rank(t.select(i)), i)
+
+            for k in t.keys():
+                should_be(t.select(t.rank(k)), k)
 
             # BST-specific tests
             if isinstance(t, BST):
