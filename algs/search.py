@@ -992,6 +992,16 @@ class BST():
         """Return the size of the subtree rooted at Node `x`."""
         return 0 if x is None else x.N
 
+    def _get_node(self, k):
+        """Return the node associated with the given `k`."""
+        if self._CACHE_FLAG and self._cache and k == self._cache.key:
+            return self._cache
+        else:
+            x = self._get(k, self._root)
+            if self._CACHE_FLAG:
+                self._cache = x
+            return x
+
     def _get(self, k, x=None):
         """Return the node associated with the given `k`.
 
