@@ -727,7 +727,9 @@ class BST():
     size : int
         Number of items on the tree.
     height : int
-        The height of the binary tree == maximum path length ~ lg N
+        The height of the binary tree == maximum path length ~ 2.99 lg N
+    internal_path_length : int
+        The sum of the depths of all nodes in the tree ~ 1.39 lg N - 1.85
     is_empty : bool
         True if `size == 0`.
     """
@@ -759,7 +761,7 @@ class BST():
         self._CACHE_FLAG = cache       # Ex 3.2.28
         self._cache = None             # store the most recently accessed Node.
         self._cost = 0                 # Ex 3.2.39, 3.2.40, 3.2.44, 3.2.47
-        self.internal_path_length = 0  # Ex 3.2.47 sum of depths of all nodes
+        self._internal_path_length = 0  # Ex 3.2.47 sum of depths of all nodes
         try:
             for k, v in items:
                 self._root = self._set(k, v, self._root)
@@ -775,6 +777,10 @@ class BST():
     def height(self):
         """Return the height of the BST in O(1) time."""
         return self._height(self._root)
+
+    @property
+    def internal_path_length(self):
+        return self._internal_path_length
 
     @property
     def is_empty(self):
@@ -801,7 +807,7 @@ class BST():
             return
         else:
             self._cost = 0  # Ex 3.2.44
-            self._root = self._set(k, v, self._root, depth=0)
+            self._root = self._set(k, v, self._root)
 
     def __delitem__(self, k):
         """Delete the node associated with `k`.
@@ -1044,7 +1050,7 @@ class BST():
         """
         # subtree is empty, create a new node
         if x is None:
-            self.internal_path_length += depth  # update internal path length
+            self._internal_path_length += depth  # update internal path length
             return self._Node(k, v, depth)
 
         # create a child, or update the value
@@ -1137,6 +1143,9 @@ class BST():
             minimum key in the subtree.
         """
         if x.left is None:
+            self._internal_path_length -= x.depth + x.N - 1
+            for p in self._iterate_nodes(x.right):
+                p.depth -= 1
             return x.right
         x.left = self._delete_min(x.left)
         # Update the size of the subtree located at the given root
@@ -1170,16 +1179,24 @@ class BST():
         elif k > x.key:
             x.right = self._delete(k, x.right)
         else:
-            if x.left is None:
-                return x.right
-            if x.right is None:
-                return x.left
-            # save pointer to Node to be deleted
-            t = x
-            # Get the successor to the node to be deleted
-            x = self._min(t.right)
-            x.right = self._delete_min(t.right)
-            x.left = t.left
+            if x.left and x.right:
+                # save pointer to Node to be deleted
+                t = x
+                # Get the successor to the node to be deleted
+                x = self._min(t.right)
+                x.right = self._delete_min(t.right)
+                x.left = t.left
+            else:
+                self._internal_path_length -= x.depth + x.N - 1
+                # update depths of subtree
+                for p in self._iterate_nodes(x):
+                    p.depth -= 1
+
+                if x.left is None:
+                    return x.right
+                else: # x.right is None
+                    return x.left
+
         # Update the size of the subtree located at the given root
         x.N = self._size(x.left) + self._size(x.right) + 1
         return x
@@ -1305,6 +1322,15 @@ class BST():
         yield x.key
         yield from self._iterate_keys(x.right)
 
+    def _iterate_nodes(self, x=None):
+        """Recursively traverse the tree in order (depth-first search)."""
+        if x is None:
+            return
+        # Yield nodes in order
+        yield from self._iterate_nodes(x.left)
+        yield x
+        yield from self._iterate_nodes(x.right)
+
     # -------------------------------------------------------------------------
     #         Certification (see Exercises 3.2.29 -- 3.2.32)
     # -------------------------------------------------------------------------
@@ -1407,7 +1433,7 @@ class ThreadedST(BST):
     # -------------------------------------------------------------------------
     #         Private API
     # -------------------------------------------------------------------------
-    def _set(self, k, v, x=None, depth=0):
+    def _set(self, k, v, x=None):
         """Add a new node to subtree at `x`, associating `k` with `v`.
         If `k` is in subtree rooted at `x`, change its value to `v`.
 
@@ -1633,7 +1659,7 @@ class BST_nr(BST):
         else:
             raise KeyError(k)
 
-    def _set(self, k, v, x, depth=0):
+    def _set(self, k, v, x):
         """Add a new node to subtree at `x`, associating `k` with `v`.
         If `k` is in subtree rooted at `x`, change its value to `v`.
 
@@ -1940,7 +1966,7 @@ class ThreadedST_nr(BST_nr):
     # -------------------------------------------------------------------------
     #         Private API
     # -------------------------------------------------------------------------
-    def _set(self, k, v, x, depth=0):
+    def _set(self, k, v, x):
         """Add a new node to subtree at `x`, associating `k` with `v`.
         If `k` is in subtree rooted at `x`, change its value to `v`.
 
@@ -2419,8 +2445,16 @@ if __name__ == '__main__':
                 should_be(list(t.level_order()), list('SEXARCHMLP'))
                 should_be(t.internal_path_length_r(), 26)
                 should_be(t.internal_path_length, 26)
+                del t['H']  # remove node with single child
+                should_be(t.internal_path_length, 20)
+                t = ST(data, cache=cache)
+                t['G'] = 6
+                should_be(t.internal_path_length, 30)
+                del t['H']  # remove node with two children
+                should_be(t.internal_path_length, 25)
 
             # In-order traversal
+            t = ST(data, cache=cache)
             should_be(list(t.keys()), sorted(test_set))
             should_be(list(t.keys(lo='P')), list('PRSX'))
             should_be(list(t.keys('F', 'Q')), list('HLMP'))  # subset of keys
