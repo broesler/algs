@@ -1670,6 +1670,8 @@ class BST_nr(BST):
             p.right = self._Node(k, v)
             cache = p.right
 
+        self.internal_path_length += len(s)  # update internal path length
+
         if self._CACHE_FLAG:
             self._cache = cache
 
@@ -2410,7 +2412,7 @@ if __name__ == '__main__':
 
             # BST-specific tests
             # if isinstance(t, BST):
-            if t.__class__ == BST:
+            if t.__class__ == BST or t.__class__ == BST_nr:
                 should_be(t.height, 6)      # Node attribute method, as a property
                 should_be(t.height_r(), 6)  # recursive method
                 should_be(t.isBST(), True)
