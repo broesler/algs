@@ -756,9 +756,10 @@ class BST():
     # -------------------------------------------------------------------------
     def __init__(self, items=list(), cache=False):
         self._root = None
-        self._CACHE_FLAG = cache  # Ex 3.2.28
-        self._cache = None  # store the most recently accessed Node.
-        self._cost = 0            # Ex 3.2.39, 3.2.40, 3.2.44, 3.2.47
+        self._CACHE_FLAG = cache       # Ex 3.2.28
+        self._cache = None             # store the most recently accessed Node.
+        self._cost = 0                 # Ex 3.2.39, 3.2.40, 3.2.44, 3.2.47
+        self.internal_path_length = 0  # Ex 3.2.47 sum of depths of all nodes
         try:
             for k, v in items:
                 self._root = self._set(k, v, self._root)
@@ -1043,6 +1044,7 @@ class BST():
         """
         # subtree is empty, create a new node
         if x is None:
+            self.internal_path_length += depth  # update internal path length
             return self._Node(k, v, depth)
 
         # create a child, or update the value
@@ -2407,12 +2409,14 @@ if __name__ == '__main__':
                 should_be(t.select(t.rank(k)), k)
 
             # BST-specific tests
-            if isinstance(t, BST):
+            # if isinstance(t, BST):
+            if t.__class__ == BST:
                 should_be(t.height, 6)      # Node attribute method, as a property
                 should_be(t.height_r(), 6)  # recursive method
                 should_be(t.isBST(), True)
                 should_be(list(t.level_order()), list('SEXARCHMLP'))
                 should_be(t.internal_path_length_r(), 26)
+                should_be(t.internal_path_length, 26)
 
             # In-order traversal
             should_be(list(t.keys()), sorted(test_set))
