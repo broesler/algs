@@ -1621,6 +1621,9 @@ class ThreadedST(BST):
 class BST_nr(BST):
     """Implements a binary search tree data structure, non-recursively.
 
+    ..note:: `BST_nr` subclasses `BST`, but only overrides the internal methods
+    for `_set`, `_get`, `_delete`, etc. 
+
     Parameters
     ----------
     items : mapping, dict-like
@@ -1632,6 +1635,8 @@ class BST_nr(BST):
         Number of items on the tree.
     height : int
         The height of the binary tree == maximum path length ~ lg N
+    internal_path_length : int
+        The sum of the depths of all nodes in the tree ~ 1.39 lg N - 1.85
     is_empty : bool
         True if `size == 0`.
     """
@@ -1690,13 +1695,16 @@ class BST_nr(BST):
             self._root = self._Node(k, v)
             cache = self._root
         elif k < p.key:
-            p.left = self._Node(k, v)
+            p.left = self._Node(k, v, depth=len(s))
             cache = p.left
         else:
-            p.right = self._Node(k, v)
+            p.right = self._Node(k, v, depth=len(s))
             cache = p.right
 
-        self.internal_path_length += len(s)  # update internal path length
+        # NOTE to change with __delitem__, subtract x.depth + x.N from IPL
+        #   * we subtract the entire path to x, then 1 from the depth of each
+        #   node in the subtree rooted at x.
+        self._internal_path_length += len(s)  # update internal path length
 
         if self._CACHE_FLAG:
             self._cache = cache
@@ -1742,15 +1750,20 @@ class BST_nr(BST):
             raise KeyError(k)
 
         # find its successor
-        if t.left is None:
-            x = t.right
-        elif t.right is None:
-            x = t.left
-        else:
+        if t.left and t.right:
             x = self._min(t.right)
             s.push(x)
             x.right = self._delete_min(t.right)
             x.left = t.left
+        else:
+            self._internal_path_length -= t.depth + t.N - 1
+            for n in self._iterate_nodes(t):
+                n.depth -= 1
+
+            if t.left is None:
+                x = t.right
+            else: # t.right is None
+                x = t.left
 
         # Update parent link
         if k == p.key:
@@ -1873,12 +1886,19 @@ class BST_nr(BST):
         r = x  # keep pointer to the root
         if x.left is None:  # the min is the root
             r = x.right
+            self._internal_path_length -= r.depth + r.N - 1
+            for p in self._iterate_nodes(r):
+                p.depth -= 1
             return r
         # find the min
         while x.left:
             p = x         # pointer to the parent
             p.N -= 1      # decrement node counts
             x = x.left
+        # Update path length and depths for nodes below the min
+        self._internal_path_length -= x.depth + x.N - 1
+        for n in self._iterate_nodes(x):
+            n.depth -= 1
         p.left = x.right  # delete the pointer to the min
         return r
 
