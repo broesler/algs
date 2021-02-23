@@ -734,12 +734,13 @@ class BST():
     # Private Node class
     class _Node():
         """Internal node object to hold key, value, and two children."""
-        def __init__(self, key, value=None):
+        def __init__(self, key, value=None, depth=0):
             self.key = key
             self.val = value
             self.left = self.right = None
             self.N = 1       # nodes in subtree rooted here
             self.height = 1  # Ex 3.2.6(b) height of the tree rooted at this _Node
+            self.depth = depth or 0
 
         def __str__(self):
             # Avoid recursion through entire tree!! Just print each child
@@ -799,7 +800,7 @@ class BST():
             return
         else:
             self._cost = 0  # Ex 3.2.44
-            self._root = self._set(k, v, self._root)
+            self._root = self._set(k, v, self._root, depth=0)
 
     def __delitem__(self, k):
         """Delete the node associated with `k`.
@@ -1017,7 +1018,7 @@ class BST():
         else:  # k == root.key!
             return x
 
-    def _set(self, k, v, x=None):
+    def _set(self, k, v, x=None, depth=0):
         """Add a new node to subtree at `x`, associating `k` with `v`.
         If `k` is in subtree rooted at `x`, change its value to `v`.
 
@@ -1032,15 +1033,15 @@ class BST():
         """
         # subtree is empty, create a new node
         if x is None:
-            return self._Node(k, v)
+            return self._Node(k, v, depth)
 
         # create a child, or update the value
         if k < x.key:
             self._cost += 1
-            x.left = self._set(k, v, x.left)
+            x.left = self._set(k, v, x.left, depth+1)
         elif k > x.key:
             self._cost += 2
-            x.right = self._set(k, v, x.right)
+            x.right = self._set(k, v, x.right, depth+1)
         else:  # k == x.key
             self._cost += 2
             x.val = v  # update the value
@@ -1394,7 +1395,7 @@ class ThreadedST(BST):
     # -------------------------------------------------------------------------
     #         Private API
     # -------------------------------------------------------------------------
-    def _set(self, k, v, x=None):
+    def _set(self, k, v, x=None, depth=0):
         """Add a new node to subtree at `x`, associating `k` with `v`.
         If `k` is in subtree rooted at `x`, change its value to `v`.
 
@@ -1620,7 +1621,7 @@ class BST_nr(BST):
         else:
             raise KeyError(k)
 
-    def _set(self, k, v, x):
+    def _set(self, k, v, x, depth=0):
         """Add a new node to subtree at `x`, associating `k` with `v`.
         If `k` is in subtree rooted at `x`, change its value to `v`.
 
@@ -1925,7 +1926,7 @@ class ThreadedST_nr(BST_nr):
     # -------------------------------------------------------------------------
     #         Private API
     # -------------------------------------------------------------------------
-    def _set(self, k, v, x):
+    def _set(self, k, v, x, depth=0):
         """Add a new node to subtree at `x`, associating `k` with `v`.
         If `k` is in subtree rooted at `x`, change its value to `v`.
 
@@ -2342,18 +2343,18 @@ if __name__ == '__main__':
                 should_be(t._assert_integrity(), None)
 
             # Binary Search Tree:
-            #  height
-            #  6        S
-            #          / \
-            #  5      E   X
-            #      /    \
-            #  4  A      R
-            #      \    /
-            #  3    C  H
-            #           \
-            #  2         M
-            #           / \
-            #  1       L   P
+            #  height depth
+            #  6      0           S
+            #                    / \
+            #  5      1         E   X
+            #                /    \
+            #  4      2     A      R
+            #                \    /
+            #  3      3       C  H
+            #                     \
+            #  2      4            M
+            #                     / \
+            #  1      5          L   P
 
             should_be(len(t), len(test_set))  # test __len__
             should_be(len(t), t.size)
