@@ -1178,18 +1178,17 @@ class BST():
         elif k > x.key:
             x.right = self._delete(k, x.right)
         else:
-            if x.left and x.right:
+            if x.left is None:
+                return x.right
+            elif x.right is None:
+                return x.left
+            else:
                 # save pointer to Node to be deleted
                 t = x
                 # Get the successor to the node to be deleted
                 x = self._min(t.right)
                 x.right = self._delete_min(t.right)
                 x.left = t.left
-            else:
-                if x.left is None:
-                    return x.right
-                else: # x.right is None
-                    return x.left
 
         self._update_node(x)
         return x
@@ -1489,26 +1488,27 @@ class ThreadedST(BST):
                 if x.prev:
                     x.prev.next = x.next
                 return x.right
-            if x.right is None:
+            elif x.right is None:
                 # Update threads
                 if x.next:
                     x.next.prev = x.prev
                 if x.prev:
                     x.prev.next = x.next
                 return x.left
-            # save pointer to Node to be deleted
-            t = x
-            # Get the successor to the node to be deleted
-            x = self._min(t.right)
-            x.right = self._delete_min(t.right)
-            x.left = t.left
-            # Update Threads: _delete_min frees x, so reattach it
-            x.next = t.next
-            x.prev = t.prev
-            if t.next:
-                t.next.prev = x
-            if t.prev:
-                t.prev.next = x
+            else:
+                # save pointer to Node to be deleted
+                t = x
+                # Get the successor to the node to be deleted
+                x = self._min(t.right)
+                x.right = self._delete_min(t.right)
+                x.left = t.left
+                # Update Threads: _delete_min frees x, so reattach it
+                x.next = t.next
+                x.prev = t.prev
+                if t.next:
+                    t.next.prev = x
+                if t.prev:
+                    t.prev.next = x
 
         self._update_node(x)  # update N, height, internal path length
         return x
@@ -1865,17 +1865,18 @@ class BST_nr(BST):
         """
         if x is None:
             x = self._root
-        r = x  # keep pointer to the root
         if x.left is None:  # the min is the root
             return x.right
-        # find the min
-        while x.left:
-            p = x         # pointer to the parent
-            p.N -= 1      # decrement node counts
-            x = x.left
-        p.left = x.right  # delete the pointer to the min
-        self._update_node(p)
-        return r
+        else:
+            # find the min
+            r = x  # keep pointer to the root
+            while x.left:
+                p = x         # pointer to the parent
+                p.N -= 1      # decrement node counts
+                x = x.left
+            p.left = x.right  # delete the pointer to the min
+            self._update_node(p)
+            return r
 
     def _delete_max(self, x=None):
         """Delete the smallest key from the subtree rooted at `x`.
@@ -1888,17 +1889,18 @@ class BST_nr(BST):
         """
         if x is None:
             x = self._root
-        r = x
         if x.right is None:  # the max is the root
             return x.left
-        # find the max
-        while x.right:
-            p = x         # pointer to the parent
-            p.N -= 1      # decrement node counts
-            x = x.right
-        p.right = x.left  # delete the pointer to it
-        self._update_node(p)
-        return r
+        else:
+            # find the max
+            r = x
+            while x.right:
+                p = x         # pointer to the parent
+                p.N -= 1      # decrement node counts
+                x = x.right
+            p.right = x.left  # delete the pointer to it
+            self._update_node(p)
+            return r
 
     # -------------------------------------------------------------------------
     #         Iterator
@@ -2093,11 +2095,11 @@ class ThreadedST_nr(BST_nr):
         """
         if x is None:
             x = self._root
-        r = x  # keep pointer to the root
         if x.left is None:  # the min is the root
             r = x.right
         else:
             # find the min
+            r = x  # keep pointer to the root
             while x.left:
                 p = x           # pointer to the parent
                 p.N -= 1        # decrement node counts
@@ -2122,11 +2124,11 @@ class ThreadedST_nr(BST_nr):
         """
         if x is None:
             x = self._root
-        r = x
         if x.right is None:  # the max is the root
             r = x.left
         else:
             # find the max
+            r = x  # keep pointer to the root
             while x.right:
                 p = x               # pointer to the parent
                 p.N -= 1            # decrement node counts
