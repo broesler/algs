@@ -742,7 +742,6 @@ class BST():
             self.left = self.right = None
             self.N = 1       # nodes in subtree rooted here
             self.height = 1  # Ex 3.2.6(b) height of the tree rooted at this _Node
-            self.depth = depth or 0
 
         def __str__(self):
             # Avoid recursion through entire tree!! Just print each child
@@ -1051,7 +1050,7 @@ class BST():
         # subtree is empty, create a new node
         if x is None:
             self._internal_path_length += depth  # update internal path length
-            return self._Node(k, v, depth)
+            return self._Node(k, v)
 
         # create a child, or update the value
         if k < x.key:
@@ -1133,7 +1132,7 @@ class BST():
         else:
             return self._size(x.left)
 
-    def _delete_min(self, x=None):
+    def _delete_min(self, x=None, depth=0):
         """Delete the minimum key in the subtree rooted at `x`.
 
         Returns
@@ -1143,11 +1142,9 @@ class BST():
             minimum key in the subtree.
         """
         if x.left is None:
-            self._internal_path_length -= x.depth + x.N - 1
-            for p in self._iterate_nodes(x.right):
-                p.depth -= 1
+            self._internal_path_length -= depth + x.N - 1
             return x.right
-        x.left = self._delete_min(x.left)
+        x.left = self._delete_min(x.left, depth+1)
         # Update the size of the subtree located at the given root
         x.N = self._size(x.left) + self._size(x.right) + 1
         return x
@@ -1168,29 +1165,26 @@ class BST():
         x.N = self._size(x.left) + self._size(x.right) + 1
         return x
 
-    def _delete(self, k, x=None):
+    def _delete(self, k, x=None, depth=0):
         """Delete the node associated with `k` using eager Hibbard deletion."""
         if x is None:
             return
         # Update links and node counts as we go vs.:
         #   t = self._get(k, self._root)
         if k < x.key:
-            x.left = self._delete(k, x.left)
+            x.left = self._delete(k, x.left, depth+1)
         elif k > x.key:
-            x.right = self._delete(k, x.right)
+            x.right = self._delete(k, x.right, depth+1)
         else:
             if x.left and x.right:
                 # save pointer to Node to be deleted
                 t = x
                 # Get the successor to the node to be deleted
                 x = self._min(t.right)
-                x.right = self._delete_min(t.right)
+                x.right = self._delete_min(t.right, depth+1)
                 x.left = t.left
             else:
-                self._internal_path_length -= x.depth + x.N - 1
-                # update depths of subtree
-                for p in self._iterate_nodes(x):
-                    p.depth -= 1
+                self._internal_path_length -= depth + x.N - 1
 
                 if x.left is None:
                     return x.right
@@ -1753,12 +1747,10 @@ class BST_nr(BST):
         if t.left and t.right:
             x = self._min(t.right)
             s.push(x)
-            x.right = self._delete_min(t.right)
+            x.right = self._delete_min(t.right, depth=len(s))
             x.left = t.left
         else:
-            self._internal_path_length -= t.depth + t.N - 1
-            for n in self._iterate_nodes(t):
-                n.depth -= 1
+            self._internal_path_length -= len(s) + t.N - 1
 
             if t.left is None:
                 x = t.right
@@ -1872,7 +1864,7 @@ class BST_nr(BST):
             x = x.right
         return x
 
-    def _delete_min(self, x=None):
+    def _delete_min(self, x=None, depth=0):
         """Delete the smallest key from the subtree rooted at `x`.
 
         Returns
@@ -1885,20 +1877,15 @@ class BST_nr(BST):
             x = self._root
         r = x  # keep pointer to the root
         if x.left is None:  # the min is the root
-            r = x.right
-            self._internal_path_length -= r.depth + r.N - 1
-            for p in self._iterate_nodes(r):
-                p.depth -= 1
-            return r
+            return x.right
         # find the min
         while x.left:
             p = x         # pointer to the parent
             p.N -= 1      # decrement node counts
             x = x.left
+            depth += 1
         # Update path length and depths for nodes below the min
-        self._internal_path_length -= x.depth + x.N - 1
-        for n in self._iterate_nodes(x):
-            n.depth -= 1
+        self._internal_path_length -= depth + x.N - 1
         p.left = x.right  # delete the pointer to the min
         return r
 
@@ -1915,8 +1902,7 @@ class BST_nr(BST):
             x = self._root
         r = x
         if x.right is None:  # the max is the root
-            r = x.left
-            return r
+            return x.left
         # find the max
         while x.right:
             p = x         # pointer to the parent
