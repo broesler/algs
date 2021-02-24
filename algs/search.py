@@ -736,12 +736,13 @@ class BST():
     # Private Node class
     class _Node():
         """Internal node object to hold key, value, and two children."""
-        def __init__(self, key, value=None, depth=0):
+        def __init__(self, key, value=None):
             self.key = key
             self.val = value
             self.left = self.right = None
             self.N = 1       # nodes in subtree rooted here
             self.height = 1  # Ex 3.2.6(b) height of the tree rooted at this _Node
+            self.ipl = 0  # Ex 3.2.47 sum of depths of nodes in subtree
 
         def __str__(self):
             # Avoid recursion through entire tree!! Just print each child
@@ -760,7 +761,6 @@ class BST():
         self._CACHE_FLAG = cache       # Ex 3.2.28
         self._cache = None             # store the most recently accessed Node.
         self._cost = 0                 # Ex 3.2.39, 3.2.40, 3.2.44, 3.2.47
-        self._internal_path_length = 0  # Ex 3.2.47 sum of depths of all nodes
         try:
             for k, v in items:
                 self._root = self._set(k, v, self._root)
@@ -779,7 +779,8 @@ class BST():
 
     @property
     def internal_path_length(self):
-        return self._internal_path_length
+        """Return the internal path length of the BST in O(1) time."""
+        return self._internal_path_length(self._root)
 
     @property
     def is_empty(self):
@@ -998,6 +999,13 @@ class BST():
         """Return the size of the subtree rooted at Node `x`."""
         return 0 if x is None else x.N
 
+    def _update_node(self, x):
+        """Update the parameters of the node based on its subtree."""
+        x.N = self._size(x.left) + self._size(x.right) + 1
+        x.height = max(self._height(x.left), self._height(x.right)) + 1
+        x.ipl = self._internal_path_length(x.left) + self._size(x.left) \
+                + self._internal_path_length(x.right) + self._size(x.right)
+
     def _get_node(self, k):
         """Return the node associated with the given `k`."""
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
@@ -1034,7 +1042,7 @@ class BST():
         else:  # k == root.key!
             return x
 
-    def _set(self, k, v, x=None, depth=0):
+    def _set(self, k, v, x=None):
         """Add a new node to subtree at `x`, associating `k` with `v`.
         If `k` is in subtree rooted at `x`, change its value to `v`.
 
@@ -1049,23 +1057,20 @@ class BST():
         """
         # subtree is empty, create a new node
         if x is None:
-            self._internal_path_length += depth  # update internal path length
             return self._Node(k, v)
 
         # create a child, or update the value
         if k < x.key:
             self._cost += 1
-            x.left = self._set(k, v, x.left, depth+1)
+            x.left = self._set(k, v, x.left)
         elif k > x.key:
             self._cost += 2
-            x.right = self._set(k, v, x.right, depth+1)
+            x.right = self._set(k, v, x.right)
         else:  # k == x.key
             self._cost += 2
             x.val = v  # update the value
 
-        # Update the size of the subtree located at the given root
-        x.N = self._size(x.left) + self._size(x.right) + 1
-        x.height = max(self._height(x.left), self._height(x.right)) + 1
+        self._update_node(x)
         return x
 
     def _min(self, x=None):
@@ -1132,7 +1137,7 @@ class BST():
         else:
             return self._size(x.left)
 
-    def _delete_min(self, x=None, depth=0):
+    def _delete_min(self, x=None):
         """Delete the minimum key in the subtree rooted at `x`.
 
         Returns
@@ -1142,11 +1147,9 @@ class BST():
             minimum key in the subtree.
         """
         if x.left is None:
-            self._internal_path_length -= depth + x.N - 1
             return x.right
-        x.left = self._delete_min(x.left, depth+1)
-        # Update the size of the subtree located at the given root
-        x.N = self._size(x.left) + self._size(x.right) + 1
+        x.left = self._delete_min(x.left)
+        self._update_node(x)
         return x
 
     def _delete_max(self, x=None):
@@ -1161,38 +1164,34 @@ class BST():
         if x.right is None:
             return x.left
         x.right = self._delete_max(x.right)
-        # Update the size of the subtree located at the given root
-        x.N = self._size(x.left) + self._size(x.right) + 1
+        self._update_node(x)
         return x
 
-    def _delete(self, k, x=None, depth=0):
+    def _delete(self, k, x=None):
         """Delete the node associated with `k` using eager Hibbard deletion."""
         if x is None:
             return
         # Update links and node counts as we go vs.:
         #   t = self._get(k, self._root)
         if k < x.key:
-            x.left = self._delete(k, x.left, depth+1)
+            x.left = self._delete(k, x.left)
         elif k > x.key:
-            x.right = self._delete(k, x.right, depth+1)
+            x.right = self._delete(k, x.right)
         else:
             if x.left and x.right:
                 # save pointer to Node to be deleted
                 t = x
                 # Get the successor to the node to be deleted
                 x = self._min(t.right)
-                x.right = self._delete_min(t.right, depth+1)
+                x.right = self._delete_min(t.right)
                 x.left = t.left
             else:
-                self._internal_path_length -= depth + x.N - 1
-
                 if x.left is None:
                     return x.right
                 else: # x.right is None
                     return x.left
 
-        # Update the size of the subtree located at the given root
-        x.N = self._size(x.left) + self._size(x.right) + 1
+        self._update_node(x)
         return x
 
     def _height_r(self, x=None):
@@ -1208,12 +1207,16 @@ class BST():
         return 0 if x is None else x.height
 
     def _internal_path_length_r(self, x=None, depth=0):
-        """Return the sum of the depths of all nodes in the tree."""
+        """Return the sum of the depths of all nodes in the subtree."""
         if x is None:
             return 0
         lpath = self._internal_path_length_r(x.left,  depth + 1)
         rpath = self._internal_path_length_r(x.right, depth + 1)
         return depth + lpath + rpath
+
+    def _internal_path_length(self, x=None):
+        """Return the sum of the depths of all nodes in the subtree."""
+        return 0 if x is None else x.ipl
 
     def _is_balanced(self, x=None):
         """Return True if subtree rooted at `x` is perfectly balanced."""
