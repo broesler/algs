@@ -396,6 +396,9 @@ class ArrayST():
         """Return an iterator of all of the keys in the table."""
         yield from self.keys()
 
+
+# Ex 3.1.12(a) Implement BST as an array of key/val objects. The original book
+# implementation uses two parallel arrays for keys and values.
 class BinarySearchST():
     """Implements an ordered-array with binary search symbol table.
 
@@ -453,7 +456,7 @@ class BinarySearchST():
         if not self.is_empty and k > self.max():
             self._items.append(_Item(k, v))
 
-        # Perform binary search O(lg N)
+        # Perform binary search O(log2 N)
         i = self.rank(k)
         # if key is in the table, update the value
         if i < self.size and self._items[i].key == k:
@@ -697,7 +700,7 @@ class BinarySearchST():
     #         Data Integrity Checks
     # -------------------------------------------------------------------------
     # Ex 3.1.30
-    # NOTE integrity checks are O(N)!! They break the O(lg N) search...
+    # NOTE integrity checks are O(N)!! They break the O(log2 N) search...
     def _assert_integrity(self):
         assert self._is_sorted() and self._rank_check()
 
@@ -727,9 +730,9 @@ class BST():
     size : int
         Number of items on the tree.
     height : int
-        The height of the binary tree == maximum path length ~ 2.99 lg N
+        The height of the binary tree == maximum path length ~ 2.99 log2 N
     internal_path_length : int
-        The sum of the depths of all nodes in the tree ~ 1.39 lg N - 1.85
+        The sum of the depths of all nodes in the tree ~ 1.39 log2 N - 1.85
     is_empty : bool
         True if `size == 0`.
     """
@@ -742,7 +745,7 @@ class BST():
             self.left = self.right = None
             self.N = 1       # nodes in subtree rooted here
             self.height = 1  # Ex 3.2.6(b) height of the tree rooted at this _Node
-            self.ipl = 0  # Ex 3.2.47 sum of depths of nodes in subtree
+            self.ipl = 0     # Ex 3.2.47 sum of depths of nodes in subtree
 
         def __str__(self):
             # Avoid recursion through entire tree!! Just print each child
@@ -1397,7 +1400,7 @@ class ThreadedST(BST):
     size : int
         Number of items on the tree.
     height : int
-        The height of the binary tree == maximum path length ~ lg N
+        The height of the binary tree == maximum path length ~ log2 N
     is_empty : bool
         True if `size == 0`.
     """
@@ -1628,9 +1631,9 @@ class BST_nr(BST):
     size : int
         Number of items on the tree.
     height : int
-        The height of the binary tree == maximum path length ~ lg N
+        The height of the binary tree == maximum path length ~ log2 N
     internal_path_length : int
-        The sum of the depths of all nodes in the tree ~ 1.39 lg N - 1.85
+        The sum of the depths of all nodes in the tree ~ 1.39 log2 N - 1.85
     is_empty : bool
         True if `size == 0`.
     """
@@ -1949,7 +1952,7 @@ class ThreadedST_nr(BST_nr):
     size : int
         Number of items on the tree.
     height : int
-        The height of the binary tree == maximum path length ~ lg N
+        The height of the binary tree == maximum path length ~ log2 N
     is_empty : bool
         True if `size == 0`.
     """
