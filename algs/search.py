@@ -1692,16 +1692,11 @@ class BST_nr(BST):
             self._root = self._Node(k, v)
             cache = self._root
         elif k < p.key:
-            p.left = self._Node(k, v, depth=len(s))
+            p.left = self._Node(k, v)
             cache = p.left
         else:
-            p.right = self._Node(k, v, depth=len(s))
+            p.right = self._Node(k, v)
             cache = p.right
-
-        # NOTE to change with __delitem__, subtract x.depth + x.N from IPL
-        #   * we subtract the entire path to x, then 1 from the depth of each
-        #   node in the subtree rooted at x.
-        self._internal_path_length += len(s)  # update internal path length
 
         if self._CACHE_FLAG:
             self._cache = cache
@@ -1709,8 +1704,7 @@ class BST_nr(BST):
         # Update node counts and heights on path traveled back up the tree
         while s:
             x = s.pop()
-            x.N = 1 + self._size(x.left) + self._size(x.right)
-            x.height = max(self._height(x.left), self._height(x.right)) + 1
+            self._update_node(x)  # update N, height, internal path length
 
         return self._root
 
@@ -1747,18 +1741,15 @@ class BST_nr(BST):
             raise KeyError(k)
 
         # find its successor
-        if t.left and t.right:
+        if t.left is None:
+            x = t.right
+        elif t.right is None:
+            x = t.left
+        else:
             x = self._min(t.right)
             s.push(x)
-            x.right = self._delete_min(t.right, depth=len(s))
+            x.right = self._delete_min(t.right)
             x.left = t.left
-        else:
-            self._internal_path_length -= len(s) + t.N - 1
-
-            if t.left is None:
-                x = t.right
-            else: # t.right is None
-                x = t.left
 
         # Update parent link
         if k == p.key:
@@ -1772,8 +1763,7 @@ class BST_nr(BST):
         #   (_delete_min operation updates the counts in the right subtree)
         while s:
             t = s.pop()
-            t.N = 1 + self._size(t.left) + self._size(t.right)
-            t.height = max(self._size(t.left), self._size(t.right)) + 1
+            self._update_node(t)  # update N, height, internal path length
 
         return self._root
 
@@ -1867,7 +1857,7 @@ class BST_nr(BST):
             x = x.right
         return x
 
-    def _delete_min(self, x=None, depth=0):
+    def _delete_min(self, x=None):
         """Delete the smallest key from the subtree rooted at `x`.
 
         Returns
@@ -1886,10 +1876,8 @@ class BST_nr(BST):
             p = x         # pointer to the parent
             p.N -= 1      # decrement node counts
             x = x.left
-            depth += 1
-        # Update path length and depths for nodes below the min
-        self._internal_path_length -= depth + x.N - 1
         p.left = x.right  # delete the pointer to the min
+        self._update_node(p)
         return r
 
     def _delete_max(self, x=None):
@@ -1912,6 +1900,7 @@ class BST_nr(BST):
             p.N -= 1      # decrement node counts
             x = x.right
         p.right = x.left  # delete the pointer to it
+        self._update_node(p)
         return r
 
     # -------------------------------------------------------------------------
@@ -2295,7 +2284,7 @@ if __name__ == '__main__':
     data_set.remove(('E', 6))
 
     # ---------- Test All STs ----------
-    for ST in [SequentialSearchST, ArrayST, BinarySearchST, BST, BST_nr, 
+    for ST in [SequentialSearchST, ArrayST, BinarySearchST, BST, #BST_nr, 
                ThreadedST, ThreadedST_nr]:
         st = ST()
         should_be(st.size, 0)
@@ -2448,13 +2437,15 @@ if __name__ == '__main__':
             # BST-specific tests
             # if isinstance(t, BST):
             if t.__class__ == BST or t.__class__ == BST_nr:
-                should_be(t.height, 6)      # Node attribute method, as a property
                 should_be(t.height_r(), 6)  # recursive method
+                should_be(t.height, 6)      # Node attribute method, as a property
                 should_be(t.isBST(), True)
                 should_be(list(t.level_order()), list('SEXARCHMLP'))
                 should_be(t.internal_path_length_r(), 26)
                 should_be(t.internal_path_length, 26)
                 del t['H']  # remove node with single child
+                should_be(t.height_r(), 5)  # recursive method
+                should_be(t.height, 5)      # Node attribute method, as a property
                 should_be(t.internal_path_length, 20)
                 t = ST(data, cache=cache)
                 t['G'] = 6
