@@ -1460,8 +1460,7 @@ class ThreadedST(BST):
             x.val = v  # update the value
 
         # Update the size of the subtree located at the given root
-        x.N = self._size(x.left) + self._size(x.right) + 1
-        x.height = max(self._height(x.left), self._height(x.right)) + 1
+        self._update_node(x)
         x.next = self._find_next(x.key, self._root)
         x.prev = self._find_prev(x.key, self._root)
         return x
@@ -1510,8 +1509,8 @@ class ThreadedST(BST):
                 t.next.prev = x
             if t.prev:
                 t.prev.next = x
-        # Update the size of the subtree located at the given root
-        x.N = self._size(x.left) + self._size(x.right) + 1
+
+        self._update_node(x)  # update N, height, internal path length
         return x
 
     def _delete_min(self, x=None):
@@ -1531,8 +1530,7 @@ class ThreadedST(BST):
                 x.prev.next = x.next
             return x.right
         x.left = self._delete_min(x.left)
-        # Update the size of the subtree located at the given root
-        x.N = self._size(x.left) + self._size(x.right) + 1
+        self._update_node(x)  # update N, height, internal path length
         return x
 
     def _delete_max(self, x=None):
@@ -1552,8 +1550,7 @@ class ThreadedST(BST):
                 x.prev.next = x.next
             return x.left
         x.right = self._delete_max(x.right)
-        # Update the size of the subtree located at the given root
-        x.N = self._size(x.left) + self._size(x.right) + 1
+        self._update_node(x)  # update N, height, internal path length
         return x
 
     def _find_next(self, k, x=None, s=None):
@@ -2004,8 +2001,7 @@ class ThreadedST_nr(BST_nr):
         # Update node counts and heights on path traveled back up the tree
         while s:
             x = s.pop()
-            x.N = 1 + self._size(x.left) + self._size(x.right)
-            x.height = max(self._height(x.left), self._height(x.right)) + 1
+            self._update_node(x)
             x.next = self._find_next(x.key)
             x.prev = self._find_prev(x.key)
 
@@ -2082,8 +2078,7 @@ class ThreadedST_nr(BST_nr):
         #   (_delete_min operation updates the counts in the right subtree)
         while s:
             t = s.pop()
-            t.N = 1 + self._size(t.left) + self._size(t.right)
-            t.height = max(self._size(t.left), self._size(t.right)) + 1
+            self._update_node(t)
 
         return self._root
 
@@ -2108,6 +2103,7 @@ class ThreadedST_nr(BST_nr):
                 p.N -= 1        # decrement node counts
                 x = x.left
             p.left = x.right    # delete the pointer to the min
+            self._update_node(p)
         # Update threads
         if x.next:
             x.next.prev = x.prev
@@ -2136,6 +2132,7 @@ class ThreadedST_nr(BST_nr):
                 p.N -= 1            # decrement node counts
                 x = x.right
             p.right = x.left        # delete the pointer to it
+            self._update_node(p)
         # Update threads
         if x.next:
             x.next.prev = x.prev
@@ -2435,8 +2432,7 @@ if __name__ == '__main__':
                 should_be(t.select(t.rank(k)), k)
 
             # BST-specific tests
-            # if isinstance(t, BST):
-            if t.__class__ == BST or t.__class__ == BST_nr:
+            if isinstance(t, BST):
                 should_be(t.height_r(), 6)  # recursive method
                 should_be(t.height, 6)      # Node attribute method, as a property
                 should_be(t.isBST(), True)
