@@ -141,14 +141,6 @@ class SequentialSearchST():
             self._cost = self.size  # tested all the keys!
             raise KeyError(k)
 
-    def __contains__(self, k):
-        """Return True if `k` is present in the table, False otherwise."""
-        try:
-            self.__getitem__(k)
-            return True
-        except KeyError:
-            return False
-
     # Exercise 3.1.5
     def __delitem__(self, k):
         """Delete the item associated with `k`.
@@ -186,6 +178,14 @@ class SequentialSearchST():
         else:
             self._cost = self.size
             raise KeyError(k)
+
+    def __contains__(self, k):
+        """Return True if `k` is present in the table, False otherwise."""
+        try:
+            self.__getitem__(k)
+            return True
+        except KeyError:
+            return False
 
     def __eq__(self, other):
         return sorted(self.items()) == sorted(other.items())
@@ -338,14 +338,6 @@ class ArrayST():
             self._cost = self.size  # tested all the keys!
             raise KeyError(k)
 
-    def __contains__(self, k):
-        """Return True if `k` is present in the table, False otherwise."""
-        try:
-            self.__getitem__(k)
-            return True
-        except KeyError:
-            return False
-
     # Exercise 3.1.5
     def __delitem__(self, k):
         """Delete the item associated with `k`.
@@ -367,6 +359,14 @@ class ArrayST():
         else:
             self._cost = self.size
             raise KeyError(k)
+
+    def __contains__(self, k):
+        """Return True if `k` is present in the table, False otherwise."""
+        try:
+            self.__getitem__(k)
+            return True
+        except KeyError:
+            return False
 
     def __eq__(self, other):
         return sorted(self.items()) == sorted(other.items())
@@ -491,14 +491,6 @@ class BinarySearchST():
         else:
             raise KeyError(k)
 
-    def __contains__(self, k):
-        """Return True if `k` is present in the table, False otherwise."""
-        try:
-            self.__getitem__(k)
-            return True
-        except KeyError:
-            return False
-
     def __delitem__(self, k):
         """Delete the item associated with `k`.
 
@@ -518,6 +510,23 @@ class BinarySearchST():
         else:
             raise KeyError(k)
         # self._assert_integrity()
+
+    def __contains__(self, k):
+        """Return True if `k` is present in the table, False otherwise."""
+        try:
+            self.__getitem__(k)
+            return True
+        except KeyError:
+            return False
+
+    def __eq__(self, other):
+        return self.items() == sorted(other.items())
+
+    def __str__(self):
+        return str(dict(self._items))
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__}: {self.__str__()}>"
 
     def min(self):
         """Return the minimum key in the table.
@@ -540,6 +549,58 @@ class BinarySearchST():
         """
         _empty_check(self)
         return self._items[-1].key
+
+    def floor(self, k):
+        """Return the largest key less than or equal to `k`, or None if `k` is
+        less than the smallest key in the table.
+        """
+        i = self.rank(k)
+        if i < self.size and self._items[i].key == k:
+            return self._items[i].key
+        elif i > 0:
+            return self._items[i-1].key
+        else:
+            return None
+
+    def ceil(self, k):
+        """Return the smallest key greater than or equal to `k`, or None if `k`
+        is greater than the largest key in the table.
+        """
+        i = self.rank(k)
+        if i < self.size:
+            return self._items[i].key
+        else:
+            return None
+
+    def rank(self, k):
+        """Return the number of keys strictly less than `k`."""
+        # Non-recursive binary search algorithm
+        self._cost = 0
+        lo = 0
+        hi = self.size - 1
+        while lo <= hi:
+            mid = (hi + lo) // 2
+            self._cost += 2  # count 1 compare + 1 access here for simplicity
+            if k < self._items[mid].key:
+                hi = mid - 1
+            elif k > self._items[mid].key:
+                lo = mid + 1
+            else:
+                return mid
+        return lo
+
+    def select(self, r):
+        """Return the key of rank `r`.
+
+        Raises
+        ------
+        IndexError
+            If there are fewer than `r`+1 keys in the table.
+        """
+        if 0 <= r < self.size:
+            return self._items[r].key
+        else:
+            raise IndexError(r)
 
     def delete_min(self):
         """Delete the smallest key.
@@ -568,67 +629,6 @@ class BinarySearchST():
             self._cache = None
         del self._items[-1]
         # self._assert_integrity()
-
-    def floor(self, k):
-        """Return the largest key less than or equal to `k`, or None if `k` is
-        less than the smallest key in the table.
-        """
-        i = self.rank(k)
-        if i < self.size and self._items[i].key == k:
-            return self._items[i].key
-        elif i > 0:
-            return self._items[i-1].key
-        else:
-            return None
-
-    def ceil(self, k):
-        """Return the smallest key greater than or equal to `k`, or None if `k`
-        is greater than the largest key in the table.
-        """
-        i = self.rank(k)
-        if i < self.size:
-            return self._items[i].key
-        else:
-            return None
-
-    def select(self, r):
-        """Return the key of rank `r`.
-
-        Raises
-        ------
-        IndexError
-            If there are fewer than `r`+1 keys in the table.
-        """
-        if 0 <= r < self.size:
-            return self._items[r].key
-        else:
-            raise IndexError(r)
-
-    def rank(self, k):
-        """Return the number of keys strictly less than `k`."""
-        # Non-recursive binary search algorithm
-        self._cost = 0
-        lo = 0
-        hi = self.size - 1
-        while lo <= hi:
-            mid = (hi + lo) // 2
-            self._cost += 2  # count 1 compare + 1 access here for simplicity
-            if k < self._items[mid].key:
-                hi = mid - 1
-            elif k > self._items[mid].key:
-                lo = mid + 1
-            else:
-                return mid
-        return lo
-
-    def __eq__(self, other):
-        return self.items() == sorted(other.items())
-
-    def __str__(self):
-        return str(dict(self._items))
-
-    def __repr__(self):
-        return f"<{self.__class__.__name__}: {self.__str__()}>"
 
     # -------------------------------------------------------------------------
     #         Iterator functions
@@ -897,32 +897,6 @@ class BST():
         """
         return self._select(r, self._root).key
 
-    def pop(self, k, *args):
-        """Delete the node associated with `k`, and return its value. If the
-        key is not in the table, return the given default value.
-
-        ..note:: Implements eager Hibbard deletion.
-
-        Raises
-        ------
-        KeyError
-            If `k` is not in the table, and default is not given.
-        """
-        try:
-            _empty_check(self)
-            v = self.__getitem__(k)
-            self._root = self._delete(k, self._root)
-            if self._CACHE_FLAG and self._cache and k == self._cache.key:
-                self._cache = None
-            return v
-        except (IndexError, KeyError) as e:
-            if len(args) == 0:
-                raise e
-            elif len(args) == 1:
-                return args[0]
-            else:  # len(args) > 0
-                raise TypeError(f"pop expected at most 2 arguments, got {len(args)+1}")
-
     def delete_min(self):
         """Delete the smallest key.
 
@@ -954,6 +928,14 @@ class BST():
         """Determine the height of the BST recursively, in O(n) time."""
         return self._height_r(self._root)
 
+    # Ex 3.2.47
+    def internal_path_length_r(self):
+        """Compute the internal path length of the tree recursively.
+
+        ..note:: The IPL is defined as the sum of the depth of every node.
+        """
+        return self._internal_path_length_r(self._root, 0)
+
     # Exercise 3.2.25
     def is_balanced(self):
         """Return True if tree is perfectly balanced."""
@@ -969,14 +951,6 @@ class BST():
         """
         _empty_check(self)
         return self._center_of_mass(self._root) / (t.size - 1)
-
-    # Ex 3.2.47
-    def internal_path_length_r(self):
-        """Compute the internal path length of the tree recursively.
-
-        ..note:: The IPL is defined as the sum of the depth of every node.
-        """
-        return self._internal_path_length_r(self._root, 0)
 
     # Exercise 3.2.37
     def level_order(self, x=None):
@@ -995,29 +969,39 @@ class BST():
             q.enqueue(x.right)
         return list(keys)
 
+    # Methods to make symbol tables behave like python dict()
+    def pop(self, k, *args):
+        """Delete the node associated with `k`, and return its value. If the
+        key is not in the table, return the given default value.
+
+        ..note:: Implements eager Hibbard deletion.
+
+        Raises
+        ------
+        KeyError
+            If `k` is not in the table, and default is not given.
+        """
+        try:
+            _empty_check(self)
+            v = self.__getitem__(k)
+            self._root = self._delete(k, self._root)
+            if self._CACHE_FLAG and self._cache and k == self._cache.key:
+                self._cache = None
+            return v
+        except (IndexError, KeyError) as e:
+            if len(args) == 0:
+                raise e
+            elif len(args) == 1:
+                return args[0]
+            else:  # len(args) > 0
+                raise TypeError(f"pop expected at most 2 arguments, got {len(args)+1}")
+
     # -------------------------------------------------------------------------
     #         Private API
     # -------------------------------------------------------------------------
     def _size(self, x=None):
         """Return the size of the subtree rooted at Node `x`."""
         return 0 if x is None else x.N
-
-    def _update_node(self, x):
-        """Update the parameters of the node based on its subtree."""
-        x.N = self._size(x.left) + self._size(x.right) + 1
-        x.height = max(self._height(x.left), self._height(x.right)) + 1
-        x.ipl = self._internal_path_length(x.left) + self._size(x.left) \
-                + self._internal_path_length(x.right) + self._size(x.right)
-
-    def _get_node(self, k):
-        """Return the node associated with the given `k`."""
-        if self._CACHE_FLAG and self._cache and k == self._cache.key:
-            return self._cache
-        else:
-            x = self._get(k, self._root)
-            if self._CACHE_FLAG:
-                self._cache = x
-            return x
 
     def _get(self, k, x=None):
         """Return the node associated with the given `k`.
@@ -1076,6 +1060,32 @@ class BST():
         self._update_node(x)
         return x
 
+    def _delete(self, k, x=None):
+        """Delete the node associated with `k` using eager Hibbard deletion."""
+        if x is None:
+            return
+        # Update links and node counts as we go vs.:
+        #   t = self._get(k, self._root)
+        if k < x.key:
+            x.left = self._delete(k, x.left)
+        elif k > x.key:
+            x.right = self._delete(k, x.right)
+        else:
+            if x.left is None:
+                return x.right
+            elif x.right is None:
+                return x.left
+            else:
+                # save pointer to Node to be deleted
+                t = x
+                # Get the successor to the node to be deleted
+                x = self._min(t.right)
+                x.right = self._delete_min(t.right)
+                x.left = t.left
+
+        self._update_node(x)
+        return x
+
     def _min(self, x=None):
         """Return the minimum key in the subtree rooted at `x`."""
         return x if x.left is None else self._min(x.left)
@@ -1106,6 +1116,20 @@ class BST():
         t = self._ceil(k, x.left)          # ceil might be in left subtree
         return t if t else x
 
+    def _rank(self, k, x=None):
+        """Return the rank of key `k` in the subtree rooted at `x`.
+
+        .. note:: `rank` is the inverse of `select`.
+        """
+        if x is None:
+            return 0
+        if k < x.key:
+            return self._rank(k, x.left)
+        elif k > x.key:
+            return 1 + self._size(x.left) + self._rank(k, x.right)
+        else:
+            return self._size(x.left)
+
     def _select(self, r, x=None):
         """Return the Node that has rank `r` in the subtree rooted at `x`.
 
@@ -1125,20 +1149,6 @@ class BST():
             return self._select(r-t-1, x.right)
         else:
             return x
-
-    def _rank(self, k, x=None):
-        """Return the rank of key `k` in the subtree rooted at `x`.
-
-        .. note:: `rank` is the inverse of `select`.
-        """
-        if x is None:
-            return 0
-        if k < x.key:
-            return self._rank(k, x.left)
-        elif k > x.key:
-            return 1 + self._size(x.left) + self._rank(k, x.right)
-        else:
-            return self._size(x.left)
 
     def _delete_min(self, x=None):
         """Delete the minimum key in the subtree rooted at `x`.
@@ -1167,32 +1177,6 @@ class BST():
         if x.right is None:
             return x.left
         x.right = self._delete_max(x.right)
-        self._update_node(x)
-        return x
-
-    def _delete(self, k, x=None):
-        """Delete the node associated with `k` using eager Hibbard deletion."""
-        if x is None:
-            return
-        # Update links and node counts as we go vs.:
-        #   t = self._get(k, self._root)
-        if k < x.key:
-            x.left = self._delete(k, x.left)
-        elif k > x.key:
-            x.right = self._delete(k, x.right)
-        else:
-            if x.left is None:
-                return x.right
-            elif x.right is None:
-                return x.left
-            else:
-                # save pointer to Node to be deleted
-                t = x
-                # Get the successor to the node to be deleted
-                x = self._min(t.right)
-                x.right = self._delete_min(t.right)
-                x.left = t.left
-
         self._update_node(x)
         return x
 
@@ -1238,6 +1222,24 @@ class BST():
         return (R - L
                 + self._center_of_mass(x.left)
                 + self._center_of_mass(x.right))
+
+    # Convenience functions
+    def _update_node(self, x):
+        """Update the parameters of the node based on its subtree."""
+        x.N = self._size(x.left) + self._size(x.right) + 1
+        x.height = max(self._height(x.left), self._height(x.right)) + 1
+        x.ipl = self._internal_path_length(x.left) + self._size(x.left) \
+                + self._internal_path_length(x.right) + self._size(x.right)
+
+    def _get_node(self, k):
+        """Return the node associated with the given `k`."""
+        if self._CACHE_FLAG and self._cache and k == self._cache.key:
+            return self._cache
+        else:
+            x = self._get(k, self._root)
+            if self._CACHE_FLAG:
+                self._cache = x
+            return x
 
     # -------------------------------------------------------------------------
     #         Iterator functions
@@ -1770,6 +1772,18 @@ class BST_nr(BST):
     # -------------------------------------------------------------------------
     #         Other Private Methods
     # -------------------------------------------------------------------------
+    def _min(self, x):
+        """Return the node with the minimum key in the subtree rooted at `x`."""
+        while x.left:
+            x = x.left
+        return x
+
+    def _max(self, x):
+        """Return the node with the maximum key in the subtree rooted at `x`."""
+        while x.right:
+            x = x.right
+        return x
+
     def _floor(self, k, x):
         """Return the Node corresponding to the largest key less than or equal
         to `k` in the subtree rooted at `x`, or None if `k` is less than the
@@ -1844,18 +1858,6 @@ class BST_nr(BST):
                 x = x.right
         else:
             raise IndexError(r)
-
-    def _min(self, x):
-        """Return the node with the minimum key in the subtree rooted at `x`."""
-        while x.left:
-            x = x.left
-        return x
-
-    def _max(self, x):
-        """Return the node with the maximum key in the subtree rooted at `x`."""
-        while x.right:
-            x = x.right
-        return x
 
     def _delete_min(self, x=None):
         """Delete the smallest key from the subtree rooted at `x`.
