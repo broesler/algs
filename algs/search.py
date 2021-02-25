@@ -771,6 +771,15 @@ class BST():
         except ValueError:
             raise ValueError(f"{self.__class__.__name__} expects a `list` of tuples input.")
 
+    # Add to make BST behave more like python dict
+    @classmethod
+    def fromkeys(cls, keys=list(), value=None):
+        """Create a new BST with keys from iterable and values set to value."""
+        st = cls()
+        for k in keys:
+            st[k] = value
+        return st
+
     @property
     def size(self):
         return self._size(self._root)
