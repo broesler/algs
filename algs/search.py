@@ -9,6 +9,8 @@
 """
 # =============================================================================
 
+import random  # only needed for Ex 3.2.42 (deletion methods)
+
 from algs.basics import Stack as _Stack, \
                         Queue as _Queue, \
                         _empty_check
@@ -718,12 +720,19 @@ class BinarySearchST():
 
 
 class BST():
-    """Implements a binary search tree data structure.
+    r"""Implements a binary search tree data structure.
 
     Parameters
     ----------
     items : mapping, dict-like
         Iterable of (key, value) tuples to be put onto the tree.
+    cache : bool, optional
+        Cache the latest item searched.
+    delete_method : str \in {'Hibbard', 'random'}
+        Select method to use for deletion:
+            * 'Hibbard' will replace the requested node with its successor.
+            * 'random' will replace the requested node with a random choice
+               between its predecessor and its successor.
 
     Attributes
     ----------
@@ -759,11 +768,12 @@ class BST():
     # -------------------------------------------------------------------------
     #         Public API
     # -------------------------------------------------------------------------
-    def __init__(self, items=list(), cache=False):
+    def __init__(self, items=list(), cache=False, delete_method='Hibbard'):
         self._root = None
         self._CACHE_FLAG = cache       # Ex 3.2.28
         self._cache = None             # store the most recently accessed Node.
         self._cost = 0                 # Ex 3.2.39, 3.2.40, 3.2.44, 3.2.47
+        self._delete_method = delete_method   # 'Hibbard' or 'random'
         try:
             for k, v in items:
                 self._root = self._set(k, v, self._root)
@@ -821,7 +831,7 @@ class BST():
             self._cost = 0  # Ex 3.2.44
             self._root = self._set(k, v, self._root)
 
-    def __delitem__(self, k):
+    def __delitem__(self, k, delete_method=None):
         """Delete the node associated with `k`.
 
         ..note:: Implements eager Hibbard deletion.
@@ -831,8 +841,18 @@ class BST():
         KeyError
             If `k` is not in the table.
         """
+        if delete_method is None:
+            delete_method = self._delete_method
+
         _empty_check(self)
-        self._root = self._delete(k, self._root)
+
+        if delete_method == 'Hibbard':
+            self._root = self._delete(k, self._root)
+        elif delete_method == 'random':
+            self._root = self._delete_random(k, self._root)
+        else:
+            raise ValueError(f"Invalid delete_method {delete_method}!")
+
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
             self._cache = None
 
@@ -1095,6 +1115,42 @@ class BST():
         self._update_node(x)
         return x
 
+    # TODO write tests for this method
+    # Idea: replace `random.random()` with `self._poss_arrow` and flip it on
+    # each deletion.
+    def _delete_random(self, k, x=None):
+        """Delete the node associated with `k` by choosing the predecessor or
+            successor at random."""
+        if x is None:
+            return
+
+        if k < x.key:
+            x.left = self._delete(k, x.left)
+        elif k > x.key:
+            x.right = self._delete(k, x.right)
+        else:
+            if x.left is None:
+                return x.right
+            elif x.right is None:
+                return x.left
+            else:
+                # save pointer to Node to be deleted
+                t = x
+                if random.random() > 0.5:
+                    # Get the successor to the node to be deleted
+                    x = self._min(t.right)
+                    x.right = self._delete_min(t.right)
+                    x.left = t.left
+                else:
+                    # Get the predecessor to the node to be deleted
+                    x = self._max(t.left)
+                    x.left = self._delete_max(t.left)
+                    x.right = t.right
+
+        self._update_node(x)
+        return x
+
+    
     def _min(self, x=None):
         """Return the minimum key in the subtree rooted at `x`."""
         return x if x.left is None else self._min(x.left)
@@ -2226,6 +2282,10 @@ class ThreadedST_nr(BST_nr):
                 else:
                     break
         return list(q)
+
+# Ex  3.2.41 array representation
+# class ArrayBST(BST):
+#     """Implements a binary search tree represented by parallel arrays."""
 
 
 # -----------------------------------------------------------------------------
