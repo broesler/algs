@@ -9,8 +9,7 @@
 """
 # =============================================================================
 
-# import random  # only needed for Ex 3.2.42 (deletion methods)
-import numpy as np
+import random  # only needed for Ex 3.2.42 (deletion methods)
 
 from algs.basics import Stack as _Stack, \
                         Queue as _Queue, \
@@ -27,8 +26,6 @@ __all__ = ['SequentialSearchST', 'BinarySearchST', 'BST', 'BST_nr',
 #     `setdefault`, and `update` like true dictionaries
 #   * implement `t.put(k, v)` method instead of just t[k] = v assignment
 #   * use collections.abc.[Keys|Values|Items]View classes?
-
-rng = np.random.default_rng()  # used for BST._delete_random
 
 
 # Private class of key/value pairs
@@ -1111,12 +1108,7 @@ class BST():
                 # save pointer to Node to be deleted
                 t = x
 
-                if 0 < self._RAND_THRESH < 1:
-                    take_successor = rng.random() < self._RAND_THRESM
-                else:
-                    take_successor = self._RAND_THRESH
-
-                if take_successor:
+                if random.random() < self._RAND_THRESH:
                     # Get the successor to the node to be deleted
                     x = self._min(t.right)
                     x.right = self._delete_min(t.right)
