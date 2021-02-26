@@ -1549,7 +1549,7 @@ class ThreadedST(BST):
                 # save pointer to Node to be deleted
                 t = x
                 # Get the successor to the node to be deleted
-                x = self._min(t.right)
+                x = t.next
                 x.right = self._delete_min(t.right)
                 x.left = t.left
                 # Update Threads: _delete_min frees x, so reattach it
@@ -2097,7 +2097,8 @@ class ThreadedST_nr(BST_nr):
             x = t.left
         else:
             has_two_children = True
-            x = self._min(t.right)
+            # get successor
+            x = t.next
             s.push(x)
             x.right = self._delete_min(t.right)
             x.left = t.left
