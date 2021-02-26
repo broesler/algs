@@ -9,7 +9,8 @@
 """
 # =============================================================================
 
-import random  # only needed for Ex 3.2.42 (deletion methods)
+# import random  # only needed for Ex 3.2.42 (deletion methods)
+import numpy as np
 
 from algs.basics import Stack as _Stack, \
                         Queue as _Queue, \
@@ -26,6 +27,8 @@ __all__ = ['SequentialSearchST', 'BinarySearchST', 'BST', 'BST_nr',
 #     `setdefault`, and `update` like true dictionaries
 #   * implement `t.put(k, v)` method instead of just t[k] = v assignment
 #   * use collections.abc.[Keys|Values|Items]View classes?
+
+rng = np.random.default_rng()  # used for BST._delete_random
 
 
 # Private class of key/value pairs
@@ -745,6 +748,9 @@ class BST():
     is_empty : bool
         True if `size == 0`.
     """
+    # Deletion method value is constant with the class
+    _THRESH = dict({'Hibbard': 1, 'Hibbard_p': 0, 'random': 0.5})
+
     # Private Node class
     class _Node():
         """Internal node object to hold key, value, and two children."""
@@ -773,7 +779,12 @@ class BST():
         self._CACHE_FLAG = cache       # Ex 3.2.28
         self._cache = None             # store the most recently accessed Node.
         self._cost = 0                 # Ex 3.2.39, 3.2.40, 3.2.44, 3.2.47
-        self._delete_method = delete_method   # 'Hibbard' or 'random'
+
+        try:
+            self._RAND_THRESH = self._THRESH[delete_method]
+        except KeyError:
+            raise ValueError(f"Invalid delete_method '{delete_method}'!")
+
         try:
             for k, v in items:
                 self._root = self._set(k, v, self._root)
@@ -831,7 +842,7 @@ class BST():
             self._cost = 0  # Ex 3.2.44
             self._root = self._set(k, v, self._root)
 
-    def __delitem__(self, k, delete_method=None):
+    def __delitem__(self, k):
         """Delete the node associated with `k`.
 
         ..note:: Implements eager Hibbard deletion.
@@ -841,18 +852,8 @@ class BST():
         KeyError
             If `k` is not in the table.
         """
-        if delete_method is None:
-            delete_method = self._delete_method
-
         _empty_check(self)
-
-        if delete_method == 'Hibbard':
-            self._root = self._delete(k, self._root)
-        elif delete_method == 'random':
-            self._root = self._delete_random(k, self._root)
-        else:
-            raise ValueError(f"Invalid delete_method {delete_method}!")
-
+        self._root = self._delete(k, self._root)
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
             self._cache = None
 
@@ -1089,36 +1090,9 @@ class BST():
         self._update_node(x)
         return x
 
-    def _delete(self, k, x=None):
-        """Delete the node associated with `k` using eager Hibbard deletion."""
-        if x is None:
-            return
-        # Update links and node counts as we go vs.:
-        #   t = self._get(k, self._root)
-        if k < x.key:
-            x.left = self._delete(k, x.left)
-        elif k > x.key:
-            x.right = self._delete(k, x.right)
-        else:
-            if x.left is None:
-                return x.right
-            elif x.right is None:
-                return x.left
-            else:
-                # save pointer to Node to be deleted
-                t = x
-                # Get the successor to the node to be deleted
-                x = self._min(t.right)
-                x.right = self._delete_min(t.right)
-                x.left = t.left
-
-        self._update_node(x)
-        return x
-
-    # TODO write tests for this method
     # Idea: replace `random.random()` with `self._poss_arrow` and flip it on
     # each deletion.
-    def _delete_random(self, k, x=None):
+    def _delete(self, k, x=None):
         """Delete the node associated with `k` by choosing the predecessor or
             successor at random."""
         if x is None:
@@ -1136,7 +1110,13 @@ class BST():
             else:
                 # save pointer to Node to be deleted
                 t = x
-                if random.random() > 0.5:
+
+                if 0 < self._RAND_THRESH < 1:
+                    take_successor = rng.random() < self._RAND_THRESM
+                else:
+                    take_successor = self._RAND_THRESH
+
+                if take_successor:
                     # Get the successor to the node to be deleted
                     x = self._min(t.right)
                     x.right = self._delete_min(t.right)
@@ -2357,7 +2337,7 @@ if __name__ == '__main__':
     data_set.remove(('E', 6))
 
     # ---------- Test All STs ----------
-    for ST in [SequentialSearchST, ArrayST, BinarySearchST, BST, #BST_nr, 
+    for ST in [SequentialSearchST, ArrayST, BinarySearchST, BST, BST_nr, 
                ThreadedST, ThreadedST_nr]:
         st = ST()
         should_be(st.size, 0)
@@ -2385,7 +2365,6 @@ if __name__ == '__main__':
 
         test_keys = test_set.copy()
         for k in st:
-            v = st[k]
             del st[k]
             test_keys -= set(k)
             should_be(sorted(st.keys()), sorted(test_keys))
@@ -2531,7 +2510,6 @@ if __name__ == '__main__':
             should_be(list(t.keys(lo='P')), list('PRSX'))
             should_be(list(t.keys('F', 'Q')), list('HLMP'))  # subset of keys
             should_be(list(t.keys(hi='P')), list('ACEHLMP'))
-
             should_be(list(t.values()), [v for k, v in sorted(data_set)])
             should_be(list(t.items()), sorted(data_set))
 
@@ -2556,21 +2534,38 @@ if __name__ == '__main__':
 
             # Delete arbitrary key, starting with same tree
             for k in test_set:
-                t = ST(data)
+                t = ST(data, cache=cache)
                 v = t[k]
                 del t[k]
                 should_be(len(t), len(test_set)-1)
                 err_test(t, '__getitem__', k, err_type=KeyError)
 
-            if isinstance(t, BST):
-                t = ST(data)  # reset tree
-                # delete the root
+        # Test BST internal structure
+        if isinstance(t, BST):
+            t = ST(data)  # reset tree
+            # delete the root (default deletion)
+            should_be(t._root.key, 'S')
+            del t['S']
+            should_be(len(t), len(test_set)-1)
+            should_be(t._root.key, 'X')
+            should_be(t._root.left.key, 'E')
+            should_be(t._root.right, None)
+            # Test Hibbard deletion option
+            t = ST(data, delete_method='Hibbard')
+            should_be(t._root.key, 'S')
+            del t['S']
+            should_be(t._root.key, 'X')
+            should_be(t._root.left.key, 'E')
+            should_be(t._root.right, None)
+            # Test predecessor deletion option
+            # TODO get rid of if statement
+            if t.__class__ is BST:
+                t = ST(data, delete_method='Hibbard_p')
                 should_be(t._root.key, 'S')
-                v = t['S']
                 del t['S']
-                should_be(len(t), len(test_set)-1)
-                should_be(t._root.key, 'X')
-                t['S'] = v
+                should_be(t._root.key, 'R')
+                should_be(t._root.left.key, 'E')
+                should_be(t._root.right.key, 'X')
 
     # Test comparisons between objects (in *both* directions)
     should_be(SequentialSearchST(data), BinarySearchST(data))
