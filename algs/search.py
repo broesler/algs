@@ -2279,9 +2279,131 @@ class ThreadedST_nr(BST_nr):
                     break
         return list(q)
 
-# Ex  3.2.41 array representation
-# class ArrayBST(BST):
-#     """Implements a binary search tree represented by parallel arrays."""
+# Ex 3.2.41 array representation
+class ArrayBST():
+    """Implements a binary search tree represented by parallel arrays.
+    
+    Parameters
+    ----------
+    items : mapping, dict-like
+        Iterable of (key, value) tuples to be put onto the tree.
+
+    Attributes
+    ----------
+    size : int
+        Number of items on the tree.
+    is_empty : bool
+        True if `size == 0`.
+    """
+    def __init__(self, items=list(), cache=False):
+        self._root = None      # index of the information on the root
+        self._keys = list()
+        self._vals = list()
+        self._lefts = list()   # indices of left-links
+        self._rights = list()  # indices of right-links
+        self._CACHE_FLAG = cache
+        self._cache = None
+        try:
+            for k, v in items:
+                self._root = self.__setitem__(k, v)
+            return
+        except ValueError:
+            raise ValueError(f"{self.__class__.__name__} "
+                             'expects an iterable mapping input.')
+
+    @property
+    def size(self):
+        return len(self._keys)
+
+    @property
+    def is_empty(self):
+        return self.size == 0
+
+    def __len__(self):
+        return self.size
+
+    def __getitem__(self, k):
+        """Return the value associated with the given key `k`."""
+        if self.is_empty:
+            raise KeyError(k)
+        
+        x = self._root
+        while x is not None:
+            if k < self._keys[x]:
+                x = self._lefts[x]
+            elif k > self._keys[x]:
+                x = self._rights[x]
+            else: # k == self._keys[x]:
+                if self._CACHE_FLAG:
+                    self._cache = x
+                return self._vals[x] 
+        else:
+            raise KeyError(k)
+
+    def __setitem__(self, k, v):
+        """Insert a new value `v` associated with key `k`."""
+        p = x = self._root
+        while x is not None:
+            p = x
+            if k == self._keys[x]:
+                self._vals[x] = v
+                if self._CACHE_FLAG:
+                    self._cache = x
+                return self._root
+            else:
+                # Move down the tree
+                if k < self._keys[x]:
+                    x = self._lefts[x]
+                else:
+                    x = self._rights[x]
+
+        # Insert new node as child of parent
+        if p is None:
+            self._root = self._new_node(k, v)
+            cache = self._root
+        elif k < self._keys[p]:
+            self._lefts[p] = self._new_node(k, v)
+            cache = self._lefts[p]
+        else:
+            self._rights[p] = self._new_node(k, v)
+            cache = self._rights[p]
+
+        if self._CACHE_FLAG:
+            self._cache = cache
+
+        return self._root
+
+    def __delitem__(self, k):
+        """Delete the item associated with `k`."""
+        pass
+
+    def __contains__(self, k):
+        """Return True if `k` is present in the tree, False otherwise."""
+        try:
+            self.__getitem__(k)
+            return True
+        except KeyError:
+            return False
+
+    def keys(self):
+        return self._keys
+
+    def values(self):
+        return self._vals
+
+    def items(self):
+        return list(zip(self._keys, self._vals))
+
+    # ------------------------------------------------------------------------- 
+    #         Private API
+    # -------------------------------------------------------------------------
+    def _new_node(self, k, v):
+        """Add a new node to the tree."""
+        self._keys.append(k)
+        self._vals.append(v)
+        self._lefts.append(None)
+        self._rights.append(None)
+        return self.size - 1  # index of the new node
 
 
 # -----------------------------------------------------------------------------
@@ -2353,8 +2475,8 @@ if __name__ == '__main__':
     data_set.remove(('E', 6))
 
     # ---------- Test All STs ----------
-    for ST in [SequentialSearchST, ArrayST, BinarySearchST, BST, BST_nr, 
-               ThreadedST, ThreadedST_nr]:
+    for ST in [SequentialSearchST, ArrayST, BinarySearchST, BST, BST_nr,
+               ThreadedST, ThreadedST_nr, ArrayBST]:
         st = ST()
         should_be(st.size, 0)
         should_be(st.is_empty, True)
@@ -2378,6 +2500,10 @@ if __name__ == '__main__':
         should_be(sorted(st.items()), sorted(data_set))
 
         err_test(st, '__getitem__', 'Z', err_type=KeyError)
+
+        # delete cut-off here
+        if isinstance(st, ArrayBST):
+            continue
 
         test_keys = test_set.copy()
         for k in st:
