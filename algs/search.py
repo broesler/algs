@@ -80,7 +80,8 @@ class SequentialSearchST():
             for k, v in items:
                 self.__setitem__(k, v)
         except ValueError:
-            raise ValueError(f"{self.__class__.__name__} expects a `list` of tuples input.")
+            raise ValueError(f"{self.__class__.__name__} "
+                             'expects an iterable mapping input.')
 
     @property
     def is_empty(self):
@@ -115,7 +116,7 @@ class SequentialSearchST():
                 x = x.next
         else:
             self._cost = self.size   # tested all the keys!
-            item = self._Item(k, v, self._first)  # add new key to beginning of list: O(1)
+            item = self._Item(k, v, self._first)  # add new key to beginning
             self._first = item
             self.size += 1
             if self._CACHE_FLAG:
@@ -275,7 +276,8 @@ class ArrayST():
             for k, v in items:
                 self.__setitem__(k, v)
         except ValueError:
-            raise ValueError(f"{self.__class__.__name__} expects a `list` of tuples input.")
+            raise ValueError(f"{self.__class__.__name__} "
+                             'expects an iterable mapping input.')
 
     @property
     def size(self):
@@ -423,12 +425,13 @@ class BinarySearchST():
         self._cache = None
         # Initialize the symbol table
         try:
-            # Ex 3.1.12(b) sort by keys so we get O(N log N) construction vs O(N^2)
+            # Ex 3.1.12(b) sort by keys for O(N log N) construction vs. O(N^2)
             for k, v in _mergesort(items):
                 self.__setitem__(k, v)
             self._assert_integrity()
         except ValueError:
-            raise ValueError(f"{self.__class__.__name__} expects a `list` of tuples input.")
+            raise ValueError(f"{self.__class__.__name__} "
+                             'expects an iterable mapping input.')
 
     @property
     def size(self):
@@ -679,20 +682,20 @@ class BinarySearchST():
         def iterator(self, lo=None, hi=None):
             """Iterate over items with keys between `lo` and `hi`."""
             if lo is None:
-                l = 0
+                lv = 0
             else:
-                l = self.rank(lo)
+                lv = self.rank(lo)
 
             if hi is None:
-                h = self.size
+                hv = self.size
             else:
-                h = self.rank(hi)
+                hv = self.rank(hi)
                 # `hi` is included in range
-                if h < self.size and self._items[h].key == hi:
-                    h += 1
+                if hv < self.size and self._items[hv].key == hi:
+                    hv += 1
 
             q = _Queue()
-            for x in self._items[l:h]:
+            for x in self._items[lv:hv]:
                 q.enqueue(x.key if rtype == 'keys' else
                           (x.val if rtype == 'values' else (x.key, x.val)))
             return list(q)
@@ -756,14 +759,17 @@ class BST():
             self.val = value
             self.left = self.right = None
             self.N = 1       # nodes in subtree rooted here
-            self.height = 1  # Ex 3.2.6(b) height of the tree rooted at this _Node
+            self.height = 1  # Ex 3.2.6(b) height of the tree rooted at _Node
             self.ipl = 0     # Ex 3.2.47 sum of depths of nodes in subtree
 
         def __str__(self):
             # Avoid recursion through entire tree!! Just print each child
-            left_str = f"{{{repr(self.left.key)}: {repr(self.left.val)}}}" if self.left else 'None'
-            right_str = f"{{{repr(self.right.key)}: {repr(self.right.val)}}}" if self.right else 'None'
-            return f"{{{repr(self.key)}: {repr(self.val)}}}, L:{left_str}, R:{right_str}, N={self.N}"
+            left_str = f"{{{repr(self.left.key)}: {repr(self.left.val)}}}" \
+                        if self.left else 'None'
+            right_str = f"{{{repr(self.right.key)}: {repr(self.right.val)}}}" \
+                        if self.right else 'None'
+            return f"{{{repr(self.key)}: {repr(self.val)}}}, "\
+                   f"L:{left_str}, R:{right_str}, N={self.N}"
 
         def __repr__(self):
             return f"<{self.__class__.__name__}: {self.__str__()}>"
@@ -787,7 +793,8 @@ class BST():
                 self._root = self._set(k, v, self._root)
             return
         except ValueError:
-            raise ValueError(f"{self.__class__.__name__} expects a `list` of tuples input.")
+            raise ValueError(f"{self.__class__.__name__} "
+                             'expects an iterable mapping input.')
 
     # Add to make BST behave more like python dict
     @classmethod
@@ -1021,7 +1028,8 @@ class BST():
             elif len(args) == 1:
                 return args[0]
             else:  # len(args) > 0
-                raise TypeError(f"pop expected at most 2 arguments, got {len(args)+1}")
+                raise TypeError('pop expected at most 2 arguments, '
+                                f"got {len(args)+1}")
 
     # -------------------------------------------------------------------------
     #         Private API
@@ -1122,7 +1130,6 @@ class BST():
         self._update_node(x)
         return x
 
-    
     def _min(self, x=None):
         """Return the minimum key in the subtree rooted at `x`."""
         return x if x.left is None else self._min(x.left)
@@ -1339,7 +1346,7 @@ class BST():
             self._iterate(lo, hi, x.left, q, rtype)
         if lo <= x.key and hi >= x.key:
             q.enqueue(x.key if rtype == 'keys' else
-                        (x.val if rtype == 'values' else (x.key, x.val)))
+                      (x.val if rtype == 'values' else (x.key, x.val)))
         if hi > x.key:
             self._iterate(lo, hi, x.right, q, rtype)
         return list(q)
@@ -1417,6 +1424,7 @@ class BST():
     # Ex 3.2.31
     def _has_no_duplicates(self):
         """Return True if there are no equal keys in the BST."""
+        p = None
         for i, k in enumerate(self.keys()):
             if i > 0 and p > k:
                 return False
@@ -1666,7 +1674,7 @@ class BST_nr(BST):
     """Implements a binary search tree data structure, non-recursively.
 
     ..note:: `BST_nr` subclasses `BST`, but only overrides the internal methods
-    for `_set`, `_get`, `_delete`, etc. 
+    for `_set`, `_get`, `_delete`, etc.
 
     Parameters
     ----------
@@ -1826,13 +1834,13 @@ class BST_nr(BST):
     #         Other Private Methods
     # -------------------------------------------------------------------------
     def _min(self, x):
-        """Return the node with the minimum key in the subtree rooted at `x`."""
+        """Return node with the minimum key in the subtree rooted at `x`."""
         while x.left:
             x = x.left
         return x
 
     def _max(self, x):
-        """Return the node with the maximum key in the subtree rooted at `x`."""
+        """Return node with the maximum key in the subtree rooted at `x`."""
         while x.right:
             x = x.right
         return x
@@ -2273,7 +2281,7 @@ class ThreadedST_nr(BST_nr):
             else:
                 if lo <= x.key and hi >= x.key:
                     q.enqueue(x.key if rtype == 'keys' else
-                                (x.val if rtype == 'values' else (x.key, x.val)))
+                              (x.val if rtype == 'values' else (x.key, x.val)))
                     x = x.next
                 else:
                     break
@@ -2631,14 +2639,14 @@ if __name__ == '__main__':
             # BST-specific tests
             if isinstance(t, BST):
                 should_be(t.height_r(), 6)  # recursive method
-                should_be(t.height, 6)      # Node attribute method, as a property
+                should_be(t.height, 6)      # Node attribute method
                 should_be(t.isBST(), True)
                 should_be(list(t.level_order()), list('SEXARCHMLP'))
                 should_be(t.internal_path_length_r(), 26)
                 should_be(t.internal_path_length, 26)
                 del t['H']  # remove node with single child
                 should_be(t.height_r(), 5)  # recursive method
-                should_be(t.height, 5)      # Node attribute method, as a property
+                should_be(t.height, 5)      # Node attribute method
                 should_be(t.internal_path_length, 20)
                 t = ST(data, cache=cache)
                 t['G'] = 6
