@@ -1540,10 +1540,18 @@ class ThreadedST(BST):
             else:
                 # save pointer to Node to be deleted
                 t = x
-                # Get the successor to the node to be deleted
-                x = t.next
-                x.right = self._delete_min(t.right)
-                x.left = t.left
+
+                if random.random() < self._RAND_THRESH:
+                    # Get successor to the node to be deleted
+                    x = t.next
+                    x.right = self._delete_min(t.right)
+                    x.left = t.left
+                else:
+                    # take predecessor
+                    x = t.prev
+                    x.left = self._delete_max(t.left)
+                    x.right = t.right
+
                 # Update Threads: _delete_min frees x, so reattach it
                 x.next = t.next
                 x.prev = t.prev
@@ -1785,10 +1793,18 @@ class BST_nr(BST):
         elif t.right is None:
             x = t.left
         else:
-            x = self._min(t.right)
-            s.push(x)
-            x.right = self._delete_min(t.right)
-            x.left = t.left
+            if random.random() < self._RAND_THRESH:
+                # take successor
+                x = self._min(t.right)
+                s.push(x)
+                x.right = self._delete_min(t.right)
+                x.left = t.left
+            else:
+                # take predecessor
+                x = self._max(t.left)
+                s.push(x)
+                x.left = self._delete_max(t.left)
+                x.right = t.right
 
         # Update parent link
         if k == p.key:
@@ -2089,11 +2105,18 @@ class ThreadedST_nr(BST_nr):
             x = t.left
         else:
             has_two_children = True
-            # get successor
-            x = t.next
-            s.push(x)
-            x.right = self._delete_min(t.right)
-            x.left = t.left
+            if random.random() < self._RAND_THRESH:
+                # get successor
+                x = t.next
+                s.push(x)
+                x.right = self._delete_min(t.right)
+                x.left = t.left
+            else:
+                # get predecessor
+                x = t.prev
+                s.push(x)
+                x.left = self._delete_max(t.left)
+                x.right = t.right
 
         # Update threads
         if not has_two_children:
@@ -2551,14 +2574,12 @@ if __name__ == '__main__':
             should_be(t._root.left.key, 'E')
             should_be(t._root.right, None)
             # Test predecessor deletion option
-            # TODO get rid of if statement
-            if t.__class__ is BST:
-                t = ST(data, delete_method='Hibbard_p')
-                should_be(t._root.key, 'S')
-                del t['S']
-                should_be(t._root.key, 'R')
-                should_be(t._root.left.key, 'E')
-                should_be(t._root.right.key, 'X')
+            t = ST(data, delete_method='Hibbard_p')
+            should_be(t._root.key, 'S')
+            del t['S']
+            should_be(t._root.key, 'R')
+            should_be(t._root.left.key, 'E')
+            should_be(t._root.right.key, 'X')
 
     # Test comparisons between objects (in *both* directions)
     should_be(SequentialSearchST(data), BinarySearchST(data))
