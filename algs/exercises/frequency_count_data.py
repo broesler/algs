@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # =============================================================================
-#     File: frequency_count.py
+#     File: frequency_count_data.py
 #  Created: 2019-11-16 18:03
 #   Author: Bernie Roesler
 #
 """
-  Description:
+  Description: Run FrequencyCounter to collect data on various symbol tables.
 """
 # =============================================================================
 
@@ -13,12 +13,12 @@ import os
 import pandas as pd
 import pickle
 
-from algs.search import ArrayST, BinarySearchST, BST
+from algs.search import ArrayST, BinarySearchST, BST, ArrayBST
 from frequency_counter import FrequencyCounter
 
 filenames = ['../data/tiny_tale.txt',  # 292
-             '../data/tale.txt']       # 779K
-             # '../data/leipzig1m.txt']  # 124M
+             '../data/tale.txt',       # 779K
+             '../data/leipzig1m.txt']  # 124M
 
 tags = [os.path.splitext(os.path.basename(x))[0] for x in filenames]
 cols = pd.MultiIndex.from_product([tags, ['words', 'distinct', 'max_word', 'max_freq']])
@@ -31,7 +31,7 @@ if kind == 'selforg':
 if kind == 'cache':
     cache = True
 
-for ST in [ArrayST, BinarySearchST, BST]:
+for ST in [ArrayST, BinarySearchST, BST, ArrayBST]:
     df = pd.DataFrame(columns=cols)
     for i, f in enumerate(filenames):
         tag = tags[i]

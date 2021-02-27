@@ -10,6 +10,7 @@
 # =============================================================================
 
 import re
+import time
 
 from tqdm import tqdm
 
@@ -45,6 +46,7 @@ class FrequencyCounter():
         self.N = 0              # number of words in the input
         self.max_word = ''
         self.cost = list()  # count compares for each `put` operation
+        self.time = list()  # track actual timing of each `put` operation
 
     @staticmethod
     def count_lines(fp):
@@ -63,19 +65,23 @@ class FrequencyCounter():
                     if len(word) >= minlen:
                         self.N += 1  # count all words matching criterion
                         try:
+                            tic = time.perf_counter()
                             self.t[word] += 1
+                            toc = time.perf_counter()
                         except KeyError:
+                            tic = time.perf_counter()
                             self.t[word] = 1
+                            toc = time.perf_counter()
                         # Track cost for each `put` operation, len(cost) == N
                         self.cost.append(self.t._cost)
+                        self.time.append(toc - tic)
 
         # Find the key with the highest frequency
         max_word = ''
-        self.t[max_word] = 0
+        max_freq = 0
         for word in self.t:
-            if self.t[word] > self.t[max_word]:
+            if self.t[word] > max_freq:
                 max_word = word
-        del self.t['']  # remove placeholder
         self.max_word = max_word  # store the result
 
 

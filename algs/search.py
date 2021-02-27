@@ -2311,6 +2311,7 @@ class ArrayBST():
         self._rights = list()  # indices of right-links
         self._CACHE_FLAG = cache
         self._cache = None
+        self._cost = 0
         try:
             for k, v in items:
                 self._root = self.__setitem__(k, v)
@@ -2393,6 +2394,7 @@ class ArrayBST():
         except KeyError:
             return False
 
+    # NOTE no guarantees on order of keys in output yet
     def keys(self):
         return self._keys
 
@@ -2401,6 +2403,9 @@ class ArrayBST():
 
     def items(self):
         return list(zip(self._keys, self._vals))
+
+    def __iter__(self):
+        yield from self.keys()
 
     # ------------------------------------------------------------------------- 
     #         Private API
