@@ -32,8 +32,9 @@ from tqdm import tqdm
 
 from algs.search import BST
 
-SAVE_FIGS = True
 FORCE_UPDATE = False
+SAVE_FIGS = False
+
 PICKLE_FILE = Path('./pkl/bst_compares_1e4.pkl')
 # PICKLE_FILE = Path('./pkl/bst_compares_tiny.pkl')
 
@@ -123,8 +124,9 @@ else:
 # -----------------------------------------------------------------------------
 #         Organize the data for plotting
 # -----------------------------------------------------------------------------
-data = comps
-col_name = 'comps'
+# TODO plot each of ipls, comps, heights in one set of subplots.
+data = ipls
+col_name = 'ipls'
 
 tf = pd.DataFrame(data=data, columns=ops)
 tf.index.name = 'trial'
@@ -145,7 +147,7 @@ g = (tf.drop('trial', axis=1)
 x = np.logspace(np.log10(min(ops)), np.log10(max(ops)))
 theory_avg_ipl = bst_avg_compares(x)
 approx_avg_ipl = 1.39 * np.log2(x) - 1.85
-
+theory_avg_height = 2.99 * np.log2(x)
 
 # Fit curve to data
 def func(x, a, b):
@@ -161,14 +163,32 @@ popt, pcov = curve_fit(func, g.index, g['mean'])
 fig = plt.figure(1, clear=True)
 ax = fig.add_subplot()
 
-# TODO
-#   * `x_jitter` argument does nothing (per seaborn docs)
-
 # Plot the theoretical curves, and the curve fit to the data
 ax.plot(x, func(x, *popt), color='k', ls='-',
         label=fr"${popt[0]:.2f} \lg N {popt[1]:+.2f}$")
-ax.plot(x, approx_avg_ipl, color='C3', ls='-', label=r'$1.39 \lg N - 1.85$')
-ax.plot(x, theory_avg_ipl, color='C3', ls='-.', label=r'$2 \lg N + 2\gamma - 3$')
+
+if col_name == 'ipls':
+    ax.plot(x, approx_avg_ipl, color='C3', ls='-', label=r'$1.39 \lg N - 1.85$')
+    ax.annotate(rf"$\leftarrow$ {approx_avg_ipl[-1]:.0f}",
+                xy=(max(ops) + 100, approx_avg_ipl[-1]),
+                ha='left', va='center', color='C3')
+
+elif col_name == 'comps':
+    ax.plot(x, theory_avg_ipl, color='C3', ls='-.', label=r'$2 \lg N + 2\gamma - 3$')
+    # Label final values
+    ax.annotate(rf"$\leftarrow$ {theory_avg_ipl[-1]:.0f}",
+                xy=(max(ops) + 100, theory_avg_ipl[-1]),
+                ha='left', va='center', color='C3')
+
+else: # col_name == 'heights':
+    ax.plot(x, theory_avg_height, color='C3', ls='--', label=r'$2.99 \lg N$')
+    ax.annotate(rf"$\leftarrow$ {theory_avg_height[-1]:.0f}",
+                xy=(max(ops) + 100, theory_avg_height[-1]),
+                ha='left', va='center', color='C3')
+
+ax.annotate(rf"$\leftarrow$ {func(x, *popt)[-1]:.0f}",
+            xy=(max(ops) + 100, func(x, *popt)[-1]),
+            ha='left', va='center', color='k')
 
 # Plot the runtime distributions
 sns.scatterplot(ax=ax, data=tf, x='N', y=col_name,
@@ -183,15 +203,6 @@ for N, m in g.iterrows():
                c='k', ls='-', lw=1, alpha=0.9)
 
 ax.legend(loc='lower right')
-
-# Label final values
-ax.annotate(rf"$\leftarrow$ {theory_avg_ipl[-1]:.0f}",
-            xy=(max(ops) + 100, theory_avg_ipl[-1]),
-            ha='left', va='center', color='C3')
-
-ax.annotate(rf"$\leftarrow$ {approx_avg_ipl[-1]:.0f}",
-            xy=(max(ops) + 100, approx_avg_ipl[-1]),
-            ha='left', va='center', color='C3')
 
 # Format axes
 xlim = ax.get_xlim()
