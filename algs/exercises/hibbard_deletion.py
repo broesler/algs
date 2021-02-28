@@ -20,6 +20,8 @@
 """
 # =============================================================================
 
+import pickle
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -31,7 +33,8 @@ from tqdm import tqdm
 
 from algs.search import BST
 
-FORCE_UPDATE = True
+FORCE_UPDATE = False
+
 PICKLE_FILE = Path('./pkl/hibbard_delete.pkl')
 
 rng = np.random.default_rng(seed=565656)
@@ -39,48 +42,74 @@ rng = np.random.default_rng(seed=565656)
 # Input variables
 dms = ['Hibbard', 'random']  # delete methods
 
-# Ns = [int(n) for n in np.logspace(2, 4)]
-Ns = [100, 1000, 10_000]
+Ns = [10, 100, 1000]
 
 # Output variables
 if FORCE_UPDATE or not PICKLE_FILE.exists():
     df = pd.DataFrame(index=pd.MultiIndex.from_product([dms, Ns]),
-                    columns=['initial', 'final'])
+                    columns=['initial', 'final', 'sqrt'])
     df.index.names = ['dm', 'N']
 
-    for dm in dms:
-        print(f"---------- {dm} deletion...")
-        for N in Ns:
-            print(f"{N} keys...")
+    ipls = dict()
+
+    for N in Ns:
+        print(f"---------- {N} keys...")
+        M = int(N*N)
+        rand_keys = N*rng.random(size=N)  # random \in [0, N)
+        rand_deletes = rng.integers(N, size=M)  # select keys uniformly
+        rand_inserts = N*rng.random(size=M)
+        for dm in dms:
+            print(f"{dm} deletion...")
             # Create a symbol table with N keys
-            st = BST(delete_method=dm)\
-                    .fromkeys(rng.choice(N, size=N, replace=False))
-            df.loc[dm, N]['initial'] = 1 + st.internal_path_length / N
-            # delete and re-insert random keys N^2 times.
-            M = int(N*N)
-            for k in tqdm(rng.integers(N, size=M)):
-                del st[k]
-                st[k] = None
-            assert st.size == N
-            df.loc[dm, N]['final'] = 1 + st.internal_path_length / N
+            st = BST.fromkeys(rand_keys, cache=True, delete_method=dm)
+            df.loc[dm, N]['initial'] = 1 + st.internal_path_length / st.size
+
+            # track IPL vs. operations
+            avg_ipl = np.empty(M)
+
+            # delete and insert random keys N^2 times.
+            for i in tqdm(range(M)):
+                del st[st.select(rand_deletes[i])]
+                st[rand_inserts[i]] = None
+                avg_ipl[i] = 1 + st.internal_path_length / st.size
+
+            assert N == st.size
+            ipls[dm, N] = avg_ipl
+            df.loc[dm, N]['final'] = 1 + st.internal_path_length / st.size
 
     with open(PICKLE_FILE, 'wb') as fp:
-        df.to_pickle(fp)
+        pickle.dump((df, ipls), fp)
                 
 else:
     with open(PICKLE_FILE, 'rb') as fp:
-        df = pd.read_pickle(fp)
+        df, ipls = pickle.load(fp)
 
 df = df.reset_index()
 
 # ----------------------------------------------------------------------------- 
 #         Plots
 # -----------------------------------------------------------------------------
+# TODO fit final lengths to: a * N**0.5 + b
 fig = plt.figure(1, clear=True)
 ax = fig.add_subplot()
 sns.pointplot(data=df, x='N', y='initial', hue='dm', linestyles='--')
 sns.pointplot(data=df, x='N', y='final', hue='dm')
 ax.set_ylabel('Average Path Length')
+
+fig = plt.figure(2, clear=True)
+ax = fig.add_subplot()
+for c, dm in zip(['C0', 'C3'], dms):
+    for N in Ns:
+        M = N*N
+        ax.plot(np.linspace(0, 1, num=M), ipls[dm, N], 
+                color=c, label=f"{dm}, N = {N}")
+
+# TODO annotate curves with value of N
+ax.set_xticks([0, 1])
+ax.set_xticklabels(['0', r'$N^2$')
+ax.legend(['Hibbard', 'random'])
+ax.set(xlabel='Operations',
+       ylabel='Average Internal Path Length')
 
 plt.show()
 
