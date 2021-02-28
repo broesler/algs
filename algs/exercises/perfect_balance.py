@@ -53,7 +53,7 @@ if __name__ == '__main__':
     t = make_balanced_tree(a)
     assert(t.is_balanced())  # make sure the tree is balanced
     assert(t.level_order() == list('HCSAERX'))  # See Algorithms text p. 403
-    # print(t.level_order())
+    print(t.level_order())
 
 # =============================================================================
 # =============================================================================
