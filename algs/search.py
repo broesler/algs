@@ -680,9 +680,43 @@ class BST():
         if self._CACHE_FLAG:
             self._cache = None
 
+    # Exercise 3.2.6
     def height_r(self):
         """Determine the height of the BST recursively, in O(n) time."""
         return self._height_r(self._root)
+
+    # Exercise 3.2.25
+    def is_balanced(self):
+        """Return True if tree is perfectly balanced."""
+        return self._is_balanced(self._root)
+
+    def center_of_mass(self):
+        """Return the left-to-right 'center of mass' of the tree.
+        
+        .. note:: negative values count nodes to the left of the root, positive
+            values count nodes to the right of the root. Values of {-1, 0, 1}
+            do *not* necessarily mean a balanced tree. Draw the tree with the
+            input string 'AXCSERH' as an example.
+        """
+        _empty_check(self)
+        return self._center_of_mass(self._root) / (t.size - 1)
+
+    # Exercise 3.2.37
+    def level_order(self, x=None):
+        """Iterate over the keys in level-order (breadth-first)."""
+        if x is None:
+            x = self._root
+        keys = _Queue()
+        q = _Queue()
+        q.enqueue(x)
+        while q:
+            x = q.dequeue()
+            if x is None:
+                continue
+            keys.enqueue(x.key)
+            q.enqueue(x.left)
+            q.enqueue(x.right)
+        return list(keys)
 
     # -------------------------------------------------------------------------
     #         Private API
@@ -880,11 +914,6 @@ class BST():
         """Return the height of the tree rooted at `x`."""
         return 0 if x is None else x.height
 
-    # Exercise 3.2.25 helper
-    def is_balanced(self):
-        """Return True if tree is perfectly balanced."""
-        return self._is_balanced(self._root)
-
     def _is_balanced(self, x=None):
         """Return True if subtree rooted at `x` is perfectly balanced."""
         if x is None:
@@ -894,22 +923,15 @@ class BST():
         else:
             return self._is_balanced(x.left) and self._is_balanced(x.right)
 
-    # Exercise 3.2.37
-    def level_order(self, x=None):
-        """Iterate over the keys in level-order (breadth-first)."""
+    def _center_of_mass(self, x=None, c=0):
+        """Return the center of mass of the subtree rooted at `x`."""
         if x is None:
-            x = self._root
-        keys = _Queue()
-        q = _Queue()
-        q.enqueue(x)
-        while q:
-            x = q.dequeue()
-            if x is None:
-                continue
-            keys.enqueue(x.key)
-            q.enqueue(x.left)
-            q.enqueue(x.right)
-        return list(keys)
+            return 0
+        L = 0 if x.left is None else  x.left.N
+        R = 0 if x.right is None else x.right.N
+        return (R - L
+                + self._center_of_mass(x.left) 
+                + self._center_of_mass(x.right))
 
     # -------------------------------------------------------------------------
     #         Iterator functions
