@@ -76,13 +76,16 @@ class FrequencyCounter():
                         self.cost.append(self.t._cost)
                         self.time.append(toc - tic)
 
-        # Find the key with the highest frequency
+    def find_max_word(self):
+        """Find the key with the highest frequency."""
         max_word = ''
-        max_freq = 0
+        self.t[max_word] = 0
         for word in self.t:
-            if self.t[word] > max_freq:
+            if self.t[word] > self.t[max_word]:
                 max_word = word
+        del self.t['']  # remove placeholder
         self.max_word = max_word  # store the result
+        return max_word
 
 
 # =============================================================================

@@ -68,7 +68,7 @@ class SequentialSearchST():
             self.next = next  # pointer to next item
 
     # Initialize the symbol table
-    def __init__(self, items=list(), cache=False):
+    def __init__(self, items=list(), cache=True):
         self.size = 0             # number of elements in the table
         self._first = None
         self._cost = 0            # cost of previous get/put/delete
@@ -264,7 +264,7 @@ class ArrayST():
         `floor`/`ceil`, etc. that the ordered symbol tables (BinarySearchST,
         BST, etc.) can efficiently implement.
     """
-    def __init__(self, items=list(), cache=False, selforg=False):
+    def __init__(self, items=list(), cache=True, selforg=False):
         self._items = list()           # Ex 3.1.2 (ArrayST)
         self._cost = 0                 # cost of previous get/put/delete
         self._CACHE_FLAG = cache
@@ -418,7 +418,7 @@ class BinarySearchST():
     is_empty : bool
         True if `size == 0`.
     """
-    def __init__(self, items=list(), cache=False):
+    def __init__(self, items=list(), cache=True):
         self._items = list()
         self._cost = 0              # track number of compares + array accesses
         self._CACHE_FLAG = cache
@@ -777,7 +777,7 @@ class BST():
     # -------------------------------------------------------------------------
     #         Public API
     # -------------------------------------------------------------------------
-    def __init__(self, items=list(), cache=False, delete_method='Hibbard'):
+    def __init__(self, items=list(), cache=True, delete_method='Hibbard'):
         self._root = None
         self._CACHE_FLAG = cache       # Ex 3.2.28
         self._cache = None             # store the most recently accessed Node.
@@ -798,9 +798,9 @@ class BST():
 
     # Add to make BST behave more like python dict
     @classmethod
-    def fromkeys(cls, keys=list(), value=None):
+    def fromkeys(cls, keys=list(), value=None, **kwargs):
         """Create a new BST with keys from iterable and values set to value."""
-        st = cls()
+        st = cls(**kwargs)
         for k in keys:
             st[k] = value
         return st
@@ -2303,7 +2303,7 @@ class ArrayBST():
     is_empty : bool
         True if `size == 0`.
     """
-    def __init__(self, items=list(), cache=False):
+    def __init__(self, items=list(), cache=True):
         self._root = None      # index of the information on the root
         self._keys = list()
         self._vals = list()
@@ -2490,14 +2490,14 @@ if __name__ == '__main__':
     # ---------- Test All STs ----------
     for ST in [SequentialSearchST, ArrayST, BinarySearchST, BST, BST_nr,
                ThreadedST, ThreadedST_nr, ArrayBST]:
-        st = ST()
+        st = ST(cache=False)
         should_be(st.size, 0)
         should_be(st.is_empty, True)
         should_be(st.keys(),   [])
         should_be(st.values(), [])
         should_be(st.items(),  [])
 
-        st = ST(data)
+        st = ST(data, cache=False)
         for k, v in data:
             should_be(k in st, True)
             if k == 'E' or k == 'A':
@@ -2537,7 +2537,7 @@ if __name__ == '__main__':
         should_be(st._cache, None)
 
     # Test self-organizing search (Exercise 3.1.22)
-    st = ArrayST(data, selforg=True)
+    st = ArrayST(data, selforg=True, cache=False)
     rand_keys = rng.choice(st.keys(), size=st.size)
     for k in rand_keys:
         st[k]                       # search for the key
@@ -2558,7 +2558,7 @@ if __name__ == '__main__':
     # ---------- Test Ordered Operations ----------
     for ST in [BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr]:
         for cache in [False, True]:
-            t = ST()
+            t = ST(cache=cache)
             # Test bad input type
             err_test(t, '__init__', list('BADEXAMPLE'), err_type=ValueError)
             # Test empty table operations

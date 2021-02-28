@@ -17,19 +17,15 @@ from algs.search import ArrayST, BinarySearchST, BST, ArrayBST
 from frequency_counter import FrequencyCounter
 
 filenames = ['../data/tiny_tale.txt',  # 292
-             '../data/tale.txt',       # 779K
-             '../data/leipzig1m.txt']  # 124M
+             '../data/tale.txt']       # 779K
+             # '../data/leipzig1m.txt']  # 124M
 
 tags = [os.path.splitext(os.path.basename(x))[0] for x in filenames]
 cols = pd.MultiIndex.from_product([tags, ['words', 'distinct', 'max_word', 'max_freq']])
-kind = 'app'  # 'ins', 'app', 'selforg', 'cache', 'LL' 
+kind = 'app'  # 'ins', 'app', 'selforg', 'LL' 
              #  for `.insert(0, item)` vs. `.append(item)`
 
-selforg = cache = False
-if kind == 'selforg':
-    selforg = True
-if kind == 'cache':
-    cache = True
+selforg = True if kind == 'selforg' else False
 
 for ST in [ArrayST, BinarySearchST, BST, ArrayBST]:
     df = pd.DataFrame(columns=cols)
@@ -37,10 +33,11 @@ for ST in [ArrayST, BinarySearchST, BST, ArrayBST]:
         tag = tags[i]
         for minlen in [1, 8, 10]:
             if ST is ArrayST:
-                fc = FrequencyCounter(ST, selforg=selforg, cache=cache)
+                fc = FrequencyCounter(ST, selforg=selforg)
             else:
-                fc = FrequencyCounter(ST, cache=cache)
+                fc = FrequencyCounter(ST)
             fc.count_frequencies(f, minlen)
+            fc.find_max_word()
             df.loc[minlen, (tag, 'words')] = fc.N
             df.loc[minlen, (tag, 'distinct')] = fc.t.size
             df.loc[minlen, (tag, 'max_word')] = fc.max_word
