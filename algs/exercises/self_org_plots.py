@@ -22,16 +22,19 @@ from pathlib import Path
 
 from self_org_driver import SelfOrganizingDriver
 
-SAVE_FIGS = False
+SAVE_FIGS = True
 
 if SAVE_FIGS:
     plt.close('all')
     fig_dir = Path('./figures/')
 
+# tag = ''
+tag = '_randinit'
+
 # TODO
 #   * add `_randinit` to df, plots as well for comparison
 # Load the data
-filename = Path('./pkl/self_org_drivers.pkl.gz')
+filename = Path(f"./pkl/self_org_drivers{tag}.pkl.gz")
 
 with gzip.open(filename, 'rb') as f:
     drivers = pickle.load(f)
@@ -95,7 +98,7 @@ ax.grid('on')
 fig.tight_layout()
 
 if SAVE_FIGS:
-    fig.savefig(fig_dir.joinpath('self_org_timedists.pdf'))
+    fig.savefig(fig_dir.joinpath(f"self_org_timedists{tag}.pdf"))
 
 # ----------------------------------------------------------------------------- 
 #         Plot total runtimes
@@ -109,7 +112,7 @@ g.add_legend()
 g.tight_layout()
 
 if SAVE_FIGS:
-    g.savefig(fig_dir.joinpath('self_org_tots.pdf'))
+    g.savefig(fig_dir.joinpath(f"self_org_tots{tag}.pdf"))
 
 # ----------------------------------------------------------------------------- 
 #         Plot keys vs. index
@@ -131,7 +134,7 @@ for i, dist in enumerate(['p', 'zipf']):
 
 gs.tight_layout(fig)
 if SAVE_FIGS:
-    fig.savefig(fig_dir.joinpath('self_org_keys.pdf'))
+    fig.savefig(fig_dir.joinpath(f"self_org_keys{tag}.pdf"))
 
 # ----------------------------------------------------------------------------- 
 #         Plot the probability distributions
@@ -153,11 +156,11 @@ ax.set(xlabel=r'$i^{th}$ key',
        yscale='log',
        ylim=(1e-12, 1))
 ax.legend(fontsize=16)
-ax.grid()
+ax.grid(which='major')
 fig.tight_layout()
 
 if SAVE_FIGS:
-    fig.savefig(fig_dir.joinpath('self_org_dists.pdf'))
+    fig.savefig(fig_dir.joinpath(f"self_org_dists{tag}.pdf"))
 
 
 plt.show()
