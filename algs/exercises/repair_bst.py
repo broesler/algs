@@ -1,0 +1,76 @@
+#!/usr/bin/env python3
+# =============================================================================
+#     File: repair_bst.py
+#  Created: 2021-03-01 17:42
+#   Author: Bernie Roesler
+#
+"""
+  Description: Find two swapped keys in a BST and repair the error.
+    See: <https://algs4.cs.princeton.edu/32bst/> for more info.
+"""
+# =============================================================================
+
+from algs.search import BST
+
+class SelfHealingBST(BST):
+    """A BST with methods to find and repair swapped nodes."""
+    def _find_swapped_keys(self):
+        """Find the indices of the two keys that are out of order.
+
+        Returns
+        -------
+        p, q : int
+            Ranks of the keys that are out of order.
+        """
+        p = q = None
+        keys = self.keys()
+        for i in range(self.size-1):
+            if keys[i] > keys[i+1]:
+                if p is None:
+                    p = i
+                elif q is None:
+                    q = i+1
+                else:
+                    break
+        if p is None:
+            return
+        if q is None:
+            q = p + 1
+        return p, q
+
+    def _swap_keys(self, p, q):
+        """Swap the nodes corresponding to keys of rank `p` and `q`.
+            
+        Parameters
+        ----------
+        p, q : int
+            Rank of the keys to swap.
+        """
+        x = self._select(p, self._root)  # return BST._Node, not the key!
+        t = self._select(q, self._root)
+        temp_key = x.key
+        temp_val = x.val
+        x.key = t.key
+        x.val = t.val
+        t.key = temp_key
+        t.val = temp_val
+
+    def repair(self):
+        """Repair the tree by swapping a pair of reversed keys."""
+        try:
+            p, q = self._find_swapped_keys()
+            self._swap_keys(p, q)
+        except TypeError:
+            pass  # no keys are swapped
+
+
+# Create a BST and swap keys to break it, then repair!
+st = SelfHealingBST.fromkeys(list('SEARCHEXAMPLE'))
+assert st.isBST()
+st._swap_keys(st.rank('E'), st.rank('M'))  # must use rank
+assert st.isBST() == False
+st.repair()
+assert st.isBST()
+
+# =============================================================================
+# =============================================================================
