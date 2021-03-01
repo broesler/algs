@@ -1680,6 +1680,27 @@ class ThreadedST(BST):
         else:  # k > x.key
             return self._find_prev(k, x.right, x)  # update predecessor pointer
 
+    # -------------------------------------------------------------------------
+    #         Iterator
+    # -------------------------------------------------------------------------
+    # TODO implement range iterate here.
+    def _iterate_all(self, x=None, rtype='keys'):
+        """Recursively traverse the tree in order from the minimum."""
+        if x is None:
+            return
+        return self.__iterate_all(self._min(x), rtype)
+
+    def __iterate_all(self, x=None, rtype='keys'):
+        """Recursively traverse the tree in order (depth-first search)."""
+        if x is None:
+            return
+        # Yield rtype in order
+        yield (x.key if rtype == 'keys' else 
+               x.val if rtype == 'values' else (x.key, x.val))
+        yield from self.__iterate_all(x.next)
+
+
+
 
 class BST_nr(BST):
     """Implements a binary search tree data structure, non-recursively.
@@ -2303,7 +2324,7 @@ class ThreadedST_nr(BST_nr):
                     return x
 
     # -------------------------------------------------------------------------
-    #         Iterator
+    #         Iterators
     # -------------------------------------------------------------------------
     def _iterate(self, lo, hi, rtype='keys', **kwargs):
         """Add items to a Queue, in key-order from `lo` to `hi`."""
@@ -2319,6 +2340,16 @@ class ThreadedST_nr(BST_nr):
                     x = x.next
                 else:
                     break
+        return list(q)
+
+    def _iterate_all(self, rtype='keys', **kwargs):
+        """Add all items to a Queue, in key-order."""
+        q = _Queue()               # the output queue
+        x = self._min(self._root)  # get the minimum Node
+        while x:
+            q.enqueue(x.key if rtype == 'keys' else
+                      (x.val if rtype == 'values' else (x.key, x.val)))
+            x = x.next
         return list(q)
 
 # Ex 3.2.41 array representation
