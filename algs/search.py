@@ -1982,6 +1982,10 @@ class BST_nr(BST):
     # -------------------------------------------------------------------------
     #         Iterator
     # -------------------------------------------------------------------------
+    # TODO rewrite using "yield" instead of an explicit Queue -> can do, but
+    #   gets messier with BST compatibility since BST_nr.items() returns
+    #   a generator instead of a list. Not quite sure how to do the same for
+    #   the recursive BST._iterate() function.
     # Exercise 3.2.36
     def _iterate(self, lo, hi, rtype='keys', **kwargs):
         """Add items to a Queue, in key-order from `lo` to `hi`."""
@@ -2004,6 +2008,25 @@ class BST_nr(BST):
                     x = x.right
                 else:
                     break
+        return list(q)
+
+    # Overwrite BST._iterate_all recursive function
+    def _iterate_all(self, rtype='keys', **kwargs):
+        """Add items to a Queue, in key-order over all keys."""
+        q = _Queue()    # the output queue
+        s = _Stack()    # visited nodes so we can pop back up the tree
+        x = self._root
+        while s or x:
+            # Move left until `lo` is found
+            if x is not None:
+                s.push(x)
+                x = x.left
+            else:
+                if x is None:
+                    x = s.pop()
+                q.enqueue(x.key if rtype == 'keys' else
+                            (x.val if rtype == 'values' else (x.key, x.val)))
+                x = x.right
         return list(q)
 
     # Overwrite BST._iterate_keys recursive call
