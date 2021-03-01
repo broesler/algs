@@ -1344,7 +1344,7 @@ class BST():
         # Enqueue by key order
         if lo < x.key:
             self._iterate(lo, hi, x.left, q, rtype)
-        if lo <= x.key and hi >= x.key:
+        if lo <= x.key <= hi:
             q.enqueue(x.key if rtype == 'keys' else
                       (x.val if rtype == 'values' else (x.key, x.val)))
         if hi > x.key:
