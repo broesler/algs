@@ -15,7 +15,7 @@ from algs.search import BST
 class SelfHealingBST(BST):
     """A BST with methods to find and repair swapped nodes."""
     def _find_swapped_keys(self):
-        """Find the indices of the two keys that are out of order.
+        """Find the indices of a pair of keys that are out of order.
 
         Returns
         -------
@@ -23,7 +23,7 @@ class SelfHealingBST(BST):
             Ranks of the keys that are out of order.
         """
         p = q = None
-        keys = self.keys()
+        keys = list(self._iterate_keys())  # does not rely on self.min()
         for i in range(self.size-1):
             if keys[i] > keys[i+1]:
                 if p is None:
@@ -48,29 +48,35 @@ class SelfHealingBST(BST):
         """
         x = self._select(p, self._root)  # return BST._Node, not the key!
         t = self._select(q, self._root)
-        temp_key = x.key
-        temp_val = x.val
-        x.key = t.key
-        x.val = t.val
-        t.key = temp_key
-        t.val = temp_val
+        temp_key, temp_val = x.key, x.val
+        x.key, x.val = t.key, t.val
+        t.key, t.val = temp_key, temp_val
 
     def repair(self):
-        """Repair the tree by swapping a pair of reversed keys."""
+        """Repair the tree by swapping pairs of reversed keys."""
         try:
-            p, q = self._find_swapped_keys()
-            self._swap_keys(p, q)
+            while not self._is_ordered():
+                p, q = self._find_swapped_keys()
+                self._swap_keys(p, q)
         except TypeError:
             pass  # no keys are swapped
 
 
 # Create a BST and swap keys to break it, then repair!
 st = SelfHealingBST.fromkeys(list('SEARCHEXAMPLE'))
-assert st.isBST()
+assert st._is_ordered()
 st._swap_keys(st.rank('E'), st.rank('M'))  # must use rank
-assert st.isBST() == False
+assert st._is_ordered() == False
 st.repair()
-assert st.isBST()
+assert st._is_ordered()
+
+# Test multiple swaps
+st = SelfHealingBST.fromkeys(list('SEARCHEXAMPLE'))
+st._swap_keys(st.rank('E'), st.rank('M'))  # must use rank
+st._swap_keys(2, st.size-1)  # must use rank indices, since swaps break BST
+assert st._is_ordered() == False
+st.repair()
+assert st._is_ordered()
 
 # =============================================================================
 # =============================================================================
