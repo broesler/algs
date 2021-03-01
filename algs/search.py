@@ -1683,11 +1683,31 @@ class ThreadedST(BST):
     # -------------------------------------------------------------------------
     #         Iterator
     # -------------------------------------------------------------------------
-    # TODO implement range iterate here.
+    def _iterate(self, lo, hi, x=None, q=None, rtype='keys'):
+        """Recursively range search the BST for keys between `lo` and `hi`."""
+        if x is None:
+            return
+        # start the recursion with the mininmum
+        return self.__iterate(lo, hi, x=self._min(x), rtype=rtype)
+
+    def __iterate(self, lo, hi, x=None, q=None, rtype='keys'):
+        """Recursively range search the BST for keys between `lo` and `hi`."""
+        if x is None:
+            return
+        if q is None:
+            q = _Queue()
+        # Enqueue by key order
+        if lo <= x.key <= hi:
+            q.enqueue(x.key if rtype == 'keys' else
+                      (x.val if rtype == 'values' else (x.key, x.val)))
+        self.__iterate(lo, hi, x.next, q, rtype)
+        return list(q)
+
     def _iterate_all(self, x=None, rtype='keys'):
         """Recursively traverse the tree in order from the minimum."""
         if x is None:
             return
+        # start the recursion with the mininmum
         return self.__iterate_all(self._min(x), rtype)
 
     def __iterate_all(self, x=None, rtype='keys'):
