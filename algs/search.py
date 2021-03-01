@@ -211,13 +211,13 @@ class SequentialSearchST():
     """
 
     def keys(self):
-        return self._make_inorder_iterator(rtype='keys')(self)
+        return self._make_range_iterator(rtype='keys')(self)
 
     def values(self):
-        return self._make_inorder_iterator(rtype='values')(self)
+        return self._make_range_iterator(rtype='values')(self)
 
     def items(self):
-        return self._make_inorder_iterator(rtype='items')(self)
+        return self._make_range_iterator(rtype='items')(self)
 
     keys.__doc__   = _docstring.format(rtype='keys')
     values.__doc__ = _docstring.format(rtype='values')
@@ -230,7 +230,7 @@ class SequentialSearchST():
     # -------------------------------------------------------------------------
     #         Private API
     # -------------------------------------------------------------------------
-    def _make_inorder_iterator(self, rtype):
+    def _make_range_iterator(self, rtype):
         """Return an iterator over all of the items in the table."""
         def iterator(self, lo=None, hi=None):
             """Iterate over items."""
@@ -655,15 +655,15 @@ class BinarySearchST():
     """
 
     def keys(self, lo=None, hi=None):
-        func = self._make_inorder_iterator(rtype='keys')
+        func = self._make_range_iterator(rtype='keys')
         return func(self, lo, hi)
 
     def values(self, lo=None, hi=None):
-        func = self._make_inorder_iterator(rtype='values')
+        func = self._make_range_iterator(rtype='values')
         return func(self, lo, hi)
 
     def items(self, lo=None, hi=None):
-        func = self._make_inorder_iterator(rtype='items')
+        func = self._make_range_iterator(rtype='items')
         return func(self, lo, hi)
 
     keys.__doc__   = _docstring.format(rtype='keys')
@@ -677,7 +677,7 @@ class BinarySearchST():
     # -------------------------------------------------------------------------
     #         Private API
     # -------------------------------------------------------------------------
-    def _make_inorder_iterator(self, rtype):
+    def _make_range_iterator(self, rtype):
         """Return an iterator over all of the items in the table."""
         def iterator(self, lo=None, hi=None):
             """Iterate over items with keys between `lo` and `hi`."""
@@ -1306,15 +1306,15 @@ class BST():
     """
 
     def keys(self, lo=None, hi=None):
-        func = self._make_inorder_iterator(rtype='keys')
+        func = self._make_range_iterator(rtype='keys')
         return func(self, lo, hi)
 
     def values(self, lo=None, hi=None):
-        func = self._make_inorder_iterator(rtype='values')
+        func = self._make_range_iterator(rtype='values')
         return func(self, lo, hi)
 
     def items(self, lo=None, hi=None):
-        func = self._make_inorder_iterator(rtype='items')
+        func = self._make_range_iterator(rtype='items')
         return func(self, lo, hi)
 
     keys.__doc__   = _docstring.format(rtype='keys')
@@ -1322,7 +1322,7 @@ class BST():
     items.__doc__  = _docstring.format(rtype='items')
 
     # factory for generic in-order iteration over keys
-    def _make_inorder_iterator(self, rtype):
+    def _make_range_iterator(self, rtype):
         """Create an iterator over the desired type."""
         def iterator(self, lo=None, hi=None):
             try:
@@ -1359,22 +1359,33 @@ class BST():
         return self._iterate_keys(self._root)
 
     def _iterate_keys(self, x=None):
-        """Recursively traverse the tree in order."""
-        if x is None:
-            return
-        # Yield keys in order
-        yield from self._iterate_keys(x.left)
-        yield x.key
-        yield from self._iterate_keys(x.right)
+        return self._make_inorder_iterator(rtype='keys')(self)
 
-    def _iterate_nodes(self, x=None):
+    def _iterate_values(self, x=None):
+        return self._make_inorder_iterator(rtype='values')(self)
+
+    def _iterate_items(self, x=None):
+        return self._make_inorder_iterator(rtype='items')(self)
+
+    # factory for generic in-order iteration *without* ranges
+    def _make_inorder_iterator(self, rtype):
+        """Create an iterator over the desired type."""
+        def iterator(self):
+            try:
+                return self._iterate_all(x=self._root, rtype=rtype)
+            except IndexError:
+                return list()
+        return iterator
+
+    def _iterate_all(self, x=None, rtype='keys'):
         """Recursively traverse the tree in order (depth-first search)."""
         if x is None:
             return
-        # Yield nodes in order
-        yield from self._iterate_nodes(x.left)
-        yield x
-        yield from self._iterate_nodes(x.right)
+        # Yield rtype in order
+        yield from self._iterate_all(x.left)
+        yield (x.key if rtype == 'keys' else 
+               x.val if rtype == 'values' else (x.key, x.val))
+        yield from self._iterate_all(x.right)
 
     # -------------------------------------------------------------------------
     #         Certification (see Exercises 3.2.29 -- 3.2.32)
