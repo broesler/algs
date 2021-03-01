@@ -2069,12 +2069,7 @@ class BST_nr(BST):
                 q.enqueue(x.key if rtype == 'keys' else
                             (x.val if rtype == 'values' else (x.key, x.val)))
                 x = x.right
-        return list(q)
-
-    # Overwrite BST._iterate_keys recursive call
-    def __iter__(self):
-        yield from self.keys()
-
+        yield from q
 
 # Exercise 3.2.34 extended API
 class ThreadedST_nr(BST_nr):
@@ -2370,7 +2365,7 @@ class ThreadedST_nr(BST_nr):
             q.enqueue(x.key if rtype == 'keys' else
                       (x.val if rtype == 'values' else (x.key, x.val)))
             x = x.next
-        return list(q)
+        yield from q
 
 
 # Ex 3.2.41 array representation
