@@ -987,6 +987,7 @@ class BST():
         return self._center_of_mass(self._root) / (t.size - 1)
 
     # Exercise 3.2.37
+    # TODO write recursively?
     def level_order(self, x=None):
         """Iterate over the keys in level-order (breadth-first)."""
         if x is None:
@@ -1386,6 +1387,37 @@ class BST():
         yield (x.key if rtype == 'keys' else
                x.val if rtype == 'values' else (x.key, x.val))
         yield from self._iterate_all(x.right)
+
+    # Tree traversals (could write with `yield` statements instead)
+    def pre_order(self):
+        """Iterate over the keys in pre-order (depth-first)."""
+        return self._pre_order(self._root)
+
+    def _pre_order(self, x=None, q=None):
+        """Iterate over the keys in pre-order (depth-first)."""
+        if x is None:
+            return
+        if q is None:
+            q = _Queue()
+        q.enqueue(x.key)
+        self._pre_order(x.left, q)
+        self._pre_order(x.right, q)
+        return list(q)
+
+    def post_order(self):
+        """Iterate over the keys in post-order (depth-first)."""
+        return self._post_order(self._root)
+
+    def _post_order(self, x=None, q=None):
+        """Iterate over the keys in post-order (depth-first)."""
+        if x is None:
+            return
+        if q is None:
+            q = _Queue()
+        self._post_order(x.left, q)
+        self._post_order(x.right, q)
+        q.enqueue(x.key)
+        return list(q)
 
     # -------------------------------------------------------------------------
     #         Certification (see Exercises 3.2.29 -- 3.2.32)
@@ -2724,6 +2756,8 @@ if __name__ == '__main__':
 
             # BST-specific tests
             if isinstance(t, BST):
+                should_be(t.pre_order(),  list('SEACRHMLPX'))
+                should_be(t.post_order(), list('CALPMHREXS'))
                 should_be(t.height_r(), 6)  # recursive method
                 should_be(t.height, 6)      # Node attribute method
                 should_be(t.isBST(), True)
