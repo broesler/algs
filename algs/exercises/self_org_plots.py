@@ -22,14 +22,14 @@ from pathlib import Path
 
 from self_org_driver import SelfOrganizingDriver
 
-SAVE_FIGS = True
+SAVE_FIGS = False
 
 if SAVE_FIGS:
     plt.close('all')
     fig_dir = Path('./figures/')
 
-# tag = ''
-tag = '_randinit'
+tag = ''
+# tag = '_randinit'
 
 # TODO
 #   * add `_randinit` to df, plots as well for comparison
@@ -156,7 +156,7 @@ ax.set(xlabel=r'$i^{th}$ key',
        yscale='log',
        ylim=(1e-12, 1))
 ax.legend(fontsize=16)
-ax.grid(which='major')
+ax.grid(True, which='both')
 fig.tight_layout()
 
 if SAVE_FIGS:
