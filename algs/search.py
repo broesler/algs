@@ -1383,7 +1383,7 @@ class BST():
             return
         # Yield rtype in order
         yield from self._iterate_all(x.left)
-        yield (x.key if rtype == 'keys' else 
+        yield (x.key if rtype == 'keys' else
                x.val if rtype == 'values' else (x.key, x.val))
         yield from self._iterate_all(x.right)
 
@@ -1700,8 +1700,11 @@ class ThreadedST(BST):
         if lo <= x.key <= hi:
             q.enqueue(x.key if rtype == 'keys' else
                       (x.val if rtype == 'values' else (x.key, x.val)))
+        elif x.key > hi:
+            return list(q)  # no need to look at further nodes
         self.__iterate(lo, hi, x.next, q, rtype)
         return list(q)
+
 
     def _iterate_all(self, x=None, rtype='keys'):
         """Recursively traverse the tree in order from the minimum."""
@@ -1715,11 +1718,9 @@ class ThreadedST(BST):
         if x is None:
             return
         # Yield rtype in order
-        yield (x.key if rtype == 'keys' else 
+        yield (x.key if rtype == 'keys' else
                x.val if rtype == 'values' else (x.key, x.val))
         yield from self.__iterate_all(x.next)
-
-
 
 
 class BST_nr(BST):
@@ -2353,13 +2354,12 @@ class ThreadedST_nr(BST_nr):
         while x:
             if lo > x.key:
                 x = x.next
-            else:
-                if lo <= x.key and hi >= x.key:
-                    q.enqueue(x.key if rtype == 'keys' else
-                              (x.val if rtype == 'values' else (x.key, x.val)))
-                    x = x.next
-                else:
-                    break
+            elif lo <= x.key <= hi:
+                q.enqueue(x.key if rtype == 'keys' else
+                            (x.val if rtype == 'values' else (x.key, x.val)))
+                x = x.next
+            else:  # x.key > hi
+                break
         return list(q)
 
     def _iterate_all(self, rtype='keys', **kwargs):
@@ -2372,10 +2372,11 @@ class ThreadedST_nr(BST_nr):
             x = x.next
         return list(q)
 
+
 # Ex 3.2.41 array representation
 class ArrayBST():
     """Implements a binary search tree represented by parallel arrays.
-    
+
     Parameters
     ----------
     items : mapping, dict-like
@@ -2420,17 +2421,17 @@ class ArrayBST():
         """Return the value associated with the given key `k`."""
         if self.is_empty:
             raise KeyError(k)
-        
+
         x = self._root
         while x is not None:
             if k < self._keys[x]:
                 x = self._lefts[x]
             elif k > self._keys[x]:
                 x = self._rights[x]
-            else: # k == self._keys[x]:
+            else:  # k == self._keys[x]:
                 if self._CACHE_FLAG:
                     self._cache = x
-                return self._vals[x] 
+                return self._vals[x]
         else:
             raise KeyError(k)
 
@@ -2492,7 +2493,7 @@ class ArrayBST():
     def __iter__(self):
         yield from self.keys()
 
-    # ------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #         Private API
     # -------------------------------------------------------------------------
     def _new_node(self, k, v):
@@ -2744,14 +2745,16 @@ if __name__ == '__main__':
                 del t['H']  # remove node with two children
                 should_be(t.internal_path_length, 25)
 
-            # In-order traversal
+            # In-order traversal + range search
             t = ST(data, cache=cache)
             should_be(list(t.keys()), sorted(test_set))
             should_be(list(t.keys(lo='P')), list('PRSX'))
-            should_be(list(t.keys('F', 'Q')), list('HLMP'))  # subset of keys
+            should_be(list(t.keys('F', 'P')), list('HLMP'))  # subset of keys
             should_be(list(t.keys(hi='P')), list('ACEHLMP'))
             should_be(list(t.values()), [v for k, v in sorted(data_set)])
+            should_be(list(t.values('F', 'P')), [v for k, v in sorted(data_set)[3:7]])
             should_be(list(t.items()), sorted(data_set))
+            should_be(list(t.items('F', 'P')), sorted(data_set)[3:7])
 
             # Test deletion and reinsertion
             k, v = t.min(), t[t.min()]
