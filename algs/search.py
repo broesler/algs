@@ -12,12 +12,11 @@
 import random  # only needed for Ex 3.2.42 (deletion methods)
 
 from algs.basics import Stack as _Stack, \
-                        Queue as _Queue, \
-                        _empty_check
+                        Queue as _Queue
 from algs.sort import mergesort as _mergesort
 
-__all__ = ['SequentialSearchST', 'BinarySearchST', 'BST', 'BST_nr',
-           'ThreadedST', 'ThreadedST_nr']
+__all__ = ['SequentialSearchST', 'BinarySearchST', 'ArrayST', 'BST', 'BST_nr',
+           'ThreadedST', 'ThreadedST_nr', 'ArrayBST']
 
 # TODO
 #   * make ST(ABC) out of MutableMapping? to hold things like `size`,
@@ -26,6 +25,12 @@ __all__ = ['SequentialSearchST', 'BinarySearchST', 'BST', 'BST_nr',
 #     `setdefault`, and `update` like true dictionaries
 #   * implement `t.put(k, v)` method instead of just t[k] = v assignment
 #   * use collections.abc.[Keys|Values|Items]View classes?
+
+
+def _empty_check(self):
+    """General assertion that table is not empty."""
+    if self.is_empty:
+        raise KeyError(f"{self.__class__.__name__} is empty!")
 
 
 # Private class of key/value pairs
@@ -856,7 +861,6 @@ class BST():
         KeyError
             If `k` is not in the table.
         """
-        _empty_check(self)
         self._root = self._delete(k, self._root)
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
             self._cache = None
@@ -936,7 +940,7 @@ class BST():
 
         Raises
         ------
-        IndexError
+        KeyError
             If the table is empty.
         """
         _empty_check(self)
@@ -949,7 +953,7 @@ class BST():
 
         Raises
         ------
-        IndexError
+        KeyError
             If the table is empty.
         """
         _empty_check(self)
@@ -1099,9 +1103,22 @@ class BST():
     # each deletion.
     def _delete(self, k, x=None):
         """Delete the node associated with `k` by choosing the predecessor or
-            successor at random."""
+            successor at random.
+
+        Parameters
+        ----------
+        k : key
+            key for which to search
+        x : _Node, optional
+            root of the subtree at which to begin search
+
+        Raises
+        ------
+        KeyError
+            If `k` is not in the table.
+        """
         if x is None:
-            return
+            raise KeyError(k)
 
         if k < x.key:
             x.left = self._delete(k, x.left)
@@ -1115,7 +1132,6 @@ class BST():
             else:
                 # save pointer to Node to be deleted
                 t = x
-
                 if random.random() < self._RAND_THRESH:
                     # Get the successor to the node to be deleted
                     x = self._min(t.right)
@@ -1126,7 +1142,6 @@ class BST():
                     x = self._max(t.left)
                     x.left = self._delete_max(t.left)
                     x.right = t.right
-
         self._update_node(x)
         return x
 
@@ -1306,16 +1321,22 @@ class BST():
     """
 
     def keys(self, lo=None, hi=None):
-        func = self._make_range_iterator(rtype='keys')
-        return func(self, lo, hi)
+        if lo or hi:
+            return self._make_range_iterator(rtype='keys')(self, lo, hi)
+        else:
+            return self._make_inorder_iterator(rtype='keys')(self)
 
     def values(self, lo=None, hi=None):
-        func = self._make_range_iterator(rtype='values')
-        return func(self, lo, hi)
+        if lo or hi:
+            return self._make_range_iterator(rtype='values')(self, lo, hi)
+        else:
+            return self._make_inorder_iterator(rtype='values')(self)
 
     def items(self, lo=None, hi=None):
-        func = self._make_range_iterator(rtype='items')
-        return func(self, lo, hi)
+        if lo or hi:
+            return self._make_range_iterator(rtype='items')(self, lo, hi)
+        else:
+            return self._make_inorder_iterator(rtype='items')(self)
 
     keys.__doc__   = _docstring.format(rtype='keys')
     values.__doc__ = _docstring.format(rtype='values')
@@ -1330,12 +1351,12 @@ class BST():
                     lo = self.min()
                 if hi is None:
                     hi = self.max()
-                return self._iterate(lo, hi, x=self._root, rtype=rtype)
-            except IndexError:
+                return self._iterate_range(lo, hi, x=self._root, rtype=rtype)
+            except KeyError:
                 return list()
         return iterator
 
-    def _iterate(self, lo, hi, x=None, q=None, rtype='keys'):
+    def _iterate_range(self, lo, hi, x=None, q=None, rtype='keys'):
         """Recursively range search the BST for keys between `lo` and `hi`."""
         if x is None:
             return
@@ -1343,49 +1364,42 @@ class BST():
             q = _Queue()
         # Enqueue by key order
         if lo < x.key:
-            self._iterate(lo, hi, x.left, q, rtype)
+            self._iterate_range(lo, hi, x.left, q, rtype)
         if lo <= x.key <= hi:
             q.enqueue(x.key if rtype == 'keys' else
                       (x.val if rtype == 'values' else (x.key, x.val)))
         if hi > x.key:
-            self._iterate(lo, hi, x.right, q, rtype)
+            self._iterate_range(lo, hi, x.right, q, rtype)
         return list(q)
-
-    # iterate as a generator function
-    #   * more efficient than `yield from self.keys()` for entire traversal
-    #     since we don't have to find the min or max keys
-    #   * also neat pythonic code!
-    def __iter__(self):
-        return self._iterate_keys(self._root)
-
-    def _iterate_keys(self, x=None):
-        return self._make_inorder_iterator(rtype='keys')(self)
-
-    def _iterate_values(self, x=None):
-        return self._make_inorder_iterator(rtype='values')(self)
-
-    def _iterate_items(self, x=None):
-        return self._make_inorder_iterator(rtype='items')(self)
 
     # factory for generic in-order iteration *without* ranges
     def _make_inorder_iterator(self, rtype):
         """Create an iterator over the desired type."""
         def iterator(self):
-            try:
-                return self._iterate_all(x=self._root, rtype=rtype)
-            except IndexError:
+            if self._root is None:
                 return list()
+            else:
+                return self._iterate_all(x=self._root, rtype=rtype)
         return iterator
 
-    def _iterate_all(self, x=None, rtype='keys'):
+    #  more efficient than `yield from self.keys()` for entire traversal since
+    #  we don't have to find the min or max keys
+    def _iterate_all(self, x=None, q=None, rtype='keys'):
         """Recursively traverse the tree in order (depth-first search)."""
         if x is None:
             return
+        if q is None:
+            q = _Queue()
         # Yield rtype in order
-        yield from self._iterate_all(x.left)
-        yield (x.key if rtype == 'keys' else
-               x.val if rtype == 'values' else (x.key, x.val))
-        yield from self._iterate_all(x.right)
+        self._iterate_all(x.left, q, rtype)
+        q.enqueue(x.key if rtype == 'keys' else
+                  x.val if rtype == 'values' else (x.key, x.val))
+        self._iterate_all(x.right, q, rtype)
+        return list(q)
+
+    # iterate as a generator function
+    def __iter__(self):
+        yield from self.keys()
 
     # Tree traversals (could write with `yield` statements instead)
     def pre_order(self):
@@ -1732,14 +1746,14 @@ class ThreadedST(BST):
     # -------------------------------------------------------------------------
     #         Iterator
     # -------------------------------------------------------------------------
-    def _iterate(self, lo, hi, x=None, q=None, rtype='keys'):
+    def _iterate_range(self, lo, hi, x=None, q=None, rtype='keys'):
         """Recursively range search the BST for keys between `lo` and `hi`."""
         if x is None:
             return
         # start the recursion with the mininmum
-        return self.__iterate(lo, hi, x=self._min(x), rtype=rtype)
+        return self.__iterate_range(lo, hi, x=self._min(x), rtype=rtype)
 
-    def __iterate(self, lo, hi, x=None, q=None, rtype='keys'):
+    def __iterate_range(self, lo, hi, x=None, q=None, rtype='keys'):
         """Recursively range search the BST for keys between `lo` and `hi`."""
         if x is None:
             return
@@ -1751,25 +1765,27 @@ class ThreadedST(BST):
                       (x.val if rtype == 'values' else (x.key, x.val)))
         elif x.key > hi:
             return list(q)  # no need to look at further nodes
-        self.__iterate(lo, hi, x.next, q, rtype)
+        self.__iterate_range(lo, hi, x.next, q, rtype)
         return list(q)
-
 
     def _iterate_all(self, x=None, rtype='keys'):
         """Recursively traverse the tree in order from the minimum."""
         if x is None:
             return
         # start the recursion with the mininmum
-        return self.__iterate_all(self._min(x), rtype)
+        return self.__iterate_all(x=self._min(x), rtype=rtype)
 
-    def __iterate_all(self, x=None, rtype='keys'):
+    def __iterate_all(self, x=None, q=None, rtype='keys'):
         """Recursively traverse the tree in order (depth-first search)."""
         if x is None:
             return
+        if q is None:
+            q = _Queue()
         # Yield rtype in order
-        yield (x.key if rtype == 'keys' else
-               x.val if rtype == 'values' else (x.key, x.val))
-        yield from self.__iterate_all(x.next)
+        q.enqueue(x.key if rtype == 'keys' else
+                  x.val if rtype == 'values' else (x.key, x.val))
+        self.__iterate_all(x.next, q, rtype)
+        return list(q)
 
 
 class BST_nr(BST):
@@ -2073,12 +2089,8 @@ class BST_nr(BST):
     # -------------------------------------------------------------------------
     #         Iterator
     # -------------------------------------------------------------------------
-    # TODO rewrite using "yield" instead of an explicit Queue -> can do, but
-    #   gets messier with BST compatibility since BST_nr.items() returns
-    #   a generator instead of a list. Not quite sure how to do the same for
-    #   the recursive BST._iterate() function.
     # Exercise 3.2.36
-    def _iterate(self, lo, hi, rtype='keys', **kwargs):
+    def _iterate_range(self, lo, hi, rtype='keys', **kwargs):
         """Add items to a Queue, in key-order from `lo` to `hi`."""
         q = _Queue()    # the output queue
         s = _Stack()    # visited nodes so we can pop back up the tree
@@ -2118,7 +2130,8 @@ class BST_nr(BST):
                 q.enqueue(x.key if rtype == 'keys' else
                             (x.val if rtype == 'values' else (x.key, x.val)))
                 x = x.right
-        yield from q
+        return list(q)
+
 
 # Exercise 3.2.34 extended API
 class ThreadedST_nr(BST_nr):
@@ -2391,7 +2404,7 @@ class ThreadedST_nr(BST_nr):
     # -------------------------------------------------------------------------
     #         Iterators
     # -------------------------------------------------------------------------
-    def _iterate(self, lo, hi, rtype='keys', **kwargs):
+    def _iterate_range(self, lo, hi, rtype='keys', **kwargs):
         """Add items to a Queue, in key-order from `lo` to `hi`."""
         q = _Queue()               # the output queue
         x = self._min(self._root)  # get the minimum Node
@@ -2414,7 +2427,7 @@ class ThreadedST_nr(BST_nr):
             q.enqueue(x.key if rtype == 'keys' else
                       (x.val if rtype == 'values' else (x.key, x.val)))
             x = x.next
-        yield from q
+        return list(q)
 
 
 # Ex 3.2.41 array representation
@@ -2698,10 +2711,10 @@ if __name__ == '__main__':
             should_be(t.values(), [])
             should_be(t.items(),  [])
             err_test(t, '__getitem__', 'A', err_type=KeyError)
-            err_test(t, 'min', err_type=IndexError)
-            err_test(t, 'max', err_type=IndexError)
-            err_test(t, 'delete_min', err_type=IndexError)
-            err_test(t, 'delete_max', err_type=IndexError)
+            err_test(t, 'min', err_type=KeyError)
+            err_test(t, 'max', err_type=KeyError)
+            err_test(t, 'delete_min', err_type=KeyError)
+            err_test(t, 'delete_max', err_type=KeyError)
             should_be(t.floor('A'),  None)
             should_be(t.ceil('A'),  None)
             should_be(t.rank('A'),  0)
