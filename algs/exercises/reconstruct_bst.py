@@ -71,8 +71,19 @@ class BST(BST):
         # If we haven't used all of the keys, it is not a valid order
         if lev:
             raise KeyError('Invalid level-order!')
-        else:
-            return st
+
+        # Fix sizes, heights, internal path lengths O(N lg N)
+        st._update_nodes(st._root)
+        return st
+
+    def _update_nodes(self, x=None):
+        """Iterate over the keys in post-order (depth-first)."""
+        if x is None:
+            return
+        self._update_nodes(x.left)
+        self._update_nodes(x.right)
+        self._update_node(x)
+        return
 
 
 def is_level_order(level_order=None):
@@ -128,6 +139,9 @@ assert is_level_order(list('SEXARCHMLP')) == True
 assert is_level_order(list('SEXRACHMLP')) == False
 
 rst = BST.from_level_order(st.level_order())
+assert rst == st
+assert rst.pre_order() == st.pre_order()
+assert rst.post_order() == st.post_order()
 
 # =============================================================================
 # =============================================================================

@@ -712,6 +712,8 @@ class BST():
         """Iterate over the keys in post-order (depth-first)."""
         return self._post_order(self._root)
 
+    # TODO could include `op=lambda x: ...` to operate on nodes as we go (see
+    # 'exercises/reconstruct_bst.py' for example `_update_nodes()`.
     def _post_order(self, x=None, q=None):
         """Iterate over the keys in post-order (depth-first)."""
         if x is None:
