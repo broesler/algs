@@ -987,7 +987,6 @@ class BST():
         return self._center_of_mass(self._root) / (t.size - 1)
 
     # Exercise 3.2.37
-    # TODO write recursively?
     def level_order(self, x=None):
         """Iterate over the keys in level-order (breadth-first)."""
         if x is None:
@@ -1418,6 +1417,24 @@ class BST():
         self._post_order(x.right, q)
         q.enqueue(x.key)
         return list(q)
+
+    def reverse(self):
+        """Reverse the BST recursively."""
+        return self._reverse(self._root)
+
+    def _reverse(self, x=None):
+        """Reverse the BST recursively."""
+        if x is None:
+            return
+
+        # Swap the children
+        # x.left, x.right = x.left, x.right
+        temp = x.left
+        x.left = x.right
+        x.right = temp
+        # Do it for each subtree
+        self._reverse(x.left)
+        self._reverse(x.right)
 
     # -------------------------------------------------------------------------
     #         Certification (see Exercises 3.2.29 -- 3.2.32)
