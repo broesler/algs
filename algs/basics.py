@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#==============================================================================
+# =============================================================================
 #     File: basics.py
 #  Created: 2019-02-08 17:23
 #   Author: Bernie Roesler
@@ -7,7 +7,7 @@
 """
   Description: Basic container algorithms.
 """
-#==============================================================================
+# =============================================================================
 
 import operator as _operator
 
@@ -57,7 +57,7 @@ class Bag():
     @property
     def is_empty(self):
         return self.size == 0
-    
+
     def add(self, item):
         """Add item to the bag."""
         self._items.append(item)
@@ -268,9 +268,9 @@ class PriorityQueue():
         assert self._is_heap()
         return the_min
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     #        Private helper functions
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def _sink(self, k):
         """Sink the given node index down to its proper location in the heap."""
         while 2*k <= self.size:
@@ -408,9 +408,9 @@ class IndexPQ(_MutableMapping):
         if items is not None:
             self.update(items)  # __setitem__ takes care of enqueuing
 
-    #-------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #        Public API
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     @property
     def size(self):
         return len(self._pq) - 1  # ignore index 0
@@ -432,7 +432,7 @@ class IndexPQ(_MutableMapping):
         return idx, self._items[idx]
 
     def enqueue(self, k, item):
-        """Add an `item` to the queue with index `k`. 
+        """Add an `item` to the queue with index `k`.
 
         .. note:
             Note that the *index* does not correspond to the *priority* in the
@@ -458,7 +458,7 @@ class IndexPQ(_MutableMapping):
         self._swap(self.size, 1)       # swap root with bottom node
         idx = self._pq.pop()
         item = self._items.pop(idx)
-        if idx in self._qp: 
+        if idx in self._qp:
             del self._qp[idx]
         self._sink(1)                  # sink the new root to reorder
         assert self._is_heap()
@@ -479,9 +479,9 @@ class IndexPQ(_MutableMapping):
         """Create a new IndexPQ object from given iterable."""
         return cls(((k, value) for k in iterable), **kwargs)
 
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     #        Private helper functions
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def _change_item(self, k, item):
         """Change item associated with index `k` to `item`."""
         self._items[k] = item
@@ -546,9 +546,9 @@ class IndexPQ(_MutableMapping):
         if (right <= self.size and self._comp(k, right)): return False
         return self._is_heap(left) and self._is_heap(right)
 
-    #-------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #        Python object methods
-    #--------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def __len__(self):
         return self.size
 
@@ -578,12 +578,9 @@ class IndexPQ(_MutableMapping):
         else:
             return self._pq_copy.dequeue()[0]  # iterate over keys
 
-    #-------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #        _MutableMapping required methods
-    #--------------------------------------------------------------------------
-    def __len__(self):
-        return self.size
-
+    # -------------------------------------------------------------------------
     def __getitem__(self, k):
         return self._items[k]
 
@@ -600,15 +597,15 @@ class IndexPQ(_MutableMapping):
         to_del = self._pq.pop()
         self._swim(idx)             # reorganize the heap
         self._sink(idx)
-        if to_del in self._qp:    
+        if to_del in self._qp:
             del self._qp[to_del]    # remove the item
         if to_del in self._items:
             del self._items[to_del]
 
 
-#------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 #        Test client
-#------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 if __name__ == '__main__':
     # TODO move to proper unit testing suite for package
     import string
@@ -652,7 +649,6 @@ if __name__ == '__main__':
                 return
             except Exception as err:
                 raise Exception(f'Improper error thrown: {repr(err)}')
-
 
     # Test Bag
     b = Bag()
@@ -768,7 +764,7 @@ if __name__ == '__main__':
     del pq[i]
     should_be(i not in pq, True)
     should_be(list(pq.keys()), idx_s[:i] + idx_s[i+1:])
-    should_be(''.join(pq.values()),   string.ascii_uppercase[:i]\
+    should_be(''.join(pq.values()),   string.ascii_uppercase[:i]
                                     + string.ascii_uppercase[i+1:])
 
     # Re-add item for completeness
@@ -797,5 +793,5 @@ if __name__ == '__main__':
         print(f"All {tests} tests passed!")
 
 
-#==============================================================================
-#==============================================================================
+# =============================================================================
+# =============================================================================
