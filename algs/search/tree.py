@@ -279,15 +279,15 @@ class BST():
             input string 'AXCSERH' as an example.
         """
         _empty_check(self)
-        return self._center_of_mass(self._root) / (t.size - 1)
+        return self._center_of_mass(self._root) / (self.size - 1)
 
     # Exercise 3.2.37
     def level_order(self, x=None):
         """Iterate over the keys in level-order (breadth-first)."""
         if x is None:
             x = self._root
-        keys = _Queue()
-        q = _Queue()
+        keys = _Queue()  # output queue (only grows)
+        q = _Queue()     # queue of keys to visit
         q.enqueue(x)
         while q:
             x = q.dequeue()
@@ -838,8 +838,8 @@ class ThreadedST(BST):
         print("k  {:40}    {:40}".format('prev', 'next'))
         for k in self.keys():
             print("{}: {:40} || {:40}"
-                    .format(k, str(self._get(k, self._root).prev),
-                               str(self._get(k, self._root).next)))
+                  .format(k, str(self._get(k, self._root).prev),
+                             str(self._get(k, self._root).next)))
 
     # -------------------------------------------------------------------------
     #         Private API
@@ -1419,7 +1419,7 @@ class BST_nr(BST):
                 if x is None:
                     x = s.pop()
                 q.enqueue(x.key if rtype == 'keys' else
-                            (x.val if rtype == 'values' else (x.key, x.val)))
+                          (x.val if rtype == 'values' else (x.key, x.val)))
                 x = x.right
         return list(q)
 
@@ -1704,7 +1704,7 @@ class ThreadedST_nr(BST_nr):
                 x = x.next
             elif lo <= x.key <= hi:
                 q.enqueue(x.key if rtype == 'keys' else
-                            (x.val if rtype == 'values' else (x.key, x.val)))
+                          (x.val if rtype == 'values' else (x.key, x.val)))
                 x = x.next
             else:  # x.key > hi
                 break
