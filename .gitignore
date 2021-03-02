@@ -2,10 +2,6 @@
 /dist/
 *.egg-info
 *.egg
-*EWD.txt
-*Kints.txt
-1Mints.txt
-antiquicksort*
 **/data
 **/pkl
 *.cache
