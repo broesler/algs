@@ -13,6 +13,7 @@ import random  # only needed for Ex 3.2.42 (deletion methods)
 
 from algs.basics import Stack as _Stack, \
                         Queue as _Queue
+from algs.search.table import _empty_check
 
 __all__ = ['BST', 'BST_nr', 'ThreadedST', 'ThreadedST_nr', 'ArrayBST']
 
