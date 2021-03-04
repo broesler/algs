@@ -17,6 +17,8 @@
     square root of N. Run the same experiments for a `delete()` implementation
     that makes a random choice whether to use the predecessor or the successor
     node.
+
+    ..note:: See Eppinger 1983 for details.
 """
 # =============================================================================
 
@@ -29,24 +31,41 @@ import seaborn as sns
 
 from matplotlib.gridspec import GridSpec
 from pathlib import Path
+from scipy.signal import resample
+from scipy.optimize import curve_fit
 from tqdm import tqdm
 
 from algs.search import BST
 
-# Define constant inputs
-FORCE_UPDATE = False
 
-PICKLE_FILE = Path('./pkl/hibbard_delete.pkl')
-# PICKLE_FILE = Path('./pkl/hibbard_delete_tiny.pkl')
+def theory_avg_ipl(N):
+    """Theoretical average internal path length of a random BST.
+
+    ..note:: See Eppinger 1983 for details.
+    """
+    return 1.386 * np.log2(N) + 2*np.euler_gamma - 3  # ≅ 1.39 lg N - 1.95
+
+
+# Define constant inputs
+FORCE_UPDATE = True
+
+# PICKLE_FILE = Path('./pkl/hibbard_delete.pkl')
+PICKLE_FILE = Path('./pkl/hibbard_delete_tiny.pkl')
 
 # Input variables
 N_TRIALS = 30  # run the entire experiment and ensemble average
 dms = ['Hibbard', 'random']  # delete methods
-Ns = [2**x for x in range(6, 12)]  # [64, 128, 256, 512, 1024, 2048]
-# Ns = [64, 128]
+# Ns = [2**x for x in range(6, 12)]  # [64, 128, 256, 512, 1024, 2048]
+Ns = [64, 128]
 
 # Output variables
 if FORCE_UPDATE or not PICKLE_FILE.exists():
+    # Create summary DataFrame from the ipl data
+    df = pd.DataFrame(index=pd.MultiIndex.from_product([dms, Ns]),
+                    columns=['samples', 'mean_IPL', 'var_IPL', 
+                             'mean_IPL_norm', 'var_IPL_norm'])
+    df.index.names = ['dm', 'N']
+
     # Store the ipls vs operations
     ipls = dict()
     for N in Ns:
@@ -76,57 +95,52 @@ if FORCE_UPDATE or not PICKLE_FILE.exists():
 
                 assert N == st.size
 
-            # Store the ipls vs operations
-            ipls[dm, N] = avg_ipl
+            # Process the stats of the data for summarization
+            data = avg_ipl[:, N*N:]
+            df.loc[dm, N]['samples'] = np.size(data)
+            df.loc[dm, N]['mean_IPL'] = np.mean(data)
+            df.loc[dm, N]['var_IPL'] = np.var(data)
+            df.loc[dm, N]['mean_IPL_norm'] = np.mean(data / theory_avg_ipl(N))
+            df.loc[dm, N]['var_IPL_norm'] = np.var(data / theory_avg_ipl(N))
+
+            # Store downsampled ipls vs operations
+            ipls[dm, N] = resample(avg_ipl, num=min(Ns)**2, axis=1)
 
     with open(PICKLE_FILE, 'wb') as fp:
-        pickle.dump(ipls, fp)
+        pickle.dump((df, ipls), fp)
 
 else:
     with open(PICKLE_FILE, 'rb') as fp:
-        ipls = pickle.load(fp)
+        df, ipls = pickle.load(fp)
 
-
+# ----------------------------------------------------------------------------- 
+#         Process the data
 # -----------------------------------------------------------------------------
-#         Process data
-# -----------------------------------------------------------------------------
-def theory_avg_ipl(N):
-    """Theoretical average internal path length of a random BST.
-
-    ..note:: See Eppinger 1983 for details.
-    """
-    return 1.386 * np.log2(N) + 2*np.euler_gamma - 3  # ≅ 1.39 lg N - 1.95
-
-
-# Create summary DataFrame from the ipl data
-df = pd.DataFrame(index=pd.MultiIndex.from_product([dms, Ns]),
-                  columns=['samples', 'mean_IPL', 'var_IPL'])
-df.index.names = ['dm', 'N']
-
-for N in Ns:
-    for dm in dms:
-        data = ipls[dm, N] / theory_avg_ipl(N)  # normalize the data
-        data = data[:, N**2:]                   # take indices > N**2
-        df.loc[dm, N]['samples'] = np.size(data)
-        df.loc[dm, N]['mean_IPL'] = np.mean(data)
-        df.loc[dm, N]['var_IPL'] = np.var(data)
-
-# df = df.reset_index()
 print(df)
+
+
+def func(x, a, b):
+    return a * x**0.5 + b
+
+
+popt, pcov = curve_fit(func, df.xs('Hibbard').index, df.xs('Hibbard')['mean_IPL'])
+
+df = df.reset_index()
+df['sqrtN'] = np.sqrt(df['N'])
 
 # -----------------------------------------------------------------------------
 #         Plots
 # -----------------------------------------------------------------------------
-# TODO fit final lengths to: a * N**0.5 + b
+fig = plt.figure(1, clear=True)
+ax = fig.add_subplot()
+sns.pointplot(ax=ax, data=df, x='N', y='mean_IPL', hue='dm')
+sns.pointplot(ax=ax, data=df, x='N', y='sqrtN', color='k')
+ax.set_ylabel('Average Path Length')
 
-# fig = plt.figure(1, clear=True)
-# fig.set_size_inches((6, 8), forward=True)
-# ax = fig.add_subplot()
-# sns.pointplot(data=df, x='N', y='initial', hue='dm', linestyles='--')
-# sns.pointplot(data=df, x='N', y='final', hue='dm')
-# ax.set_ylabel('Average Path Length')
+ENSEMBLE = True
 
 fig = plt.figure(2, clear=True)
+fig.suptitle(f"Ensemble Average Over {N_TRIALS} Trials")
 gs = GridSpec(nrows=len(Ns), ncols=1)
 
 for i, N in enumerate(Ns):
@@ -134,18 +148,30 @@ for i, N in enumerate(Ns):
     ax.axhline(1, color='k', lw=1)
 
     for c, dm in zip(['C0', 'C3'], dms):
-        ensemble_avg = np.mean(ipls[dm, N], axis=0)  # avg over trials
-        M = len(ensemble_avg)
-        ax.plot(range(M),  ensemble_avg / theory_avg_ipl(N),
-                color=c, label=f"{dm}, N = {N}")
+        if ENSEMBLE:
+            ensemble_avg = np.mean(ipls[dm, N], axis=0)  # avg over trials
+            M = len(ensemble_avg)
+            ax.plot(range(M),  ensemble_avg / theory_avg_ipl(N),
+                    color=c, label=f"{dm}")
+        else:
+            # Plot all trials separately
+            for t in range(N_TRIALS):
+                M = ipls[dm, N].shape[1]
+                ax.plot(range(M),  ipls[dm, N][t, :] / theory_avg_ipl(N),
+                    color=c, label=f"{dm}, N = {N}")
 
+        ax.annotate(rf"$N$ = {N}",
+                    xy=(0.01, 0.97), xycoords='axes fraction',
+                    ha='left', va='top', color='k')
+
+    # Set ticks but turn labels off for all but last
     ax.set_xticks([0, M/2, M])
-    ax.set_xticklabels(['0', '$N^2$', '$2N^2$'])
-    ax.legend(loc='upper left', fontsize=8)
-    ax.set(xlabel='Operations',
-           ylabel='IPL vs. Theory')
+    ax.set_xticklabels([])
 
-# TODO annotate curves with value of N
+ax.set_xticklabels(['0', '$N^2$', '$2N^2$'])
+ax.legend(fontsize=8)
+ax.set(xlabel='Operations',
+       ylabel='IPL vs. Theory')
 
 gs.tight_layout(fig)
 
