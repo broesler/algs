@@ -5,7 +5,7 @@
 #   Author: Bernie Roesler
 #
 """
-  Description: Search algorithms
+  Description: Binary Search Trees.
 """
 # =============================================================================
 
@@ -17,6 +17,8 @@ from algs.search.table import _empty_check
 
 __all__ = ['BST', 'BST_nr', 'ThreadedST', 'ThreadedST_nr', 'ArrayBST']
 
+
+# TODO put parameters and attributes into general string and set the doc.
 
 class BST():
     r"""Implements a binary search tree data structure.
