@@ -46,6 +46,7 @@ class RedBlackBST(BST):
             super().__init__(*args, **kwargs)
             self.color = color
 
+    # Redefine put() operations to account for node colors
     def __setitem__(self, k, v):
         """Add a new node to subtree at `x`, associating `k` with `v`.
         If `k` is in subtree rooted at `x`, change its value to `v`."""
@@ -95,7 +96,6 @@ class RedBlackBST(BST):
         x.color = h.color
         h.color = self._RED
         x.N = h.N
-        # h.N = 1 + self._size(h.left) + self._size(h.right)
         self._update_node(h)
         return x  # return the new parent
 

@@ -11,8 +11,9 @@
 
 import numpy as np
 
-from algs.search import SequentialSearchST, BinarySearchST, ArrayST,\
-                        BST, BST_nr, ThreadedST, ThreadedST_nr, ArrayBST
+from algs.search import SequentialSearchST, BinarySearchST, ArrayST, \
+                        BST, BST_nr, ThreadedST, ThreadedST_nr, ArrayBST, \
+                        RedBlackBST
 
 # TODO write Pytest classes/functions
 # Ex 3.1.29 (and then some!)
@@ -83,7 +84,7 @@ data_set.remove(('E', 6))
 
 # ---------- Test All STs ----------
 for ST in [SequentialSearchST, ArrayST, BinarySearchST, BST, BST_nr,
-           ThreadedST, ThreadedST_nr, ArrayBST]:
+           ThreadedST, ThreadedST_nr, ArrayBST, RedBlackBST]:
     st = ST(cache=False)
     should_be(st.size, 0)
     should_be(st.is_empty, True)
@@ -109,7 +110,7 @@ for ST in [SequentialSearchST, ArrayST, BinarySearchST, BST, BST_nr,
     err_test(st, '__getitem__', 'Z', err_type=KeyError)
 
     # delete cut-off here
-    if isinstance(st, ArrayBST):
+    if st.__class__ is ArrayBST or st.__class__ is RedBlackBST:
         continue
 
     test_keys = test_set.copy()
@@ -150,7 +151,8 @@ del st[k]
 should_be(st._cache, None)
 
 # ---------- Test Ordered Operations ----------
-for ST in [BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr]:
+for ST in [BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr,
+           RedBlackBST]:
     for cache in [False, True]:
         t = ST(cache=cache)
         # Test bad input type
@@ -236,7 +238,7 @@ for ST in [BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr]:
             should_be(t.select(t.rank(k)), k)
 
         # BST-specific tests
-        if isinstance(t, BST):
+        if isinstance(t, BST) and t.__class__ is not RedBlackBST:
             should_be(t.pre_order(),  list('SEACRHMLPX'))
             should_be(t.post_order(), list('CALPMHREXS'))
             should_be(t.height_r(), 6)  # recursive method
@@ -262,7 +264,8 @@ for ST in [BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr]:
         should_be(list(t.keys('F', 'P')), list('HLMP'))  # subset of keys
         should_be(list(t.keys(hi='P')), list('ACEHLMP'))
         should_be(list(t.values()), [v for k, v in sorted(data_set)])
-        should_be(list(t.values('F', 'P')), [v for k, v in sorted(data_set)[3:7]])
+        should_be(list(t.values('F', 'P')),
+                  [v for k, v in sorted(data_set)[3:7]])
         should_be(list(t.items()), sorted(data_set))
         should_be(list(t.items('F', 'P')), sorted(data_set)[3:7])
 
@@ -294,7 +297,7 @@ for ST in [BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr]:
             err_test(t, '__getitem__', k, err_type=KeyError)
 
     # Test BST internal structure
-    if isinstance(t, BST):
+    if isinstance(t, BST) and t.__class__ is not RedBlackBST:
         t = ST(data)  # reset tree
         # delete the root (default deletion)
         should_be(t._root.key, 'S')
