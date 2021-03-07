@@ -24,14 +24,15 @@ class NodeArtist():
     ..note:: This class is a *recursive structure*! It builds itself by
         a pre-order traversal of the given BST.
     """
-    def __init__(self, h=None):
+    def __init__(self, h=None, depth=0):
         if h is None:
             return
-        self.x = 0
-        self.y = h.height
-        self.node = h  # pointer to node in BST
-        self.left = NodeArtist(h.left)
-        self.right = NodeArtist(h.right)
+        self.x = None       # set by layout methods
+        self.y = None
+        self.depth = depth  # track depth independent of y-coordinate
+        self.node = h       # pointer to node in BST
+        self.left = NodeArtist(h.left, depth+1)
+        self.right = NodeArtist(h.right, depth+1)
 
     def __bool__(self):
         return hasattr(self, 'x')  # no attributes set if None
@@ -101,6 +102,7 @@ class BSTArtist():
         if h.left:
             self._knuth_layout(h.left)
         h.x = self._i
+        h.y = -h.depth
         self._i += 1
         if h.right:
             self._knuth_layout(h.right)
@@ -116,9 +118,9 @@ class BSTArtist():
         """
         if not h:
             return
-        i = h.node.height-1
+        i = h.depth
         h.x = self._cols[i]
-        h.y = i
+        h.y = -i  # root at the top
         self._cols[i] += 1
         self._wetherell_naive_layout(h.left)
         self._wetherell_naive_layout(h.right)
@@ -202,8 +204,8 @@ class BSTArtist():
 #         Test Client
 # -----------------------------------------------------------------------------
 # st = BST.fromkeys(sorted(list('SEARCHEXAMPLE')))  # in-order
-st = BST.fromkeys(list('AXCSERHPL'))                # worst-case alternating
-# st = BST.fromkeys(list('SEARCHEXAMPLE'))
+# st = BST.fromkeys(list('AXCSERHPL'))                # worst-case alternating
+st = BST.fromkeys(list('SEARCHEXAMPLE'))
 # st = RedBlackBST.fromkeys(list('SEARCHEXAMPLE'))
 
 # st = BST.fromkeys(list('EASYQUESTION'))
@@ -215,7 +217,7 @@ dt.ax.set_title('Knuth')
 
 dt = BSTArtist(st, layout='wetherell_naive')
 dt.draw(fignum=2)
-dt.ax.set_title('Wetherell and Shannon (basic)')
+dt.ax.set_title('Wetherell and Shannon (naïve)')
 
 # =============================================================================
 # =============================================================================
