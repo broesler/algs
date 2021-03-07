@@ -170,7 +170,7 @@ class BSTArtist():
             return
         self._wetherell_first_pass(h.left)
         self._wetherell_first_pass(h.right)
-        # Do things post-order
+        # Compute the preliminary x-positions and modifiers
         i = h.depth
         is_leaf = h.left is None and h.right is None
         if is_leaf:
@@ -189,13 +189,15 @@ class BSTArtist():
         self._cols[i] = h.x + 1
         h.mod = self._mods[i]
 
-    def _wetherell_second_pass(self, h=None):
+    def _wetherell_second_pass(self, h=None, mod_sum=0):
         """Second, pre-order pass of Wetherell Algorithm 3."""
         if h is None:
             return
-        # Do things pre-order
-        self._wetherell_second_pass(h.left)
-        self._wetherell_second_pass(h.right)
+        # Shift subtrees right by the cumulative modifiers of their parents
+        h.x += mod_sum
+        mod_sum += h.mod
+        self._wetherell_second_pass(h.left, mod_sum)
+        self._wetherell_second_pass(h.right, mod_sum)
 
     def draw(self, fignum=None, layout=None, debug=False):
         """Plot the tree.
