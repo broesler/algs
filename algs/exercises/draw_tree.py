@@ -51,26 +51,43 @@ class BSTArtist():
 
     Attributes
     ----------
-    ???
+    fig, ax : :obj:Figure, :obj:Axis
+        figure and axis handles to the plot.
     """
     def __init__(self, st, layout='knuth'):
         self.st = st  # pointer to the original BST
         self._root = NodeArtist(st._root)  # recursive structure!!
         self.fig = None
         self.ax = None
+        self.layout = layout
+
+    @property
+    def layout(self):
+        return self.layout
+
+    @layout.setter
+    def layout(self, layout='knuth'):
+        """Set the layout property and compute the node coordinates."""
         if layout == 'knuth':
-            self.layout = layout
+            self._i = 0
             self._knuth_layout(self._root)
+        elif layout == 'wetherell_naive':
+            self._cols = [0] * self.st._root.height
+            self._wetherell_naive_layout(self._root)
         else:
             raise ValueError(f"Invalid layout: {repr(layout)}")
 
-    def _knuth_layout(self, h=None, i=0, depth=0):
+    def _knuth_layout(self, h=None):
         """Set coordinates according to Knuth's method of tree layout.
 
         Follows two principles:
             1. The edges of the tree should not cross each other.
-            2. All nodes at the same depth should be drawn on the same
+            2. All nodes at the same height should be drawn on the same
                horizontal line to clarify the tree structure.
+
+        The traversal is in-order, with the minimum key at the far left,
+        increasing one step to the right for each subsequent key, regardless of
+        height. Knuth's layout leads to nicely ordered, but wide trees.
 
         Parameters
         ----------
@@ -78,20 +95,39 @@ class BSTArtist():
             Root of the subtree to process
         i : float, optional
             x-coordinate of `h`
-        depth : float, optional
-            y-coordinate of `h`
         """
-        if h is None:
+        if not h:
             return
         if h.left:
-            self._knuth_layout(h.left, i-1)
-        h.x = i
+            self._knuth_layout(h.left)
+        h.x = self._i
+        self._i += 1
         if h.right:
-            self._knuth_layout(h.right, i+1)
+            self._knuth_layout(h.right)
 
-    def draw(self, debug=False):
+    def _wetherell_naive_layout(self, h=None):
+        """Use pre-order traversal (Wetherell and Shannon (1979)).
+        
+        This algorithm tracks the number of nodes on each level in `_cols`,
+        incrementing in top-down fashion. The left-most node on the level
+        starts at `x = 0`, with the rest of the level spreading to the right.
+        This algorithm creates narrow trees, but parents are not centered above
+        children.
+        """
+        if not h:
+            return
+        i = h.node.height-1
+        h.x = self._cols[i]
+        h.y = i
+        self._cols[i] += 1
+        self._wetherell_naive_layout(h.left)
+        self._wetherell_naive_layout(h.right)
+
+    def draw(self, debug=False, fignum=None, layout=None):
         """Plot the tree."""
-        self.fig = plt.figure(1, clear=True)
+        if layout:
+            self.layout = layout
+        self.fig = plt.figure(fignum or 1, clear=True)
         self.ax = self.fig.add_subplot()
         self._draw(self._root)
         self.ax.set_aspect('equal')
@@ -116,24 +152,70 @@ class BSTArtist():
             return
         if ax is None:
             ax = self.ax
+
+        NULL_DIST = 0.3
+
         # Plot the node itself
-        circ = plt.Circle((h.x, h.y), radius=0.2, ec='k', fc='#EEE')
+        circ = plt.Circle((h.x, h.y), radius=0.25, ec='k', fc='#EEE')
         ax.add_patch(circ)
-        label = ax.annotate(h.node.key, xy=(h.x, h.y), 
+        label = ax.annotate(h.node.key, xy=(h.x, h.y),
                             ha='center', va='center')
+
         # Plot lines to children
+        # TODO 
+        #   * option to plot red links level with neighbors
+        #   * plot next/prev of ThreadedST with curved, dashed arrows?
         if h.left:
-            ax.plot((h.x, h.left.x), (h.y, h.left.y), 'k', lw=2, zorder=-1)
+            if self._is_red(h.left.node):
+                color = 'C3'
+                lw = 3
+            else:
+                color = 'k'
+                lw = 2
+            ax.plot((h.x, h.left.x), (h.y, h.left.y), 
+                    color=color, lw=lw, zorder=-1)
+        elif null_links:
+            ax.plot((h.x, h.x - NULL_DIST), (h.y, h.y - NULL_DIST), 'k', lw=2, zorder=-1)
+
         if h.right:
-            ax.plot((h.x, h.right.x), (h.y, h.right.y), 'k', lw=2, zorder=-1)
+            if self._is_red(h.right.node):
+                color = 'C3'
+                lw = 3
+            else:
+                color = 'k'
+                lw = 2
+            ax.plot((h.x, h.right.x), (h.y, h.right.y), 
+                    color=color, lw=lw, zorder=-1)
+        elif null_links:
+            ax.plot((h.x, h.x + NULL_DIST), (h.y, h.y - NULL_DIST), 'k', lw=2, zorder=-1)
 
+    def _is_red(self, h=None):
+        """Return True if `h` is colored red. Calls RedBlackBST method unless
+        we're drawing a regular BST.
+        """
+        try:
+            return RedBlackBST._is_red(self.st, h)
+        except AttributeError:
+            return False
 
+# ----------------------------------------------------------------------------- 
+#         Test Client
+# -----------------------------------------------------------------------------
+# st = BST.fromkeys(sorted(list('SEARCHEXAMPLE')))  # in-order
+st = BST.fromkeys(list('AXCSERHPL'))                # worst-case alternating
+# st = BST.fromkeys(list('SEARCHEXAMPLE'))
+# st = RedBlackBST.fromkeys(list('SEARCHEXAMPLE'))
 
+# st = BST.fromkeys(list('EASYQUESTION'))
+# st = RedBlackBST.fromkeys(list('EASYQUESTION'))
 
-st = BST.fromkeys(list('SEARCHEXAMPLE'))
-# st = BST.fromkeys(list('SEX'))
-dt = BSTArtist(st)
-dt.draw(debug=True)
+dt = BSTArtist(st, layout='knuth')
+dt.draw(fignum=1)
+dt.ax.set_title('Knuth')
+
+dt = BSTArtist(st, layout='wetherell_naive')
+dt.draw(fignum=2)
+dt.ax.set_title('Wetherell and Shannon (basic)')
 
 # =============================================================================
 # =============================================================================

@@ -737,7 +737,7 @@ class BST():
             return
 
         # Swap the children
-        # x.left, x.right = x.left, x.right
+        # x.left, x.right = x.left, x.right  # NOTE this line FAILS!! why??
         temp = x.left
         x.left = x.right
         x.right = temp
