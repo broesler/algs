@@ -13,6 +13,7 @@
 """
 # =============================================================================
 
+import random
 import matplotlib.pyplot as plt
 
 from algs.search import BST, RedBlackBST
@@ -91,6 +92,10 @@ class BSTArtist():
             self._cols = [0] * self.st._root.height
             self._mods = [0] * self.st._root.height
             self._wetherell_3_layout(self._root)
+        elif layout == 'wetherell':
+            self._cols = [0] * self.st._root.height
+            self._mods = [0] * self.st._root.height
+            self._wetherell_layout(self._root)
         else:
             raise ValueError(f"Invalid layout: {repr(layout)}")
 
@@ -164,6 +169,22 @@ class BSTArtist():
         self._wetherell_first_pass(h)
         self._wetherell_second_pass(h)
 
+    def _wetherell_layout(self, h=None):
+        """Use pre-order traversal by Wetherell and Shannon[1], Algorithm 3.
+
+        This method walks the tree twice:
+            1. In post-order, assign preliminary x-coordinates. Also create
+               a modifier for each node that will help to move sub-trees right.
+            2. In pre-order, sum preliminary x-coordinate with modifiers of all
+               parents.
+        The y-coordinates are given by the heights (assumed pre-computed).
+
+        .. [1] Wetherell, Charles and Alfred Shannon. "Tidy Drawings of Trees".
+            *IEEE Trans. Software Eng.*, vol. SE-5, pp 514-520, 1979.
+        """
+        self._wetherell_first_pass(h)
+        self._wetherell_mod_second_pass(h)
+
     def _wetherell_first_pass(self, h=None):
         """First, post-order pass of Wetherell Algorithm 3."""
         if h is None:
@@ -186,7 +207,7 @@ class BSTArtist():
         # Actual position corrects h to the right to avoid siblings
         h.x = place if is_leaf else place + self._mods[i]
         h.y = -i
-        self._cols[i] = h.x + 1
+        self._cols[i] = h.x + 2
         h.mod = self._mods[i]
 
     def _wetherell_second_pass(self, h=None, mod_sum=0):
@@ -198,6 +219,25 @@ class BSTArtist():
         mod_sum += h.mod
         self._wetherell_second_pass(h.left, mod_sum)
         self._wetherell_second_pass(h.right, mod_sum)
+
+    def _wetherell_mod_second_pass(self, h=None, mod_sum=0, p=None, from_right=False):
+        """Second, in-order pass of Wetherell Algorithm 3."""
+        if h is None:
+            return
+        # Shift subtrees right by the cumulative modifiers of their parents
+        mod_sum += h.mod
+        self._wetherell_mod_second_pass(h.left, mod_sum)
+        # Compute positions in-order
+        i = h.depth
+        h.x = min(self._cols[i], h.x + mod_sum - h.mod)
+        if h.left is not None:
+            h.x = max(h.x, h.left.x + 1)
+        # check whether we are in a right child
+        if from_right:
+            h.x = max(h.x, p.x + 1)
+        # update arrays
+        self._cols[i] = h.x + 2
+        self._wetherell_mod_second_pass(h.right, mod_sum, p=h, from_right=True)
 
     def draw(self, fignum=None, layout=None, debug=False):
         """Plot the tree.
@@ -225,7 +265,8 @@ class BSTArtist():
         self._draw(self._root)
         self.ax.set_aspect('equal')
         self.ax.autoscale_view()
-        self.ax.axis('off')
+        if not debug:
+            self.ax.axis('off')
         plt.show()
         return self.fig, self.ax
 
@@ -295,26 +336,26 @@ class BSTArtist():
 # -----------------------------------------------------------------------------
 #         Test Client
 # -----------------------------------------------------------------------------
-# st = BST.fromkeys(sorted(list('SEARCHEXAMPLE')))  # in-order
-# st = BST.fromkeys(list('AXCSERHPL'))                # worst-case alternating
-st = BST.fromkeys(list('SEARCHEXAMPLE'))            # arbitrary
+if __name__ == '__main__':
+    # st = BST.fromkeys(list('EASYQUESTION'))
+    # st = RedBlackBST.fromkeys(list('EASYQUESTION'))
 
-# st = RedBlackBST.fromkeys(list('SEARCHEXAMPLE'))
+    # st = BST.fromkeys(sorted(list('SEARCHEXAMPLE')))  # in-order
+    # st = BST.fromkeys(list('AXCSERHPL'))              # worst-case alternating
+    # st = BST.fromkeys(list('SEARCHEXAMPLE'))            # arbitrary
+    st = RedBlackBST.fromkeys(list('SEARCHEXAMPLE'))
+    # st = BST.fromkeys(st.pre_order())  # test BST with shape of RedBlackBST
 
-# st = BST.fromkeys(list('EASYQUESTION'))
-# st = RedBlackBST.fromkeys(list('EASYQUESTION'))
+    layouts = dict({'knuth': 'Knuth',
+                    'wetherell_naive': 'Wetherell and Shannon (naïve)',
+                    'wetherell_3': 'Wetherell and Shannon (Algorithm 3)',
+                    'wetherell': 'Wetherell and Shannon (complete)'})
 
-dt = BSTArtist(st, layout='knuth')
-dt.draw(fignum=1)
-dt.ax.set_title('Knuth')
+    for i, (layout, title) in enumerate(layouts.items()):
+        dt = BSTArtist(st)
+        dt.draw(debug=True, fignum=i+1, layout=layout)
+        dt.ax.set_title(title)
 
-dt = BSTArtist(st, layout='wetherell_naive')
-dt.draw(fignum=2)
-dt.ax.set_title('Wetherell and Shannon (naïve)')
-
-dt = BSTArtist(st, layout='wetherell_3')
-dt.draw(fignum=3)
-dt.ax.set_title('Wetherell and Shannon (Algorithm 3)')
 
 # =============================================================================
 # =============================================================================
