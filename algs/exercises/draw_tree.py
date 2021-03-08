@@ -13,6 +13,7 @@
 """
 # =============================================================================
 
+import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 
 from algs.basics import Queue as _Queue
@@ -438,7 +439,9 @@ class BSTArtist():
         # Format the axes
         self.ax.set_aspect('equal')
         self.ax.autoscale_view()
-        if not debug:
+        if debug:
+            self.ax.grid(which='both')
+        else:
             self.ax.axis('off')
         # Display the figure
         if not quiet:
@@ -467,28 +470,30 @@ class BSTArtist():
         #   * plot next/prev of ThreadedST with curved, dashed arrows?
         #   * add scaling parameters, size tree around font?
         LINK_COLOR = 'k'
-        lw = 2
+        LINE_WIDTH = 2
         NULL_DIST = 0.3
 
         # Plot the node itself
-        circ = plt.Circle((h.x, h.y), radius=0.25, ec='k', fc='#EEE', zorder=2)
+        circ = patches.Circle(
+                (h.x, h.y),
+                radius=0.25, 
+                edgecolor='k', facecolor='#EEE',  # light grey with black edge
+                zorder=3  # place on top of lines
+                )
         ax.add_patch(circ)
         label = ax.annotate(h.node.key, xy=(h.x, h.y),
                             ha='center', va='center')
 
-        # Plot lines to children
+        # Plot links to children
         for t, is_left in zip([h.left, h.right], [True, False]):
             if t:
-                if self._is_red(t.node):
-                    color = 'C3'
-                    lw = 3
-                else:
-                    color = LINK_COLOR
-                ax.plot((h.x, t.x), (h.y, t.y), color=color, lw=lw, zorder=1)
+                color = 'C3' if self._is_red(t.node) else LINK_COLOR
+                lw = 3 if self._is_red(t.node) else LINE_WIDTH
+                ax.plot((h.x, t.x), (h.y, t.y), color=color, lw=lw)
             elif null_links:
                 shift = -NULL_DIST if is_left else NULL_DIST
                 ax.plot((h.x, h.x + shift), (h.y, h.y - NULL_DIST),
-                        LINK_COLOR, lw=lw, zorder=1)
+                        color=LINK_COLOR, lw=LINE_WIDTH)
 
     # ------------------------------------------------------------------------- 
     #         Helper Functions
