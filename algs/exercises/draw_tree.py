@@ -246,6 +246,7 @@ class BSTArtist():
         self._cols[i] = h.x + 2  # shift by 2 to allow for centered parents
         self._wetherell_mod_second_pass(h.right, mod_sum, p=h, from_right=True)
 
+    # TODO rewrite the Reingold-Tilford algorithm in more clear terms
     class Extreme():
         """Pointer to the left- and right-most nodes on the lowest level of the
         subtree."""
@@ -442,7 +443,7 @@ class BSTArtist():
             self.ax.axis('off')
         # Display the figure
         if not quiet:
-        plt.show()
+            plt.show()
         return self.fig, self.ax
 
     def _draw(self, h=None, ax=None):
@@ -511,8 +512,8 @@ if __name__ == '__main__':
 
     # st = BST.fromkeys(sorted(list('SEARCHEXAMPLE')))  # in-order
     # st = BST.fromkeys(list('AXCSERHPL'))              # worst-case alternating
-    # st = BST.fromkeys(list('SEARCHEXAMPLE'))            # arbitrary
-    st = RedBlackBST.fromkeys(list('SEARCHEXAMPLE'))
+    st = BST.fromkeys(list('SEARCHEXAMPLE'))            # arbitrary
+    # st = RedBlackBST.fromkeys(list('SEARCHEXAMPLE'))
     # st = BST.fromkeys(st.pre_order())  # test BST with shape of RedBlackBST
 
     layouts = dict({'knuth': 'Knuth (1971)',
