@@ -34,7 +34,7 @@ class NodeArtist():
         self.mod = 0         # position modifier used by Weatherill
         self.thread = False  # if True, one of the children is a thread
         self.depth = depth   # track depth independent of y-coordinate
-        self.node = h        # pointer to node in BST
+        self.node = h        # pointer to node in BST (for key, value, etc.)
         self.left = NodeArtist(h.left, depth+1) or None
         self.right = NodeArtist(h.right, depth+1) or None
 
@@ -251,9 +251,9 @@ class BSTArtist():
         """Pointer to the left- and right-most nodes on the lowest level of the
         subtree."""
         def __init__(self, addr=None, mod=None, lev=None):
-            self.addr = addr
-            self.mod = mod
-            self.lev = lev
+            self.addr = addr  # actual tree node
+            self.mod = mod    # offset from the root of the subtree
+            self.lev = lev    # depth in the tree
 
     def _reingold_layout(self, t=None):
         """Layout nodes according to the Reingold-Tilford algorithm [1].
@@ -277,47 +277,50 @@ class BSTArtist():
         self._reingold_setup(t)
         self._reingold_petrify(t)
 
-    def _reingold_setup(self, t=None, level=0, rmost=None, lmost=None):
+    def _reingold_setup(self, t=None, rmost=None, lmost=None):
         """Recursively assign relative coordinates to all nodes in the tree.
 
         Parameters
         ----------
-        h : NodeArtist
+        t : NodeArtist
             Root of the subtree on which to assign coordinates.
-        level : int, optional
-            Current depth in the tree.
+        rmost, lmost : NodeArtist
+            Right- and left-most extreme descendents of `t`.
         """
-        if t is None:
-            return
         if rmost is None:
             rmost = self.Extreme()
         if lmost is None:
             lmost = self.Extreme()
-        # LR == rightmost node on lowest level of left subtree, etc.
-        LR = self.Extreme(t, t.mod, level)
-        LL = self.Extreme(t, t.mod, level)
-        RR = self.Extreme(t, t.mod, level)
-        RL = self.Extreme(t, t.mod, level)
-
-        MINSEP = 1  # define
-        cursep = 0             # separation on current level
-        rootsep = 0            # current separation at node t
-        loffsum = roffsum = 0  # offset from left and right to t
 
         if t is None:
-            lmost.lev = rmost.lev = -1
+            lmost.lev = -1
+            rmost.lev = -1
         else:
-            t.y = -level
+            # LR == rightmost node on lowest level of left subtree, etc.
+            LR = self.Extreme(t, t.mod, t.depth)
+            LL = self.Extreme(t, t.mod, t.depth)
+            RR = self.Extreme(t, t.mod, t.depth)
+            RL = self.Extreme(t, t.mod, t.depth)
+
+            MINSEP = 1             # user-defined
+            cursep = 0             # separation on current level
+            rootsep = 0            # current separation at node t
+            loffsum = roffsum = 0  # offset from L & R to t
+
+            # Recursion
             L = t.left
             R = t.right
-            self._reingold_setup(L, level+1, LR, LL)
-            self._reingold_setup(R, level+1, RR, RL)
+            self._reingold_setup(L, rmost=LR, lmost=LL)
+            self._reingold_setup(R, rmost=RR, lmost=RL)
+
             # Post-order activities
             if R is None and L is None:  # t is a leaf
+                # NOTE just initialize rmost, lmost above and return if t is a leaf
+                # NOTE this code may be entirely unnecessary
                 rmost.addr = t
                 lmost.addr = t
-                rmost.lev = level
-                lmost.lev = level
+                rmost.lev = t.depth
+                lmost.lev = t.depth
                 rmost.mod = 0
                 lmost.mod = 0
                 t.mod = 0
@@ -375,6 +378,7 @@ class BSTArtist():
                     rmost = RR
                     rmost.mod += t.mod
 
+                # FIXME threads break the links in the tree
                 # If subtrees of t were of uneven heights, check to see if
                 # threading is necessary. At most one thread needs to be
                 # inserted.
@@ -398,6 +402,7 @@ class BSTArtist():
         if t is None:
             return
         t.x = x
+        t.y = -t.depth
         # Remove thread if it exists
         if t.thread:
             t.thread = False
