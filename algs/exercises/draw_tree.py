@@ -162,11 +162,22 @@ class BSTArtist():
     def _wetherell_layout(self, h=None, mod=False):
         """Use pre-order traversal by Wetherell and Shannon[1], Algorithm 3.
 
+        The algorithm requires three Aesthetics:
+
+            Aesthetic 1: Nodes at the same level of the tree should lie along
+                a straight line, and the straight lines defining the levels
+                should be parallel.
+            Aesthetic 2: A left son should be positioned to the left of its
+                father and a right son to the right.
+            Aesthetic 3: A father should be centered over its sons.
+
         This method walks the tree twice:
+
             1. In post-order, assign preliminary x-coordinates. Also create
                a modifier for each node that will help to move sub-trees right.
             2. In pre-order, sum preliminary x-coordinate with modifiers of all
                parents.
+
         The y-coordinates are given by the heights (assumed pre-computed).
 
         .. [1] Wetherell, Charles and Alfred Shannon. "Tidy Drawings of Trees".
@@ -215,8 +226,11 @@ class BSTArtist():
         self._wetherell_second_pass(h.left, mod_sum)
         self._wetherell_second_pass(h.right, mod_sum)
 
-    def _wetherell_mod_second_pass(self, h=None, mod_sum=0,
-                                   p=None, from_right=False):
+    def _wetherell_mod_second_pass(self, 
+                                   h=None,
+                                   mod_sum=0,
+                                   p=None,
+                                   from_right=False):
         """Second, in-order pass of Wetherell Algorithm 3."""
         if h is None:
             return
