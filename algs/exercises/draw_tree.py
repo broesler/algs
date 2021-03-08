@@ -81,17 +81,15 @@ class BSTArtist():
 
     def set_layout(self, layout='knuth'):
         """Set the layout property and compute the node coordinates."""
-        if layout == 'knuth':
-            self._knuth_layout(self._root)
-        elif layout == 'wetherell_naive':
-            self._wetherell_naive_layout(self._root)
-        elif layout == 'wetherell_3':
-            self._wetherell_layout(self._root, mod=False)
-        elif layout == 'wetherell':
-            self._wetherell_layout(self._root, mod=True)
-        elif layout == 'reingold':
-            self._reingold_layout(self._root)
-        else:
+        layout_funcs = dict(knuth=lambda x: self._knuth_layout(x),
+                            wetherell_naive=lambda x: self._wetherell_naive_layout(x),
+                            wetherell_3=lambda x: self._wetherell_layout(x, mod=False),
+                            wetherell=lambda x: self._wetherell_layout(x, mod=True),
+                            reingold=lambda x: self._reingold_layout(x),
+                            )
+        try:
+            layout_funcs[layout](self._root)
+        except KeyError:
             raise ValueError(f"Invalid layout: {repr(layout)}")
 
     # ------------------------------------------------------------------------- 
@@ -237,6 +235,8 @@ class BSTArtist():
         self._cols[i] = h.x + 2  # shift by 2 to allow for centered parents
         self._wetherell_mod_second_pass(h.right, mod_sum, p=h, from_right=True)
 
+    def _reingold_layout(self, h=None):
+        pass
     # ------------------------------------------------------------------------- 
     #         Drawing Methods
     # -------------------------------------------------------------------------
