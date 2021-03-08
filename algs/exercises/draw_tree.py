@@ -27,11 +27,12 @@ class NodeArtist():
     def __init__(self, h=None, depth=0):
         if h is None:
             return
-        self.x = 0          # set by layout methods
+        self.x = 0           # set by layout methods
         self.y = 0
-        self.mod = 0        # position modifier used by Weatherill
-        self.depth = depth  # track depth independent of y-coordinate
-        self.node = h       # pointer to node in BST
+        self.mod = 0         # position modifier used by Weatherill
+        self.thread = False  # if True, one of the children is a thread
+        self.depth = depth   # track depth independent of y-coordinate
+        self.node = h        # pointer to node in BST
         self.left = NodeArtist(h.left, depth+1) or None
         self.right = NodeArtist(h.right, depth+1) or None
 
@@ -249,8 +250,165 @@ class BSTArtist():
         self._cols[i] = h.x + 2  # shift by 2 to allow for centered parents
         self._wetherell_mod_second_pass(h.right, mod_sum, p=h, from_right=True)
 
-    def _reingold_layout(self, h=None):
-        pass
+    class Extreme():
+        """Pointer to the left- and right-most nodes on the lowest level of the
+        subtree."""
+        def __init__(self, addr=None, mod=None, lev=None):
+            self.addr = addr
+            self.mod = mod
+            self.lev = lev
+
+    def _reingold_layout(self, t=None):
+        """Layout nodes according to the Reingold-Tilford algorithm [1].
+
+        Reingold and Tilford add a fourth Aesthetic to those of Wetherell and
+        Shannon:
+
+            Aesthetic 4: A tree and its mirror image should produce drawings
+                that are reflections of one another; moreover, a sub tree
+                should be drawn the same way regardless of where it occurs in
+                the tree.
+
+        ..note:: This implementation intends to follow the original Pascal code
+          from the paper as closely as possible. The `NodeArtist` property
+          `mod` will be used instead of `offset` for compatibility with other
+          methods in `BSTArtist`.
+
+        .. [1] Reingold, Edward M. and John S. Tilford. "Tidier Drawings of
+            Trees." *IEEE Trans. of Soft. Eng.*, vol. SE-7, No. 2, 1981.
+        """
+        self._reingold_setup(t)
+        self._reingold_petrify(t)
+
+    def _reingold_setup(self, t=None, level=0, rmost=None, lmost=None):
+        """Recursively assign relative coordinates to all nodes in the tree.
+
+        Parameters
+        ----------
+        h : NodeArtist
+            Root of the subtree on which to assign coordinates.
+        level : int, optional
+            Current depth in the tree.
+        """
+        if t is None:
+            return
+        if rmost is None:
+            rmost = self.Extreme()
+        if lmost is None:
+            lmost = self.Extreme()
+        # LR == rightmost node on lowest level of left subtree, etc.
+        LR = self.Extreme(t, t.mod, level)
+        LL = self.Extreme(t, t.mod, level)
+        RR = self.Extreme(t, t.mod, level)
+        RL = self.Extreme(t, t.mod, level)
+
+        MINSEP = 1  # define
+        cursep = 0             # separation on current level
+        rootsep = 0            # current separation at node t
+        loffsum = roffsum = 0  # offset from left and right to t
+
+        if t is None:
+            lmost.lev = rmost.lev = -1
+        else:
+            t.y = -level
+            L = t.left
+            R = t.right
+            self._reingold_setup(L, level+1, LR, LL)
+            self._reingold_setup(R, level+1, RR, RL)
+            # Post-order activities
+            if R is None and L is None:  # t is a leaf
+                rmost.addr = t
+                lmost.addr = t
+                rmost.lev = level
+                lmost.lev = level
+                rmost.mod = 0
+                lmost.mod = 0
+                t.mod = 0
+            else:
+                # Set up for subtree pushing. Place roots of subtrees minimum
+                # distance apart
+                cursep = MINSEP
+                rootsep = MINSEP
+                loffsum = roffsum = 0
+
+                # Consider each level in turn until one subtree is exhausted,
+                # pushing the subtrees apart when necessary
+                while L is not None and R is not None:
+                    if cursep < MINSEP:
+                        # Push the trees
+                        rootsep += MINSEP - cursep
+                        cursep = MINSEP
+
+                    # Advance L & R
+                    if L.right is not None:
+                        loffsum += L.mod
+                        cursep -= L.mod
+                        L = L.right
+                    else:
+                        loffsum -= L.mod
+                        cursep += L.mod
+                        L = L.left
+
+                    if R.left is not None:
+                        roffsum -= R.mod
+                        cursep -= R.mod
+                        R = R.left
+                    else:
+                        roffsum += R.mod
+                        cursep += R.mod
+                        R = R.right
+
+                # Set the offset in t, and include it in accumulated offsets
+                t.mod = (rootsep + 1) / 2
+                loffsum -= t.mod
+                roffsum += t.mod
+
+                # Update extreme descendants' information
+                if RL.lev > LL.lev or t.left is None:
+                    lmost = RL
+                    lmost.mod += t.mod
+                else:
+                    lmost = LL
+                    lmost.mod -= t.mod
+
+                if LR.lev > RR.lev or t.right is None:
+                    rmost = LR
+                    rmost.mod -= t.mod
+                else:
+                    rmost = RR
+                    rmost.mod += t.mod
+
+                # If subtrees of t were of uneven heights, check to see if
+                # threading is necessary. At most one thread needs to be
+                # inserted.
+                if L is not None and L is not t.left:
+                    RR.addr.thread = True
+                    RR.addr.mod = abs((RR.mod + t.mod) - loffsum)
+                    if loffsum - t.mod <= RR.mod:
+                        RR.addr.left = L
+                    else:
+                        RR.addr.right = L
+                elif R is not None and R is not t.right:
+                    LL.addr.thread = True
+                    LL.addr.mod = abs((LL.mod - t.mod) - roffsum)
+                    if roffsum + t.mod >= LL.mod:
+                        LL.addr.right = R
+                    else:
+                        LL.addr.left = R
+
+    def _reingold_petrify(self, t=None, x=0):
+        """Convert relative node positions into absolute coordinates."""
+        if t is None:
+            return
+        t.x = x
+        # Remove thread if it exists
+        if t.thread:
+            t.thread = False
+            t.left = None
+            t.right = None
+        self._reingold_petrify(t.left, x - t.mod)
+        self._reingold_petrify(t.right, x + t.mod)
+
     # ------------------------------------------------------------------------- 
     #         Drawing Methods
     # -------------------------------------------------------------------------
@@ -357,12 +515,12 @@ if __name__ == '__main__':
                     'wetherell_naive': 'Wetherell and Shannon (1979) (naïve)',
                     'wetherell_3': 'Wetherell and Shannon (1979) (Algorithm 3)',
                     'wetherell': 'Wetherell and Shannon (1979)',
-                    # 'reingold': 'Reingold and Tilford (1981)',
+                    'reingold': 'Reingold and Tilford (1981)',
                     })
 
     for i, (layout, title) in enumerate(layouts.items()):
         dt = BSTArtist(st)
-        dt.draw(fignum=i+1, layout=layout)
+        dt.draw(debug=True, fignum=i+1, layout=layout)
         dt.ax.set_title(title)
 
 
