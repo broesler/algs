@@ -13,7 +13,6 @@
 """
 # =============================================================================
 
-import random
 import matplotlib.pyplot as plt
 
 from algs.search import BST, RedBlackBST
@@ -41,7 +40,7 @@ class NodeArtist():
     # for attributes, or catching AttributeError, just redefine `__bool__`. The
     # constructor can then test if it returns a complete object or not to allow
     # client code to be both consistent with BST and more explicit than 
-    # `if not h` `if h is None:` checks.
+    # `if not h` checks, by using `if h is None:` to test for null links.
     def __bool__(self):
         return hasattr(self, 'x')  # no attributes set if None
 
@@ -83,22 +82,21 @@ class BSTArtist():
     def set_layout(self, layout='knuth'):
         """Set the layout property and compute the node coordinates."""
         if layout == 'knuth':
-            self._i = 0
             self._knuth_layout(self._root)
         elif layout == 'wetherell_naive':
-            self._cols = [0] * (self.st._root.height + 1)
             self._wetherell_naive_layout(self._root)
         elif layout == 'wetherell_3':
-            self._cols = [0] * (self.st._root.height + 1)
-            self._mods = [0] * (self.st._root.height + 1)
-            self._wetherell_3_layout(self._root)
+            self._wetherell_layout(self._root, mod=False)
         elif layout == 'wetherell':
-            self._cols = [0] * (self.st._root.height + 1)
-            self._mods = [0] * (self.st._root.height + 1)
-            self._wetherell_layout(self._root)
+            self._wetherell_layout(self._root, mod=True)
+        elif layout == 'reingold':
+            self._reingold_layout(self._root)
         else:
             raise ValueError(f"Invalid layout: {repr(layout)}")
 
+    # ------------------------------------------------------------------------- 
+    #         Layout Methods
+    # -------------------------------------------------------------------------
     def _knuth_layout(self, h=None):
         """Set coordinates according to Knuth's method[1] of tree layout.
 
@@ -122,15 +120,20 @@ class BSTArtist():
         i : float, optional
             x-coordinate of `h`
         """
+        self._i = 0
+        self.__knuth_layout(h)
+
+    def __knuth_layout(self, h=None):
+        """Recursive method of the Knuth algorithm."""
         if h is None:
             return
         if h.left:
-            self._knuth_layout(h.left)
+            self.__knuth_layout(h.left)
         h.x = self._i
         h.y = -h.depth
         self._i += 1
         if h.right:
-            self._knuth_layout(h.right)
+            self.__knuth_layout(h.right)
 
     def _wetherell_naive_layout(self, h=None):
         """Use pre-order traversal by Wetherell and Shannon[1], Algorithm 1.
@@ -144,16 +147,21 @@ class BSTArtist():
         .. [1] Wetherell, Charles and Alfred Shannon. "Tidy Drawings of Trees".
             *IEEE Trans. Software Eng.*, vol. SE-5, pp 514-520, 1979.
         """
+        self._cols = [0] * (self.st._root.height + 1)
+        self.__wetherell_naive_layout(h)
+
+    def __wetherell_naive_layout(self, h=None):
+        """Recursive method of the Wetherell-Shannon naïve algorithm."""
         if h is None:
             return
         i = h.depth
         h.x = self._cols[i]
         h.y = -i  # root at the top
         self._cols[i] += 1
-        self._wetherell_naive_layout(h.left)
-        self._wetherell_naive_layout(h.right)
+        self.__wetherell_naive_layout(h.left)
+        self.__wetherell_naive_layout(h.right)
 
-    def _wetherell_3_layout(self, h=None):
+    def _wetherell_layout(self, h=None, mod=False):
         """Use pre-order traversal by Wetherell and Shannon[1], Algorithm 3.
 
         This method walks the tree twice:
@@ -166,24 +174,13 @@ class BSTArtist():
         .. [1] Wetherell, Charles and Alfred Shannon. "Tidy Drawings of Trees".
             *IEEE Trans. Software Eng.*, vol. SE-5, pp 514-520, 1979.
         """
+        self._cols = [0] * (self.st._root.height + 1)
+        self._mods = [0] * (self.st._root.height + 1)
         self._wetherell_first_pass(h)
-        self._wetherell_second_pass(h)
-
-    def _wetherell_layout(self, h=None):
-        """Use pre-order traversal by Wetherell and Shannon[1], Algorithm 3.
-
-        This method walks the tree twice:
-            1. In post-order, assign preliminary x-coordinates. Also create
-               a modifier for each node that will help to move sub-trees right.
-            2. In pre-order, sum preliminary x-coordinate with modifiers of all
-               parents.
-        The y-coordinates are given by the heights (assumed pre-computed).
-
-        .. [1] Wetherell, Charles and Alfred Shannon. "Tidy Drawings of Trees".
-            *IEEE Trans. Software Eng.*, vol. SE-5, pp 514-520, 1979.
-        """
-        self._wetherell_first_pass(h)
-        self._wetherell_mod_second_pass(h)
+        if mod:
+            self._wetherell_mod_second_pass(h)
+        else:
+            self._wetherell_second_pass(h)
 
     def _wetherell_first_pass(self, h=None):
         """First, post-order pass of Wetherell Algorithm 3."""
@@ -220,7 +217,8 @@ class BSTArtist():
         self._wetherell_second_pass(h.left, mod_sum)
         self._wetherell_second_pass(h.right, mod_sum)
 
-    def _wetherell_mod_second_pass(self, h=None, mod_sum=0, p=None, from_right=False):
+    def _wetherell_mod_second_pass(self, h=None, mod_sum=0,
+                                   p=None, from_right=False):
         """Second, in-order pass of Wetherell Algorithm 3."""
         if h is None:
             return
@@ -239,6 +237,9 @@ class BSTArtist():
         self._cols[i] = h.x + 2  # shift by 2 to allow for centered parents
         self._wetherell_mod_second_pass(h.right, mod_sum, p=h, from_right=True)
 
+    # ------------------------------------------------------------------------- 
+    #         Drawing Methods
+    # -------------------------------------------------------------------------
     def draw(self, fignum=None, layout=None, debug=False):
         """Plot the tree.
 
@@ -334,14 +335,16 @@ if __name__ == '__main__':
 
     # st = BST.fromkeys(sorted(list('SEARCHEXAMPLE')))  # in-order
     # st = BST.fromkeys(list('AXCSERHPL'))              # worst-case alternating
-    st = BST.fromkeys(list('SEARCHEXAMPLE'))            # arbitrary
-    # st = RedBlackBST.fromkeys(list('SEARCHEXAMPLE'))
+    # st = BST.fromkeys(list('SEARCHEXAMPLE'))            # arbitrary
+    st = RedBlackBST.fromkeys(list('SEARCHEXAMPLE'))
     # st = BST.fromkeys(st.pre_order())  # test BST with shape of RedBlackBST
 
     layouts = dict({'knuth': 'Knuth (1971)',
                     'wetherell_naive': 'Wetherell and Shannon (1979) (naïve)',
                     'wetherell_3': 'Wetherell and Shannon (1979) (Algorithm 3)',
-                    'wetherell': 'Wetherell and Shannon (1979)'})
+                    'wetherell': 'Wetherell and Shannon (1979)',
+                    # 'reingold': 'Reingold and Tilford (1981)',
+                    })
 
     for i, (layout, title) in enumerate(layouts.items()):
         dt = BSTArtist(st)
