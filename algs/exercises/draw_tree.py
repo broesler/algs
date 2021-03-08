@@ -70,6 +70,9 @@ class BSTArtist():
         self.ax = None
         self.set_layout(layout)
 
+    # Write as "get/set" methods, since computing the layout could be as costly
+    # as O(N^2). Make clear that it is a method call, not just a simple
+    # property value.
     @property
     def layout(self):
         return self.layout
@@ -77,24 +80,21 @@ class BSTArtist():
     def get_layout(self):
         return self.layout
 
-    # Write as "get/set" methods, since computing the layout could be as costly
-    # as O(N^2). Make clear that it is a method call, not just a simple
-    # property value.
     def set_layout(self, layout='knuth'):
         """Set the layout property and compute the node coordinates."""
         if layout == 'knuth':
             self._i = 0
             self._knuth_layout(self._root)
         elif layout == 'wetherell_naive':
-            self._cols = [0] * self.st._root.height
+            self._cols = [0] * (self.st._root.height + 1)
             self._wetherell_naive_layout(self._root)
         elif layout == 'wetherell_3':
-            self._cols = [0] * self.st._root.height
-            self._mods = [0] * self.st._root.height
+            self._cols = [0] * (self.st._root.height + 1)
+            self._mods = [0] * (self.st._root.height + 1)
             self._wetherell_3_layout(self._root)
         elif layout == 'wetherell':
-            self._cols = [0] * self.st._root.height
-            self._mods = [0] * self.st._root.height
+            self._cols = [0] * (self.st._root.height + 1)
+            self._mods = [0] * (self.st._root.height + 1)
             self._wetherell_layout(self._root)
         else:
             raise ValueError(f"Invalid layout: {repr(layout)}")
@@ -191,8 +191,8 @@ class BSTArtist():
             return
         self._wetherell_first_pass(h.left)
         self._wetherell_first_pass(h.right)
-        # Compute the preliminary x-positions and modifiers
-        i = h.depth
+        # Compute the preliminary x-positions and modifiers from the bottom up
+        i = h.depth  # index by depth (vs height) to show distance from root
         is_leaf = h.left is None and h.right is None
         if is_leaf:
             place = self._cols[i]
@@ -206,8 +206,8 @@ class BSTArtist():
         self._mods[i] = max(self._mods[i], self._cols[i] - place)
         # Actual position corrects h to the right to avoid siblings
         h.x = place if is_leaf else place + self._mods[i]
-        h.y = -i
-        self._cols[i] = h.x + 2
+        h.y = -i  # root at the top
+        self._cols[i] = h.x + 2  # shift by 2 to allow for centered parents
         h.mod = self._mods[i]
 
     def _wetherell_second_pass(self, h=None, mod_sum=0):
@@ -236,7 +236,7 @@ class BSTArtist():
         if from_right:
             h.x = max(h.x, p.x + 1)
         # update arrays
-        self._cols[i] = h.x + 2
+        self._cols[i] = h.x + 2  # shift by 2 to allow for centered parents
         self._wetherell_mod_second_pass(h.right, mod_sum, p=h, from_right=True)
 
     def draw(self, fignum=None, layout=None, debug=False):
@@ -287,41 +287,33 @@ class BSTArtist():
         if ax is None:
             ax = self.ax
 
+        # TODO
+        #   * option to plot red links level with neighbors
+        #   * plot next/prev of ThreadedST with curved, dashed arrows?
+        #   * add scaling parameters, size tree around font?
+        LINK_COLOR = 'k'
+        lw = 2
         NULL_DIST = 0.3
 
         # Plot the node itself
-        circ = plt.Circle((h.x, h.y), radius=0.25, ec='k', fc='#EEE')
+        circ = plt.Circle((h.x, h.y), radius=0.25, ec='k', fc='#EEE', zorder=2)
         ax.add_patch(circ)
         label = ax.annotate(h.node.key, xy=(h.x, h.y),
                             ha='center', va='center')
 
         # Plot lines to children
-        # TODO
-        #   * option to plot red links level with neighbors
-        #   * plot next/prev of ThreadedST with curved, dashed arrows?
-        if h.left:
-            if self._is_red(h.left.node):
-                color = 'C3'
-                lw = 3
-            else:
-                color = 'k'
-                lw = 2
-            ax.plot((h.x, h.left.x), (h.y, h.left.y),
-                    color=color, lw=lw, zorder=-1)
-        elif null_links:
-            ax.plot((h.x, h.x - NULL_DIST), (h.y, h.y - NULL_DIST), 'k', lw=2, zorder=-1)
-
-        if h.right:
-            if self._is_red(h.right.node):
-                color = 'C3'
-                lw = 3
-            else:
-                color = 'k'
-                lw = 2
-            ax.plot((h.x, h.right.x), (h.y, h.right.y),
-                    color=color, lw=lw, zorder=-1)
-        elif null_links:
-            ax.plot((h.x, h.x + NULL_DIST), (h.y, h.y - NULL_DIST), 'k', lw=2, zorder=-1)
+        for t, is_left in zip([h.left, h.right], [True, False]):
+            if t:
+                if self._is_red(t.node):
+                    color = 'C3'
+                    lw = 3
+                else:
+                    color = LINK_COLOR
+                ax.plot((h.x, t.x), (h.y, t.y), color=color, lw=lw, zorder=1)
+            elif null_links:
+                shift = -NULL_DIST if is_left else NULL_DIST
+                ax.plot((h.x, h.x + shift), (h.y, h.y - NULL_DIST),
+                        LINK_COLOR, lw=lw, zorder=1)
 
     def _is_red(self, h=None):
         """Return True if `h` is colored red. Calls RedBlackBST method unless
@@ -342,18 +334,18 @@ if __name__ == '__main__':
 
     # st = BST.fromkeys(sorted(list('SEARCHEXAMPLE')))  # in-order
     # st = BST.fromkeys(list('AXCSERHPL'))              # worst-case alternating
-    # st = BST.fromkeys(list('SEARCHEXAMPLE'))            # arbitrary
-    st = RedBlackBST.fromkeys(list('SEARCHEXAMPLE'))
+    st = BST.fromkeys(list('SEARCHEXAMPLE'))            # arbitrary
+    # st = RedBlackBST.fromkeys(list('SEARCHEXAMPLE'))
     # st = BST.fromkeys(st.pre_order())  # test BST with shape of RedBlackBST
 
-    layouts = dict({'knuth': 'Knuth',
-                    'wetherell_naive': 'Wetherell and Shannon (naïve)',
-                    'wetherell_3': 'Wetherell and Shannon (Algorithm 3)',
-                    'wetherell': 'Wetherell and Shannon (complete)'})
+    layouts = dict({'knuth': 'Knuth (1971)',
+                    'wetherell_naive': 'Wetherell and Shannon (1979) (naïve)',
+                    'wetherell_3': 'Wetherell and Shannon (1979) (Algorithm 3)',
+                    'wetherell': 'Wetherell and Shannon (1979)'})
 
     for i, (layout, title) in enumerate(layouts.items()):
         dt = BSTArtist(st)
-        dt.draw(debug=True, fignum=i+1, layout=layout)
+        dt.draw(fignum=i+1, layout=layout)
         dt.ax.set_title(title)
 
 

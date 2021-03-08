@@ -59,7 +59,7 @@ class BST():
             self.val = value
             self.left = self.right = None
             self.N = 1       # nodes in subtree rooted here
-            self.height = 1  # Ex 3.2.6(b) height of the tree rooted at _Node
+            self.height = 0  # Ex 3.2.6(b) height of the tree rooted at _Node
             self.ipl = 0     # Ex 3.2.47 sum of depths of nodes in subtree
 
         def __str__(self):
@@ -537,7 +537,7 @@ class BST():
     def _height_r(self, x=None):
         """Return the height of the tree rooted at `x`."""
         if x is None:
-            return 0
+            return -1  # height of a leaf is zero
         lmax = self._height_r(x.left)
         rmax = self._height_r(x.right)
         return max(lmax, rmax) + 1

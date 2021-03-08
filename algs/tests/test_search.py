@@ -185,17 +185,17 @@ for ST in [BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr,
 
         # Binary Search Tree:
         #  height depth
-        #  6      0           S
+        #  5      0           S
         #                    / \
-        #  5      1         E   X
+        #  4      1         E   X
         #                /    \
-        #  4      2     A      R
+        #  3      2     A      R
         #                \    /
-        #  3      3       C  H
+        #  2      3       C  H
         #                     \
-        #  2      4            M
+        #  1      4            M
         #                     / \
-        #  1      5          L   P
+        #  0      5          L   P
 
         should_be(len(t), len(test_set))  # test __len__
         should_be(len(t), t.size)
@@ -241,15 +241,15 @@ for ST in [BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr,
         if isinstance(t, BST) and t.__class__ is not RedBlackBST:
             should_be(t.pre_order(),  list('SEACRHMLPX'))
             should_be(t.post_order(), list('CALPMHREXS'))
-            should_be(t.height_r(), 6)  # recursive method
-            should_be(t.height, 6)      # Node attribute method
+            should_be(t.height_r(), 5)  # recursive method
+            should_be(t.height, 5)      # Node attribute method
             should_be(t.isBST(), True)
             should_be(list(t.level_order()), list('SEXARCHMLP'))
             should_be(t.internal_path_length_r(), 26)
             should_be(t.internal_path_length, 26)
             del t['H']  # remove node with single child
-            should_be(t.height_r(), 5)  # recursive method
-            should_be(t.height, 5)      # Node attribute method
+            should_be(t.height_r(), 4)  # recursive method
+            should_be(t.height, 4)      # Node attribute method
             should_be(t.internal_path_length, 20)
             t = ST(data, cache=cache)
             t['G'] = 6
