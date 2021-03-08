@@ -17,7 +17,7 @@ from algs.search.table import _empty_check
 
 __all__ = ['BST', 'BST_nr', 'ThreadedST', 'ThreadedST_nr', 'ArrayBST']
 
-# TODO 
+# TODO
 #   * put parameters and attributes into general string and set the doc.
 #   * provision for `key is None` in BST._Node, etc.
 
@@ -596,111 +596,91 @@ class BST():
             return x
 
     # -------------------------------------------------------------------------
-    #         Iterator functions
+    #         Iterator functions (Tree traversals)
     # -------------------------------------------------------------------------
-    _docstring = """Return an in-order iterator over the {rtype} between the
+    _docstring = """Return an in-order list over the {rtype} between the
     keys `lo` and `hi`, inclusive. Guaranteed to be the same order as
     `BST.keys()`.
 
     Parameters
     ----------
-    lo : key
-        Minimum key over which to search, inclusive.
-    hi : key
-        Maximum key over which to search, inclusive.
+    lo, hi : key, optional
+        Minimum/maximum key over which to search, inclusive. If `None`, include
+        all keys in respective direction.
+    {oplang}
 
     Returns
     -------
-    q : iterator
-        iterator over the {rtype} between `lo` and `hi`, inclusive.
+    q : list
+        list of the {rtype} between `lo` and `hi`, inclusive.
     """
 
     def keys(self, lo=None, hi=None):
-        op = lambda x: x.key
-        if lo or hi:
-            return self._make_range_iterator(op)(self, lo, hi)
-        else:
-            return self._make_inorder_iterator(op)(self)
+        return self.in_order(lo, hi, op=lambda x: x.key)
 
     def values(self, lo=None, hi=None):
-        op = lambda x: x.val
-        if lo or hi:
-            return self._make_range_iterator(op)(self, lo, hi)
-        else:
-            return self._make_inorder_iterator(op)(self)
+        return self.in_order(lo, hi, op=lambda x: x.val)
 
     def items(self, lo=None, hi=None):
-        op = lambda x: (x.key, x.val)
-        if lo or hi:
-            return self._make_range_iterator(op)(self, lo, hi)
+        return self.in_order(lo, hi, op=lambda x: (x.key, x.val))
+
+    keys.__doc__   = _docstring.format(rtype='keys', oplang='')
+    values.__doc__ = _docstring.format(rtype='values', oplang='')
+    items.__doc__  = _docstring.format(rtype='items', oplang='')
+
+    def in_order(self, lo=None, hi=None, op=None):
+        if self._root is None:
+            return list()
+        if lo is None and hi is None:
+            return self._in_order_all(x=self._root, op=op)
         else:
-            return self._make_inorder_iterator(op)(self)
+            if lo is None:
+                lo = self.min()
+            if hi is None:
+                hi = self.max()
+            return self._in_order_range(lo, hi, x=self._root, op=op)
 
-    keys.__doc__   = _docstring.format(rtype='keys')
-    values.__doc__ = _docstring.format(rtype='values')
-    items.__doc__  = _docstring.format(rtype='items')
-
-    # factory for generic in-order iteration over keys
-    def _make_range_iterator(self, op):
-        """Create an iterator over the desired type."""
-        def iterator(self, lo=None, hi=None):
-            try:
-                if lo is None:
-                    lo = self.min()
-                if hi is None:
-                    hi = self.max()
-                return self._iterate_range(lo, hi, x=self._root, op=op)
-            except KeyError:
-                return list()
-        return iterator
-
-    def _iterate_range(self, lo, hi, x=None, q=None, op=None):
-        """Recursively range search the BST for keys between `lo` and `hi`."""
-        if x is None:
-            return
-        if q is None:
-            q = _Queue()
-        # Enqueue by key order
-        if lo < x.key:
-            self._iterate_range(lo, hi, x.left, q, op)
-        if lo <= x.key <= hi:
-            q.enqueue(op(x) if op else x.key)
-        if hi > x.key:
-            self._iterate_range(lo, hi, x.right, q, op)
-        return list(q)
-
-    # factory for generic in-order iteration *without* ranges
-    def _make_inorder_iterator(self, op):
-        """Create an iterator over the desired type."""
-        def iterator(self):
-            if self._root is None:
-                return list()
-            else:
-                return self._iterate_all(x=self._root, op=op)
-        return iterator
+    # Add language to `in_order` documentation.
+    _oplang = """op : callable, optional, default: lambda x: x.key
+        Function of one argument that takes a `BST._Node`. The output queue
+        will contain the return value of `op` in key-order. If `op` is `None`,
+        keys will be returned.
+    """
+    in_order.__doc__ = _docstring.format(rtype='keys', oplang=_oplang)
 
     #  more efficient than `yield from self.keys()` for entire traversal since
     #  we don't have to find the min or max keys
-    def _iterate_all(self, x=None, q=None, op=None):
+    def _in_order_all(self, x=None, q=None, op=None):
         """Recursively traverse the tree in order (depth-first search)."""
         if x is None:
             return
         if q is None:
             q = _Queue()
-        # Yield rtype in order
-        self._iterate_all(x.left, q, op)
+        # Operate on nodes in key order
+        self._in_order_all(x.left, q, op)
         q.enqueue(op(x) if op else x.key)
-        self._iterate_all(x.right, q, op)
+        self._in_order_all(x.right, q, op)
         return list(q)
 
-    # iterate as a generator function
-    def __iter__(self):
-        yield from self.keys()
+    def _in_order_range(self, lo, hi, x=None, q=None, op=None):
+        """Recursively range search the BST for keys between `lo` and `hi`."""
+        if x is None:
+            return
+        if q is None:
+            q = _Queue()
+        # Operate on nodes in key order, within range
+        if lo < x.key:
+            self._in_order_range(lo, hi, x.left, q, op)
+        if lo <= x.key <= hi:
+            q.enqueue(op(x) if op else x.key)
+        if hi > x.key:
+            self._in_order_range(lo, hi, x.right, q, op)
+        return list(q)
 
     # Tree traversals (could write with `yield` statements instead)
-    def pre_order(self):
+    def pre_order(self, op=None):
         """Iterate over the keys in pre-order (depth-first)."""
-        return self._pre_order(self._root)
+        return self._pre_order(self._root, op=op)
 
     def _pre_order(self, x=None, q=None, op=None):
         """Iterate over the keys in pre-order (depth-first)."""
@@ -713,12 +693,10 @@ class BST():
         self._pre_order(x.right, q, op)
         return list(q)
 
-    def post_order(self):
+    def post_order(self, op=None):
         """Iterate over the keys in post-order (depth-first)."""
-        return self._post_order(self._root)
+        return self._post_order(self._root, op=op)
 
-    # TODO could include `op=lambda x: ...` to operate on nodes as we go (see
-    # 'exercises/reconstruct_bst.py' for example `_update_nodes()`.
     def _post_order(self, x=None, q=None, op=None):
         """Iterate over the keys in post-order (depth-first)."""
         if x is None:
@@ -731,14 +709,16 @@ class BST():
         return list(q)
 
     def reverse(self):
-        """Reverse the BST recursively."""
+        """Reverse the BST recursively, akin to `list.reverse()`.
+        ..note: This method breaks most methods in the tree since the
+          comparisons to left/right nodes are no longer true.
+        """
         return self._reverse(self._root)
 
     def _reverse(self, x=None):
         """Reverse the BST recursively."""
         if x is None:
             return
-
         # Swap the children
         # x.left, x.right = x.left, x.right  # NOTE this line FAILS!! why??
         temp = x.left
@@ -747,6 +727,10 @@ class BST():
         # Do it for each subtree
         self._reverse(x.left)
         self._reverse(x.right)
+
+    # iterate as a generator function
+    def __iter__(self):
+        yield from self.keys()
 
     # -------------------------------------------------------------------------
     #         Certification (see Exercises 3.2.29 -- 3.2.32)

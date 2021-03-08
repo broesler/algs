@@ -86,8 +86,7 @@ class BSTArtist():
 
     def get_coords(self):
         """Return a list of (key, (x, y)) pairs for the BSTArtist."""
-        return self.st._iterate_all(self._root,
-                                    op=lambda h: (h.node.key, (h.x, h.y)))
+        return self.st._in_order_all(self._root, op=lambda h: (h.node.key, (h.x, h.y)))
 
     # ------------------------------------------------------------------------- 
     #         Layout Methods
@@ -525,7 +524,7 @@ if __name__ == '__main__':
 
     for i, (layout, title) in enumerate(layouts.items()):
         dt = BSTArtist(st)
-        dt.draw(debug=True, fignum=i+1, layout=layout, quiet=True)
+        dt.draw(debug=True, fignum=i+1, layout=layout, quiet=False)
         dt.ax.set_title(title)
 
 
