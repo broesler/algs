@@ -616,29 +616,32 @@ class BST():
     """
 
     def keys(self, lo=None, hi=None):
+        op = lambda x: x.key
         if lo or hi:
-            return self._make_range_iterator(rtype='keys')(self, lo, hi)
+            return self._make_range_iterator(op)(self, lo, hi)
         else:
-            return self._make_inorder_iterator(rtype='keys')(self)
+            return self._make_inorder_iterator(op)(self)
 
     def values(self, lo=None, hi=None):
+        op = lambda x: x.val
         if lo or hi:
-            return self._make_range_iterator(rtype='values')(self, lo, hi)
+            return self._make_range_iterator(op)(self, lo, hi)
         else:
-            return self._make_inorder_iterator(rtype='values')(self)
+            return self._make_inorder_iterator(op)(self)
 
     def items(self, lo=None, hi=None):
+        op = lambda x: (x.key, x.val)
         if lo or hi:
-            return self._make_range_iterator(rtype='items')(self, lo, hi)
+            return self._make_range_iterator(op)(self, lo, hi)
         else:
-            return self._make_inorder_iterator(rtype='items')(self)
+            return self._make_inorder_iterator(op)(self)
 
     keys.__doc__   = _docstring.format(rtype='keys')
     values.__doc__ = _docstring.format(rtype='values')
     items.__doc__  = _docstring.format(rtype='items')
 
     # factory for generic in-order iteration over keys
-    def _make_range_iterator(self, rtype):
+    def _make_range_iterator(self, op):
         """Create an iterator over the desired type."""
         def iterator(self, lo=None, hi=None):
             try:
@@ -646,12 +649,12 @@ class BST():
                     lo = self.min()
                 if hi is None:
                     hi = self.max()
-                return self._iterate_range(lo, hi, x=self._root, rtype=rtype)
+                return self._iterate_range(lo, hi, x=self._root, op=op)
             except KeyError:
                 return list()
         return iterator
 
-    def _iterate_range(self, lo, hi, x=None, q=None, rtype='keys'):
+    def _iterate_range(self, lo, hi, x=None, q=None, op=None):
         """Recursively range search the BST for keys between `lo` and `hi`."""
         if x is None:
             return
@@ -659,37 +662,35 @@ class BST():
             q = _Queue()
         # Enqueue by key order
         if lo < x.key:
-            self._iterate_range(lo, hi, x.left, q, rtype)
+            self._iterate_range(lo, hi, x.left, q, op)
         if lo <= x.key <= hi:
-            q.enqueue(x.key if rtype == 'keys' else
-                      (x.val if rtype == 'values' else (x.key, x.val)))
+            q.enqueue(op(x) if op else x.key)
         if hi > x.key:
-            self._iterate_range(lo, hi, x.right, q, rtype)
+            self._iterate_range(lo, hi, x.right, q, op)
         return list(q)
 
     # factory for generic in-order iteration *without* ranges
-    def _make_inorder_iterator(self, rtype):
+    def _make_inorder_iterator(self, op):
         """Create an iterator over the desired type."""
         def iterator(self):
             if self._root is None:
                 return list()
             else:
-                return self._iterate_all(x=self._root, rtype=rtype)
+                return self._iterate_all(x=self._root, op=op)
         return iterator
 
     #  more efficient than `yield from self.keys()` for entire traversal since
     #  we don't have to find the min or max keys
-    def _iterate_all(self, x=None, q=None, rtype='keys'):
+    def _iterate_all(self, x=None, q=None, op=None):
         """Recursively traverse the tree in order (depth-first search)."""
         if x is None:
             return
         if q is None:
             q = _Queue()
         # Yield rtype in order
-        self._iterate_all(x.left, q, rtype)
-        q.enqueue(x.key if rtype == 'keys' else
-                  x.val if rtype == 'values' else (x.key, x.val))
-        self._iterate_all(x.right, q, rtype)
+        self._iterate_all(x.left, q, op)
+        q.enqueue(op(x) if op else x.key)
+        self._iterate_all(x.right, q, op)
         return list(q)
 
     # iterate as a generator function
@@ -1043,14 +1044,14 @@ class ThreadedST(BST):
     # -------------------------------------------------------------------------
     #         Iterator
     # -------------------------------------------------------------------------
-    def _iterate_range(self, lo, hi, x=None, q=None, rtype='keys'):
+    def _iterate_range(self, lo, hi, x=None, q=None, op=None):
         """Recursively range search the BST for keys between `lo` and `hi`."""
         if x is None:
             return
         # start the recursion with the mininmum
-        return self.__iterate_range(lo, hi, x=self._min(x), rtype=rtype)
+        return self.__iterate_range(lo, hi, x=self._min(x), op=op)
 
-    def __iterate_range(self, lo, hi, x=None, q=None, rtype='keys'):
+    def __iterate_range(self, lo, hi, x=None, q=None, op=None):
         """Recursively range search the BST for keys between `lo` and `hi`."""
         if x is None:
             return
@@ -1058,30 +1059,28 @@ class ThreadedST(BST):
             q = _Queue()
         # Enqueue by key order
         if lo <= x.key <= hi:
-            q.enqueue(x.key if rtype == 'keys' else
-                      (x.val if rtype == 'values' else (x.key, x.val)))
+            q.enqueue(op(x) if op else x.key)
         elif x.key > hi:
             return list(q)  # no need to look at further nodes
-        self.__iterate_range(lo, hi, x.next, q, rtype)
+        self.__iterate_range(lo, hi, x.next, q, op)
         return list(q)
 
-    def _iterate_all(self, x=None, rtype='keys'):
+    def _iterate_all(self, x=None, op=None):
         """Recursively traverse the tree in order from the minimum."""
         if x is None:
             return
         # start the recursion with the mininmum
-        return self.__iterate_all(x=self._min(x), rtype=rtype)
+        return self.__iterate_all(x=self._min(x), op=op)
 
-    def __iterate_all(self, x=None, q=None, rtype='keys'):
+    def __iterate_all(self, x=None, q=None, op=None):
         """Recursively traverse the tree in order (depth-first search)."""
         if x is None:
             return
         if q is None:
             q = _Queue()
-        # Yield rtype in order
-        q.enqueue(x.key if rtype == 'keys' else
-                  x.val if rtype == 'values' else (x.key, x.val))
-        self.__iterate_all(x.next, q, rtype)
+        # Yield in order
+        q.enqueue(op(x) if op else x.key)
+        self.__iterate_all(x.next, q, op)
         return list(q)
 
 
@@ -1387,7 +1386,7 @@ class BST_nr(BST):
     #         Iterator
     # -------------------------------------------------------------------------
     # Exercise 3.2.36
-    def _iterate_range(self, lo, hi, rtype='keys', **kwargs):
+    def _iterate_range(self, lo, hi, op=None, **kwargs):
         """Add items to a Queue, in key-order from `lo` to `hi`."""
         q = _Queue()    # the output queue
         s = _Stack()    # visited nodes so we can pop back up the tree
@@ -1401,8 +1400,7 @@ class BST_nr(BST):
                 if x is None:
                     x = s.pop()
                 if lo <= x.key and hi >= x.key:
-                    q.enqueue(x.key if rtype == 'keys' else
-                              (x.val if rtype == 'values' else (x.key, x.val)))
+                    q.enqueue(op(x) if op else x.key)
                 # Move right until `hi` is found
                 if hi > x.key:
                     x = x.right
@@ -1411,7 +1409,7 @@ class BST_nr(BST):
         return list(q)
 
     # Overwrite BST._iterate_all recursive function
-    def _iterate_all(self, rtype='keys', **kwargs):
+    def _iterate_all(self, op=None, **kwargs):
         """Add items to a Queue, in key-order over all keys."""
         q = _Queue()    # the output queue
         s = _Stack()    # visited nodes so we can pop back up the tree
@@ -1424,8 +1422,7 @@ class BST_nr(BST):
             else:
                 if x is None:
                     x = s.pop()
-                q.enqueue(x.key if rtype == 'keys' else
-                          (x.val if rtype == 'values' else (x.key, x.val)))
+                q.enqueue(op(x) if op else x.key)
                 x = x.right
         return list(q)
 
@@ -1701,7 +1698,7 @@ class ThreadedST_nr(BST_nr):
     # -------------------------------------------------------------------------
     #         Iterators
     # -------------------------------------------------------------------------
-    def _iterate_range(self, lo, hi, rtype='keys', **kwargs):
+    def _iterate_range(self, lo, hi, op=None, **kwargs):
         """Add items to a Queue, in key-order from `lo` to `hi`."""
         q = _Queue()               # the output queue
         x = self._min(self._root)  # get the minimum Node
@@ -1709,20 +1706,18 @@ class ThreadedST_nr(BST_nr):
             if lo > x.key:
                 x = x.next
             elif lo <= x.key <= hi:
-                q.enqueue(x.key if rtype == 'keys' else
-                          (x.val if rtype == 'values' else (x.key, x.val)))
+                q.enqueue(op(x) if op else x.key)
                 x = x.next
             else:  # x.key > hi
                 break
         return list(q)
 
-    def _iterate_all(self, rtype='keys', **kwargs):
+    def _iterate_all(self, op=None, **kwargs):
         """Add all items to a Queue, in key-order."""
         q = _Queue()               # the output queue
         x = self._min(self._root)  # get the minimum Node
         while x:
-            q.enqueue(x.key if rtype == 'keys' else
-                      (x.val if rtype == 'values' else (x.key, x.val)))
+            q.enqueue(op(x) if op else x.key)
             x = x.next
         return list(q)
 
