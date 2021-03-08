@@ -286,21 +286,21 @@ class BST():
         return self._center_of_mass(self._root) / (self.size - 1)
 
     # Exercise 3.2.37
-    def level_order(self, x=None):
+    def level_order(self, x=None, op=None):
         """Iterate over the keys in level-order (breadth-first)."""
         if x is None:
             x = self._root
-        keys = _Queue()  # output queue (only grows)
-        q = _Queue()     # queue of keys to visit
+        out = _Queue()  # output queue (only grows)
+        q = _Queue()     # queue of out to visit
         q.enqueue(x)
         while q:
             x = q.dequeue()
             if x is None:
                 continue
-            keys.enqueue(x.key)
+            out.enqueue(op(x) if op else x.key)
             q.enqueue(x.left)
             q.enqueue(x.right)
-        return list(keys)
+        return list(out)
 
     # Methods to make symbol tables behave like python dict()
     def pop(self, k, *args):
@@ -702,15 +702,15 @@ class BST():
         """Iterate over the keys in pre-order (depth-first)."""
         return self._pre_order(self._root)
 
-    def _pre_order(self, x=None, q=None):
+    def _pre_order(self, x=None, q=None, op=None):
         """Iterate over the keys in pre-order (depth-first)."""
         if x is None:
             return
         if q is None:
             q = _Queue()
-        q.enqueue(x.key)
-        self._pre_order(x.left, q)
-        self._pre_order(x.right, q)
+        q.enqueue(op(x) if op else x.key)
+        self._pre_order(x.left, q, op)
+        self._pre_order(x.right, q, op)
         return list(q)
 
     def post_order(self):
@@ -719,15 +719,15 @@ class BST():
 
     # TODO could include `op=lambda x: ...` to operate on nodes as we go (see
     # 'exercises/reconstruct_bst.py' for example `_update_nodes()`.
-    def _post_order(self, x=None, q=None):
+    def _post_order(self, x=None, q=None, op=None):
         """Iterate over the keys in post-order (depth-first)."""
         if x is None:
             return
         if q is None:
             q = _Queue()
-        self._post_order(x.left, q)
-        self._post_order(x.right, q)
-        q.enqueue(x.key)
+        self._post_order(x.left, q, op)
+        self._post_order(x.right, q, op)
+        q.enqueue(op(x) if op else x.key)
         return list(q)
 
     def reverse(self):

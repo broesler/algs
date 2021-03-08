@@ -241,10 +241,10 @@ for ST in [BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr,
         if isinstance(t, BST) and t.__class__ is not RedBlackBST:
             should_be(t.pre_order(),  list('SEACRHMLPX'))
             should_be(t.post_order(), list('CALPMHREXS'))
+            should_be(t.level_order(), list('SEXARCHMLP'))
             should_be(t.height_r(), 5)  # recursive method
             should_be(t.height, 5)      # Node attribute method
             should_be(t.isBST(), True)
-            should_be(list(t.level_order()), list('SEXARCHMLP'))
             should_be(t.internal_path_length_r(), 26)
             should_be(t.internal_path_length, 26)
             del t['H']  # remove node with single child
