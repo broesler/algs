@@ -15,6 +15,7 @@
 
 import matplotlib.pyplot as plt
 
+from algs.basics import Queue as _Queue
 from algs.search import BST, RedBlackBST
 
 
@@ -483,6 +484,9 @@ class BSTArtist():
                 ax.plot((h.x, h.x + shift), (h.y, h.y - NULL_DIST),
                         LINK_COLOR, lw=lw, zorder=1)
 
+    # ------------------------------------------------------------------------- 
+    #         Helper Functions
+    # -------------------------------------------------------------------------
     def _is_red(self, h=None):
         """Return True if `h` is colored red. Calls RedBlackBST method unless
         we're drawing a regular BST.
@@ -491,6 +495,23 @@ class BSTArtist():
             return RedBlackBST._is_red(self.st, h)
         except AttributeError:
             return False
+
+    def get_coords(self):
+        """Return a list of (key, (x, y)) pairs for the BSTArtist."""
+        return self._get_coords(self._root)
+
+    # TODO rewrite in-order traversal op=lambda x: x.key, etc. instead of
+    # a message-passing style.
+    def _get_coords(self, h=None, q=None):
+        if h is None:
+            return
+        if q is None:
+            q = _Queue()
+        self._get_coords(h.left, q)
+        q.enqueue((h.node.key, (h.x, h.y)))
+        self._get_coords(h.right, q)
+        return list(q)
+
 
 
 # -----------------------------------------------------------------------------
