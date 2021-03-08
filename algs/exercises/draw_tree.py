@@ -68,19 +68,9 @@ class BSTArtist():
         self._root = NodeArtist(st._root)  # recursive structure!!
         self.fig = None
         self.ax = None
-        self.set_layout(layout)
+        self.layout = layout
 
-    # Write as "get/set" methods, since computing the layout could be as costly
-    # as O(N^2). Make clear that it is a method call, not just a simple
-    # property value.
-    @property
-    def layout(self):
-        return self.layout
-
-    def get_layout(self):
-        return self.layout
-
-    def set_layout(self, layout='knuth'):
+    def set_coords(self):
         """Set the layout property and compute the node coordinates."""
         layout_funcs = dict(knuth=lambda x: self._knuth_layout(x),
                             wetherell_naive=lambda x: self._wetherell_naive_layout(x),
@@ -89,9 +79,9 @@ class BSTArtist():
                             reingold=lambda x: self._reingold_layout(x),
                             )
         try:
-            layout_funcs[layout](self._root)
+            layout_funcs[self.layout](self._root)
         except KeyError:
-            raise ValueError(f"Invalid layout: {repr(layout)}")
+            raise ValueError(f"Invalid layout: {repr(self.layout)}")
 
     # ------------------------------------------------------------------------- 
     #         Layout Methods
@@ -431,15 +421,20 @@ class BSTArtist():
         fig, ax : Figure, Axis
             Handles to the Figure and Axis objects that hold the plot.
         """
+        # Compute the node coordinates
         if layout:
-            self.set_layout(layout)
+            self.layout = layout
+        self.set_coords()
+        # Create the figure
         self.fig = plt.figure(fignum or 1, clear=True)
         self.ax = self.fig.add_subplot()
         self._draw(self._root)
+        # Format the axes
         self.ax.set_aspect('equal')
         self.ax.autoscale_view()
         if not debug:
             self.ax.axis('off')
+        # Display the figure
         plt.show()
         return self.fig, self.ax
 
