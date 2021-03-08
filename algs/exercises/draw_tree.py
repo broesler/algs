@@ -84,6 +84,11 @@ class BSTArtist():
         except KeyError:
             raise ValueError(f"Invalid layout: {repr(self.layout)}")
 
+    def get_coords(self):
+        """Return a list of (key, (x, y)) pairs for the BSTArtist."""
+        return self.st._iterate_all(self._root,
+                                    op=lambda h: (h.node.key, (h.x, h.y)))
+
     # ------------------------------------------------------------------------- 
     #         Layout Methods
     # -------------------------------------------------------------------------
@@ -495,24 +500,6 @@ class BSTArtist():
             return RedBlackBST._is_red(self.st, h)
         except AttributeError:
             return False
-
-    def get_coords(self):
-        """Return a list of (key, (x, y)) pairs for the BSTArtist."""
-        return self._get_coords(self._root)
-
-    # TODO rewrite in-order traversal op=lambda x: x.key, etc. instead of
-    # a message-passing style.
-    def _get_coords(self, h=None, q=None):
-        if h is None:
-            return
-        if q is None:
-            q = _Queue()
-        self._get_coords(h.left, q)
-        q.enqueue((h.node.key, (h.x, h.y)))
-        self._get_coords(h.right, q)
-        return list(q)
-
-
 
 # -----------------------------------------------------------------------------
 #         Test Client
