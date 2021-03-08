@@ -408,7 +408,7 @@ class BSTArtist():
     # ------------------------------------------------------------------------- 
     #         Drawing Methods
     # -------------------------------------------------------------------------
-    def draw(self, fignum=None, layout=None, debug=False):
+    def draw(self, fignum=None, layout=None, debug=False, quiet=False):
         """Plot the tree.
 
         Parameters
@@ -441,6 +441,7 @@ class BSTArtist():
         if not debug:
             self.ax.axis('off')
         # Display the figure
+        if not quiet:
         plt.show()
         return self.fig, self.ax
 
@@ -523,7 +524,7 @@ if __name__ == '__main__':
 
     for i, (layout, title) in enumerate(layouts.items()):
         dt = BSTArtist(st)
-        dt.draw(debug=True, fignum=i+1, layout=layout)
+        dt.draw(debug=True, fignum=i+1, layout=layout, quiet=True)
         dt.ax.set_title(title)
 
 
