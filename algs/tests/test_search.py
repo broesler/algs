@@ -239,8 +239,9 @@ for ST in [BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr,
 
         # BST-specific tests
         if isinstance(t, BST) and t.__class__ is not RedBlackBST:
-            should_be(t.pre_order(),  list('SEACRHMLPX'))
-            should_be(t.post_order(), list('CALPMHREXS'))
+            should_be(t.pre_order(),   list('SEACRHMLPX'))
+            should_be(t.in_order(),    list('ACEHLMPRSX'))
+            should_be(t.post_order(),  list('CALPMHREXS'))
             should_be(t.level_order(), list('SEXARCHMLP'))
             should_be(t.height_r(), 5)  # recursive method
             should_be(t.height, 5)      # Node attribute method
