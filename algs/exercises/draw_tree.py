@@ -282,7 +282,7 @@ class BSTArtist():
         .. [1] Reingold, Edward M. and John S. Tilford. "Tidier Drawings of
             Trees." *IEEE Trans. of Soft. Eng.*, vol. SE-7, No. 2, 1981.
         """
-        self._reingold_setup(t)
+        self._reingold_clean_setup(t)
         self._reingold_petrify(t)
 
     def _reingold_setup(self, t=None, rmost=None, lmost=None):
@@ -417,6 +417,128 @@ class BSTArtist():
                         LL.addr.right = R
                     else:
                         LL.addr.left = R
+
+    def _reingold_clean_setup(self, t=None):
+        """Recursively assign relative coordinates to all nodes in the tree.
+
+        Parameters
+        ----------
+        t : NodeArtist
+            Root of the subtree on which to assign coordinates.
+        """
+        rmost = self.Extreme()
+        lmost = self.Extreme()
+        if t is None:
+            # Avoid selecting as extreme
+            lmost.lev = -1
+            rmost.lev = -1
+            return lmost, rmost
+
+        # Recursion
+        # LR == rightmost node on lowest level of left subtree, etc.
+        # NOTE In the original Pascal, these variables are instantiated at each
+        # node `t`, but are *set* by passing pointers to each as "lmost" and
+        # "rmost" through their respective recursive call stack, such that
+        # their values are set when we reach the leaves of the subtree rooted
+        # at `t`. In python, it is much clearer to instantiate them at the
+        # children and return their values from the recursive call.
+        LL, LR = self._reingold_clean_setup(t.left)
+        RL, RR = self._reingold_clean_setup(t.right)
+
+        # Post-order activities
+        if t.left is None and t.right is None:
+            # A leaf is both the left- and right-most node on the lowest level
+            # of the subtree consisting of itself
+            rmost.addr = t
+            lmost.addr = t
+            rmost.lev = t.depth
+            lmost.lev = t.depth
+            # rmost.mod = 0  # unnecessary since we initialize to 0
+            # lmost.mod = 0
+            # t.mod = 0  
+            return lmost, rmost
+
+        # Separate the subtrees and update `t.mod`
+        L, R, loffsum, roffsum = self._contour(t)
+
+        # Update extreme descendants' information
+        if RL.lev > LL.lev or t.left is None:
+            lmost = RL
+            lmost.mod += t.mod
+        else:
+            lmost = LL
+            lmost.mod -= t.mod
+
+        if LR.lev > RR.lev or t.right is None:
+            rmost = LR
+            rmost.mod -= t.mod
+        else:
+            rmost = RR
+            rmost.mod += t.mod
+
+        # If subtrees of t were of uneven heights, check to see if threading is
+        # necessary. At most one thread needs to be inserted.
+        # NOTE Threads allow fast following of the contours of subtrees as we
+        # pop back up the tree to separate the next pair.
+        if L is not None and L is not t.left:
+            RR.addr.thread = True
+            RR.addr.mod = abs((RR.mod + t.mod) - loffsum)
+            if loffsum - t.mod <= RR.mod:
+                RR.addr.left = L
+            else:
+                RR.addr.right = L
+        elif R is not None and R is not t.right:
+            LL.addr.thread = True
+            LL.addr.mod = abs((LL.mod - t.mod) - roffsum)
+            if roffsum + t.mod >= LL.mod:
+                LL.addr.right = R
+            else:
+                LL.addr.left = R
+
+        return lmost, rmost
+
+    @staticmethod
+    def _contour(t):
+        """Place the roots of subtrees of `t` the minimum distance apart."""
+        MINSEP = 1             # user-defined
+        cursep = MINSEP        # separation on current level
+        rootsep = MINSEP       # accumulate separation of children of `t`
+        loffsum = roffsum = 0  # offset from L & R to t
+
+        # Consider each level in turn until one subtree is exhausted,
+        # pushing the subtrees apart when necessary
+        L = t.left
+        R = t.right
+        while L is not None and R is not None:
+            if cursep < MINSEP:
+                # Push the trees apart
+                rootsep += MINSEP - cursep
+                cursep = MINSEP
+
+            # Advance L & R
+            if L.right is not None:
+                loffsum += L.mod
+                cursep -= L.mod
+                L = L.right
+            else:
+                loffsum -= L.mod
+                cursep += L.mod
+                L = L.left
+
+            if R.left is not None:
+                roffsum -= R.mod
+                cursep -= R.mod
+                R = R.left
+            else:
+                roffsum += R.mod
+                cursep += R.mod
+                R = R.right
+
+        # Set the offset in t, and include it in accumulated offsets
+        t.mod = (rootsep + 1) / 2
+        loffsum -= t.mod
+        roffsum += t.mod
+        return L, R, loffsum, roffsum
 
     def _reingold_petrify(self, t=None, x=0):
         """Convert relative node positions into absolute coordinates."""
