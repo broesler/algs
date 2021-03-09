@@ -16,7 +16,7 @@
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 
-from algs.search import BST, RedBlackBST
+from algs.search import BST, ThreadedST, RedBlackBST
 
 
 class NodeArtist():
@@ -28,14 +28,17 @@ class NodeArtist():
     def __init__(self, h=None, depth=0):
         if h is None:
             return
+        self.node = h        # pointer to node in BST (for key, value, etc.)
         self.x = 0           # set by layout methods
         self.y = 0
         self.mod = 0         # position modifier used by Weatherill
         self.thread = False  # if True, one of the children is a thread
         self.depth = depth   # track depth independent of y-coordinate
-        self.node = h        # pointer to node in BST (for key, value, etc.)
         self.left = NodeArtist(h.left, depth+1) or None
         self.right = NodeArtist(h.right, depth+1) or None
+        # Slots for threads of ThreadedST, etc.
+        self.next = None
+        self.prev = None
 
     # Slight trickery to set children to `None`: The constructor will construct
     # an object with no attributes if h is None, so instead of having to check
@@ -66,10 +69,14 @@ class BSTArtist():
     """
     def __init__(self, st, layout='knuth'):
         self.st = st  # pointer to the original BST
-        self._root = NodeArtist(st._root)  # recursive structure!!
+        self._root = NodeArtist(st._root)  # recursive structure!! Θ(N)
         self.fig = None
         self.ax = None
         self.layout = layout
+        try:
+            self.sew_threads()  # Θ(2N) forward/back through the ThreadedST
+        except AttributeError:
+            pass
 
     def set_coords(self):
         """Set the layout property and compute the node coordinates."""
@@ -88,6 +95,42 @@ class BSTArtist():
         """Return a list of (key, (x, y)) pairs for the BSTArtist."""
         return self.st._in_order_all(self._root,
                                      op=lambda h: (h.node.key, (h.x, h.y)))
+
+    def get_node(self, k):
+        """Return a reference to the NodeArtist with key `k`."""
+        return self._get_node(k, self._root)
+
+    def _get_node(self, k, x=None):
+        """Search for the NodeArtist with key `k` in subtree rooted at `x`."""
+        if x is None:
+            raise KeyError(k)
+        if k < x.node.key:
+            return self._get_node(k, x.left)
+        elif k > x.node.key:
+            return self._get_node(k, x.right)
+        else: # k == x.node.key:
+            return x
+
+    def sew_threads(self):
+        """Create thread links based on underlying BST references."""
+        self._next_threads()
+        self._prev_threads()
+
+    def _next_threads(self):
+        """Create thread links based on underlying BST references."""
+        x = self.get_node(self.st.min())
+        while x.node.next:
+            x.next = self.get_node(x.node.next.key)
+            x = x.next
+
+    def _prev_threads(self):
+        """Create thread links based on underlying BST references."""
+        x = self.get_node(self.st.max())
+        while x.node.prev:
+            x.prev = self.get_node(x.node.prev.key)
+            x = x.prev
+
+
 
     # -------------------------------------------------------------------------
     #         Layout Methods
@@ -631,9 +674,10 @@ class BSTArtist():
 
     def draw_node(self,
                   h=None,
+                  ax=None,
                   null_links=True,
                   label_keys=True,
-                  ax=None,
+                  threads=True,
                   **kwargs):
         """Plot a single node and its children."""
         if h is None:
@@ -643,7 +687,6 @@ class BSTArtist():
 
         # TODO
         #   * option to plot red links level with neighbors
-        #   * plot next/prev of ThreadedST with curved, dashed arrows?
         #   * add scaling parameters, size tree around font?
         LINK_COLOR = 'k'
         LINE_WIDTH = 2
@@ -670,6 +713,19 @@ class BSTArtist():
                 shift = -NULL_DIST if is_left else NULL_DIST
                 ax.plot((h.x, h.x + shift), (h.y, h.y - NULL_DIST),
                         color=LINK_COLOR, lw=LINE_WIDTH)
+
+        if threads:
+            for t, is_next in zip([h.next, h.prev], [True, False]):
+                if t:
+                    color = 'g' if is_next else 'r'
+                    ax.annotate("", xy=(h.x, h.y), xytext=(t.x, t.y), 
+                                arrowprops=dict(arrowstyle='->', color=color,
+                                                connectionstyle='arc3,rad=0.1',
+                                                shrinkA=15, shrinkB=15,
+                                                linestyle='--'
+                                                )
+                                )
+
 
     # -------------------------------------------------------------------------
     #         Helper Functions
@@ -701,12 +757,14 @@ if __name__ == '__main__':
 
     # st = BST.fromkeys(sorted(list('SEARCHEXAMPLE')))  # in-order
     # st = BST.fromkeys(list('AXCSERHPL'))             # worst-case alternating
-    st = BST.fromkeys(list('SEARCHEXAMPLE'))          # arbitrary
+    # st = BST.fromkeys(list('SEARCHEXAMPLE'))          # arbitrary
     # st = RedBlackBST.fromkeys(list('SEARCHEXAMPLE'))
     # st = BST.fromkeys(st.pre_order())  # test BST with shape of RedBlackBST
 
     # st = BST.fromkeys(list('SQRYXV'))
     # st = BST.fromkeys(list('SQRY'))
+
+    st = ThreadedST.fromkeys(list('SEARCHEXAMPLE'))
 
     # Test with random tree
     # N = 30

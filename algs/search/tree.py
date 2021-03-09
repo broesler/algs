@@ -608,7 +608,6 @@ class BST():
         Minimum/maximum key over which to search, inclusive. If `None`, include
         all keys in respective direction.
     {oplang}
-
     Returns
     -------
     q : list
