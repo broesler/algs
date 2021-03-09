@@ -250,10 +250,18 @@ class BSTArtist():
     class Extreme():
         """Pointer to the left- and right-most nodes on the lowest level of the
         subtree."""
-        def __init__(self, addr=None, mod=None, lev=None):
+        def __init__(self, addr=None, mod=0, lev=0):
             self.addr = addr  # actual tree node
             self.mod = mod    # offset from the root of the subtree
             self.lev = lev    # depth in the tree
+
+        def __str__(self):
+            return (f"key={repr(self.addr.node.key if self.addr else 'None')}: "
+                    f"mod={repr(self.mod)} "
+                    f"lev={repr(self.lev)}")
+
+        def __repr__(self):
+            return f"<{self.__class__.__name__}: {self.__str__()}>"
 
     def _reingold_layout(self, t=None):
         """Layout nodes according to the Reingold-Tilford algorithm [1].
@@ -287,20 +295,20 @@ class BSTArtist():
         rmost, lmost : NodeArtist
             Right- and left-most extreme descendents of `t`.
         """
-        if rmost is None:
-            rmost = self.Extreme()
-        if lmost is None:
-            lmost = self.Extreme()
-
         if t is None:
+            # Avoid selecting as extreme
             lmost.lev = -1
             rmost.lev = -1
         else:
             # LR == rightmost node on lowest level of left subtree, etc.
-            LR = self.Extreme(t, t.mod, t.depth)
-            LL = self.Extreme(t, t.mod, t.depth)
-            RR = self.Extreme(t, t.mod, t.depth)
-            RL = self.Extreme(t, t.mod, t.depth)
+            # These variables are instantiated at each node `t`, but are 
+            # *set* by passing pointers to each as "lmost" and "rmost" through
+            # their respective recursive call stack, such that their values are
+            # set when we hit the leaves of the subtree rooted at `t` 
+            LR = self.Extreme()
+            LL = self.Extreme()
+            RR = self.Extreme()
+            RL = self.Extreme()
 
             MINSEP = 1             # user-defined
             cursep = 0             # separation on current level
@@ -315,8 +323,6 @@ class BSTArtist():
 
             # Post-order activities
             if R is None and L is None:  # t is a leaf
-                # NOTE just initialize rmost, lmost above and return if t is a leaf
-                # NOTE this code may be entirely unnecessary
                 rmost.addr = t
                 lmost.addr = t
                 rmost.lev = t.depth
@@ -364,21 +370,33 @@ class BSTArtist():
                 roffsum += t.mod
 
                 # Update extreme descendants' information
-                if RL.lev > LL.lev or t.left is None:
-                    lmost = RL
-                    lmost.mod += t.mod
-                else:
-                    lmost = LL
-                    lmost.mod -= t.mod
+                # NOTE these lines differ from the original implementation in
+                # Pascal. In python, we need to reassign the *attributes* of
+                # the object referenced by lmost (i.e. the Extreme object up
+                # the function call stack), not the reference itself, otherwise
+                # we lose the link back up the stack!
+                # The only time lmost and rmost are None is at the root, in
+                # which case it does not matter if we don't update them.
+                if lmost is not None:
+                    if RL.lev > LL.lev or t.left is None:
+                        lmost.addr = RL.addr
+                        lmost.lev = RL.lev
+                        lmost.mod = RL.mod + t.mod
+                    else:
+                        lmost.addr = LL.addr
+                        lmost.lev = LL.lev
+                        lmost.mod = LL.mod - t.mod
 
-                if LR.lev > RR.lev or t.right is None:
-                    rmost = LR
-                    rmost.mod -= t.mod
-                else:
-                    rmost = RR
-                    rmost.mod += t.mod
+                if rmost is not None:
+                    if LR.lev > RR.lev or t.right is None:
+                        rmost.addr = LR.addr
+                        rmost.lev = LR.lev
+                        rmost.mod = LR.mod - t.mod
+                    else:
+                        rmost.addr = RR.addr
+                        rmost.lev = RR.lev
+                        rmost.mod = RR.mod + t.mod
 
-                # FIXME threads break the links in the tree
                 # If subtrees of t were of uneven heights, check to see if
                 # threading is necessary. At most one thread needs to be
                 # inserted.
