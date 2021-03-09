@@ -432,7 +432,14 @@ class BSTArtist():
     # ------------------------------------------------------------------------- 
     #         Drawing Methods
     # -------------------------------------------------------------------------
-    def draw(self, fignum=None, layout=None, debug=False, quiet=False):
+    def draw(self,
+             fig=None,
+             ax=None,
+             fignum=None,
+             layout=None,
+             debug=False,
+             quiet=False,
+             **kwargs):
         """Plot the tree.
 
         Parameters
@@ -445,6 +452,8 @@ class BSTArtist():
             Choice of method to use for tree drawing.
         debug : bool, optional
             Enable extra plotting commands for debugging purposes.
+        **kwargs : dict
+            Additional keyword arguments are passed on to `draw_node`.
 
         Returns
         -------
@@ -456,9 +465,18 @@ class BSTArtist():
             self.layout = layout
         self.set_coords()
         # Create the figure
-        self.fig = plt.figure(fignum or 1, clear=True)
-        self.ax = self.fig.add_subplot()
-        self._draw(self._root)
+        # If axes are given, use them and set the figure as the parent
+        if ax is not None:
+            self.fig = ax.figure
+            self.ax = ax
+        else:
+            if fig is not None:
+                self.fig = fig
+            else:
+                self.fig = self.fig or plt.figure(fignum or 1, clear=True)
+            self.ax = self.ax or self.fig.add_subplot()
+        # Recursively draw the nodes
+        self._draw(self._root, **kwargs)
         # Format the axes
         self.ax.set_aspect('equal')
         self.ax.autoscale_view()
@@ -471,17 +489,22 @@ class BSTArtist():
             plt.show()
         return self.fig, self.ax
 
-    def _draw(self, h=None, ax=None):
+    def _draw(self, h=None, ax=None, **kwargs):
         """Recursively plot the nodes and connectors to each child."""
         if h is None:
             return
         if ax is None:
             ax = self.ax
-        self.draw_node(h, ax)
-        self._draw(h.left, ax)
-        self._draw(h.right, ax)
+        self.draw_node(h, ax, **kwargs)
+        self._draw(h.left, ax, **kwargs)
+        self._draw(h.right, ax, **kwargs)
 
-    def draw_node(self, h=None, null_links=True, ax=None, **kwargs):
+    def draw_node(self, 
+                  h=None,
+                  null_links=True,
+                  label_keys=True,
+                  ax=None,
+                  **kwargs):
         """Plot a single node and its children."""
         if h is None:
             return
@@ -504,8 +527,8 @@ class BSTArtist():
                 zorder=3  # place on top of lines
                 )
         ax.add_patch(circ)
-        label = ax.annotate(h.node.key, xy=(h.x, h.y),
-                            ha='center', va='center')
+        if label_keys:
+            ax.annotate(h.node.key, xy=(h.x, h.y), ha='center', va='center')
 
         # Plot links to children
         for t, is_left in zip([h.left, h.right], [True, False]):
@@ -534,14 +557,25 @@ class BSTArtist():
 #         Test Client
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
+    import numpy as np
+    from matplotlib.gridspec import GridSpec
+
     # st = BST.fromkeys(list('EASYQUESTION'))
     # st = RedBlackBST.fromkeys(list('EASYQUESTION'))
 
     # st = BST.fromkeys(sorted(list('SEARCHEXAMPLE')))  # in-order
     # st = BST.fromkeys(list('AXCSERHPL'))              # worst-case alternating
-    st = BST.fromkeys(list('SEARCHEXAMPLE'))            # arbitrary
+    st = BST.fromkeys(list('SEARCHEXAMPLE'))          # arbitrary
     # st = RedBlackBST.fromkeys(list('SEARCHEXAMPLE'))
     # st = BST.fromkeys(st.pre_order())  # test BST with shape of RedBlackBST
+
+    # st = BST.fromkeys(list('SQRYXV'))
+    # st = BST.fromkeys(list('SQRY'))
+
+    # Test with random tree
+    # N = 30
+    # rng = np.random.default_rng(seed=565656)
+    # st = BST.fromkeys(rng.integers(0, N, size=N))
 
     layouts = dict({'knuth': 'Knuth (1971)',
                     'wetherell_naive': 'Wetherell and Shannon (1979) (naïve)',
@@ -552,8 +586,20 @@ if __name__ == '__main__':
 
     for i, (layout, title) in enumerate(layouts.items()):
         dt = BSTArtist(st)
-        dt.draw(debug=True, fignum=i+1, layout=layout, quiet=False)
-        dt.ax.set_title(title)
+        # Plot the tree and a mirror image to test
+        fig = plt.figure(i+1, clear=True)
+        fig.suptitle(title)
+        gs = GridSpec(nrows=1, ncols=2)
+        ax = fig.add_subplot(gs[0])
+        ax.set_title('Original')
+        dt.draw(ax=ax, layout=layout)
+        # Plot the mirror image
+        ax = fig.add_subplot(gs[1])
+        ax.set_title('Mirror')
+        st.reverse()  # reverse the BST orientation
+        dt = BSTArtist(st)
+        dt.draw(ax=ax, layout=layout)
+        gs.tight_layout(fig)
 
 
 # =============================================================================
