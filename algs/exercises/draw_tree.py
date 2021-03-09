@@ -16,7 +16,6 @@
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 
-from algs.basics import Queue as _Queue
 from algs.search import BST, RedBlackBST
 
 
@@ -42,7 +41,7 @@ class NodeArtist():
     # an object with no attributes if h is None, so instead of having to check
     # for attributes, or catching AttributeError, just redefine `__bool__`. The
     # constructor can then test if it returns a complete object or not to allow
-    # client code to be both consistent with BST and more explicit than 
+    # client code to be both consistent with BST and more explicit than
     # `if not h` checks, by using `if h is None:` to test for null links.
     def __bool__(self):
         return hasattr(self, 'x')  # no attributes set if None
@@ -74,22 +73,23 @@ class BSTArtist():
 
     def set_coords(self):
         """Set the layout property and compute the node coordinates."""
-        layout_funcs = dict(knuth=lambda x: self._knuth_layout(x),
-                            wetherell_naive=lambda x: self._wetherell_naive_layout(x),
-                            wetherell_3=lambda x: self._wetherell_layout(x, mod=False),
-                            wetherell=lambda x: self._wetherell_layout(x, mod=True),
-                            reingold=lambda x: self._reingold_layout(x),
-                            )
+        layouts = dict(knuth=lambda x: self._knuth_layout(x),
+                       wetherell_naive=lambda x: self._wetherell_naive_layout(x),
+                       wetherell_3=lambda x: self._wetherell_layout(x, mod=False),
+                       wetherell=lambda x: self._wetherell_layout(x, mod=True),
+                       reingold=lambda x: self._reingold_layout(x),
+                       )
         try:
-            layout_funcs[self.layout](self._root)
+            layouts[self.layout](self._root)
         except KeyError:
             raise ValueError(f"Invalid layout: {repr(self.layout)}")
 
     def get_coords(self):
         """Return a list of (key, (x, y)) pairs for the BSTArtist."""
-        return self.st._in_order_all(self._root, op=lambda h: (h.node.key, (h.x, h.y)))
+        return self.st._in_order_all(self._root,
+                                     op=lambda h: (h.node.key, (h.x, h.y)))
 
-    # ------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #         Layout Methods
     # -------------------------------------------------------------------------
     def _knuth_layout(self, h=None):
@@ -223,7 +223,7 @@ class BSTArtist():
         self._wetherell_second_pass(h.left, mod_sum)
         self._wetherell_second_pass(h.right, mod_sum)
 
-    def _wetherell_mod_second_pass(self, 
+    def _wetherell_mod_second_pass(self,
                                    h=None,
                                    mod_sum=0,
                                    p=None,
@@ -256,9 +256,9 @@ class BSTArtist():
             self.lev = lev    # depth in the tree
 
         def __str__(self):
-            return (f"key={repr(self.addr.node.key if self.addr else 'None')}: "
-                    f"mod={repr(self.mod)} "
-                    f"lev={repr(self.lev)}")
+            return (f"key={repr(self.addr.node.key if self.addr else 'None')}:"
+                    f" mod={repr(self.mod)}"
+                    f" lev={repr(self.lev)}")
 
         def __repr__(self):
             return f"<{self.__class__.__name__}: {self.__str__()}>"
@@ -295,16 +295,19 @@ class BSTArtist():
         rmost, lmost : NodeArtist
             Right- and left-most extreme descendents of `t`.
         """
+        # NOTE the only time that lmost and rmost are None are at the root.
+        #   Otherwise, they serve as references back *up* the tree to
+        #   LL, LR, RL, RR during their respective recursive calls.
         if t is None:
             # Avoid selecting as extreme
             lmost.lev = -1
             rmost.lev = -1
         else:
             # LR == rightmost node on lowest level of left subtree, etc.
-            # These variables are instantiated at each node `t`, but are 
+            # These variables are instantiated at each node `t`, but are
             # *set* by passing pointers to each as "lmost" and "rmost" through
             # their respective recursive call stack, such that their values are
-            # set when we hit the leaves of the subtree rooted at `t` 
+            # set when we reach the leaves of the subtree rooted at `t`.
             LR = self.Extreme()
             LL = self.Extreme()
             RR = self.Extreme()
@@ -376,7 +379,7 @@ class BSTArtist():
                 # the function call stack), not the reference itself, otherwise
                 # we lose the link back up the stack!
                 # The only time lmost and rmost are None is at the root, in
-                # which case it does not matter if we don't update them.
+                # which case we don't need to update them.
                 if lmost is not None:
                     if RL.lev > LL.lev or t.left is None:
                         lmost.addr = RL.addr
@@ -429,7 +432,7 @@ class BSTArtist():
         self._reingold_petrify(t.left, x - t.mod)
         self._reingold_petrify(t.right, x + t.mod)
 
-    # ------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #         Drawing Methods
     # -------------------------------------------------------------------------
     def draw(self,
@@ -444,6 +447,8 @@ class BSTArtist():
 
         Parameters
         ----------
+        fig, ax : Figure, Axis
+            Pre-existing plotting objects.
         fignum : int, optional
             Figure number in which to draw. If a figure exists with the given
             `fignum`, it will be cleared. If `None`, a new Figure will be
@@ -452,6 +457,9 @@ class BSTArtist():
             Choice of method to use for tree drawing.
         debug : bool, optional
             Enable extra plotting commands for debugging purposes.
+        quiet : bool, optional
+            If True, do not show plot windows, or do not bring them into focus
+            if they exist.
         **kwargs : dict
             Additional keyword arguments are passed on to `draw_node`.
 
@@ -499,7 +507,7 @@ class BSTArtist():
         self._draw(h.left, ax, **kwargs)
         self._draw(h.right, ax, **kwargs)
 
-    def draw_node(self, 
+    def draw_node(self,
                   h=None,
                   null_links=True,
                   label_keys=True,
@@ -522,7 +530,7 @@ class BSTArtist():
         # Plot the node itself
         circ = patches.Circle(
                 (h.x, h.y),
-                radius=0.25, 
+                radius=0.25,
                 edgecolor='k', facecolor='#EEE',  # light grey with black edge
                 zorder=3  # place on top of lines
                 )
@@ -541,7 +549,7 @@ class BSTArtist():
                 ax.plot((h.x, h.x + shift), (h.y, h.y - NULL_DIST),
                         color=LINK_COLOR, lw=LINE_WIDTH)
 
-    # ------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #         Helper Functions
     # -------------------------------------------------------------------------
     def _is_red(self, h=None):
@@ -553,18 +561,24 @@ class BSTArtist():
         except AttributeError:
             return False
 
+
 # -----------------------------------------------------------------------------
 #         Test Client
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
-    import numpy as np
+    # import numpy as np
     from matplotlib.gridspec import GridSpec
 
+    PLOT_MIRROR = False
+
+    # -------------------------------------------------------------------------
+    #         Test Trees
+    # -------------------------------------------------------------------------
     # st = BST.fromkeys(list('EASYQUESTION'))
     # st = RedBlackBST.fromkeys(list('EASYQUESTION'))
 
     # st = BST.fromkeys(sorted(list('SEARCHEXAMPLE')))  # in-order
-    # st = BST.fromkeys(list('AXCSERHPL'))              # worst-case alternating
+    # st = BST.fromkeys(list('AXCSERHPL'))             # worst-case alternating
     st = BST.fromkeys(list('SEARCHEXAMPLE'))          # arbitrary
     # st = RedBlackBST.fromkeys(list('SEARCHEXAMPLE'))
     # st = BST.fromkeys(st.pre_order())  # test BST with shape of RedBlackBST
@@ -577,29 +591,38 @@ if __name__ == '__main__':
     # rng = np.random.default_rng(seed=565656)
     # st = BST.fromkeys(rng.integers(0, N, size=N))
 
+    # -------------------------------------------------------------------------
+    #         Plots
+    # -------------------------------------------------------------------------
     layouts = dict({'knuth': 'Knuth (1971)',
                     'wetherell_naive': 'Wetherell and Shannon (1979) (naïve)',
-                    'wetherell_3': 'Wetherell and Shannon (1979) (Algorithm 3)',
-                    'wetherell': 'Wetherell and Shannon (1979)',
+                    'wetherell_3': 'Wetherell and Shannon (1979) (Alg 3)',
+                    'wetherell': 'Wetherell and Shannon (1979) (Alg 3 mod)',
                     'reingold': 'Reingold and Tilford (1981)',
                     })
 
     for i, (layout, title) in enumerate(layouts.items()):
         dt = BSTArtist(st)
-        # Plot the tree and a mirror image to test
-        fig = plt.figure(i+1, clear=True)
-        fig.suptitle(title)
-        gs = GridSpec(nrows=1, ncols=2)
-        ax = fig.add_subplot(gs[0])
-        ax.set_title('Original')
-        dt.draw(ax=ax, layout=layout)
-        # Plot the mirror image
-        ax = fig.add_subplot(gs[1])
-        ax.set_title('Mirror')
-        st.reverse()  # reverse the BST orientation
-        dt = BSTArtist(st)
-        dt.draw(ax=ax, layout=layout)
-        gs.tight_layout(fig)
+
+        if not PLOT_MIRROR:
+            dt.draw(fignum=i+1, layout=layout)
+            dt.ax.set_title(title)
+            dt.fig.tight_layout()
+        else:
+            # Plot the tree and a mirror image to test
+            fig = plt.figure(i+1, clear=True)
+            fig.suptitle(title)
+            gs = GridSpec(nrows=1, ncols=2)
+            ax = fig.add_subplot(gs[0])
+            ax.set_title('Original')
+            dt.draw(ax=ax, layout=layout)
+            # Plot the mirror image
+            ax = fig.add_subplot(gs[1])
+            ax.set_title('Mirror')
+            st.reverse()  # reverse the BST orientation
+            dt = BSTArtist(st)
+            dt.draw(ax=ax, layout=layout)
+            gs.tight_layout(fig)
 
 
 # =============================================================================
