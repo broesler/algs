@@ -67,7 +67,7 @@ class BSTArtist():
     fig, ax : :obj:Figure, :obj:Axis
         figure and axis handles to the plot.
     """
-    def __init__(self, st, layout='knuth'):
+    def __init__(self, st, layout='reingold'):
         self.st = st  # pointer to the original BST
         self._root = NodeArtist(st._root)  # recursive structure!! Θ(N)
         self.fig = None
