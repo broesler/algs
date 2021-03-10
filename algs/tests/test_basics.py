@@ -9,196 +9,198 @@
 """
 # =============================================================================
 
-# TODO move to proper Pytest functions/classes
-import string
 import numpy as np
+import pytest
 from random import shuffle
+import string
 
 from algs.basics import Bag, Stack, Queue, PriorityQueue, IndexPQ
 
-tests = fails = 0
-
-
-def should_be(a, b, name=None, verbose=False):
-    """Test a condition."""
-    global tests, fails
-    tests += 1
-    try:
-        assert a == b
-        if verbose:
-            print(f"[{name}]: Got: {a}, Expected: {b}")
-    except AssertionError as e:
-        fails += 1
-        print(f"[{name}]: Got: {a}, Expected: {b}")
-        raise e
-
-
-def err_test(container, op, err_type=IndexError):
+def err_test(container, op, *args, err_type=IndexError):
     """Test for raising a given error type.
 
     Parameters
     ----------
-    container : list-like container data type
+    container : list-like container data type instance
+        A class instance to be tested.
     op : str
         attribute name of method to test
+    *args : list
+        arguments to `op`.
     err_type : Exception, optional
         error type that object is expected to raise
 
-    Returns
-    -------
-    None
+    Raises
+    ------
+    Exception
+        If error raised is not of type `err_type`.
     """
-    while True:
-        try:
-            getattr(container, op)()  # call the method
-        except err_type:
-            return
-        except Exception as err:
-            raise Exception(f'Improper error thrown: {repr(err)}')
+    with pytest.raises(err_type):
+        while True:
+            getattr(container, op)(*args)  # call the method
+
+class TestBag:
+    def test_bag_methods(self):
+        b = Bag()
+        for i in range(10):
+            b.add(i)
+        assert b.size == 10
+        assert not b.is_empty
+        for i, x in enumerate(b):
+            assert i == x
+
+    def test_bag_stats(self):
+        # Run some basic statistics from an interator of values
+        b = Bag()
+        scores = iter([100, 99, 101, 120, 98, 107, 109, 81, 101, 90])  # ~ StdIn
+        for s in scores:
+            b.add(s)
+        mean = 0.0
+        std = 0.0
+        N = b.size
+        for x in b:
+            mean += x / N
+        for x in b:
+            std += (x - mean)*(x - mean) / (N - 1)
+        assert mean == 100.6
+        np.testing.assert_almost_equal(std, 110.489, decimal=3)
 
 
-# Test Bag
-b = Bag()
-for i in range(10):
-    b.add(i)
-should_be(b.size, 10)
-should_be(b.is_empty, False)
-for i, x in enumerate(b):
-    should_be(i, x)
+class TestStack:
+    def test_stack_methods(self):
+        s = Stack()
+        for i in range(5):
+            s.push(i)
+        assert s.size == 5
+        assert not s.is_empty
+        assert 4 == s.peek()
+        assert 4 == s.pop()
+        # Test iteration -- pop should be in reverse order
+        for i, item in zip([3, 2, 1, 0], s):
+            assert i == item
+        err_test(s, 'pop')
+        # with pytest.raises(IndexError):
+        #     while True:
+        #         s.pop()
 
-# Run some basic statistics from an interator of values
-b = Bag()
-scores = iter([100, 99, 101, 120, 98, 107, 109, 81, 101, 90])  # ~ StdIn
-for s in scores:
-    b.add(s)
-mean = 0.0
-std = 0.0
-N = b.size
-for x in b:
-    mean += x / N
-for x in b:
-    std += (x - mean)*(x - mean) / (N - 1)
-should_be(mean, 100.6)
-np.testing.assert_almost_equal(std, 110.489, decimal=3)
 
-# Test Stack
-s = Stack()
-for i in range(5):
-    s.push(i)
-should_be(s.size, 5)
-should_be(s.is_empty, False)
-should_be(4, s.peek())
-should_be(4, s.pop())
-# Test iteration -- pop should be in reverse order
-for i, item in zip([3, 2, 1, 0], s):
-    should_be(i, item)
-# Test for pop
-err_test(s, 'pop')
+class TestQueue:
+    def test_queue_methods(self):
+        q = Queue(['A', 'B', 'C'])
+        q.enqueue('D')
+        assert q.size == 4
+        assert not q.is_empty
+        assert 'A' == q.peek()
+        assert 'A' == q.dequeue()
+        # Elements should be in forwards order
+        for c, item in zip(['B', 'C', 'D'], q):
+            assert c == item
+        err_test(q, 'dequeue')
 
-# Test Queue
-q = Queue(['A', 'B', 'C'])
-q.enqueue('D')
-should_be(q.size, 4)
-should_be(q.is_empty, False)
-should_be('A', q.peek())
-should_be('A', q.dequeue())
-# Elements should be in forwards order
-for c, item in zip(['B', 'C', 'D'], q):
-    should_be(c, item)
-# Test dequeue error
-err_test(q, 'dequeue')
 
-# Shuffled alphabet data with indices
-data_s = string.ascii_uppercase
-idx_s = list(range(len(data_s)))
-idx = idx_s.copy()
-shuffle(idx)
-data = [data_s[i] for i in idx]
+@pytest.fixture
+def the_data():
+    """Shuffled alphabet data with indices"""
+    data_s = string.ascii_uppercase
+    idx_s = list(range(len(data_s)))
+    idx = idx_s.copy()
+    shuffle(idx)
+    data = [data_s[i] for i in idx]
+    return idx_s, idx, data
 
-# Test maxPQ
-pq = PriorityQueue(data, kind='max')
-should_be(pq.is_empty, False)
-should_be(pq.size, 26)
-should_be('Z', pq.peek())
-should_be('Z', pq.dequeue())
-should_be('Y', pq.dequeue())
-should_be('X', pq.dequeue())
-should_be('W', pq.peek())
-for c in ['X', 'Y', 'Z']:
-    pq.enqueue(c)
-# implicitly test iteration
-should_be(''.join(pq), string.ascii_uppercase[::-1])
-# Test dequeue error
-err_test(pq, 'dequeue')
 
-# Test MinPQ
-pq = PriorityQueue(data, kind='min')
-should_be('A', pq.dequeue())
-should_be('B', pq.dequeue())
-should_be('C', pq.dequeue())
-should_be('D', pq.peek())
-for c in ['A', 'B', 'C']:
-    pq.enqueue(c)
-# implicitly test iteration
-should_be(''.join(pq), string.ascii_uppercase)
+class TestPQ:
+    def test_maxpq_methods(self, the_data):
+        _, _, data = the_data
+        pq = PriorityQueue(data, kind='max')
+        assert not pq.is_empty
+        assert pq.size == 26
+        assert 'Z' == pq.peek()
+        assert 'Z' == pq.dequeue()
+        assert 'Y' == pq.dequeue()
+        assert 'X' == pq.dequeue()
+        assert 'W' == pq.peek()
+        for c in ['X', 'Y', 'Z']:
+            pq.enqueue(c)
+        # implicitly test iteration
+        assert ''.join(pq) == string.ascii_uppercase[::-1]
+        err_test(pq, 'dequeue')
 
-# Test IndexMinPQ
-pq = IndexPQ(zip(idx, data), kind='min')
-should_be(len(pq), 26)
-should_be((0, 'A'), pq.dequeue())
-should_be((1, 'B'), pq.dequeue())
-should_be((2, 'C'), pq.dequeue())
-should_be(len(pq), 23)
-should_be((3, 'D'), pq.peek())
-for i, c in [(0, 'A'), (1, 'B'), (2, 'C')]:
-    pq.enqueue(i, c)
-should_be(list(pq.keys()), idx_s)
-should_be(''.join(pq.values()), string.ascii_uppercase)
+    def test_minpq_methods(self, the_data):
+        _, _, data = the_data
+        pq = PriorityQueue(data, kind='min')
+        assert 'A' == pq.dequeue()
+        assert 'B' == pq.dequeue()
+        assert 'C' == pq.dequeue()
+        assert 'D' == pq.peek()
+        for c in ['A', 'B', 'C']:
+            pq.enqueue(c)
+        # implicitly test iteration
+        assert ''.join(pq) == string.ascii_uppercase
 
-# Test `change` item
-pq[0] = 'ZZZ'
-should_be(0 in pq, True)
-should_be(list(pq.keys()), idx_s[1:] + [0])
-should_be(''.join(pq.values()), string.ascii_uppercase[1:] + 'ZZZ')
-pq[0] = 'A'
-should_be(0 in pq, True)
-should_be(list(pq.keys()), idx_s)
-should_be(''.join(pq.values()), string.ascii_uppercase)
 
-# Test 'delete' item
-i = 0  # removes (0, 'A')
-item = pq[i]  # store value for later
-del pq[i]
-should_be(i not in pq, True)
-should_be(list(pq.keys()), idx_s[:i] + idx_s[i+1:])
-should_be(''.join(pq.values()),   string.ascii_uppercase[:i]
-                                + string.ascii_uppercase[i+1:])
+@pytest.fixture
+def pq(the_data):
+    _, idx, data = the_data
+    return IndexPQ(zip(idx, data), kind='min')
 
-# Re-add item for completeness
-pq[i] = item
 
-# Internal checks
-for i in range(len(pq._pq)-1):
-    should_be(pq._pq[pq._qp[i]], i)
+class TestIndexPQ:
+    def test_indexpq_methosd(self, the_data, pq):
+        idx_s, _, _ = the_data
+        assert len(pq) == 26
+        assert (0, 'A') == pq.dequeue()
+        assert (1, 'B') == pq.dequeue()
+        assert (2, 'C') == pq.dequeue()
+        assert len(pq) == 23
+        assert (3, 'D') == pq.peek()
+        for i, c in [(0, 'A'), (1, 'B'), (2, 'C')]:
+            pq.enqueue(i, c)
+        assert list(pq.keys()) == idx_s
+        assert ''.join(pq.values()) == string.ascii_uppercase
 
-# Equality checks
-pq1 = IndexPQ(zip(idx, data), kind='min')
-pq2 = IndexPQ(zip(idx, data), kind='min')
-should_be(pq1, pq2)
-del pq1, pq2
+    def test_indexpq_change_item(self, the_data, pq):
+        idx_s, _, _ = the_data
+        pq[0] = 'ZZZ'
+        assert 0 in pq
+        assert list(pq.keys()) == idx_s[1:] + [0]
+        assert ''.join(pq.values()) == string.ascii_uppercase[1:] + 'ZZZ'
+        pq[0] = 'A'
+        assert 0 in pq
+        assert list(pq.keys()) == idx_s
+        assert ''.join(pq.values()) == string.ascii_uppercase
 
-# Copy check
-pq_copy = pq.copy()
-should_be(pq_copy, pq)
+    def test_indexpq_delete_item(self, the_data, pq):
+        idx_s, _, _ = the_data
+        i = 0  # removes (0, 'A')
+        item = pq[i]  # store value for later
+        del pq[i]
+        assert i not in pq
+        assert list(pq.keys()) == idx_s[:i] + idx_s[i+1:]
+        assert ''.join(pq.values()) == (string.ascii_uppercase[:i]
+                                        + string.ascii_uppercase[i+1:])
+        # Re-add item for completeness
+        pq[i] = item
 
-pq_fromkeys = pq.fromkeys(idx)
+    def test_indexpq_internals(self, pq):
+        for i in range(len(pq._pq)-1):
+            assert pq._pq[pq._qp[i]] == i
 
-# Summary
-if fails > 0:
-    print(f"{fails}/{tests} tests failed")
-else:
-    print(f"All {tests} tests passed!")
+    def test_indexpq_equality(self, the_data):
+        _, idx, data = the_data
+        pq1 = IndexPQ(zip(idx, data), kind='min')
+        pq2 = IndexPQ(zip(idx, data), kind='min')
+        assert pq1 == pq2
+        del pq1, pq2
 
+    def test_indexpq_copy(self, pq):
+        pq_copy = pq.copy()
+        assert pq_copy == pq
+
+    def test_indexpq_fromkeys(self, the_data, pq):
+        _, idx, _ = the_data
+        pq_fromkeys = pq.fromkeys(idx)
+        assert pq_fromkeys.keys() == pq.keys()
 
 # =============================================================================
 # =============================================================================
