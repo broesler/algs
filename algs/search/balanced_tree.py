@@ -83,9 +83,9 @@ class RedBlackBST(BST):
         self._root = self._set(k, v, self._root)
         self._root.color = self._BLACK
 
-    def _set(self, k, v, x=None):
-        """Add a new node to subtree at `x`, associating `k` with `v`.
-        If `k` is in subtree rooted at `x`, change its value to `v`.
+    def _set(self, k, v, h=None):
+        """Add a new node to subtree at `h`, associating `k` with `v`.
+        If `k` is in subtree rooted at `h`, change its value to `v`.
 
         Parameters
         ----------
@@ -93,61 +93,72 @@ class RedBlackBST(BST):
             key for which to search
         v : value
             object to be associated with key `k`
-        x : _Node, optional
+        h : _Node, optional
             root of the subtree at which to begin search
         """
         # subtree is empty, create a new node with a red link to parent
-        if x is None:
+        if h is None:
             return self._Node(k, v, color=self._RED)
 
         # create a child, or update the value
-        if k < x.key:
-            x.left = self._set(k, v, x.left)
-        elif k > x.key:
-            x.right = self._set(k, v, x.right)
-        else:  # k == x.key
-            x.val = v  # update the value
+        if k < h.key:
+            h.left = self._set(k, v, h.left)
+        elif k > h.key:
+            h.right = self._set(k, v, h.right)
+        else:  # k == h.key
+            h.val = v  # update the value
 
         # Update the colors (i.e. split a 4-node)
-        if self._is_red(x.right) and not self._is_red(x.left):
-            x = self._rotate_left(x)
-        if self._is_red(x.left) and self._is_red(x.left.left):
-            x = self._rotate_right(x)
-        if self._is_red(x.right) and self._is_red(x.left):
-            self._flip_colors(x)
+        if self._is_red(h.right) and not self._is_red(h.left):
+            h = self._rotate_left(h)
+        if self._is_red(h.left) and self._is_red(h.left.left):
+            h = self._rotate_right(h)
+        if self._is_red(h.right) and self._is_red(h.left):
+            self._flip_colors(h)
 
-        self._update_node(x)
-        return x
+        # Update node attributes
+        h.N = 1 + self._size(h.left) + self._size(h.right)
+        # h.height = 1 + max(self._height(h.left), self._height(h.right))
+        return h
 
     def _rotate_left(self, h):
         """Rotate node `h` such that its right child becomes its parent."""
+        assert h is not None and self._is_red(h.right)
         x = h.right
-        h.right, x.left = x.left, h
+        h.right = x.left 
+        x.left = h
         x.color = h.color
         h.color = self._RED
         x.N = h.N
-        self._update_node(h)
+        h.N = 1 + self._size(h.left) + self._size(h.right)
+        # x.height = h.height
+        # h.height = 1 + max(self._height(h.left), self._height(h.right))
         return x  # return the new parent
 
     def _rotate_right(self, h):
         """Rotate node `h` such that its left child becomes its parent."""
+        assert h is not None and self._is_red(h.left)
         x = h.left
-        h.left, x.right = x.right, h
+        h.left = x.right
+        x.right = h
         x.color = h.color
         h.color = self._RED
         x.N = h.N
-        self._update_node(h)
+        h.N = 1 + self._size(h.left) + self._size(h.right)
+        # x.height = h.height - 1
+        # h.height = 1 + max(self._height(h.left), self._height(h.right))
         return x  # return the new parent
-
-    def _is_red(self, x):
-        """Return True if `x` is red, otherwise False."""
-        return False if x is None else x.color == self._RED
 
     def _flip_colors(self, x):
         """Convert two red children to black, and parent to red."""
         x.color = self._RED
         x.left.color = self._BLACK
         x.right.color = self._BLACK
+
+    def _is_red(self, x):
+        """Return True if `x` is red, otherwise False."""
+        return False if x is None else x.color == self._RED
+
 
 # =============================================================================
 # =============================================================================
