@@ -12,7 +12,59 @@
 import numpy as np
 
 from algs.search import RedBlackBST
-from algs.tests.helpers import should_be, err_test
+
+# Define test counts
+tests = fails = 0
+
+
+def should_be(a, b, name=None, verbose=False):
+    """Test a condition."""
+    global tests, fails
+    tests += 1
+    try:
+        assert a == b
+        if verbose:
+            print(f"[{name}]: Got: {a}, Expected: {b}")
+    except AssertionError as e:
+        fails += 1
+        print(f"     Got: {a}\nExpected: {b}")
+        raise e
+
+
+def err_test(container, op, *args, err_type=IndexError):
+    """Test for raising a given error type.
+
+    Parameters
+    ----------
+    container : list-like container data type instance
+        A class instance to be tested.
+    op : str
+        attribute name of method to test
+    *args : list
+        arguments to `op`.
+    err_type : Exception, optional
+        error type that object is expected to raise
+
+    Raises
+    ------
+    Exception
+        If error raised is not of type `err_type`.
+    """
+    global tests, fails
+    tests += 1
+    try:
+        getattr(container, op)(*args)  # call the method
+    except err_type:
+        return
+    except Exception as err:
+        fails += 1
+        print(f"Raised: {repr(err)}, Expected: {err_type}")
+        raise err
+    else:
+        fails += 1
+        print(f"No error raised! Expected: {err_type}")
+        raise
+
 
 # TODO write Pytest classes/functions
 # Ex 3.1.29 (and then some!)
@@ -81,6 +133,12 @@ should_be(node_attrs, list(zip(keys, Ns)))
 # t = ST(data, cache=cache)
 # t_heights = t.level_order(op=lambda x: (x.key, x.height))
 # should_be(t_heights, heights)
+
+# Summary
+if fails > 0:
+    print(f"{fails}/{tests} tests failed")
+else:
+    print(f"All {tests} tests passed!")
 
 # =============================================================================
 # =============================================================================
