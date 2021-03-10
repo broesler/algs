@@ -196,6 +196,8 @@ for ST in [BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr,
         #  1      4            M
         #                     / \
         #  0      5          L   P
+        heights = list(zip(list('SEXARCHMLP'), [5, 4, 0, 1, 3, 0, 2, 1, 0, 0]))
+        # depths  = list(zip(list('SEXARCHMLP'), [0, 1, 1, 2, 2, 3, 3, 4, 5, 5]))
 
         should_be(len(t), len(test_set))  # test __len__
         should_be(len(t), t.size)
@@ -257,6 +259,12 @@ for ST in [BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr,
             should_be(t.internal_path_length, 30)
             del t['H']  # remove node with two children
             should_be(t.internal_path_length, 25)
+
+            # Test height of each node
+            t = ST(data, cache=cache)
+            t_heights = t.level_order(op=lambda x: (x.key, x.height))
+            should_be(t_heights, heights)
+
 
         # In-order traversal + range search
         t = ST(data, cache=cache)

@@ -580,8 +580,8 @@ class BST():
     # Convenience functions
     def _update_node(self, x):
         """Update the parameters of the node based on its subtree."""
-        x.N = self._size(x.left) + self._size(x.right) + 1
-        x.height = max(self._height(x.left), self._height(x.right)) + 1
+        x.N = 1 + self._size(x.left) + self._size(x.right)
+        x.height = 1 + max(self._height(x.left), self._height(x.right))
         x.ipl = self._internal_path_length(x.left) + self._size(x.left) \
                 + self._internal_path_length(x.right) + self._size(x.right)
 
