@@ -107,6 +107,7 @@ class RedBlackBST(BST):
             h.right = self._set(k, v, h.right)
         else:  # k == h.key
             h.val = v  # update the value
+            return h   # no noeed for rotations if we only change value
 
         # Update the colors (i.e. split a 4-node)
         if self._is_red(h.right) and not self._is_red(h.left):
