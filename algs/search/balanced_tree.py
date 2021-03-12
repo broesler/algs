@@ -117,8 +117,7 @@ class RedBlackBST(BST):
             self._flip_colors(h)
 
         # Update node attributes
-        h.N = 1 + self._size(h.left) + self._size(h.right)
-        # h.height = 1 + max(self._height(h.left), self._height(h.right))
+        self._update_node(h)
         return h
 
     def _rotate_left(self, h):
@@ -129,10 +128,9 @@ class RedBlackBST(BST):
         x.left = h
         x.color = h.color
         h.color = self._RED
-        x.N = h.N
-        h.N = 1 + self._size(h.left) + self._size(h.right)
-        # x.height = h.height
-        # h.height = 1 + max(self._height(h.left), self._height(h.right))
+        # Update the new child before the new parent
+        self._update_node(h)
+        self._update_node(x)
         return x  # return the new parent
 
     def _rotate_right(self, h):
@@ -143,10 +141,9 @@ class RedBlackBST(BST):
         x.right = h
         x.color = h.color
         h.color = self._RED
-        x.N = h.N
-        h.N = 1 + self._size(h.left) + self._size(h.right)
-        # x.height = h.height - 1
-        # h.height = 1 + max(self._height(h.left), self._height(h.right))
+        # Update the new child before the new parent
+        self._update_node(h)
+        self._update_node(x)
         return x  # return the new parent
 
     def _flip_colors(self, x):

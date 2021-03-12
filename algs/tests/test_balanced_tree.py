@@ -83,23 +83,23 @@ data_set.remove(('E', 6))
 ST = RedBlackBST
 # t = ST(data)
 
-# # Test insertion without rotates
-# t = RedBlackBST.fromkeys(list('SAX'))
-# expected = [('S', 3, 1), ('A', 1, 0), ('X', 1, 0)]
-# node_attrs = t.level_order(op=lambda x: (x.key, x.N, x.height))
-# should_be(node_attrs, expected)
+# Test insertion without rotates
+t = RedBlackBST.fromkeys(list('SAX'))
+expected = [('S', 3, 1), ('A', 1, 0), ('X', 1, 0)]
+node_attrs = t.level_order(op=lambda x: (x.key, x.N, x.height))
+should_be(node_attrs, expected)
 
-# # Test left rotation of right-leaning red link
-# t = RedBlackBST.fromkeys(list('ES'))
-# expected = [('S', 2, 1), ('E', 1, 0)]
-# node_attrs = t.level_order(op=lambda x: (x.key, x.N, x.height))
-# should_be(node_attrs, expected)
+# Test left rotation of right-leaning red link
+t = RedBlackBST.fromkeys(list('ES'))
+expected = [('S', 2, 1), ('E', 1, 0)]
+node_attrs = t.level_order(op=lambda x: (x.key, x.N, x.height))
+should_be(node_attrs, expected)
 
-# # Test right rotation of two red links
-# t = RedBlackBST.fromkeys(list('SEA'))
-# expected = [('E', 3, 1), ('A', 1, 0), ('S', 1, 0)]
-# node_attrs = t.level_order(op=lambda x: (x.key, x.N, x.height))
-# should_be(node_attrs, expected)
+# Test right rotation of two red links
+t = RedBlackBST.fromkeys(list('SEA'))
+expected = [('E', 3, 1), ('A', 1, 0), ('S', 1, 0)]
+node_attrs = t.level_order(op=lambda x: (x.key, x.N, x.height))
+should_be(node_attrs, expected)
 
 # Test attributes of (somewhat) random tree
 keys = list('MERCLPXAHS')
@@ -110,6 +110,12 @@ hs   = [ 3, 2, 2, 1, 1, 0, 1, 0, 0, 0]
 t = ST(data)
 node_attrs = t.level_order(op=lambda x: (x.key, x.N))
 should_be(node_attrs, list(zip(keys, Ns)))
+
+node_attrs = t.level_order(op=lambda x: (x.key, x.height))
+should_be(node_attrs, list(zip(keys, hs)))
+
+# node_attrs = t.level_order(op=lambda x: (x.key, x.ipl))
+# should_be(node_attrs, list(zip(keys, ipls)))
 
 # node_attrs = t.level_order(op=lambda x: (x.key, x.height))
 # should_be(node_attrs, list(zip(keys, hs)))

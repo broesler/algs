@@ -544,7 +544,7 @@ class BST():
 
     def _height(self, x=None):
         """Return the height of the tree rooted at `x`."""
-        return 0 if x is None else x.height
+        return -1 if x is None else x.height
 
     def _internal_path_length_r(self, x=None, depth=0):
         """Return the sum of the depths of all nodes in the subtree."""
