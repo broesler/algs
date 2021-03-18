@@ -16,6 +16,7 @@ import string
 
 from algs.basics import Bag, Stack, Queue, PriorityQueue, IndexPQ
 
+
 def err_test(container, op, *args, err_type=IndexError):
     """Test for raising a given error type.
 
@@ -39,6 +40,7 @@ def err_test(container, op, *args, err_type=IndexError):
         while True:
             getattr(container, op)(*args)  # call the method
 
+
 class TestBag:
     def test_bag_methods(self):
         b = Bag()
@@ -52,7 +54,7 @@ class TestBag:
     def test_bag_stats(self):
         # Run some basic statistics from an interator of values
         b = Bag()
-        scores = iter([100, 99, 101, 120, 98, 107, 109, 81, 101, 90])  # ~ StdIn
+        scores = iter([100, 99, 101, 120, 98, 107, 109, 81, 101, 90])
         for s in scores:
             b.add(s)
         mean = 0.0
@@ -79,9 +81,6 @@ class TestStack:
         for i, item in zip([3, 2, 1, 0], s):
             assert i == item
         err_test(s, 'pop')
-        # with pytest.raises(IndexError):
-        #     while True:
-        #         s.pop()
 
 
 class TestQueue:
@@ -99,19 +98,25 @@ class TestQueue:
 
 
 @pytest.fixture
-def the_data():
+def idx_s():
     """Shuffled alphabet data with indices"""
-    data_s = string.ascii_uppercase
-    idx_s = list(range(len(data_s)))
+    return list(range(len(string.ascii_uppercase)))
+
+
+@pytest.fixture
+def idx(idx_s):
     idx = idx_s.copy()
     shuffle(idx)
-    data = [data_s[i] for i in idx]
-    return idx_s, idx, data
+    return idx
+
+
+@pytest.fixture
+def data(idx):
+    return list(string.ascii_uppercase[i] for i in idx)
 
 
 class TestPQ:
-    def test_maxpq_methods(self, the_data):
-        _, _, data = the_data
+    def test_maxpq_methods(self, data):
         pq = PriorityQueue(data, kind='max')
         assert not pq.is_empty
         assert pq.size == 26
@@ -126,8 +131,7 @@ class TestPQ:
         assert ''.join(pq) == string.ascii_uppercase[::-1]
         err_test(pq, 'dequeue')
 
-    def test_minpq_methods(self, the_data):
-        _, _, data = the_data
+    def test_minpq_methods(self, data):
         pq = PriorityQueue(data, kind='min')
         assert 'A' == pq.dequeue()
         assert 'B' == pq.dequeue()
@@ -140,14 +144,12 @@ class TestPQ:
 
 
 @pytest.fixture
-def pq(the_data):
-    _, idx, data = the_data
+def pq(idx, data):
     return IndexPQ(zip(idx, data), kind='min')
 
 
 class TestIndexPQ:
-    def test_indexpq_methosd(self, the_data, pq):
-        idx_s, _, _ = the_data
+    def test_indexpq_methosd(self, idx_s, pq):
         assert len(pq) == 26
         assert (0, 'A') == pq.dequeue()
         assert (1, 'B') == pq.dequeue()
@@ -159,8 +161,7 @@ class TestIndexPQ:
         assert list(pq.keys()) == idx_s
         assert ''.join(pq.values()) == string.ascii_uppercase
 
-    def test_indexpq_change_item(self, the_data, pq):
-        idx_s, _, _ = the_data
+    def test_indexpq_change_item(self, idx_s, pq):
         pq[0] = 'ZZZ'
         assert 0 in pq
         assert list(pq.keys()) == idx_s[1:] + [0]
@@ -170,8 +171,7 @@ class TestIndexPQ:
         assert list(pq.keys()) == idx_s
         assert ''.join(pq.values()) == string.ascii_uppercase
 
-    def test_indexpq_delete_item(self, the_data, pq):
-        idx_s, _, _ = the_data
+    def test_indexpq_delete_item(self, idx_s, pq):
         i = 0  # removes (0, 'A')
         item = pq[i]  # store value for later
         del pq[i]
@@ -186,8 +186,7 @@ class TestIndexPQ:
         for i in range(len(pq._pq)-1):
             assert pq._pq[pq._qp[i]] == i
 
-    def test_indexpq_equality(self, the_data):
-        _, idx, data = the_data
+    def test_indexpq_equality(self, idx, data):
         pq1 = IndexPQ(zip(idx, data), kind='min')
         pq2 = IndexPQ(zip(idx, data), kind='min')
         assert pq1 == pq2
@@ -197,8 +196,7 @@ class TestIndexPQ:
         pq_copy = pq.copy()
         assert pq_copy == pq
 
-    def test_indexpq_fromkeys(self, the_data, pq):
-        _, idx, _ = the_data
+    def test_indexpq_fromkeys(self, idx, pq):
         pq_fromkeys = pq.fromkeys(idx)
         assert pq_fromkeys.keys() == pq.keys()
 
