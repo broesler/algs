@@ -47,6 +47,7 @@ class TestBag:
         for i in range(10):
             b.add(i)
         assert b.size == 10
+        assert len(b) == b.size
         assert not b.is_empty
         for i, x in enumerate(b):
             assert i == x
