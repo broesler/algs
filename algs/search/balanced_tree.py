@@ -109,7 +109,7 @@ class RedBlackBST(BST):
             h.val = v  # update the value
             return h   # no noeed for rotations if we only change value
 
-        # Update the colors (i.e. split a 4-node)
+        # Rotate red links to be left-leaning (i.e. split a 4-node)
         if self._is_red(h.right) and not self._is_red(h.left):
             h = self._rotate_left(h)
         if self._is_red(h.left) and self._is_red(h.left.left):

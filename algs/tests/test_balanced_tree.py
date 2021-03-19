@@ -33,16 +33,21 @@ class TestRotations:
 
 
 @pytest.mark.parametrize('ST', [RedBlackBST])
-class TestRedBlackBST:
-    def test_node_updates(self, t):
-        keys = list('MERCLPXAHS')
-        Ns = [10, 5, 4, 2, 2, 1, 2, 1, 1, 1]
-        hs = [3, 2, 2, 1, 1, 0, 1, 0, 0, 0]
-        # ipls = []
-        assert t.level_order(op=lambda x: (x.key, x.N)) == list(zip(keys, Ns))
-        assert t.level_order(op=lambda x: (x.key, x.height)) == list(zip(keys, hs))
-        # assert t.level_order(op=lambda x: (x.key, x.ipl)) == list(zip(keys, ipls))
+def test_node_updates(self, t):
+    keys = list('MERCLPXAHS')
+    Ns = [10, 5, 4, 2, 2, 1, 2, 1, 1, 1]
+    hs = [3, 2, 2, 1, 1, 0, 1, 0, 0, 0]
+    # ipls = []
+    assert t.level_order(op=lambda x: (x.key, x.N)) == list(zip(keys, Ns))
+    assert t.level_order(op=lambda x: (x.key, x.height)) == list(zip(keys, hs))
+    # assert t.level_order(op=lambda x: (x.key, x.ipl)) == list(zip(keys, ipls))
 
+
+# Interactive test setup
+if __name__ == '__main__':
+    EXPECT_STR = 'SEARCHEXAMPLE'
+    data = list((c, i) for i, c in enumerate(EXPECT_STR))
+    st = RedBlackBST(data)
 
 # =============================================================================
 # =============================================================================

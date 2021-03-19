@@ -149,12 +149,6 @@ class TestSelfOrg:
 
 
 # ---------- Test Ordered Operations ----------
-
-# TODO separate tests for certain classes
-# if isinstance(t, BinarySearchST):
-#     assert t._assert_integrity() is None
-
-
 @pytest.fixture
 def empty_t(ST, cache):
     return ST(cache=cache)
@@ -163,6 +157,11 @@ def empty_t(ST, cache):
 @pytest.fixture
 def t(ST, cache, data):
     return ST(data, cache=cache)
+
+
+def test_binary_integrity(data):
+    t = BinarySearchST(data)
+    assert t._assert_integrity() is None
 
 
 @pytest.mark.parametrize('ST', ORDERED_STS - set([ArrayBST]))
