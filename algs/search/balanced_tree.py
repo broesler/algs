@@ -41,7 +41,6 @@ class RedBlackBST(BST):
     _RED = True
     _BLACK = False
 
-    # Add some color to the BST nodes!
     class _Node(BST._Node):
         """Internal RedBlack Node. Same as BST node but add color."""
         def __init__(self, *args, color=None, **kwargs):
@@ -72,9 +71,9 @@ class RedBlackBST(BST):
                 right_str = 'None'
 
             return COLOR_SELF \
-                   + f"{{{repr(self.key)}: {repr(self.val)}}}, " \
+                   + f"{{{repr(self.key)}: {repr(self.val)}}}" \
                    + COLOR_END \
-                   + f"L:{left_str}, R:{right_str}"
+                   + f", L:{left_str}, R:{right_str}"
 
     # Redefine put() operations to account for node colors
     def __setitem__(self, k, v):
@@ -119,13 +118,18 @@ class RedBlackBST(BST):
 
         # Update node attributes
         self._update_node(h)
+        # In 2-3 tree analogue, red nodes are at same height as their parent,
+        # so adjust the height, and reduce internal path length accordingly
+        if self._is_red(h.left):
+            h.height = 1 + max(self._height(h.left) - 1, self._height(h.right))
+            h.ipl -= self._size(h.left)
         return h
 
     def _rotate_left(self, h):
         """Rotate node `h` such that its right child becomes its parent."""
         assert h is not None and self._is_red(h.right)
         x = h.right
-        h.right = x.left 
+        h.right = x.left
         x.left = h
         x.color = h.color
         h.color = self._RED
