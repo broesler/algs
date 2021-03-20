@@ -79,8 +79,12 @@ class RedBlackBST(BST):
     def __setitem__(self, k, v):
         """Add a new node to subtree at `x`, associating `k` with `v`.
         If `k` is in subtree rooted at `x`, change its value to `v`."""
-        self._root = self._set(k, v, self._root)
-        self._root.color = self._BLACK
+        if self._CACHE_FLAG and self._cache and k == self._cache.key:
+            self._cache.val = v
+            return
+        else:
+            self._root = self._set(k, v, self._root)
+            self._root.color = self._BLACK
 
     def _set(self, k, v, h=None):
         """Add a new node to subtree at `h`, associating `k` with `v`.
