@@ -10,7 +10,7 @@
 # =============================================================================
 
 from algs.basics import Queue as _Queue
-from algs.search import BST
+from algs.search.tree import _empty_check, BST
 
 __all__ = ['RedBlackBST']
 
@@ -131,6 +131,126 @@ class RedBlackBST(BST):
         #             + self._internal_path_length(h.right) + self._size(h.right)
         return h
 
+    def __delitem__(self, k):
+        """Delete the node associated with `k`.
+
+        Raises
+        ------
+        KeyError
+            If `k` is not in the table.
+        """
+        if not self.__contains__(k):
+            raise KeyError(k)
+        # If root is a 2-node, make it a 3-node
+        if (not self._is_red(self._root.left) and 
+            not self._is_red(self._root.right)):
+            self._root.color = self._RED
+        self._root = self._delete(k, self._root)
+        if self._CACHE_FLAG and self._cache and k == self._cache.key:
+            self._cache = None
+
+    def delete_min(self):
+        """Delete the smallest key.
+
+        Raises
+        ------
+        KeyError
+            If the table is empty.
+        """
+        _empty_check(self)
+        # If root is a 2-node, make it a 3-node
+        if (not self._is_red(self._root.left) and 
+            not self._is_red(self._root.right)):
+            self._root.color = self._RED
+        self._root = self._delete_min(self._root)
+        if not self.is_empty:
+            self._root.color = self._BLACK
+        if self._CACHE_FLAG:
+            self._cache = None
+
+    def delete_max(self):
+        """Delete the smallest key.
+
+        Raises
+        ------
+        KeyError
+            If the table is empty.
+        """
+        _empty_check(self)
+        # If root is a 2-node, make it a 3-node
+        if (not self._is_red(self._root.right) and 
+            not self._is_red(self._root.left)):
+            self._root.color = self._RED
+        self._root = self._delete_max(self._root)
+        if not self.is_empty:
+            self._root.color = self._BLACK
+        if self._CACHE_FLAG:
+            self._cache = None
+
+    # ------------------------------------------------------------------------- 
+    #         Private API
+    # -------------------------------------------------------------------------
+    def _delete(self, k, h=None):
+        """Delete the item associated with `k` in the subtree rooted at `h`."""
+        if k < h.key:
+            # move left down the tree
+            if not self._is_red(h.left) and not self._is_red(h.left.left):
+                h = self._move_left(h)
+            h.left = self._delete(k, h.left)
+        else:
+            # start on minimum key in the 3-node
+            if self._is_red(h.left):
+                h = self._rotate_right(h)
+            if k == h.key and h.right is None:
+                return
+            # otherwise deal with right children
+            if not self._is_red(h.right) and not self._is_red(h.right.left):
+                h = self._move_right(h)
+            if k == h.key:
+                # Replace current node with its successor
+                x = self._min(h.right)
+                h.key = x.key
+                h.val = x.val
+                h.right = self._delete_min(h.right)
+            else:
+                h.right = self._delete(k, h.right)
+        return self._balance(h)
+
+    def _delete_min(self, h=None):
+        """Delete the smallest key from the subtree rooted at `h`."""
+        if h.left is None:
+            return
+        # If h.left is a 2-node, move a key from h.right to h.left
+        if not self._is_red(h.left) and not self._is_red(h.left.left):
+            h = self._move_left(h)
+        h.left = self._delete_min(h.left)
+        return self._balance(h)
+
+    def _delete_max(self, h=None):
+        """Delete the smallest key from the subtree rooted at `h`."""
+        if self._is_red(h.left):
+            h = self._rotate_right(h)
+        if h.right is None:
+            return
+        # If h.right is a 2-node, move a key from h.left to h.right
+        if not self._is_red(h.right) and not self._is_red(h.right.left):
+            h = self._move_right(h)
+        h.right = self._delete_max(h.right)
+        return self._balance(h)
+
+    # ------------------------------------------------------------------------- 
+    #         Node Operations
+    # -------------------------------------------------------------------------
+    def _is_red(self, x):
+        """Return True if `x` is red, otherwise False."""
+        return False if x is None else x.color == self._RED
+
+    def _flip_colors(self, x):
+        """Invert the colors of the `x` and its children."""
+        x.color = not x.color
+        x.left.color = not x.left.color
+        x.right.color =  not x.right.color
+
     def _rotate_left(self, h):
         """Rotate node `h` such that its right child becomes its parent."""
         assert h is not None and self._is_red(h.right)
@@ -157,15 +277,38 @@ class RedBlackBST(BST):
         self._update_node(x)
         return x  # return the new parent
 
-    def _flip_colors(self, x):
-        """Convert two red children to black, and parent to red."""
-        x.color = self._RED
-        x.left.color = self._BLACK
-        x.right.color = self._BLACK
+    def _move_left(self, h=None):
+        """Move a key from the right child of `h` to its left child."""
+        # Assuming that h is red and both h.left and h.left.left
+        # are black, make h.left or one of its children red.
+        self._flip_colors(h)
+        if self._is_red(h.right.left):
+            h.right = self._rotate_right(h.right)
+            h = self._rotate_left(h)
+        return h
 
-    def _is_red(self, x):
-        """Return True if `x` is red, otherwise False."""
-        return False if x is None else x.color == self._RED
+    def _move_right(self, h=None):
+        """Move a key from the left child of `h` to its right child."""
+        # Assuming that h is red and both h.right and h.right.left
+        # are black, make h.right or one of its children red.
+        self._flip_colors(h)
+        if self._is_red(h.left.left):
+            h = self._rotate_right(h)
+            self._flip_colors(h)
+        return h
+
+    def _balance(self, h=None):
+        if self._is_red(h.right):
+            h = self._rotate_left(h)
+        # Rotate red links to be left-leaning (i.e. split a 4-node)
+        if self._is_red(h.right) and not self._is_red(h.left):
+            h = self._rotate_left(h)
+        if self._is_red(h.left) and self._is_red(h.left.left):
+            h = self._rotate_right(h)
+        if self._is_red(h.right) and self._is_red(h.left):
+            self._flip_colors(h)
+        self._update_node(h)
+        return h
 
     # -------------------------------------------------------------------------
     #         Certification
@@ -215,7 +358,6 @@ if __name__ == '__main__':
     EXPECT_STR = 'SEARCHEXAMPLE'
     data = list((c, i) for i, c in enumerate(EXPECT_STR))
     st = RedBlackBST(data)
-    # FIXME root is not black? or str() does not work at root
 
 # =============================================================================
 # =============================================================================

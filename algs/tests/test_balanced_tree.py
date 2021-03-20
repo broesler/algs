@@ -22,6 +22,7 @@ def t(data):
 
 class TestRotations:
     # NOTE keys must be in special order, expected outputs are in *level* order
+    # TODO test values after deletion
     @pytest.fixture
     def insert_no_rotate(self):
         keys = list('SAX')  # level-order = SAX

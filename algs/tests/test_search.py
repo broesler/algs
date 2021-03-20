@@ -102,7 +102,7 @@ class TestUnorderedOps:
 
         err_test(st, '__getitem__', 'Z', err_type=KeyError)
 
-    @pytest.mark.parametrize('ST', ALL_STS - set([ArrayBST, RedBlackBST]))
+    @pytest.mark.parametrize('ST', ALL_STS - set([ArrayBST]))
     def test_delete(self, ST, data, expect_set):
         st = ST(data, cache=False)
         test_keys = expect_set.copy()
