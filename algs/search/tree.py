@@ -737,9 +737,9 @@ class BST():
     # Ex 3.2.32
     def isBST(self):
         """Assert that all of the binary search tree properties hold."""
-        return self._is_binary_tree() and \
-               self._is_ordered() and \
-               self._has_no_duplicates()
+        return (self._is_binary_tree() and
+               self._is_ordered() and
+               self._has_no_duplicates())
 
     # Ex 3.2.29
     def _is_binary_tree(self):
@@ -755,8 +755,8 @@ class BST():
         elif self._size(x) != 1 + self._size(x.left) + self._size(x.right):
             return False
         else:
-            return self.__is_binary_tree(x.left) and \
-                   self.__is_binary_tree(x.right)
+            return (self.__is_binary_tree(x.left) and
+                    self.__is_binary_tree(x.right))
 
     # Ex 3.2.30
     def _is_ordered(self):
@@ -769,12 +769,12 @@ class BST():
         """
         if x is None:
             return True
-        elif (lo is not None and self._min(x).key < lo) or \
-             (hi is not None and self._max(x).key > hi):
+        elif ((lo is not None and self._min(x).key < lo) or
+              (hi is not None and self._max(x).key > hi)):
             return False
         else:
-            return self.__is_ordered(lo, x.key, x.left) and \
-                   self.__is_ordered(x.key, hi, x.right)
+            return (self.__is_ordered(lo, x.key, x.left) and
+                    self.__is_ordered(x.key, hi, x.right))
 
     # Ex 3.2.31
     def _has_no_duplicates(self):

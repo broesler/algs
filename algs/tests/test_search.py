@@ -306,6 +306,7 @@ class TestBST:
 
     def test_construction(self, t):
         assert t.isBST()
+        # TODO test for each failure mode
 
     def test_orders(self, t):
         assert t.pre_order() ==   list('SEACRHMLPX')
