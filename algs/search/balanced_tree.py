@@ -120,9 +120,10 @@ class RedBlackBST(BST):
         self._update_node(h)
         # In 2-3 tree analogue, red nodes are at same height as their parent,
         # so adjust the height, and reduce internal path length accordingly
-        if self._is_red(h.left):
-            h.height = 1 + max(self._height(h.left) - 1, self._height(h.right))
-            h.ipl -= self._size(h.left)
+        # if self._is_red(h.left):
+        #     h.height = 1 + max(self._height(h.left) - 1, self._height(h.right))
+        #     h.ipl = self._internal_path_length(h.left) \
+        #             + self._internal_path_length(h.right) + self._size(h.right)
         return h
 
     def _rotate_left(self, h):
@@ -161,6 +162,13 @@ class RedBlackBST(BST):
         """Return True if `x` is red, otherwise False."""
         return False if x is None else x.color == self._RED
 
+
+# Interactive test setup
+if __name__ == '__main__':
+    EXPECT_STR = 'SEARCHEXAMPLE'
+    data = list((c, i) for i, c in enumerate(EXPECT_STR))
+    st = RedBlackBST(data)
+    # FIXME root is not black? or str() does not work at root
 
 # =============================================================================
 # =============================================================================
