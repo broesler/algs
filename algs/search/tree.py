@@ -90,7 +90,7 @@ class BST():
 
         try:
             for k, v in items:
-                self._root = self._set(k, v, self._root)
+                self.__setitem__(k, v)
             return
         except ValueError:
             raise ValueError(f"{self.__class__.__name__} "
