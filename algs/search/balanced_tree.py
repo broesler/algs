@@ -9,6 +9,7 @@
 """
 # =============================================================================
 
+from algs.basics import Queue as _Queue
 from algs.search import BST
 
 __all__ = ['RedBlackBST']
@@ -165,6 +166,48 @@ class RedBlackBST(BST):
     def _is_red(self, x):
         """Return True if `x` is red, otherwise False."""
         return False if x is None else x.color == self._RED
+
+    # -------------------------------------------------------------------------
+    #         Certification
+    # -------------------------------------------------------------------------
+    def isRedBlackBST(self):
+        """Return True if all of the red-black BST properties hold."""
+        return self.isBST() and self.is23() and self.is_balanced()
+
+    def is23(self):
+        """Return True if no node is connected to two red links, and there are
+        no right-leaning red links."""
+        return self._is23(self._root)
+
+    def _is23(self, h=None):
+        if h is None:
+            return True
+        if self._is_red(h.right):
+            return False
+        elif self._is_red(h.left) and self._is_red(h.left.left):
+            return False
+        else:
+            return self._is23(h.left) and self._is23(h.right)
+
+    def is_balanced(self):
+        """Return True if all paths from the root to a null link have the same
+        number of *black* links."""
+        lens = self._null_path_lengths(self._root, depth=0)
+        return all([x == lens.peek() for x in lens])
+
+    def _null_path_lengths(self, h=None, q=None, depth=0):
+        """Return a list of path lengths to all null links."""
+        if h is None:
+            return
+        if q is None:
+            q = _Queue()
+        if h.left is None or h.right is None:
+            q.enqueue(depth)
+        # Do not count red links
+        new_depth = depth if self._is_red(h.left) else depth + 1
+        self._null_path_lengths(h.left, q, new_depth)
+        self._null_path_lengths(h.right, q, depth + 1)
+        return q
 
 
 # Interactive test setup

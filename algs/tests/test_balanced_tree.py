@@ -12,12 +12,12 @@
 import pytest
 
 from algs.search import RedBlackBST
-# from algs.tests.test_search import data
+from algs.tests.test_search import data
 
 
-# @pytest.fixture
-# def t(self, data):
-#     return RedBlackBST(data)
+@pytest.fixture
+def t(data):
+    return RedBlackBST(data)
 
 
 class TestRotations:
@@ -69,6 +69,29 @@ class TestRotations:
         assert t.level_order(op=lambda x: x.N) == Ns
         assert t.level_order(op=lambda x: x.height) == hs
         assert t.level_order(op=lambda x: x.ipl) == ipls
+
+
+class TestCertification:
+    def test_is23(self, t):
+        assert t.is23()
+
+    def test_isnot23a(self, t):
+        t._root.left.left.color = t._RED  # t._root.left.left.left is also red
+        assert not t.is23()
+
+    def test_isnot23b(self, t):
+        t._root.right.color = t._RED  # right-leaning red link
+        assert not t.is23()
+
+    def test_is_balanced(self, t):
+        assert t.is_balanced()
+
+    def test_is_not_balanced(self, t):
+        t._root.left.left.left.color = t._BLACK
+        assert not t.is_balanced()
+
+    def test_isRedBlackBST(self, t):
+        assert t.isRedBlackBST()
 
 # =============================================================================
 # =============================================================================
