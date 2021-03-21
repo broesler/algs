@@ -113,11 +113,12 @@ class RedBlackBST(BST):
             h.val = v  # update the value
             return h   # no noeed for rotations if we only change value
 
-        # Rotate red links to be left-leaning (i.e. split a 4-node)
+        # Rotate red links to be left-leaning
         if self._is_red(h.right) and not self._is_red(h.left):
             h = self._rotate_left(h)
         if self._is_red(h.left) and self._is_red(h.left.left):
             h = self._rotate_right(h)
+        # Split a 4-node into 3 2-nodes
         if self._is_red(h.right) and self._is_red(h.left):
             self._flip_colors(h)
 
@@ -376,7 +377,8 @@ class TopDown234(RedBlackBST):
         if h is None:
             return self._Node(k, v, color=self._RED)
 
-        # Only change from RedBlackBST is to move these lines from below 
+        # NOTE Only change from RedBlackBST is to move these lines from below 
+        # Split a 4-node into 3 2-nodes
         if self._is_red(h.right) and self._is_red(h.left):
             self._flip_colors(h)
 
@@ -389,7 +391,7 @@ class TopDown234(RedBlackBST):
             h.val = v  # update the value
             return h   # no noeed for rotations if we only change value
 
-        # Rotate red links to be left-leaning (i.e. split a 4-node)
+        # Rotate red links to be left-leaning
         if self._is_red(h.right) and not self._is_red(h.left):
             h = self._rotate_left(h)
         if self._is_red(h.left) and self._is_red(h.left.left):
