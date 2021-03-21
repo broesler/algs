@@ -1457,7 +1457,6 @@ class ThreadedST_nr(BST_nr):
         s = _Stack()  # track all nodes on path for updates
         p = self._root
         while x:
-            p = x  # track parent node
             if k == x.key:
                 x.val = v  # update the value if found
                 if self._CACHE_FLAG:
@@ -1465,6 +1464,7 @@ class ThreadedST_nr(BST_nr):
                 return self._root
             else:
                 # Move down the tree
+                p = x  # track parent node
                 s.push(x)
                 if k < x.key:
                     x = x.left
