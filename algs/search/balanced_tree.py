@@ -335,27 +335,30 @@ class RedBlackBST(BST):
     def is_balanced(self):
         """Return True if all paths from the root to a null link have the same
         number of *black* links."""
-        lens = self._null_path_lengths(self._root, depth=0)
-        return all([x == lens.peek() for x in lens])
+        # Count black links to the minimum node
+        black = 0
+        x = self._root
+        while x:
+            if not self._is_red(x):
+                black += 1
+            x = x.left
+        return self._is_balanced(self._root, black)
 
-    def _null_path_lengths(self, h=None, q=None, depth=0):
-        """Return a list of path lengths to all null links."""
+    def _is_balanced(self, h=None, black=0):
+        """Return True if all paths from `h` to a null link have the same
+        number of *black* links."""
         if h is None:
-            return
-        if q is None:
-            q = _Queue()
-        if h.left is None or h.right is None:
-            q.enqueue(depth)
+            return black == 0
         # Do not count red links
-        new_depth = depth if self._is_red(h.left) else depth + 1
-        self._null_path_lengths(h.left, q, new_depth)
-        self._null_path_lengths(h.right, q, depth + 1)
-        return q
-
+        if not self._is_red(h):
+            black -= 1
+        return (self._is_balanced(h.left, black) and
+                self._is_balanced(h.right, black))
 
 # Interactive test setup
 if __name__ == '__main__':
-    EXPECT_STR = 'SEARCHEXAMPLE'
+    # EXPECT_STR = 'SEARCHEXAMPLE'
+    EXPECT_STR = 'EASYQUESTION'
     data = list((c, i) for i, c in enumerate(EXPECT_STR))
     st = RedBlackBST(data)
 
