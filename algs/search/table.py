@@ -154,6 +154,7 @@ class SequentialSearchST():
         KeyError
             If `k` is not in the table.
         """
+        _empty_check(self)
         # Perform sequential search
         x = self._first
 
@@ -164,6 +165,7 @@ class SequentialSearchST():
             if self._CACHE_FLAG and self._cache and k == self._cache.key:
                 self._cache = None
             self._first = x.next
+            self.size -= 1
             return
 
         # Search
@@ -175,6 +177,7 @@ class SequentialSearchST():
                 if self._CACHE_FLAG and self._cache and k == self._cache.key:
                     self._cache = None
                 x.next = x.next.next  # unlink the node
+                self.size -= 1
                 return
             else:
                 i += 1

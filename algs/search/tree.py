@@ -880,7 +880,7 @@ class ThreadedST(BST):
             If `k` is not in the table.
         """
         if x is None:
-            return
+            raise KeyError(k)
         if k < x.key:
             x.left = self._delete(k, x.left)
         elif k > x.key:

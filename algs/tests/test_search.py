@@ -92,24 +92,26 @@ class TestUnorderedOps:
                 assert st[k] == max([val for key, val in data if key == k])
             else:
                 assert st[k] == v
-
         assert len(st) == len(expect_set)
         assert len(st) == st.size
         # st.keys() not guaranteed in order, so these tests are weak
         assert sorted(st.keys()) == sorted(expect_set)
         assert sorted(st.values()) == sorted([v for k, v in data_set])
         assert sorted(st.items()) == sorted(data_set)
-
         err_test(st, '__getitem__', 'Z', err_type=KeyError)
 
     @pytest.mark.parametrize('ST', ALL_STS - set([ArrayBST]))
     def test_delete(self, ST, data, expect_set):
         st = ST(data, cache=False)
         test_keys = expect_set.copy()
-        for k in st:
+        N_expect = len(expect_set)
+        for k in list(st.keys()):
             del st[k]
+            N_expect -= 1
             test_keys -= set(k)
+            assert st.size == N_expect
             assert sorted(st.keys()) == sorted(test_keys)
+        err_test(st, '__delitem__', 'Z', err_type=KeyError)
 
     @pytest.mark.parametrize('ST', ALL_STS - set([ArrayBST]))
     def test_caching(self, ST, data):
