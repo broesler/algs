@@ -1133,7 +1133,6 @@ class BST_nr(BST):
         s = _Stack()  # track all nodes on path for updates
         p = self._root
         while x:
-            p = x  # track parent node
             if k == x.key:
                 x.val = v  # update the value if found
                 if self._CACHE_FLAG:
@@ -1141,6 +1140,7 @@ class BST_nr(BST):
                 return self._root
             else:
                 # Move down the tree
+                p = x  # track parent node
                 s.push(x)
                 if k < x.key:
                     self._cost += 1
@@ -1150,18 +1150,16 @@ class BST_nr(BST):
                     x = x.right
 
         # Insert new node as child of parent
+        new = self._Node(k, v)
         if p is None:
-            self._root = self._Node(k, v)
-            cache = self._root
+            self._root = new
         elif k < p.key:
-            p.left = self._Node(k, v)
-            cache = p.left
+            p.left = new
         else:
-            p.right = self._Node(k, v)
-            cache = p.right
+            p.right = new
 
         if self._CACHE_FLAG:
-            self._cache = cache
+            self._cache = new
 
         # Update node counts and heights on path traveled back up the tree
         while s:
@@ -1788,7 +1786,6 @@ class ArrayBST():
         """Insert a new value `v` associated with key `k`."""
         p = x = self._root
         while x is not None:
-            p = x
             if k == self._keys[x]:
                 self._vals[x] = v
                 if self._CACHE_FLAG:
@@ -1796,24 +1793,23 @@ class ArrayBST():
                 return self._root
             else:
                 # Move down the tree
+                p = x
                 if k < self._keys[x]:
                     x = self._lefts[x]
                 else:
                     x = self._rights[x]
 
         # Insert new node as child of parent
+        new = self._new_node(k, v)
         if p is None:
-            self._root = self._new_node(k, v)
-            cache = self._root
+            self._root = new
         elif k < self._keys[p]:
-            self._lefts[p] = self._new_node(k, v)
-            cache = self._lefts[p]
+            self._lefts[p] = new
         else:
-            self._rights[p] = self._new_node(k, v)
-            cache = self._rights[p]
+            self._rights[p] = new
 
         if self._CACHE_FLAG:
-            self._cache = cache
+            self._cache = new
 
         return self._root
 
