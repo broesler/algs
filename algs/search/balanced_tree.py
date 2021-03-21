@@ -102,7 +102,10 @@ class RedBlackBST(BST):
         """
         # subtree is empty, create a new node with a red link to parent
         if h is None:
-            return self._Node(k, v, color=self._RED)
+            x = self._Node(k, v, color=self._RED)
+            if self._CACHE_FLAG:
+                self._cache = x
+            return x
 
         # create a child, or update the value
         if k < h.key:
@@ -111,6 +114,8 @@ class RedBlackBST(BST):
             h.right = self._set(k, v, h.right)
         else:  # k == h.key
             h.val = v  # update the value
+            if self._CACHE_FLAG:
+                self._cache = h
             return h   # no noeed for rotations if we only change value
 
         # Rotate red links to be left-leaning

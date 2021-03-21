@@ -114,7 +114,7 @@ class TestUnorderedOps:
         err_test(st, '__delitem__', 'Z', err_type=KeyError)
 
     @pytest.mark.parametrize('ST', ALL_STS - set([ArrayBST]))
-    def test_caching(self, ST, data):
+    def test_cache_existing(self, ST, data):
         st = ST(data, cache=True)
         for k in st:
             v = st[k]   # __getitem__
@@ -123,8 +123,16 @@ class TestUnorderedOps:
             st[k] = 56  # __setitem__
             assert st._cache.key == k
             assert st._cache.val == 56
-        # del st[k]
-        # assert st._cache is None
+        del st[k]
+        assert st._cache is None
+
+    @pytest.mark.parametrize('ST', ALL_STS - set([ArrayBST]))
+    def test_cache_new(self, ST, data):
+        st = ST(cache=True)
+        for k, v in data:
+            st[k] = v  # __setitem__
+            assert st._cache.key == k
+            assert st._cache.val == v
 
 
 class TestSelfOrg:

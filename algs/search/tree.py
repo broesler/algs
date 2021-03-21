@@ -378,7 +378,10 @@ class BST():
         """
         # subtree is empty, create a new node
         if x is None:
-            return self._Node(k, v)
+            h = self._Node(k, v)
+            if self._CACHE_FLAG:
+                self._cache = h
+            return h
 
         # create a child, or update the value
         if k < x.key:
@@ -390,6 +393,8 @@ class BST():
         else:  # k == x.key
             self._cost += 2
             x.val = v  # update the value
+            if self._CACHE_FLAG:
+                self._cache = x
 
         self._update_node(x)
         return x
@@ -849,7 +854,10 @@ class ThreadedST(BST):
         """
         # subtree is empty, create a new node
         if x is None:
-            return self._Node(k, v)
+            h = self._Node(k, v)
+            if self._CACHE_FLAG:
+                self._cache = h
+            return h
 
         # create a child, or update the value
         if k < x.key:
@@ -862,6 +870,8 @@ class ThreadedST(BST):
             x.right.prev = self._find_prev(x.right.key, self._root)
         else:  # k == x.key
             x.val = v  # update the value
+            if self._CACHE_FLAG:
+                self._cache = x
 
         # Update the size of the subtree located at the given root
         self._update_node(x)
@@ -1452,6 +1462,8 @@ class ThreadedST_nr(BST_nr):
             p = x  # track parent node
             if k == x.key:
                 x.val = v  # update the value if found
+                if self._CACHE_FLAG:
+                    self._cache = x
                 return self._root
             else:
                 # Move down the tree
@@ -1464,6 +1476,8 @@ class ThreadedST_nr(BST_nr):
         # Insert new node as child of parent
         if p is None:
             self._root = self._Node(k, v)
+            if self._CACHE_FLAG:
+                self._cache = self._root
             return self._root
         elif k < p.key:
             p.left = self._Node(k, v)
@@ -1471,6 +1485,9 @@ class ThreadedST_nr(BST_nr):
         else:
             p.right = self._Node(k, v)
             x = p.right
+
+        if self._CACHE_FLAG:
+            self._cache = x
 
         # Initialize next/prev pointers of newly added node
         x.next = self._find_next(x.key)
