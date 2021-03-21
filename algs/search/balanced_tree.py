@@ -9,7 +9,7 @@
 """
 # =============================================================================
 
-from algs.basics import Queue as _Queue
+from algs.basics import Stack as _Stack
 from algs.search.tree import _empty_check, BST
 
 __all__ = ['RedBlackBST']
@@ -118,7 +118,7 @@ class RedBlackBST(BST):
                 self._cache = h
             return h   # no noeed for rotations if we only change value
 
-        # Rotate red links to be left-leaning
+        # Balance the tree (red links left-leaning)
         if self._is_red(h.right) and not self._is_red(h.left):
             h = self._rotate_left(h)
         if self._is_red(h.left) and self._is_red(h.left.left):
@@ -304,13 +304,14 @@ class RedBlackBST(BST):
         return h
 
     def _balance(self, h=None):
+        # Balance the tree (red links left-leaning)
         if self._is_red(h.right):
             h = self._rotate_left(h)
-        # Rotate red links to be left-leaning (i.e. split a 4-node)
         if self._is_red(h.right) and not self._is_red(h.left):
             h = self._rotate_left(h)
         if self._is_red(h.left) and self._is_red(h.left.left):
             h = self._rotate_right(h)
+        # Split a 4-node into 3 2-nodes
         if self._is_red(h.right) and self._is_red(h.left):
             self._flip_colors(h)
         self._update_node(h)
@@ -396,7 +397,7 @@ class TopDown234(RedBlackBST):
             h.val = v  # update the value
             return h   # no noeed for rotations if we only change value
 
-        # Rotate red links to be left-leaning
+        # Balance the tree (red links left-leaning)
         if self._is_red(h.right) and not self._is_red(h.left):
             h = self._rotate_left(h)
         if self._is_red(h.left) and self._is_red(h.left.left):
@@ -406,15 +407,83 @@ class TopDown234(RedBlackBST):
         self._update_node(h)
         return h
 
+
+# Ex 3.3.26 Top-down 2-3-4 Trees, non-recursively
+class TopDown234_nr(RedBlackBST):
+    """Implements a top-down 2-3-4 tree using the red-black representation, but
+    sets elements with a single top-down pass."""
+    def _set(self, k, v, h=None):
+        """Add a new node to subtree at `h`, associating `k` with `v`.
+        If `k` is in subtree rooted at `h`, change its value to `v`.
+
+        ..note:: `h` will always be `self._root` from the parent class.
+
+        Parameters
+        ----------
+        k : key
+            key for which to search
+        v : value
+            object to be associated with key `k`
+        h : _Node, optional
+            root of the subtree at which to begin search
+        """
+        s = _Stack()
+        p = self._root
+        while h:
+            if k == h.key:
+                h.val = v
+                if self._CACHE_FLAG:
+                    self._cache = h
+                return self._root
+            else:
+                h = self._balance(h)
+                # Update the root
+                if self._root is h.right or self._root is h.left:
+                    self._root = h
+                # Update the parent
+                if p is not h and p is not h.left and p is not h.right:
+                    if h.key < p.key:
+                        p.left = h
+                    else:
+                        p.right = h
+                # Move down the tree
+                p = h
+                s.push(h)
+                if k < h.key:
+                    h = h.left
+                else:
+                    h = h.right
+
+        # Insert new node as child of parent
+        new = self._Node(k, v, color=self._RED)
+        if p is None:
+            self._root = new
+        elif k < p.key:
+            p.left = new
+        else:
+            p.right = new
+
+        if self._CACHE_FLAG:
+            self._cache = new
+
+        # Update node counts and heights on path traveled back up the tree
+        while s:
+            x = s.pop()
+            self._update_node(x)  # update N, height, internal path length
+
+        return self._root
+
+
 # ----------------------------------------------------------------------------- 
 #         Interactive test setup
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
-    # EXPECT_STR = 'SEARCHEXAMPLE'
-    EXPECT_STR = 'EASYQUESTION'
+    EXPECT_STR = 'SEARCHEXAMPLE'
+    # EXPECT_STR = 'EASYQUESTION'
     data = list((c, i) for i, c in enumerate(EXPECT_STR))
-    rbst = RedBlackBST(data)
-    st = TopDown234(data)
+    # st = RedBlackBST(data)
+    # st = TopDown234(data)
+    st = TopDown234_nr(data)
 
 # =============================================================================
 # =============================================================================

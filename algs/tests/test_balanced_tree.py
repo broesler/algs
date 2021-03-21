@@ -94,5 +94,8 @@ class TestCertification:
     def test_isRedBlackBST(self, t):
         assert t.isRedBlackBST()
 
+
+# TODO implement to check structure of trees
+# class TestLevelOrder:
 # =============================================================================
 # =============================================================================
