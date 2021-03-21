@@ -355,12 +355,59 @@ class RedBlackBST(BST):
         return (self._is_balanced(h.left, black) and
                 self._is_balanced(h.right, black))
 
-# Interactive test setup
+
+# Ex 3.3.25 Top-down 2-3-4 Trees
+class TopDown234(RedBlackBST):
+    """Implements a top-down 2-3-4 tree using the red-black representation."""
+    def _set(self, k, v, h=None):
+        """Add a new node to subtree at `h`, associating `k` with `v`.
+        If `k` is in subtree rooted at `h`, change its value to `v`.
+
+        Parameters
+        ----------
+        k : key
+            key for which to search
+        v : value
+            object to be associated with key `k`
+        h : _Node, optional
+            root of the subtree at which to begin search
+        """
+        # subtree is empty, create a new node with a red link to parent
+        if h is None:
+            return self._Node(k, v, color=self._RED)
+
+        # Only change from RedBlackBST is to move these lines from below 
+        if self._is_red(h.right) and self._is_red(h.left):
+            self._flip_colors(h)
+
+        # create a child, or update the value
+        if k < h.key:
+            h.left = self._set(k, v, h.left)
+        elif k > h.key:
+            h.right = self._set(k, v, h.right)
+        else:  # k == h.key
+            h.val = v  # update the value
+            return h   # no noeed for rotations if we only change value
+
+        # Rotate red links to be left-leaning (i.e. split a 4-node)
+        if self._is_red(h.right) and not self._is_red(h.left):
+            h = self._rotate_left(h)
+        if self._is_red(h.left) and self._is_red(h.left.left):
+            h = self._rotate_right(h)
+
+        # Update node attributes
+        self._update_node(h)
+        return h
+
+# ----------------------------------------------------------------------------- 
+#         Interactive test setup
+# -----------------------------------------------------------------------------
 if __name__ == '__main__':
     # EXPECT_STR = 'SEARCHEXAMPLE'
     EXPECT_STR = 'EASYQUESTION'
     data = list((c, i) for i, c in enumerate(EXPECT_STR))
-    st = RedBlackBST(data)
+    rbst = RedBlackBST(data)
+    st = TopDown234(data)
 
 # =============================================================================
 # =============================================================================
