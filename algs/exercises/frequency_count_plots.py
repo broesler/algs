@@ -82,7 +82,7 @@ if SAVE_FIGS:
 # ----------------------------------------------------------------------------- 
 #         Plot actual timings
 # -----------------------------------------------------------------------------
-ST_names = ['ArrayST', 'BinarySearchST', 'BST', 'ArrayBST']
+ST_names = ['ArrayST', 'BinarySearchST', 'BST', 'ArrayBST', 'RedBlackBST']
 
 tag = filename.stem
 kind = 'app'  # 'ins', 'app', 'selforg', 'cache'

@@ -88,6 +88,7 @@ class RedBlackBST(BST):
             self._cache.val = v
             return
         else:
+            self._cost = 0  # Ex 3.2.44
             self._root = self._set(k, v, self._root)
             self._root.color = self._BLACK
             self._update_node(self._root)
@@ -114,10 +115,13 @@ class RedBlackBST(BST):
 
         # create a child, or update the value
         if k < h.key:
+            self._cost += 1
             h.left = self._set(k, v, h.left)
         elif k > h.key:
+            self._cost += 2
             h.right = self._set(k, v, h.right)
         else:  # k == h.key
+            self._cost += 2
             h.val = v  # update the value
             if self._CACHE_FLAG:
                 self._cache = h
