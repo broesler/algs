@@ -14,7 +14,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from algs.search import BST, RedBlackBST
-from algs.exercises.draw_tree import BSTArtist
+from algs.exercises.draw_tree import TreeArtist
 
 rng = np.random.default_rng(seed=565656)
 N = 16  # number of nodes
@@ -32,8 +32,8 @@ for i in range(2):
 
     # Plot the BSTs
     keys = rng.random(size=N)
-    drbst = BSTArtist(RedBlackBST.fromkeys(keys))
-    dbst = BSTArtist(BST.fromkeys(keys))
+    drbst = TreeArtist(RedBlackBST.fromkeys(keys))
+    dbst = TreeArtist(BST.fromkeys(keys))
     drbst.draw(ax=ax1, label_keys=False)
     dbst.draw(ax=ax2,  label_keys=False)
 

@@ -50,7 +50,7 @@ class NodeArtist():
         return hasattr(self, 'x')  # no attributes set if None
 
 
-class BSTArtist():
+class TreeArtist():
     """Class to plot a BST.
 
     Parameters
@@ -92,7 +92,7 @@ class BSTArtist():
             raise ValueError(f"Invalid layout: {repr(self.layout)}")
 
     def get_coords(self):
-        """Return a list of (key, (x, y)) pairs for the BSTArtist."""
+        """Return a list of (key, (x, y)) pairs for the TreeArtist."""
         return self.st._in_order_all(self._root,
                                      op=lambda h: (h.node.key, (h.x, h.y)))
 
@@ -320,7 +320,7 @@ class BSTArtist():
         ..note:: This implementation intends to follow the original Pascal code
           from the paper as closely as possible. The `NodeArtist` property
           `mod` will be used instead of `offset` for compatibility with other
-          methods in `BSTArtist`.
+          methods in `TreeArtist`.
 
         .. [1] Reingold, Edward M. and John S. Tilford. "Tidier Drawings of
             Trees." *IEEE Trans. of Soft. Eng.*, vol. SE-7, No. 2, 1981.
@@ -782,7 +782,7 @@ if __name__ == '__main__':
                     })
 
     for i, (layout, title) in enumerate(layouts.items()):
-        dt = BSTArtist(st)
+        dt = TreeArtist(st)
 
         if not PLOT_MIRROR:
             dt.draw(fignum=i+1, layout=layout)
@@ -800,7 +800,7 @@ if __name__ == '__main__':
             ax = fig.add_subplot(gs[1])
             ax.set_title('Mirror')
             st.reverse()  # reverse the BST orientation
-            dt = BSTArtist(st)
+            dt = TreeArtist(st)
             dt.draw(ax=ax, layout=layout)
             gs.tight_layout(fig)
 
