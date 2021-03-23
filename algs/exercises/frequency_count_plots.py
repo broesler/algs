@@ -24,7 +24,7 @@ MINLEN = 8  # 1, 8, 10
 filename = Path('../data/tale.txt')       # 779K
 # filename = Path('../data/leipzig1m.txt')  # 124M
 
-ST_names = ['ArrayST', 'BinarySearchST', 'BST']
+ST_names = ['ArrayST', 'BinarySearchST', 'BST', 'RedBlackBST']
 
 tag = filename.stem
 kind = 'app'  # 'ins', 'app', 'selforg', 'cache'

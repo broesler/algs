@@ -13,7 +13,7 @@ import os
 import pandas as pd
 import pickle
 
-from algs.search import ArrayST, BinarySearchST, BST, ArrayBST
+from algs.search import ArrayST, BinarySearchST, BST, ArrayBST, RedBlackBST
 from frequency_counter import FrequencyCounter
 
 filenames = ['../data/tiny_tale.txt',  # 292
@@ -27,7 +27,7 @@ kind = 'app'  # 'ins', 'app', 'selforg', 'LL'
 
 selforg = True if kind == 'selforg' else False
 
-for ST in [ArrayST, BinarySearchST, BST, ArrayBST]:
+for ST in [ArrayST, BinarySearchST, BST, ArrayBST, RedBlackBST]:
     df = pd.DataFrame(columns=cols)
     for i, f in enumerate(filenames):
         tag = tags[i]
