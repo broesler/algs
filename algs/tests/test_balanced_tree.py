@@ -11,14 +11,13 @@
 
 import pytest
 
-from algs.search import RedBlackBST
+from algs.search.balanced_tree import RedBlackBST
 from algs.tests.test_search import data
 
 
-@pytest.fixture
-def t(data):
-    return RedBlackBST(data)
-
+@pytest.fixture(params=[RedBlackBST])
+def t(data, request):
+    return request.param(data)
 
 class TestRotations:
     # NOTE keys must be in special order, expected outputs are in *level* order
@@ -29,17 +28,17 @@ class TestRotations:
         Ns = [3, 1, 1]
         hs = [1, 0, 0]
         ipls = [2, 0, 0]
-        return keys, Ns, hs, ipls
+        Nred = [0, 0, 0]
+        return keys, Ns, hs, ipls, Nred
 
     @pytest.fixture
     def left_rotate(self):
         keys = list('ES')  # level-order = SE
         Ns = [2, 1]
-        hs = [1, 0]
-        # hs = [0, 0]  # red shift
-        ipls = [1, 0]
-        # ipls = [0, 0]  # red shift
-        return keys, Ns, hs, ipls
+        hs = [0, 0]
+        ipls = [0, 0]
+        Nred = [1, 1]
+        return keys, Ns, hs, ipls, Nred
 
     @pytest.fixture
     def right_rotate(self):
@@ -47,17 +46,17 @@ class TestRotations:
         Ns = [3, 1, 1]
         hs = [1, 0, 0]
         ipls = [2, 0, 0]
-        return keys, Ns, hs, ipls
+        Nred = [0, 0, 0]
+        return keys, Ns, hs, ipls, Nred
 
     @pytest.fixture
     def search_example(self):
         keys = list('SEARCHEXAMPLE')  # level-order = MERCLPXAHS
         Ns = [10, 5, 4, 2, 2, 1, 2, 1, 1, 1]
-        hs = [3, 2, 2, 1, 1, 0, 1, 0, 0, 0]
-        # hs = [2, 1, 1, 0, 0, 0, 0, 0, 0, 0]  # red shift
-        ipls = [19, 6, 4, 1, 1, 0, 1, 0, 0, 0]
-        # ipls = [10, 2, 2, 0, 0, 0, 0, 0, 0, 0]  # red shift
-        return keys, Ns, hs, ipls
+        hs = [2, 1, 1, 0, 0, 0, 0, 0, 0, 0]
+        ipls = [10, 2, 2, 0, 0, 0, 0, 0, 0, 0]
+        Nred = [3, 2, 1, 1, 1, 0, 1, 1, 1, 1]
+        return keys, Ns, hs, ipls, Nred
 
     @pytest.mark.parametrize('the_input',
                              ['insert_no_rotate',
@@ -65,11 +64,12 @@ class TestRotations:
                               'right_rotate',
                               'search_example'])
     def test_node_update(self, the_input, request):
-        keys, Ns, hs, ipls = request.getfixturevalue(the_input)
+        keys, Ns, hs, ipls, Nred = request.getfixturevalue(the_input)
         t = RedBlackBST.fromkeys(keys)
         assert t.level_order(op=lambda x: x.N) == Ns
         assert t.level_order(op=lambda x: x.height) == hs
         assert t.level_order(op=lambda x: x.ipl) == ipls
+        assert t.level_order(op=lambda x: x.Nred) == Nred
 
 
 class TestCertification:

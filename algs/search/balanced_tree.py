@@ -45,6 +45,7 @@ class RedBlackBST(BST):
         def __init__(self, *args, color=None, **kwargs):
             super().__init__(*args, **kwargs)
             self.color = color
+            self.Nred = int(self.color)  # 1 if red, 0 if black
 
         def __str__(self):
             # Print the nodes with colors!
@@ -69,10 +70,15 @@ class RedBlackBST(BST):
             else:
                 right_str = 'None'
 
-            return COLOR_SELF \
-                   + f"{{{repr(self.key)}: {repr(self.val)}}}" \
-                   + COLOR_END \
-                   + f", L:{left_str}, R:{right_str}"
+            return (COLOR_SELF
+                    + f"{{{repr(self.key)}: {repr(self.val)}}}"
+                    + COLOR_END
+                    + f", L:{left_str}, R:{right_str}")
+
+    @property
+    def Nred(self):
+        """Return the number of red nodes in the tree."""
+        return self._Nred(self._root)
 
     # Redefine put() operations to account for node colors
     def __setitem__(self, k, v):
@@ -84,6 +90,7 @@ class RedBlackBST(BST):
         else:
             self._root = self._set(k, v, self._root)
             self._root.color = self._BLACK
+            self._update_node(self._root)
 
     def _set(self, k, v, h=None):
         """Add a new node to subtree at `h`, associating `k` with `v`.
@@ -127,12 +134,6 @@ class RedBlackBST(BST):
 
         # Update node attributes
         self._update_node(h)
-        # In 2-3 tree analogue, red nodes are at same height as their parent,
-        # so adjust the height, and reduce internal path length accordingly
-        # if self._is_red(h.left):
-        #     h.height = 1 + max(self._height(h.left) - 1, self._height(h.right))
-        #     h.ipl = self._internal_path_length(h.left) \
-        #             + self._internal_path_length(h.right) + self._size(h.right)
         return h
 
     def __delitem__(self, k):
@@ -245,6 +246,25 @@ class RedBlackBST(BST):
     # ------------------------------------------------------------------------- 
     #         Node Operations
     # -------------------------------------------------------------------------
+    def _update_node(self, x):
+        """Update the parameters of the node based on its subtree."""
+        x.N = 1 + self._size(x.left) + self._size(x.right)
+        x.Nred = int(x.color) + self._Nred(x.left) + self._Nred(x.right)
+        # In 2-3 tree analogue, red nodes are at same height as their parent,
+        # so adjust the height, and reduce internal path length accordingly
+        if self._is_red(x.left):
+            x.height = 1 + max(self._height(x.left) - 1, self._height(x.right))
+        else:
+            x.height = 1 + max(self._height(x.left), self._height(x.right))
+        x.ipl = (self._internal_path_length(x.left) +
+                 (self._size(x.left) - self._Nred(x.left)) +  # blacks only
+                 self._internal_path_length(x.right) +
+                 (self._size(x.right) - self._Nred(x.right)))
+
+    def _Nred(self, x=None):
+        """Return the number of red nodes in the subtree rooted at `x`."""
+        return 0 if x is None else x.Nred
+
     def _is_red(self, x):
         """Return True if `x` is red, otherwise False."""
         return False if x is None else x.color == self._RED
@@ -254,6 +274,8 @@ class RedBlackBST(BST):
         x.color = not x.color
         x.left.color = not x.left.color
         x.right.color =  not x.right.color
+        self._update_node(x.left)
+        self._update_node(x.right)
 
     def _rotate_left(self, h):
         """Rotate node `h` such that its right child becomes its parent."""
