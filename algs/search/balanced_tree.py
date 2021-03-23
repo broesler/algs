@@ -363,6 +363,58 @@ class RedBlackBST(BST):
                 self._is_balanced(h.right, black))
 
 
+# Ex 3.3.23: 2-3 tree *without* balance restriction
+class Unbalanced23(RedBlackBST):
+    """Implements a 2-3 tree using the red-black representation, but without
+    a balance requirement."""
+    def _set(self, k, v, h=None, parent_is_3node=False):
+        """Add a new node to subtree at `h`, associating `k` with `v`.
+        If `k` is in subtree rooted at `h`, change its value to `v`.
+
+        ..note:: `h` will always be `self._root` from the parent class.
+
+        Parameters
+        ----------
+        k : key
+            key for which to search
+        v : value
+            object to be associated with key `k`
+        h : _Node, optional
+            root of the subtree at which to begin search
+        parent_is_3node : bool, optional
+            True if the parent of the current node is a 3-node
+        """
+        # subtree is empty, create a new node with a red link to parent
+        if h is None:
+            if parent_is_3node:
+                x = self._Node(k, v, color=self._BLACK)
+            else:  # parent_is_2node
+                x = self._Node(k, v, color=self._RED)
+            if self._CACHE_FLAG:
+                self._cache = x
+            return x
+
+        parent_is_3node = (True if (self._is_red(h) or
+                                     self._is_red(h.left) or
+                                     self._is_red(h.right))
+                           else False)
+
+        # create a child, or update the value
+        if k < h.key:
+            h.left = self._set(k, v, h.left, parent_is_3node)
+        elif k > h.key:
+            h.right = self._set(k, v, h.right, parent_is_3node)
+        else:  # k == h.key
+            h.val = v  # update the value
+            if self._CACHE_FLAG:
+                self._cache = h
+            return h   # no noeed for rotations if we only change value
+
+        # Update node attributes
+        self._update_node(h)
+        return h
+
+
 # Ex 3.3.25 Top-down 2-3-4 Trees
 class TopDown234(RedBlackBST):
     """Implements a top-down 2-3-4 tree using the red-black representation."""
