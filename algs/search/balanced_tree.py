@@ -526,16 +526,93 @@ class TopDown234_nr(RedBlackBST):
         return self._root
 
 
+# Ex 3.3.28 Bottom-up 2-3-4 Tree
+class BottomUp234(RedBlackBST):
+    """Implements a bottom-up 2-3-4 tree using the red-black representation."""
+    def _set(self, k, v, h=None):
+        """Add a new node to subtree at `h`, associating `k` with `v`.
+        If `k` is in subtree rooted at `h`, change its value to `v`.
+
+        ..note:: `h` will always be `self._root` from the parent class.
+
+        Parameters
+        ----------
+        k : key
+            key for which to search
+        v : value
+            object to be associated with key `k`
+        h : _Node, optional
+            root of the subtree at which to begin search
+        """
+        if h is None:
+            x = self._Node(k, v, color=self._RED)
+            if self._CACHE_FLAG:
+                self._cache = x
+            return x
+
+        # Split a 4-node into 3 2-nodes if it is a leaf
+        if self._is_4node_leaf(h):
+            self._flip_colors(h)
+
+        if k < h.key:
+            h.left = self._set(k, v, h.left)
+        elif k > h.key:
+            h.right = self._set(k, v, h.right)
+        else:  # k == h.key
+            h.val = v  # update the value
+            if self._CACHE_FLAG:
+                self._cache = h
+            return h   # no noeed for rotations if we only change value
+
+        # Split a 4-node into 3 2-nodes
+        if self._is_red(h.left) and self._is_red(h.right):
+            self._flip_colors(h)
+        # Balance the tree (red links left-leaning)
+        if self._is_red(h.right) and not self._is_red(h.left):
+            h = self._rotate_left(h)
+        if self._is_red(h.left) and self._is_red(h.left.left):
+            h = self._rotate_right(h)
+
+        # Update node attributes
+        self._update_node(h)
+        return h
+
+    def _is_4node_leaf(self, h=None):
+        if (self._is_red(h.left) and
+            self._is_red(h.right) and
+            (h.left.left is None and
+                h.left.right is None and
+                h.right.left is None and
+                h.right.right is None)):
+            return True
+        return False
+
+
 # ----------------------------------------------------------------------------- 
 #         Interactive test setup
 # -----------------------------------------------------------------------------
-if __name__ == '__main__':
-    EXPECT_STR = 'SEARCHEXAMPLE'
-    # EXPECT_STR = 'EASYQUESTION'
-    data = list((c, i) for i, c in enumerate(EXPECT_STR))
+# if __name__ == '__main__':
+    # import matplotlib.pyplot as plt
+    # from algs.exercises.draw_tree import TreeArtist
+    # EXPECT_STR = 'SEARCHEXAMPLE'
+    # # EXPECT_STR = 'EASYQUESTION'
+    # data = list((c, i) for i, c in enumerate(EXPECT_STR))
     # st = RedBlackBST(data)
     # st = TopDown234(data)
-    st = TopDown234_nr(data)
+    # st = TopDown234_nr(data)
+    # st = Unbalanced23(data)
+    # st = BottomUp234(data)
+    # keys = [3, 7, 4, 9, 10, 0, 5, 6, 8, 2, 1]
+    # tst = TopDown234.fromkeys(keys)
+    # bst = BottomUp234.fromkeys(keys)
+    # fig = plt.figure(1, clear=True)
+    # gs = fig.add_gridspec(nrows=2, ncols=1)
+    # ax1 = fig.add_subplot(gs[0])  # left side plot
+    # ax2 = fig.add_subplot(gs[1])  # right side plot
+    # ax1.set_title('Top-Down')
+    # ax2.set_title('Bottom-Up')
+    # TreeArtist(tst).draw(ax=ax1)
+    # TreeArtist(bst).draw(ax=ax2)
 
 # =============================================================================
 # =============================================================================
