@@ -12,9 +12,7 @@
 from algs.basics import Stack as _Stack
 from algs.search.tree import _empty_check, BST
 
-__all__ = ['RedBlackBST']
-
-# TODO put parameters and attributes into general string and set the doc.
+__all__ = ['RedBlackBST', 'TopDown234', 'BottomUp234', 'Unbalanced23']
 
 
 class RedBlackBST(BST):
@@ -433,7 +431,10 @@ class TopDown234(RedBlackBST):
         """
         # subtree is empty, create a new node with a red link to parent
         if h is None:
-            return self._Node(k, v, color=self._RED)
+            x = self._Node(k, v, color=self._RED)
+            if self._CACHE_FLAG:
+                self._cache = x
+            return x
 
         # NOTE Only change from RedBlackBST is to move these lines from below 
         # Split a 4-node into 3 2-nodes
@@ -447,6 +448,8 @@ class TopDown234(RedBlackBST):
             h.right = self._set(k, v, h.right)
         else:  # k == h.key
             h.val = v  # update the value
+            if self._CACHE_FLAG:
+                self._cache = h
             return h   # no noeed for rotations if we only change value
 
         # Balance the tree (red links left-leaning)

@@ -14,7 +14,7 @@ import pytest
 
 from algs.search import SequentialSearchST, BinarySearchST, ArrayST, \
                         BST, BST_nr, ThreadedST, ThreadedST_nr, ArrayBST, \
-                        RedBlackBST
+                        RedBlackBST, TopDown234, BottomUp234, Unbalanced23 
 
 rng = np.random.default_rng(seed=565656)
 
@@ -68,9 +68,9 @@ def data_set(data):
 # ---------- Test All STs ----------
 UNORDERED_STS = set([SequentialSearchST, ArrayST])
 ORDERED_STS = set([BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr,
-                   ArrayBST,
-                   RedBlackBST])
-ALL_STS = UNORDERED_STS | ORDERED_STS
+                   ArrayBST])
+BALANCED_TREES = set([RedBlackBST, TopDown234, BottomUp234, Unbalanced23])
+ALL_STS = UNORDERED_STS | ORDERED_STS | BALANCED_TREES
 
 
 class TestUnorderedOps:
@@ -100,7 +100,7 @@ class TestUnorderedOps:
         assert sorted(st.items()) == sorted(data_set)
         err_test(st, '__getitem__', 'Z', err_type=KeyError)
 
-    @pytest.mark.parametrize('ST', ALL_STS - set([ArrayBST]))
+    @pytest.mark.parametrize('ST', ALL_STS - set([ArrayBST, Unbalanced23]))
     def test_delete(self, ST, data, expect_set):
         st = ST(data, cache=False)
         test_keys = expect_set.copy()
@@ -293,7 +293,7 @@ class TestOrderedOps:
 
 
 @pytest.mark.parametrize('ST', set([x for x in ORDERED_STS if issubclass(x, BST)])
-                               - set([RedBlackBST]))
+                               - BALANCED_TREES)
 class TestBST:
     @staticmethod
     @pytest.fixture
