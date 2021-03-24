@@ -35,8 +35,8 @@ class TestRotations:
     def left_rotate(self):
         keys = list('ES')  # level-order = SE
         Ns = [2, 1]
-        hs = [0, 0]
-        ipls = [0, 0]
+        hs = [1, 0]
+        ipls = [1, 0]
         Nred = [1, 1]
         return keys, Ns, hs, ipls, Nred
 
@@ -53,8 +53,8 @@ class TestRotations:
     def search_example(self):
         keys = list('SEARCHEXAMPLE')  # level-order = MERCLPXAHS
         Ns = [10, 5, 4, 2, 2, 1, 2, 1, 1, 1]
-        hs = [2, 1, 1, 0, 0, 0, 0, 0, 0, 0]
-        ipls = [10, 2, 2, 0, 0, 0, 0, 0, 0, 0]
+        hs = [3, 2, 2, 1, 1, 0, 1, 0, 0, 0]
+        ipls = [19, 6, 4, 1, 1, 0, 1, 0, 0, 0]
         Nred = [3, 2, 1, 1, 1, 0, 1, 1, 1, 1]
         return keys, Ns, hs, ipls, Nred
 

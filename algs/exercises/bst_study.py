@@ -44,13 +44,6 @@ from algs.search import BST, RedBlackBST
 FORCE_UPDATE = False
 SAVE_FIGS = False
 
-theory_dict = dict(bst_avg_compares=lambda N: 2*np.log2(N) + 2*np.euler_gamma - 3,
-                   approx_bst_ipl=lambda N: 1.39 * np.log2(N) - 1.85,
-                   bst_height=lambda N: 2.99 * np.log2(N),
-                   rbst_avg_compares=lambda N: np.log2(N) - 0.5,
-                   rbst_height=lambda N: np.log2(N)
-                   )
-
 # Seed the rng for consistency
 rng = np.random.default_rng(seed=565656)
 
@@ -95,11 +88,11 @@ for ST, tag in zip([RedBlackBST], ['rbst']):
             # Prep summary table
             # TODO combine matrices into one big df and use that instead.
             # df.loc[N, ('compares', 'Experiment')] = comps[:, j].mean(), comps[:, j].std()
-            # df.loc[N, ('compares', 'Theory')]     = bst_avg_compares(N), None
+            # df.loc[N, ('compares', 'Theory')]     = bst_avg_comps(N), None
             # df.loc[N, ('height', 'Experiment')]   = heights[:, j].mean(), heights[:, j].std()
             # df.loc[N, ('height', 'Theory')]       = bst_height(N), None
             # df.loc[N, ('path lengths', 'Experiment')] = ipls[:, j].mean(), ipls[:, j].std()
-            # df.loc[N, ('path lengths', 'Theory')]     = bst_avg_compares(N), None
+            # df.loc[N, ('path lengths', 'Theory')]     = bst_avg_comps(N), None
 
         with open(PICKLE_FILE, 'wb') as fp:
             pickle.dump((comps, heights, ipls), fp)
@@ -120,6 +113,10 @@ for ST, tag in zip([RedBlackBST], ['rbst']):
 #   * compare BST with RedBlackBST
 data = ipls
 col_name = 'ipls'
+# data = comps
+# col_name = 'comps'
+# data = heights
+# col_name = 'heights'
 
 tf = pd.DataFrame(data=data, columns=ops)
 tf.index.name = 'trial'
@@ -155,19 +152,30 @@ ax = fig.add_subplot()
 # Plot the theoretical curves, and the curve fit to the data
 ax.plot(x, func(x, *popt), color='k', ls='-',
         label=fr"${popt[0]:.2f} \lg N {popt[1]:+.2f}$")
-# ax.annotate(rf"$\leftarrow$ {func(x, *popt)[-1]:.0f}",
-#             xy=(max(ops) + 100, func(x, *popt)[-1]),
-#             ha='left', va='center', color='k')
+ax.annotate(rf"$\leftarrow$ {func(x, *popt)[-1]:.0f}",
+            xy=(max(ops) + 100, func(x, *popt)[-1]),
+            ha='left', va='center', color='k')
 
-if col_name == 'ipls':
-    y_theory = theory_dict['approx_bst_ipl'](x)
-    label = r'$1.39 \lg N - 1.85$'
-elif col_name == 'comps':
-    y_theory = theory_dict['bst_avg_compares'](x)
-    label = r'$2 \lg N + 2\gamma - 3$'
-else:  # col_name == 'heights':
-    y_theory = theory_dict['bst_height'](x)
-    label = r'$2.99 \lg N$'
+theory_dict = dict(bst_avg_comps=lambda N: 2*np.log2(N) + 2*np.euler_gamma - 3,
+                   bst_avg_ipls=lambda N: 1.39 * np.log2(N) - 1.85,
+                   bst_heights=lambda N: 2.99 * np.log2(N),
+                   rbst_avg_comps=lambda N: np.log2(N) - 0.5,
+                   # rbst_avg_comps=lambda N: 1.39 * np.log2(N) - 1.85,
+                   rbst_avg_ipls=lambda N: np.log2(N) - 0.5,
+                   rbst_avg_heights=lambda N: np.log2(N) - 0.5
+                   )
+# LaTeX labels for the theory curves
+labels_dict = dict(bst_avg_comps=r'$2 \lg N + 2\gamma - 3$',
+                   bst_avg_ipls=r'$1.39 \lg N - 1.85$',
+                   bst_heights=r'$2.99 \lg N$',
+                   rbst_avg_comps=r'$\lg N - 0.5$',
+                   # rbst_avg_comps=r'$1.39 \lg N - 1.85$',
+                   rbst_avg_ipls=r'$\lg N - 0.5$',
+                   rbst_avg_heights=r'$\lg N - 0.5$'
+                   )
+
+y_theory = theory_dict[f"{tag}_avg_{col_name}"](x)
+label = labels_dict[f"{tag}_avg_{col_name}"]
 
 ax.plot(x, y_theory, color='C3', ls='-', label=label)
 ax.annotate(rf"$\leftarrow$ {y_theory[-1]:.0f}",
@@ -178,6 +186,9 @@ ax.annotate(rf"$\leftarrow$ {y_theory[-1]:.0f}",
 sns.scatterplot(ax=ax, data=tf, x='N', y=col_name,
                 color=0.5*np.ones(3), s=10, alpha=0.10)
 
+# g['mean'] *= 3/4  # FIXME compares are too large by 1/4-ish -> EXCLUDE multiple compares in 3-nodes
+# g['mean'] *= 3/4  # FIXME heights are too large by 1/3 (for counting all nodes)
+# g['mean'] *= 4/3  # FIXME heights are too small by 1/3 (for counting only black nodes)
 # Plot the means and stds of each group
 sns.scatterplot(ax=ax, data=g, x='N', y='mean',
                 color='k', marker='d', s=30, zorder=3)
@@ -190,26 +201,23 @@ ax.legend(loc='lower right')
 
 # Format axes
 xlim = ax.get_xlim()
-ylim = ax.get_ylim()
+ylim = [0, 20] #ax.get_ylim()
 
+ax.ticklabel_format(style='plain')  # no scientific notation
 ax.xaxis.label.set_color('C3')
 ax.yaxis.label.set_color('C3')
-# ax.set_xlim([0, max(ops)])
-# ax.set_ylim([0, round(np.max(ipls))])
 ax.set_xticks([min(ops), max(ops)])
-# ax.set_yticks([0, round(np.max(ipls) / 10) * 10])
 ax.set_yticks([0, round(ylim[1])])
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
+ax.grid(False)
 
 # Place labels on axis (like ticklabels)
-ax.set_xlabel('operations')
-# ax.xaxis.set_label_coords((np.max(ops) - np.min(ops))/2, 0,
-#                           transform=ax.xaxis.get_ticklabels()[0].get_transform())
+ax.set_xlabel('operations', fontweight='bold')
 ax.xaxis.set_label_coords(np.mean(xlim), 0,
                           transform=ax.xaxis.get_ticklabels()[0].get_transform())
 
-ax.set_ylabel('compares')
+ax.set_ylabel(col_name, fontweight='bold')
 ax.yaxis.set_label_coords(0, ylim[1] / 2,
                           transform=ax.yaxis.get_ticklabels()[0].get_transform())
 
@@ -217,7 +225,7 @@ fig.tight_layout()
 
 if SAVE_FIGS:
     # figname = Path('./figures/BST_avg_length.pdf')
-    figname = Path('./figures/BST_avg_compares.pdf')
+    figname = Path('./figures/bst_avg_comps.pdf')
     fig.savefig(figname)
 
 plt.show()

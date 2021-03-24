@@ -256,14 +256,17 @@ class RedBlackBST(BST):
         x.Nred = int(x.color) + self._Nred(x.left) + self._Nred(x.right)
         # In 2-3 tree analogue, red nodes are at same height as their parent,
         # so adjust the height, and reduce internal path length accordingly
-        if self._is_red(x.left):
-            x.height = 1 + max(self._height(x.left) - 1, self._height(x.right))
-        else:
+        # if self._is_red(x.left):
+        #     x.height = 1 + max(self._height(x.left) - 1, self._height(x.right))
+        # else:
             x.height = 1 + max(self._height(x.left), self._height(x.right))
-        x.ipl = (self._internal_path_length(x.left) +
-                 (self._size(x.left) - self._Nred(x.left)) +  # blacks only
-                 self._internal_path_length(x.right) +
-                 (self._size(x.right) - self._Nred(x.right)))
+
+        # x.ipl = (self._internal_path_length(x.left) +
+        #          (self._size(x.left) - self._Nred(x.left)) +  # blacks only
+        #          self._internal_path_length(x.right) +
+        #          (self._size(x.right) - self._Nred(x.right)))
+        x.ipl = (self._internal_path_length(x.left) + self._size(x.left) +
+                 self._internal_path_length(x.right) + self._size(x.right))
 
     def _Nred(self, x=None):
         """Return the number of red nodes in the subtree rooted at `x`."""
