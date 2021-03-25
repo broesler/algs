@@ -18,6 +18,7 @@ __all__ = ['RedBlackBST', 'TopDown234', 'BottomUp234', 'Unbalanced23']
 class KeyChangeException(Exception):
     pass
 
+
 class RedBlackBST(BST):
     """Implements a red-black binary search tree.
 
@@ -78,6 +79,14 @@ class RedBlackBST(BST):
                     + COLOR_END
                     + f", L:{left_str}, R:{right_str}")
 
+    # ------------------------------------------------------------------------- 
+    #         Public API
+    # -------------------------------------------------------------------------
+    def __init__(self, *args, **kwargs):
+        self.Nrotations = 0  # track total rotations and splits to build tree
+        self.Nsplits = 0
+        super().__init__(*args, **kwargs)
+
     @property
     def Nred(self):
         """Return the number of red nodes in the tree."""
@@ -91,58 +100,13 @@ class RedBlackBST(BST):
             self._cache.val = v
             return
         else:
-            self._cost = 0  # Ex 3.2.44
+            self._cost = 0  # Ex 3.3.43
             try:
                 self._root = self._set(k, v, self._root)
                 self._root.color = self._BLACK
                 self._update_node(self._root)
             except KeyChangeException:
                 pass
-
-    def _set(self, k, v, h=None):
-        """Add a new node to subtree at `h`, associating `k` with `v`.
-        If `k` is in subtree rooted at `h`, change its value to `v`.
-
-        Parameters
-        ----------
-        k : key
-            key for which to search
-        v : value
-            object to be associated with key `k`
-        h : _Node, optional
-            root of the subtree at which to begin search
-        """
-        # subtree is empty, create a new node with a red link to parent
-        if h is None:
-            x = self._Node(k, v, color=self._RED)
-            if self._CACHE_FLAG:
-                self._cache = x
-            return x
-
-        # create a child, or update the value
-        self._cost += 1
-        if k < h.key:
-            h.left = self._set(k, v, h.left)
-        elif k > h.key:
-            h.right = self._set(k, v, h.right)
-        else:  # k == h.key
-            h.val = v  # update the value
-            if self._CACHE_FLAG:
-                self._cache = h
-            raise KeyChangeException  # no need for rotations
-
-        # Balance the tree (red links left-leaning)
-        if self._is_red(h.right) and not self._is_red(h.left):
-            h = self._rotate_left(h)
-        if self._is_red(h.left) and self._is_red(h.left.left):
-            h = self._rotate_right(h)
-        # Split a 4-node into 3 2-nodes
-        if self._is_red(h.right) and self._is_red(h.left):
-            self._flip_colors(h)
-
-        # Update node attributes
-        self._update_node(h)
-        return h
 
     def __delitem__(self, k):
         """Delete the node associated with `k`.
@@ -203,6 +167,51 @@ class RedBlackBST(BST):
     # -------------------------------------------------------------------------
     #         Private API
     # -------------------------------------------------------------------------
+    def _set(self, k, v, h=None):
+        """Add a new node to subtree at `h`, associating `k` with `v`.
+        If `k` is in subtree rooted at `h`, change its value to `v`.
+
+        Parameters
+        ----------
+        k : key
+            key for which to search
+        v : value
+            object to be associated with key `k`
+        h : _Node, optional
+            root of the subtree at which to begin search
+        """
+        # subtree is empty, create a new node with a red link to parent
+        if h is None:
+            x = self._Node(k, v, color=self._RED)
+            if self._CACHE_FLAG:
+                self._cache = x
+            return x
+
+        # create a child, or update the value
+        self._cost += 1
+        if k < h.key:
+            h.left = self._set(k, v, h.left)
+        elif k > h.key:
+            h.right = self._set(k, v, h.right)
+        else:  # k == h.key
+            h.val = v  # update the value
+            if self._CACHE_FLAG:
+                self._cache = h
+            raise KeyChangeException  # no need for rotations
+
+        # Balance the tree (red links left-leaning)
+        if self._is_red(h.right) and not self._is_red(h.left):
+            h = self._rotate_left(h)
+        if self._is_red(h.left) and self._is_red(h.left.left):
+            h = self._rotate_right(h)
+        # Split a 4-node into 3 2-nodes
+        if self._is_red(h.right) and self._is_red(h.left):
+            self._flip_colors(h)
+
+        # Update node attributes
+        self._update_node(h)
+        return h
+
     def _delete(self, k, h=None):
         """Delete the item associated with `k` in the subtree rooted at `h`."""
         if k < h.key:
@@ -280,6 +289,7 @@ class RedBlackBST(BST):
                         self._Nred(x.right.left) +
                         self._Nred(x.right.right))
         x.Nred = int(x.color) + self._Nred(x.left) + self._Nred(x.right)
+        self.Nsplits += 1
 
     def _rotate_left(self, h):
         """Rotate node `h` such that its right child becomes its parent."""
@@ -292,6 +302,7 @@ class RedBlackBST(BST):
         # Update the new child before the new parent
         self._update_node(h)
         self._update_node(x)
+        self.Nrotations += 1
         return x  # return the new parent
 
     def _rotate_right(self, h):
@@ -305,6 +316,7 @@ class RedBlackBST(BST):
         # Update the new child before the new parent
         self._update_node(h)
         self._update_node(x)
+        self.Nrotations += 1
         return x  # return the new parent
 
     def _move_left(self, h=None):
