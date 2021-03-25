@@ -62,7 +62,7 @@ Ns = [64, 128]
 if FORCE_UPDATE or not PICKLE_FILE.exists():
     # Create summary DataFrame from the ipl data
     df = pd.DataFrame(index=pd.MultiIndex.from_product([dms, Ns]),
-                    columns=['samples', 'mean_IPL', 'var_IPL', 
+                    columns=['samples', 'mean_IPL', 'var_IPL',
                              'mean_IPL_norm', 'var_IPL_norm'])
     df.index.names = ['dm', 'N']
 
@@ -103,6 +103,7 @@ if FORCE_UPDATE or not PICKLE_FILE.exists():
             df.loc[dm, N]['mean_IPL_norm'] = np.mean(data / theory_avg_ipl(N))
             df.loc[dm, N]['var_IPL_norm'] = np.var(data / theory_avg_ipl(N))
 
+            # TODO convert 'pkl/hibbard_delete.pkl' to downsampled version
             # Store downsampled ipls vs operations
             ipls[dm, N] = resample(avg_ipl, num=min(Ns)**2, axis=1)
 
@@ -113,15 +114,13 @@ else:
     with open(PICKLE_FILE, 'rb') as fp:
         df, ipls = pickle.load(fp)
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 #         Process the data
 # -----------------------------------------------------------------------------
 print(df)
 
-
 def func(x, a, b):
     return a * x**0.5 + b
-
 
 popt, pcov = curve_fit(func, df.xs('Hibbard').index, df.xs('Hibbard')['mean_IPL'])
 
