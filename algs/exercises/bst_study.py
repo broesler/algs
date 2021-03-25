@@ -44,21 +44,22 @@ from algs.search import BST, RedBlackBST
 FORCE_UPDATE = False
 SAVE_FIGS = False
 
-# Seed the rng for consistency
-rng = np.random.default_rng(seed=565656)
-
-N_trials = 1000
-# ops = [int(x) for x in [1e2, 1e3, 1e4]]
-ops = [int(x) for x in np.logspace(2, 4)]
+# N_trials = 1000
+N_trials = 30
+ops = [int(x) for x in [1e2, 1e3, 1e4]]
+# ops = [int(x) for x in np.logspace(2, 4)]
 M = len(ops)
 
-# for ST, tag in zip([BST, RedBlackBST], ['bst', 'rbst']):
-for ST, tag in zip([RedBlackBST], ['rbst']):
-# for ST, tag in zip([BST], ['bst']):
-    PICKLE_FILE = Path(f"./pkl/{tag}_compares_1e4.pkl")
-    # PICKLE_FILE = Path(f"./pkl/{tag}_compares_tiny.pkl")
+for ST, tag in zip([BST, RedBlackBST], ['bst', 'rbst']):
+    # pickle_file = Path(f"./pkl/{tag}_compares_1e4.pkl")
+    pickle_file = Path(f"./pkl/{tag}_compares_tiny.pkl")
 
-    if FORCE_UPDATE or not PICKLE_FILE.exists():
+    if FORCE_UPDATE or not pickle_file.exists():
+        print(f"Running {ST.__class__.__name__}...")
+
+        # Seed the rng for consistency
+        rng = np.random.default_rng(seed=565656)
+
         # Insert N random (with replacement) keys into an initially empty tree
         # cols = pd.MultiIndex.from_product([
         #         ['compares', 'height', 'path lengths'],
@@ -94,141 +95,155 @@ for ST, tag in zip([RedBlackBST], ['rbst']):
             # df.loc[N, ('path lengths', 'Experiment')] = ipls[:, j].mean(), ipls[:, j].std()
             # df.loc[N, ('path lengths', 'Theory')]     = bst_avg_comps(N), None
 
-        with open(PICKLE_FILE, 'wb') as fp:
+        with open(pickle_file, 'wb') as fp:
+            print(f"Writing to '{pickle_file}'...")
             pickle.dump((comps, heights, ipls), fp)
 
-    else:
-        # TODO read each file separately
-        # read data from file
-        with open(PICKLE_FILE, 'rb') as fp:
-            (comps, heights, ipls) = pickle.load(fp)
-
-# print(df)
-
 # -----------------------------------------------------------------------------
-#         Organize the data for plotting
+#         Plots
 # -----------------------------------------------------------------------------
-# TODO
-#   * plot each of ipls, comps, heights in one set of subplots.
-#   * compare BST with RedBlackBST
-data = ipls
-col_name = 'ipls'
-# data = comps
-# col_name = 'comps'
-# data = heights
-# col_name = 'heights'
+theory_dict = dict(bst_avg_comps=dict(eqn=lambda N: 2*np.log2(N) + 2*np.euler_gamma - 3,
+                                      label=r'$2 \lg N + 2\gamma - 3$'),
+                   bst_avg_ipls=dict(eqn=lambda N: 1.39 * np.log2(N) - 1.85,
+                                     label=r'$1.39 \lg N - 1.85$'),
+                   bst_avg_heights=dict(eqn=lambda N: 2.99 * np.log2(N),
+                                        label=r'$2.99 \lg N$'),
+                   rbst_avg_comps=dict(eqn=lambda N: np.log2(N) - 0.5,
+                                       label=r'$\lg N - 0.5$'),
+                   rbst_avg_ipls=dict(eqn=lambda N: np.log2(N) - 0.5,
+                                      label=r'$\lg N - 0.5$'),
+                   rbst_avg_heights=dict(eqn=lambda N: np.log2(N),
+                                         label=r'$\lg N$'),
+                   )
 
-tf = pd.DataFrame(data=data, columns=ops)
-tf.index.name = 'trial'
-tf.columns.name = 'N'
-tf = (tf.melt(ignore_index=False)
-        .reset_index()
-        .rename(columns={'value': col_name})
-      )
+titles = dict(bst='BST', rbst='Red-Black BST')
+opts = dict(comps=dict(ylim=20, ylabel='compares'),
+            heights=dict(ylim=40, ylabel='height'),
+            ipls=dict(ylim=20, ylabel='internal path length'))
 
-# Aggregate the meand and std
-g = (tf.drop('trial', axis=1)
-       .groupby('N')
-       .agg(['mean', 'std'])
-       .droplevel(0, axis=1)
-     )
-
-# Theory curve
-x = np.logspace(np.log10(min(ops)), np.log10(max(ops)))
-
-# Fit curve to data
-def func(x, a, b):
-    return a * np.log2(x) + b
-
-popt, pcov = curve_fit(func, g.index, g['mean'])
-# print(popt)
-
-# -----------------------------------------------------------------------------
-#         Make Plots
-# -----------------------------------------------------------------------------
 fig = plt.figure(1, clear=True)
-ax = fig.add_subplot()
+fig.set_size_inches((8, 8), forward=True)
+gs = fig.add_gridspec(nrows=3, ncols=2)
+plt.rc('font', **{'size': 8})
 
-# Plot the theoretical curves, and the curve fit to the data
-ax.plot(x, func(x, *popt), color='k', ls='-',
-        label=fr"${popt[0]:.2f} \lg N {popt[1]:+.2f}$")
-ax.annotate(rf"$\leftarrow$ {func(x, *popt)[-1]:.0f}",
-            xy=(max(ops) + 100, func(x, *popt)[-1]),
-            ha='left', va='center', color='k')
+for j, tag in enumerate(['bst', 'rbst']):
+    # pickle_file = Path(f"./pkl/{tag}_compares_1e4.pkl")
+    pickle_file = Path(f"./pkl/{tag}_compares_tiny.pkl")
+    with open(pickle_file, 'rb') as fp:
+        comps, heights, ipls = pickle.load(fp)
 
-theory_dict = dict(bst_avg_comps=lambda N: 2*np.log2(N) + 2*np.euler_gamma - 3,
-                   bst_avg_ipls=lambda N: 1.39 * np.log2(N) - 1.85,
-                   bst_heights=lambda N: 2.99 * np.log2(N),
-                   rbst_avg_comps=lambda N: np.log2(N) - 0.5,
-                   # rbst_avg_comps=lambda N: 1.39 * np.log2(N) - 1.85,
-                   rbst_avg_ipls=lambda N: np.log2(N) - 0.5,
-                   rbst_avg_heights=lambda N: np.log2(N) - 0.5
-                   )
-# LaTeX labels for the theory curves
-labels_dict = dict(bst_avg_comps=r'$2 \lg N + 2\gamma - 3$',
-                   bst_avg_ipls=r'$1.39 \lg N - 1.85$',
-                   bst_heights=r'$2.99 \lg N$',
-                   rbst_avg_comps=r'$\lg N - 0.5$',
-                   # rbst_avg_comps=r'$1.39 \lg N - 1.85$',
-                   rbst_avg_ipls=r'$\lg N - 0.5$',
-                   rbst_avg_heights=r'$\lg N - 0.5$'
-                   )
+    for i, (data, col_name) in enumerate(zip([comps, heights, ipls],
+                                             ['comps', 'heights', 'ipls'])):
 
-y_theory = theory_dict[f"{tag}_avg_{col_name}"](x)
-label = labels_dict[f"{tag}_avg_{col_name}"]
+        # Organize data
+        tf = pd.DataFrame(data=data, columns=ops)
+        tf.index.name = 'trial'
+        tf.columns.name = 'N'
+        tf = (tf.melt(ignore_index=False)
+                .reset_index()
+                .rename(columns={'value': col_name})
+            )
 
-ax.plot(x, y_theory, color='C3', ls='-', label=label)
-ax.annotate(rf"$\leftarrow$ {y_theory[-1]:.0f}",
-            xy=(max(ops) + 100, y_theory[-1]),
-            ha='left', va='center', color='C3')
+        # Aggregate the mean and std
+        g = (tf.drop('trial', axis=1)
+            .groupby('N')
+            .agg(['mean', 'std'])
+            .droplevel(0, axis=1)
+            )
 
-# Plot the runtime distributions
-sns.scatterplot(ax=ax, data=tf, x='N', y=col_name,
-                color=0.5*np.ones(3), s=10, alpha=0.10)
+        # Theory curve
+        x = np.logspace(np.log10(min(ops)), np.log10(max(ops)))
 
-# g['mean'] *= 3/4  # FIXME compares are too large by 1/4-ish -> EXCLUDE multiple compares in 3-nodes
-# g['mean'] *= 3/4  # FIXME heights are too large by 1/3 (for counting all nodes)
-# g['mean'] *= 4/3  # FIXME heights are too small by 1/3 (for counting only black nodes)
-# Plot the means and stds of each group
-sns.scatterplot(ax=ax, data=g, x='N', y='mean',
-                color='k', marker='d', s=30, zorder=3)
+        # Fit curve to data
+        def func(x, a, b):
+            return a * np.log2(x) + b
 
-for N, m in g.iterrows():
-    ax.plot((N, N), (m['mean'] - m['std'], m['mean'] + m['std']),
-               c='k', ls='-', lw=2, alpha=1.0)
+        popt, pcov = curve_fit(func, g.index, g['mean'])
+        # print(popt)
 
-ax.legend(loc='lower right')
+        # -----------------------------------------------------------------------------
+        #         Make Plots
+        # -----------------------------------------------------------------------------
+        ax = fig.add_subplot(gs[i, j])
 
-# Format axes
-xlim = ax.get_xlim()
-ylim = [0, 20] #ax.get_ylim()
+        if i == 0:
+            ax.set_title(titles[tag])
 
-ax.ticklabel_format(style='plain')  # no scientific notation
-ax.xaxis.label.set_color('C3')
-ax.yaxis.label.set_color('C3')
-ax.set_xticks([min(ops), max(ops)])
-ax.set_yticks([0, round(ylim[1])])
-ax.spines['top'].set_visible(False)
-ax.spines['right'].set_visible(False)
-ax.grid(False)
+        # Plot the theoretical curves, and the curve fit to the data
+        ax.plot(x, func(x, *popt), color='k', ls='-',
+                label=fr"${popt[0]:.2f} \lg N {popt[1]:+.2f}$")
+        ax.annotate(rf"$\leftarrow$ {func(x, *popt)[-1]:.0f}",
+                    xy=(max(ops) + 100, func(x, *popt)[-1]),
+                    ha='left', va='center', color='k')
 
-# Place labels on axis (like ticklabels)
-ax.set_xlabel('operations', fontweight='bold')
-ax.xaxis.set_label_coords(np.mean(xlim), 0,
-                          transform=ax.xaxis.get_ticklabels()[0].get_transform())
+        y_theory = theory_dict[f"{tag}_avg_{col_name}"]['eqn'](x)
+        label = theory_dict[f"{tag}_avg_{col_name}"]['label']
 
-ax.set_ylabel(col_name, fontweight='bold')
-ax.yaxis.set_label_coords(0, ylim[1] / 2,
-                          transform=ax.yaxis.get_ticklabels()[0].get_transform())
+        ax.plot(x, y_theory, color='C3', ls='-', label=label)
+        ax.annotate(rf"$\leftarrow$ {y_theory[-1]:.0f}",
+                    xy=(max(ops) + 100, y_theory[-1]),
+                    ha='left', va='center', color='C3')
 
-fig.tight_layout()
+        # Plot the runtime distributions
+        sns.scatterplot(ax=ax, data=tf, x='N', y=col_name,
+                        color=0.5*np.ones(3), s=10, alpha=0.10)
 
-if SAVE_FIGS:
-    # figname = Path('./figures/BST_avg_length.pdf')
-    figname = Path('./figures/bst_avg_comps.pdf')
-    fig.savefig(figname)
+        # g['mean'] *= 3/4  # FIXME compares are too large by 1/4-ish when counting all nodes -> EXCLUDE multiple compares in 3-nodes
+        # g['mean'] *= 3/4  # FIXME heights are too large by 1/3 (for counting all nodes)
+        # g['mean'] *= 4/3  # FIXME heights are too small by 1/3 (for counting only black nodes)
+        # Plot the means and stds of each group
+        sns.scatterplot(ax=ax, data=g, x='N', y='mean',
+                        color='k', marker='d', s=30, zorder=3)
 
-plt.show()
+        for N, m in g.iterrows():
+            ax.plot((N, N), (m['mean'] - m['std'], m['mean'] + m['std']),
+                    c='k', ls='-', lw=2, alpha=1.0)
+
+        ax.legend(loc='lower right')
+
+        # Format axes
+        xlim = ax.get_xlim()
+        # ylim = ax.get_ylim()  # [0, 20]
+        ylim = [0, opts[col_name]['ylim']]
+
+        ax.xaxis.label.set(color='C3')
+        ax.yaxis.label.set(color='C3')
+        ax.set_xticks([min(ops), max(ops)])
+        ax.set_yticks([0, round(ylim[1])])
+
+        # Place labels on axis (like ticklabels)
+        ax.set_xlabel('operations')
+        ax.xaxis.set_label_coords(np.mean(xlim), 0,
+                                transform=ax.xaxis.get_ticklabels()[0].get_transform())
+
+        ax.set_ylabel(opts[col_name]['ylabel'])
+        ax.yaxis.set_label_coords(0, ylim[1] / 2,
+                                transform=ax.yaxis.get_ticklabels()[0].get_transform())
+
+        # Hide x-labels except for bottom
+        if i < 2:
+            ax.xaxis.set_ticklabels([])
+            ax.set_xlabel('')
+        else:
+            ax.ticklabel_format(style='plain')  # no scientific notation
+
+        # TODO change axis limits to be the same in each row
+        if j == 1:
+            # ax.yaxis.set_ticklabels([])
+            ax.set_ylabel('')
+
+        ax.grid(False)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+
+        gs.tight_layout(fig)
+
+        if SAVE_FIGS:
+            # figname = Path('./figures/BST_avg_length.pdf')
+            figname = Path('./figures/bst_avg_comps.pdf')
+            fig.savefig(figname)
+
+        plt.show()
 
 # =============================================================================
 # =============================================================================

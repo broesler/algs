@@ -384,14 +384,12 @@ class BST():
             return h
 
         # create a child, or update the value
+        self._cost += 1
         if k < x.key:
-            self._cost += 1
             x.left = self._set(k, v, x.left)
         elif k > x.key:
-            self._cost += 2
             x.right = self._set(k, v, x.right)
         else:  # k == x.key
-            self._cost += 2
             x.val = v  # update the value
             if self._CACHE_FLAG:
                 self._cache = x
