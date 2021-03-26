@@ -540,7 +540,6 @@ class TopDown234_nr(RedBlackBST):
                 if self._is_red(h.left) and self._is_red(h.right):
                     self._flip_colors(h)
 
-                # s.push(h)
                 # NOTE do insertion *before* moving `h` so we retain both
                 # parent pointers, otherwise we lose the grandparent
                 if k < h.key:
@@ -559,30 +558,9 @@ class TopDown234_nr(RedBlackBST):
                                     pp.right = h
                         break
                     else:
-                        # Split a 4-node into 3 2-nodes before moving into the node
-                        if self._is_red(x.left) and self._is_red(x.right):
-                            self._flip_colors(x)
-                            if self._is_red(h.right) and not self._is_red(h.left):
-                                h = self._rotate_left(h)
-                                if p is None:
-                                    self._root = h
-                                else:
-                                    if h.key < p.key:
-                                        p.left = h
-                                    else:
-                                        p.right = h
-                            if (p is not None and
-                                    self._is_red(p.left) and self._is_red(p.left.left)):
-                                h = self._rotate_right(p)
-                                if pp is None:
-                                    self._root = h
-                                    pp = p = None
-                                else:
-                                    if h.key < pp.key:
-                                        pp.left = h
-                                    else:
-                                        pp.right = h
+                        pp, p, h = self._balance_nr(pp, p, h, x)
                         # Move down the tree
+                        # s.push(h)
                         pp = p
                         p = h
                         h = h.left
@@ -612,30 +590,9 @@ class TopDown234_nr(RedBlackBST):
                                     pp.right = h
                         break
                     else:
-                        # Split a 4-node into 3 2-nodes before moving into the node
-                        if self._is_red(x.left) and self._is_red(x.right):
-                            self._flip_colors(x)
-                            if self._is_red(h.right) and not self._is_red(h.left):
-                                h = self._rotate_left(h)
-                                if p is None:
-                                    self._root = h
-                                else:
-                                    if h.key < p.key:
-                                        p.left = h
-                                    else:
-                                        p.right = h
-                            if (p is not None and
-                                    self._is_red(p.left) and self._is_red(p.left.left)):
-                                h = self._rotate_right(p)
-                                if pp is None:
-                                    self._root = h
-                                    pp = p = None
-                                else:
-                                    if h.key < pp.key:
-                                        pp.left = h
-                                    else:
-                                        pp.right = h
+                        pp, p, h = self._balance_nr(pp, p, h, x)
                         # Move down the tree
+                        # s.push(h)
                         pp = p
                         p = h
                         h = h.right
@@ -646,6 +603,35 @@ class TopDown234_nr(RedBlackBST):
         #     self._update_node(x)  # update N, height, internal path length
 
         return self._root
+
+    def _balance_nr(self, pp, p, h, x):
+        # Split a 4-node into 3 2-nodes before moving into the node
+        if self._is_red(x.left) and self._is_red(x.right):
+            self._flip_colors(x)
+        # Rotate to balance the parent node
+        if self._is_red(h.right) and not self._is_red(h.left):
+            h = self._rotate_left(h)
+            # Update the parent
+            if p is None:
+                self._root = h
+            else:
+                if h.key < p.key:
+                    p.left = h
+                else:
+                    p.right = h
+        if (p is not None and
+                self._is_red(p.left) and self._is_red(p.left.left)):
+            h = self._rotate_right(p)
+            # Update the parent
+            if pp is None:
+                self._root = h
+                p = None
+            else:
+                if h.key < pp.key:
+                    pp.left = h
+                else:
+                    pp.right = h
+        return pp, p, h
 
 
 # Ex 3.3.27 Top-down 2-3-4 Trees, with right-leaning links allowed
