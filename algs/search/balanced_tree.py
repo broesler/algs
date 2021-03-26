@@ -523,8 +523,12 @@ class TopDown234_nr(RedBlackBST):
         h : _Node, optional
             root of the subtree at which to begin search
         """
-        s = _Stack()
-        p = self._root
+        if self._root is None:
+            self._root = self._Node(k, v, color=self._BLACK)
+            return self._root
+
+        # s = _Stack()
+        pp = p = None
         while h:
             if k == h.key:
                 h.val = v
@@ -532,56 +536,72 @@ class TopDown234_nr(RedBlackBST):
                     self._cache = h
                 raise KeyChangeException  # no need for rotations
             else:
-                # Split a 4-node into 3 2-nodes
-                if (not self._is_red(h) and
-                        self._is_red(h.left) and
-                        self._is_red(h.right)):
+                # Split a 4-node into 3 2-nodes before moving into the node
+                if self._is_red(h.left) and self._is_red(h.right):
                     self._flip_colors(h)
-                s.push(h)
+                    if (p is not None and 
+                            self._is_red(p.right) and not self._is_red(p.left)):
+                        h = self._rotate_left(p)
+                        p = pp  # reset parent pointer
+                        if pp is None:
+                            self._root = h
+                        else:
+                            if h.key < pp.key:
+                                pp.left = h
+                            else:
+                                pp.right = h
+                # s.push(h)
                 if k < h.key:
-                    x = h.left  # potential path
-                    if x is None:
+                    if h.left is None:
                         # Make a 3-node or 4-node (depending on h.color)
                         h.left = self._Node(k, v, color=self._RED)
-                        # Balance the tree (red links left-leaning)
-                        if self._is_red(h.right) and not self._is_red(h.left):
-                            h = self._rotate_left(h)
-                        if self._is_red(h.left) and self._is_red(h.left.left):
-                            h = self._rotate_right(h)
-                        if self._root is h.right or self._root is h.left:
-                            self._root = h
+                        if self._is_red(h):
+                            h = self._rotate_right(p)
+                            if pp is None:
+                                self._root = h
+                            else:
+                                if h.key < pp.key:
+                                    pp.left = h
+                                else:
+                                    pp.right = h
                         break
                     else:
+                        pp = p
                         p = h
                         h = h.left
                 else:  # k > h.key
-                    x = h.right
-                    if x is None:
+                    if h.right is None:
                         # Make a 3-node or 4-node
                         h.right = self._Node(k, v, color=self._RED)
                         # Balance the tree (red links left-leaning)
                         if self._is_red(h.right) and not self._is_red(h.left):
                             h = self._rotate_left(h)
-                        # if self._is_red(h.left) and self._is_red(h.left.left):
-                        #     h = self._rotate_right(h)
+                            if p is None:
+                                self._root = h
+                            else:
+                                if h.key < p.key:
+                                    p.left = h
+                                else:
+                                    p.right = h
                         if self._is_red(h) and self._is_red(h.left):
-                            p.left = h
-                            p = self._rotate_right(p)
-                        # TODO HOOK INTO P AT THE BOTTOM
-                        if self._root is h.right or self._root is h.left:
-                            self._root = h
+                            h = self._rotate_right(p)
+                            if pp is None:
+                                self._root = h
+                            else:
+                                if h.key < pp.key:
+                                    pp.left = h
+                                else:
+                                    pp.right = h
                         break
                     else:
+                        pp = p
                         p = h
                         h = h.right
 
-        if self._root is None:
-            self._root = self._Node(k, v, color=self._BLACK)
-
-        # Update node counts and heights on path traveled back up the tree
-        while s:
-            x = s.pop()
-            self._update_node(x)  # update N, height, internal path length
+        # # Update node counts and heights on path traveled back up the tree
+        # while s:
+        #     x = s.pop()
+        #     self._update_node(x)  # update N, height, internal path length
 
         return self._root
 
@@ -713,16 +733,18 @@ class BottomUp234(RedBlackBST):
 if __name__ == '__main__':
     # import matplotlib.pyplot as plt
     from algs.exercises.draw_tree import TreeArtist
-    EXPECT_STR = 'SEARCHXMPLJ'
+    # EXPECT_STR = 'SEARCHXMPLJ'
+    EXPECT_STR = 'SEARCHXMP'
     # EXPECT_STR = 'EASYQUESTION'
     keys = list(EXPECT_STR)
-    # keys = [3, 7, 4, 9, 10, 0, 5, 6, 8, 2, 1]
+    # keys = [3, 7, 4, 9, 10, 0, 5, 6, 8, 2, 1, -8, -3, -5]
     # st = RedBlackBST.fromkeys(keys)
-    # st = TopDown234_nr.fromkeys(keys)
     # st = Unbalanced23.fromkeys(keys)
     # st = TopDown234.fromkeys(keys)
-    st = TopDown234bothways.fromkeys(keys)
+    st = TopDown234_nr.fromkeys(keys)
+    # st = TopDown234bothways.fromkeys(keys)
     # st = BottomUp234.fromkeys(keys)
+    # assert st.isBST() and st.is_balanced()
     TreeArtist(st).draw()
 
     # Compare two trees

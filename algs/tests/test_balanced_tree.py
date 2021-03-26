@@ -19,7 +19,7 @@ from algs.tests.test_search import data
 def t(data, request):
     return request.param(data)
 
-class TestRotations:
+class Test23Rotations:
     # NOTE keys must be in special order, expected outputs are in *level* order
     # TODO test values after deletion
     @pytest.fixture
