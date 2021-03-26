@@ -12,7 +12,8 @@
 from algs.basics import Stack as _Stack
 from algs.search.tree import _empty_check, BST
 
-__all__ = ['RedBlackBST', 'TopDown234', 'BottomUp234', 'Unbalanced23']
+__all__ = ['RedBlackBST', 'TopDown234', 'TopDown234bothways', 'BottomUp234',
+           'Unbalanced23']
 
 
 class KeyChangeException(Exception):
@@ -585,6 +586,64 @@ class TopDown234_nr(RedBlackBST):
         return self._root
 
 
+# Ex 3.3.27 Top-down 2-3-4 Trees, with right-leaning links allowed
+class TopDown234bothways(RedBlackBST):
+    """Implements a top-down 2-3-4 tree using the red-black representation."""
+    def _set(self, k, v, h=None):
+        """Add a new node to subtree at `h`, associating `k` with `v`.
+        If `k` is in subtree rooted at `h`, change its value to `v`.
+
+        ..note:: `h` will always be `self._root` from the parent class.
+
+        Parameters
+        ----------
+        k : key
+            key for which to search
+        v : value
+            object to be associated with key `k`
+        h : _Node, optional
+            root of the subtree at which to begin search
+        """
+        # subtree is empty, create a new node with a red link to parent
+        if h is None:
+            x = self._Node(k, v, color=self._RED)
+            if self._CACHE_FLAG:
+                self._cache = x
+            return x
+
+        # Split a 4-node into 3 2-nodes
+        if self._is_red(h.right) and self._is_red(h.left):
+            self._flip_colors(h)
+
+        # create a child, or update the value
+        if k < h.key:
+            h.left = self._set(k, v, h.left)
+        elif k > h.key:
+            h.right = self._set(k, v, h.right)
+        else:  # k == h.key
+            h.val = v  # update the value
+            if self._CACHE_FLAG:
+                self._cache = h
+            raise KeyChangeException  # no need for rotations
+
+        # Balance the tree (red links lean either way!)
+        if self._is_red(h.right) and self._is_red(h.right.right):
+            h = self._rotate_left(h)
+        if self._is_red(h.left) and self._is_red(h.left.left):
+            h = self._rotate_right(h)
+        # NOTE new cases account for right-leaning links
+        if self._is_red(h.right) and self._is_red(h.right.left):
+            h.right = self._rotate_right(h.right)
+            h = self._rotate_left(h)
+        if self._is_red(h.left) and self._is_red(h.left.right):
+            h.left = self._rotate_left(h.left)
+            h = self._rotate_right(h)
+
+        # Update node attributes
+        self._update_node(h)
+        return h
+
+
 # Ex 3.3.28 Bottom-up 2-3-4 Tree
 class BottomUp234(RedBlackBST):
     """Implements a bottom-up 2-3-4 tree using the red-black representation."""
@@ -623,14 +682,15 @@ class BottomUp234(RedBlackBST):
                 self._cache = h
             raise KeyChangeException  # no need for rotations
 
-        # Split a 4-node into 3 2-nodes
-        if self._is_red(h.left) and self._is_red(h.right):
-            self._flip_colors(h)
         # Balance the tree (red links left-leaning)
         if self._is_red(h.right) and not self._is_red(h.left):
             h = self._rotate_left(h)
         if self._is_red(h.left) and self._is_red(h.left.left):
-            h = self._rotate_right(h)
+            # Split the 4-node if we have to
+            if self._is_red(h.right):
+                self._flip_colors(h)
+            else:
+                h = self._rotate_right(h)
 
         # Update node attributes
         self._update_node(h)
@@ -650,18 +710,22 @@ class BottomUp234(RedBlackBST):
 # -----------------------------------------------------------------------------
 #         Interactive test setup
 # -----------------------------------------------------------------------------
-# if __name__ == '__main__':
+if __name__ == '__main__':
     # import matplotlib.pyplot as plt
-    # from algs.exercises.draw_tree import TreeArtist
-    # EXPECT_STR = 'SEARCHEXAMPLE'
-    # # EXPECT_STR = 'EASYQUESTION'
-    # data = list((c, i) for i, c in enumerate(EXPECT_STR))
-    # st = RedBlackBST(data)
-    # st = TopDown234(data)
-    # st = TopDown234_nr(data)
-    # st = Unbalanced23(data)
-    # st = BottomUp234(data)
+    from algs.exercises.draw_tree import TreeArtist
+    EXPECT_STR = 'SEARCHXMPLJ'
+    # EXPECT_STR = 'EASYQUESTION'
+    keys = list(EXPECT_STR)
     # keys = [3, 7, 4, 9, 10, 0, 5, 6, 8, 2, 1]
+    # st = RedBlackBST.fromkeys(keys)
+    # st = TopDown234_nr.fromkeys(keys)
+    # st = Unbalanced23.fromkeys(keys)
+    # st = TopDown234.fromkeys(keys)
+    st = TopDown234bothways.fromkeys(keys)
+    # st = BottomUp234.fromkeys(keys)
+    TreeArtist(st).draw()
+
+    # Compare two trees
     # tst = TopDown234.fromkeys(keys)
     # bst = BottomUp234.fromkeys(keys)
     # fig = plt.figure(1, clear=True)
