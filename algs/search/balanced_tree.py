@@ -539,29 +539,6 @@ class TopDown234_nr(RedBlackBST):
                 # Split a 4-node into 3 2-nodes at the root
                 if self._is_red(h.left) and self._is_red(h.right):
                     self._flip_colors(h)
-                    if (p is not None and
-                            self._is_red(p.right) and not self._is_red(p.left)):
-                        h = self._rotate_left(p)
-                        p = pp  # reset parent pointer
-                        if pp is None:
-                            self._root = h
-                        else:
-                            if h.key < pp.key:
-                                pp.left = h
-                            else:
-                                pp.right = h
-                    if (pp is not None and
-                            self._is_red(pp.left) and self._is_red(pp.left.left)):
-                        h = self._rotate_right(pp)
-                        p = pp
-                        if p is self._root:
-                            self._root = h
-                            pp = p = None
-                        else:
-                            if h.key < pp.key:
-                                pp.left = h
-                            else:
-                                pp.right = h
 
                 # s.push(h)
                 # NOTE do insertion *before* moving `h` so we retain both
@@ -605,11 +582,13 @@ class TopDown234_nr(RedBlackBST):
                                         pp.left = h
                                     else:
                                         pp.right = h
+                        # Move down the tree
                         pp = p
                         p = h
                         h = h.left
                 else:  # k > h.key
-                    if h.right is None:
+                    x = h.right
+                    if x is None:
                         # Make a 3-node or 4-node
                         h.right = self._Node(k, v, color=self._RED)
                         # Balance the tree (red links left-leaning)
@@ -633,6 +612,30 @@ class TopDown234_nr(RedBlackBST):
                                     pp.right = h
                         break
                     else:
+                        # Split a 4-node into 3 2-nodes before moving into the node
+                        if self._is_red(x.left) and self._is_red(x.right):
+                            self._flip_colors(x)
+                            if self._is_red(h.right) and not self._is_red(h.left):
+                                h = self._rotate_left(h)
+                                if p is None:
+                                    self._root = h
+                                else:
+                                    if h.key < p.key:
+                                        p.left = h
+                                    else:
+                                        p.right = h
+                            if (p is not None and
+                                    self._is_red(p.left) and self._is_red(p.left.left)):
+                                h = self._rotate_right(p)
+                                if pp is None:
+                                    self._root = h
+                                    pp = p = None
+                                else:
+                                    if h.key < pp.key:
+                                        pp.left = h
+                                    else:
+                                        pp.right = h
+                        # Move down the tree
                         pp = p
                         p = h
                         h = h.right
@@ -775,8 +778,7 @@ if __name__ == '__main__':
     EXPECT_STR = 'SEARCHXMPLJ'
     # EXPECT_STR = 'EASYQUESTION'
     keys = list(EXPECT_STR)
-    # keys = [3, 7, 4, 9, 10, 0, 5, 6, 8, 2, 1, -8, -3, -5]
-    keys = [3, 7, 4, 9, 10, 0, 5, 6, 8, 2, 1, -8, -3, -5]  # fails on -3
+    keys = [3, 7, 4, 9, 10, 0, 5, 6, 8, 2, 1, -8, -3, -5]
     # st = RedBlackBST.fromkeys(keys)
     # st = Unbalanced23.fromkeys(keys)
     # st = TopDown234.fromkeys(keys)
