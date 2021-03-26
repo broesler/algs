@@ -539,7 +539,7 @@ class TopDown234_nr(RedBlackBST):
                 # Split a 4-node into 3 2-nodes before moving into the node
                 if self._is_red(h.left) and self._is_red(h.right):
                     self._flip_colors(h)
-                    if (p is not None and 
+                    if (p is not None and
                             self._is_red(p.right) and not self._is_red(p.left)):
                         h = self._rotate_left(p)
                         p = pp  # reset parent pointer
@@ -550,6 +550,19 @@ class TopDown234_nr(RedBlackBST):
                                 pp.left = h
                             else:
                                 pp.right = h
+                    if (p is not None and
+                            self._is_red(p.left) and self._is_red(p.left.left)):
+                        h = self._rotate_right(p)
+                        p = pp
+                        if pp is None or p is self._root:
+                            self._root = h
+                            pp = p = None
+                        else:
+                            if h.key < pp.key:
+                                pp.left = h
+                            else:
+                                pp.right = h
+
                 # s.push(h)
                 if k < h.key:
                     if h.left is None:
@@ -734,10 +747,11 @@ if __name__ == '__main__':
     # import matplotlib.pyplot as plt
     from algs.exercises.draw_tree import TreeArtist
     # EXPECT_STR = 'SEARCHXMPLJ'
-    EXPECT_STR = 'SEARCHXMP'
+    # EXPECT_STR = 'SEARCHXMPLJ'
     # EXPECT_STR = 'EASYQUESTION'
-    keys = list(EXPECT_STR)
+    # keys = list(EXPECT_STR)
     # keys = [3, 7, 4, 9, 10, 0, 5, 6, 8, 2, 1, -8, -3, -5]
+    keys = [3, 7, 4, 9, 10, 0, 5, 6, 8, 2, 1, -8, -3]
     # st = RedBlackBST.fromkeys(keys)
     # st = Unbalanced23.fromkeys(keys)
     # st = TopDown234.fromkeys(keys)
