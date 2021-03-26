@@ -689,24 +689,27 @@ class TreeArtist():
         #   * option to plot red links level with neighbors
         #   * add scaling parameters, size tree around font?
         LINK_COLOR = 'k'
+        RED = 'C3'
         LINE_WIDTH = 2
         NULL_DIST = 0.3
+
+        edgecolor = fontcolor = RED if self._is_red(h.node) else LINK_COLOR
 
         # Plot the node itself
         circ = patches.Circle(
                 (h.x, h.y),
                 radius=0.25,
-                edgecolor='k', facecolor='#EEE',  # light grey with black edge
+                edgecolor=edgecolor, facecolor='#EEE',
                 zorder=3  # place on top of lines
                 )
         ax.add_patch(circ)
         if label_keys:
-            ax.annotate(h.node.key, xy=(h.x, h.y), ha='center', va='center')
+            ax.annotate(h.node.key, xy=(h.x, h.y), color=fontcolor, ha='center', va='center')
 
         # Plot links to children
         for t, is_left in zip([h.left, h.right], [True, False]):
             if t:
-                color = 'C3' if self._is_red(t.node) else LINK_COLOR
+                color = RED if self._is_red(t.node) else LINK_COLOR
                 lw = 3 if self._is_red(t.node) else LINE_WIDTH
                 ax.plot((h.x, t.x), (h.y, t.y), color=color, lw=lw)
             elif null_links:
@@ -758,13 +761,13 @@ if __name__ == '__main__':
     # st = BST.fromkeys(sorted(list('SEARCHEXAMPLE')))  # in-order
     # st = BST.fromkeys(list('AXCSERHPL'))             # worst-case alternating
     # st = BST.fromkeys(list('SEARCHEXAMPLE'))          # arbitrary
-    # st = RedBlackBST.fromkeys(list('SEARCHEXAMPLE'))
+    st = RedBlackBST.fromkeys(list('SEARCHEXAMPLEJ'))
     # st = BST.fromkeys(st.pre_order())  # test BST with shape of RedBlackBST
 
     # st = BST.fromkeys(list('SQRYXV'))
     # st = BST.fromkeys(list('SQRY'))
 
-    st = ThreadedST.fromkeys(list('SEARCHEXAMPLE'))
+    # st = ThreadedST.fromkeys(list('SEARCHEXAMPLE'))
 
     # Test with random tree
     # N = 30
