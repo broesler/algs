@@ -80,7 +80,7 @@ class RedBlackBST(BST):
                     + COLOR_END
                     + f", L:{left_str}, R:{right_str}")
 
-    # ------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #         Public API
     # -------------------------------------------------------------------------
     def __init__(self, *args, **kwargs):
@@ -120,7 +120,7 @@ class RedBlackBST(BST):
         if not self.__contains__(k):
             raise KeyError(k)
         # If root is a 2-node, make it a 3-node
-        if (not self._is_red(self._root.left) and 
+        if (not self._is_red(self._root.left) and
             not self._is_red(self._root.right)):
             self._root.color = self._RED
         self._root = self._delete(k, self._root)
@@ -137,7 +137,7 @@ class RedBlackBST(BST):
         """
         _empty_check(self)
         # If root is a 2-node, make it a 3-node
-        if (not self._is_red(self._root.left) and 
+        if (not self._is_red(self._root.left) and
             not self._is_red(self._root.right)):
             self._root.color = self._RED
         self._root = self._delete_min(self._root)
@@ -156,7 +156,7 @@ class RedBlackBST(BST):
         """
         _empty_check(self)
         # If root is a 2-node, make it a 3-node
-        if (not self._is_red(self._root.right) and 
+        if (not self._is_red(self._root.right) and
             not self._is_red(self._root.left)):
             self._root.color = self._RED
         self._root = self._delete_max(self._root)
@@ -369,9 +369,8 @@ class RedBlackBST(BST):
     def _is23(self, h=None):
         if h is None:
             return True
-        if self._is_red(h.right):
-            return False
-        elif self._is_red(h.left) and self._is_red(h.left.left):
+        if (self._is_red(h.right) or
+            (self._is_red(h.left) and self._is_red(h.left.left))):
             return False
         else:
             return self._is23(h.left) and self._is23(h.right)
@@ -849,7 +848,7 @@ class AVLTree(BST):
 if __name__ == '__main__':
     # import matplotlib.pyplot as plt
     from algs.exercises.draw_tree import TreeArtist
-    EXPECT_STR = 'SEARCHXMPLJ'
+    EXPECT_STR = 'SEARCHXMPL'
     # EXPECT_STR = 'EASYQUESTION'
     keys = list(EXPECT_STR)
     # keys = [3, 7, 4, 9, 10, 0, 5, 6, 8, 2, 1, -8, -3, -5]
