@@ -755,6 +755,94 @@ class BottomUp234(RedBlackBST):
         return False
 
 
+class AVLTree(BST):
+    """Implements an AVL height-balanced tree, without colors."""
+
+    def _set(self, k, v, h=None):
+        """Add a new node to subtree at `h`, associating `k` with `v`.
+        If `k` is in subtree rooted at `h`, change its value to `v`.
+
+        Parameters
+        ----------
+        k : key
+            key for which to search
+        v : value
+            object to be associated with key `k`
+        h : _Node, optional
+            root of the subtree at which to begin search
+        """
+        # subtree is empty, create a new node with a red link to parent
+        if h is None:
+            x = self._Node(k, v)
+            if self._CACHE_FLAG:
+                self._cache = x
+            return x
+
+        # create a child, or update the value
+        self._cost += 1
+        if k < h.key:
+            h.left = self._set(k, v, h.left)
+        elif k > h.key:
+            h.right = self._set(k, v, h.right)
+        else:  # k == h.key
+            h.val = v  # update the value
+            if self._CACHE_FLAG:
+                self._cache = h
+            return h
+            # raise KeyChangeException  # no need for rotations
+
+        # Balance the tree based on height of children
+        bal = self._height(h.left) - self._height(h.right)
+        if bal < -1:  # right-heavy
+            if k < h.right.key:   # new key was added to the left
+                h.right = self._rotate_right(h.right)
+                h = self._rotate_left(h)
+            else:                 # new key was added to the right
+                h = self._rotate_left(h)
+        elif bal > 1:  # left-heavy
+            if k < h.left.key:    # new key was added to the left
+                h = self._rotate_right(h)
+            else:                 # new key was added to the right
+                h.left = self._rotate_left(h.left)
+                h = self._rotate_right(h)
+
+        # Update node height
+        self._update_node(h)
+        return h
+
+    def _rotate_left(self, h):
+        """Rotate node `h` such that its right child becomes its parent."""
+        x = h.right
+        h.right = x.left
+        x.left = h
+        self._update_node(h)  # update the new child before the new parent
+        self._update_node(x)
+        return x
+
+    def _rotate_right(self, h):
+        """Rotate node `h` such that its left child becomes its parent."""
+        x = h.left
+        h.left = x.right
+        x.right = h
+        self._update_node(h)  # update the new child before the new parent
+        self._update_node(x)
+        return x
+
+    def is_height_balanced(self):
+        """Return True if the heights of the subtrees rooted at each child
+        differ by 1 or 0."""
+        return self._is_height_balanced(self._root)
+
+    def _is_height_balanced(self, x=None):
+        if x is None:
+            return True
+        elif abs(self._height(x.left) - self._height(x.right)) > 1:
+            return False
+        else:
+            return (self._is_height_balanced(x.left) and
+                    self._is_height_balanced(x.right))
+
+
 # -----------------------------------------------------------------------------
 #         Interactive test setup
 # -----------------------------------------------------------------------------
@@ -764,15 +852,18 @@ if __name__ == '__main__':
     EXPECT_STR = 'SEARCHXMPLJ'
     # EXPECT_STR = 'EASYQUESTION'
     keys = list(EXPECT_STR)
-    keys = [3, 7, 4, 9, 10, 0, 5, 6, 8, 2, 1, -8, -3, -5]
+    # keys = [3, 7, 4, 9, 10, 0, 5, 6, 8, 2, 1, -8, -3, -5]
     # st = RedBlackBST.fromkeys(keys)
     # st = Unbalanced23.fromkeys(keys)
     # st = TopDown234.fromkeys(keys)
-    st = TopDown234_nr.fromkeys(keys)
+    # st = TopDown234_nr.fromkeys(keys)
     # st = TopDown234bothways.fromkeys(keys)
     # st = BottomUp234.fromkeys(keys)
-    # assert st.isBST() and st.is_balanced()
+    st = AVLTree.fromkeys(keys)
     TreeArtist(st).draw()
+    assert st.isBST()
+    assert st.is_height_balanced()
+    assert st.is_balanced()
 
     # Compare two trees
     # tst = TopDown234.fromkeys(keys)
