@@ -741,8 +741,8 @@ class BST():
     def isBST(self):
         """Assert that all of the binary search tree properties hold."""
         return (self._is_binary_tree() and
-               self._is_ordered() and
-               self._has_no_duplicates())
+                self._is_ordered() and
+                self._has_no_duplicates())
 
     # Ex 3.2.29
     def _is_binary_tree(self):
