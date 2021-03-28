@@ -18,6 +18,7 @@ __all__ = ['RedBlackBST', 'TopDown234', 'BottomUp234', 'Unbalanced23']
 class KeyChangeException(Exception):
     pass
 
+
 class RedBlackBST(BST):
     """Implements a red-black binary search tree.
 

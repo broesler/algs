@@ -30,7 +30,7 @@ tag = filename.stem
 kind = 'app'  # 'ins', 'app', 'selforg', 'cache'
 
 fig = plt.figure(0, clear=True)
-fig.set_size_inches((8, max(6, 3*len(ST_names))), forward=True)
+fig.set_size_inches((6, max(8, 3*len(ST_names))), forward=True)
 fig.suptitle(f"{filename.name}, min. length = {MINLEN}")
 gs = GridSpec(nrows=len(ST_names), ncols=1)
 
@@ -44,7 +44,10 @@ for i, ST_name in enumerate(ST_names):
 
     # Plot the amortized cost (# cost) vs. number of `put` operations
     ax = fig.add_subplot(gs[i])
-    ax.set_title(ST_name, fontsize=12)
+    # ax.set_title(ST_name, fontsize=12)
+    ax.annotate(ST_name,
+                xy=(0.01, 0.97), xycoords='axes fraction',
+                ha='left', va='top', color='k')
 
     # Place labels on axis (like ticklabels)
     ax.set_xlabel('operations')
@@ -70,6 +73,12 @@ for i, ST_name in enumerate(ST_names):
     ax.set_yticks([0, max(fc.cost)])
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
+    # Hide x-labels except for bottom
+    if i < len(ST_names)+1:
+        ax.xaxis.set_ticklabels([])
+        ax.set_xlabel('')
+    else:
+        ax.ticklabel_format(style='plain')  # no scientific notation
 
 # gs.tight_layout(fig, rect=(0, 0, 1, 0.96))
 gs.tight_layout(fig)
@@ -106,7 +115,8 @@ for i, ST_name in enumerate(ST_names):
 ax.legend()
 
 # Place labels on axis (like ticklabels)
-ax.set(xscale='log', yscale='log')
+# ax.set(xscale='log', yscale='log')
+# ax.set(xscale='log')
 ylim = ax.get_ylim()
 ax.set_xlabel('operations')
 ax.set_ylabel('time [s]')
