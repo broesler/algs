@@ -9,6 +9,8 @@
 """
 # =============================================================================
 
+import random
+
 from algs.basics import Stack as _Stack
 from algs.search.tree import _empty_check, BST
 
@@ -121,7 +123,7 @@ class RedBlackBST(BST):
             raise KeyError(k)
         # If root is a 2-node, make it a 3-node
         if (not self._is_red(self._root.left) and
-            not self._is_red(self._root.right)):
+              not self._is_red(self._root.right)):
             self._root.color = self._RED
         self._root = self._delete(k, self._root)
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
@@ -138,7 +140,7 @@ class RedBlackBST(BST):
         _empty_check(self)
         # If root is a 2-node, make it a 3-node
         if (not self._is_red(self._root.left) and
-            not self._is_red(self._root.right)):
+              not self._is_red(self._root.right)):
             self._root.color = self._RED
         self._root = self._delete_min(self._root)
         if not self.is_empty:
@@ -157,7 +159,7 @@ class RedBlackBST(BST):
         _empty_check(self)
         # If root is a 2-node, make it a 3-node
         if (not self._is_red(self._root.right) and
-            not self._is_red(self._root.left)):
+              not self._is_red(self._root.left)):
             self._root.color = self._RED
         self._root = self._delete_max(self._root)
         if not self.is_empty:
@@ -370,7 +372,7 @@ class RedBlackBST(BST):
         if h is None:
             return True
         if (self._is_red(h.right) or
-            (self._is_red(h.left) and self._is_red(h.left.left))):
+              (self._is_red(h.left) and self._is_red(h.left.left))):
             return False
         else:
             return self._is23(h.left) and self._is23(h.right)
@@ -430,10 +432,9 @@ class Unbalanced23(RedBlackBST):
                 self._cache = x
             return x
 
-        parent_is_3node = (True if (self._is_red(h) or
-                                     self._is_red(h.left) or
-                                     self._is_red(h.right))
-                           else False)
+        parent_is_3node = (self._is_red(h) or
+                           self._is_red(h.left) or
+                           self._is_red(h.right))
 
         # create a child, or update the value
         if k < h.key:
@@ -842,6 +843,76 @@ class AVLTree(BST):
                     self._is_height_balanced(x.right))
 
 
+# Web Exercise: implement a Randomized Binary Search Tree
+class RandomizedBST(BST):
+    """Implements a radomized BST per Martinez and Roura [0].
+
+    .. [0]:: Martínez, Conrado and Roura, Salvador (1997). "Randomized binary
+    search trees". *Journal of the ACM*, 45 (2): 288–323.
+    """
+    def _set(self, k, v, t=None):
+        """Add a new node to subtree at `t`, associating `k` with `v`.
+        If `k` is in subtree rooted at `t`, change its value to `v`.
+
+        Parameters
+        ----------
+        k : key
+            key for which to search
+        v : value
+            object to be associated with key `k`
+        t : _Node, optional
+            root of the subtree at which to begin search
+        """
+        # subtree is empty, create a new node with a red link to parent
+        if t is None:
+            new = self._Node(k, v)
+            if self._CACHE_FLAG:
+                self._cache = new
+            return new
+
+        # insert node here w.p. 1/(n+1)
+        n = t.N
+        r = random.randint(0, n)
+        if r == n:
+            return self._insert_at_root(k, v, t)
+        elif k < t.key:
+            t.left = self._set(k, v, t.left)
+        else:  # k > t.key:
+            t.right = self._set(k, v, t.right)
+
+        return t
+
+    def _insert_at_root(self, k, v, t=None):
+        """Inset a new node at the root of the subtree of `t`.
+
+        Parameters
+        ----------
+        k : key
+            key to insert
+        v : value
+            object to be associated with key `k`
+        t : _Node, optional
+            root of the subtree at which to insert `k`
+        """
+        left, right = self._split(k, t)
+        t = self._Node(k, v)
+        t.left, t.right = left, right
+        return t
+
+    def _split(k, t=None, s=None, g=None):
+        """Split the subtree rooted at `t` into `s` and `g`, where `s` contains
+        all keys less than `k`, and `g` contains all keys greater than `k`."""
+        if t is None:
+            return None, None
+
+        if k < t.key:
+            g = t
+            s, g.left = self._split(k, t.left, s, g.left)
+        else:  # x > t.key
+            s = t
+            s.right, g = self._split(k, t.right, s.right, g)
+        return s, g
+
 # -----------------------------------------------------------------------------
 #         Interactive test setup
 # -----------------------------------------------------------------------------
@@ -858,11 +929,12 @@ if __name__ == '__main__':
     # st = TopDown234_nr.fromkeys(keys)
     # st = TopDown234bothways.fromkeys(keys)
     # st = BottomUp234.fromkeys(keys)
-    st = AVLTree.fromkeys(keys)
+    # st = AVLTree.fromkeys(keys)
+    st = RandomizedBST.fromkeys(keys)
     TreeArtist(st).draw()
     assert st.isBST()
-    assert st.is_height_balanced()
-    assert st.is_balanced()
+    # assert st.is_balanced()
+    # assert st.is_height_balanced()  # only AVL tree
 
     # Compare two trees
     # tst = TopDown234.fromkeys(keys)
