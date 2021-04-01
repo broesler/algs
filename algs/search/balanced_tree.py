@@ -848,7 +848,7 @@ class AVLTree(BST):
 if __name__ == '__main__':
     # import matplotlib.pyplot as plt
     from algs.exercises.draw_tree import TreeArtist
-    EXPECT_STR = 'SEARCHXMPL'
+    EXPECT_STR = 'SEARCHXMPLJ'
     # EXPECT_STR = 'EASYQUESTION'
     keys = list(EXPECT_STR)
     # keys = [3, 7, 4, 9, 10, 0, 5, 6, 8, 2, 1, -8, -3, -5]
