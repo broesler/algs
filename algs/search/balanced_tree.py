@@ -18,7 +18,7 @@ __all__ = ['RedBlackBST', 'TopDown234', 'TopDown234bothways', 'BottomUp234',
            'Unbalanced23']
 
 
-class KeyChangeException(Exception):
+class KeyChanged(Exception):
     pass
 
 
@@ -108,7 +108,7 @@ class RedBlackBST(BST):
                 self._root = self._set(k, v, self._root)
                 self._root.color = self._BLACK
                 self._update_node(self._root)
-            except KeyChangeException:
+            except KeyChanged:
                 pass
 
     def __delitem__(self, k):
@@ -200,7 +200,7 @@ class RedBlackBST(BST):
             h.val = v  # update the value
             if self._CACHE_FLAG:
                 self._cache = h
-            raise KeyChangeException  # no need for rotations
+            raise KeyChanged  # no need for rotations
 
         # Balance the tree (red links left-leaning)
         if self._is_red(h.right) and not self._is_red(h.left):
@@ -445,7 +445,7 @@ class Unbalanced23(RedBlackBST):
             h.val = v  # update the value
             if self._CACHE_FLAG:
                 self._cache = h
-            raise KeyChangeException  # no need for rotations
+            raise KeyChanged  # no need for rotations
 
         # Update node attributes
         self._update_node(h)
@@ -491,7 +491,7 @@ class TopDown234(RedBlackBST):
             h.val = v  # update the value
             if self._CACHE_FLAG:
                 self._cache = h
-            raise KeyChangeException  # no need for rotations
+            raise KeyChanged  # no need for rotations
 
         # Balance the tree (red links left-leaning)
         if self._is_red(h.right) and not self._is_red(h.left):
@@ -534,7 +534,7 @@ class TopDown234_nr(RedBlackBST):
                 h.val = v
                 if self._CACHE_FLAG:
                     self._cache = h
-                raise KeyChangeException  # no need for rotations
+                raise KeyChanged  # no need for rotations
             else:
                 # Split a 4-node into 3 2-nodes at the root
                 if self._is_red(h.left) and self._is_red(h.right):
@@ -672,7 +672,7 @@ class TopDown234bothways(RedBlackBST):
             h.val = v  # update the value
             if self._CACHE_FLAG:
                 self._cache = h
-            raise KeyChangeException  # no need for rotations
+            raise KeyChanged  # no need for rotations
 
         # Balance the tree (red links lean either way!)
         if self._is_red(h.right) and self._is_red(h.right.right):
@@ -728,7 +728,7 @@ class BottomUp234(RedBlackBST):
             h.val = v  # update the value
             if self._CACHE_FLAG:
                 self._cache = h
-            raise KeyChangeException  # no need for rotations
+            raise KeyChanged  # no need for rotations
 
         # Balance the tree (red links left-leaning)
         if self._is_red(h.right) and not self._is_red(h.left):
@@ -789,7 +789,7 @@ class AVLTree(BST):
             if self._CACHE_FLAG:
                 self._cache = h
             return h
-            # raise KeyChangeException  # no need for rotations
+            # raise KeyChanged  # no need for rotations
 
         # Balance the tree based on height of children
         bal = self._height(h.left) - self._height(h.right)
