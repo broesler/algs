@@ -50,6 +50,8 @@ class SequentialSearchST():
     ----------
     items : mapping, dict-like
         Iterable of (key, value) pairs to be put into the table.
+    cache : bool
+        If True, cache the most recent search result.
 
     Attributes
     ----------
@@ -69,12 +71,13 @@ class SequentialSearchST():
             self.next = next  # pointer to next item
 
     # Initialize the symbol table
-    def __init__(self, items=list(), cache=True):
+    def __init__(self, items=None, cache=True):
         self.size = 0             # number of elements in the table
         self._first = None
         self._cost = 0            # cost of previous get/put/delete
         self._CACHE_FLAG = cache
         self._cache = None        # store latest search hit
+        items = items or []       # must be iterable
 
         # Initialize the symbol table
         try:
