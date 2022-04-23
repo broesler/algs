@@ -13,9 +13,10 @@ import numpy as np
 import pytest
 
 from algs.search import (SequentialSearchST, BinarySearchST, ArrayST, 
-                         BST, BST_nr, ThreadedST, ThreadedST_nr, ArrayBST, 
-                         RedBlackBST, TopDown234, TopDown234_nr, 
-                         TopDown234bothways, BottomUp234, Unbalanced23, AVLTree)
+                         BST, BST_nr, ThreadedST, ThreadedST_nr, ArrayBST,
+                         RedBlackBST, TopDown234, TopDown234_nr,
+                         TopDown234bothways, BottomUp234, Unbalanced23,
+                         AVLTree, SeparateChainingHashST)
 
 rng = np.random.default_rng(seed=565656)
 
