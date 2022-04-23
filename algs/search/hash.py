@@ -11,8 +11,6 @@
 
 from algs.search.table import _Item, _empty_check
 
-keys = np.r_[212, 618, 302, 940, 702, 704, 612, 606, 772, 510, 423, 650, 317,
-             907, 507, 304, 714, 857, 801, 900, 413, 701, 418, 601]
 
 # Run tests
 # if __name__ == '__main__':
