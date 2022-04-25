@@ -12,9 +12,11 @@
 import numpy as np
 import pytest
 
-from algs.search import SequentialSearchST, BinarySearchST, ArrayST, \
-                        BST, BST_nr, ThreadedST, ThreadedST_nr, ArrayBST, \
-                        RedBlackBST, TopDown234, BottomUp234, Unbalanced23 
+from algs.search import (SequentialSearchST, BinarySearchST, ArrayST, 
+                         BST, BST_nr, ThreadedST, ThreadedST_nr, ArrayBST,
+                         RedBlackBST, TopDown234, TopDown234_nr,
+                         TopDown234bothways, BottomUp234, Unbalanced23,
+                         AVLTree, SeparateChainingHashST)
 
 rng = np.random.default_rng(seed=565656)
 
@@ -69,7 +71,8 @@ def data_set(data):
 UNORDERED_STS = set([SequentialSearchST, ArrayST])
 ORDERED_STS = set([BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr,
                    ArrayBST])
-BALANCED_TREES = set([RedBlackBST, TopDown234, BottomUp234, Unbalanced23])
+BALANCED_TREES = set([RedBlackBST, TopDown234, TopDown234_nr, BottomUp234,
+                      TopDown234bothways, Unbalanced23, AVLTree])
 ALL_STS = UNORDERED_STS | ORDERED_STS | BALANCED_TREES
 
 

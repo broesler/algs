@@ -14,8 +14,8 @@ import random
 from algs.basics import Stack as _Stack
 from algs.search.tree import _empty_check, BST
 
-__all__ = ['RedBlackBST', 'TopDown234', 'TopDown234bothways', 'BottomUp234',
-           'Unbalanced23']
+__all__ = ['RedBlackBST', 'TopDown234', 'TopDown234_nr', 'TopDown234bothways',
+           'BottomUp234', 'Unbalanced23', 'AVLTree']
 
 
 class KeyChanged(Exception):
@@ -525,6 +525,8 @@ class TopDown234_nr(RedBlackBST):
         """
         if self._root is None:
             self._root = self._Node(k, v, color=self._BLACK)
+            if self._CACHE_FLAG:
+                self._cache = self._root
             return self._root
 
         s = _Stack()
@@ -547,6 +549,8 @@ class TopDown234_nr(RedBlackBST):
                     if h.left is None:
                         # Make a 3-node or 4-node (depending on h.color)
                         h.left = self._Node(k, v, color=self._RED)
+                        if self._CACHE_FLAG:
+                            self._cache = h.left
                         if self._is_red(h):
                             h = self._rotate_right(p)
                             # Update the parent
@@ -565,6 +569,8 @@ class TopDown234_nr(RedBlackBST):
                     if h.right is None:
                         # Make a 3-node or 4-node
                         h.right = self._Node(k, v, color=self._RED)
+                        if self._CACHE_FLAG:
+                            self._cache = h.right
                         # Balance the tree (red links left-leaning)
                         if self._is_red(h.right) and not self._is_red(h.left):
                             h = self._rotate_left(h)
@@ -844,6 +850,7 @@ class AVLTree(BST):
 
 
 # Web Exercise: implement a Randomized Binary Search Tree
+# TODO implement all methods for use in tests
 class RandomizedBST(BST):
     """Implements a radomized BST per Martinez and Roura [0].
 
