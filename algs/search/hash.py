@@ -216,7 +216,8 @@ class SeparateChainingLiteHashST():
     def __setitem__(self, k, v):
         """Insert a new value `v` associated with key `k`.
         If `k` is in the table, change its value to `v`."""
-        x = self.st[self._hash(k)]
+        idx = self._hash(k)
+        x = self.st[idx]
         while x:
             if k == x.key:
                 x.val = v
@@ -224,7 +225,7 @@ class SeparateChainingLiteHashST():
             else:
                 x = x.next
         else:
-            x = self._Node(k, v)
+            self.st[idx] = self._Node(k, v)
             self.size += 1
 
     def __getitem__(self, k):
@@ -313,6 +314,8 @@ class SeparateChainingLiteHashST():
 #         Run tests
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
+    import string
+
     # Exercise 3.4.1
     keys = 'EASYQUTION'
     items = [(c, i) for i, c in enumerate(keys)]
@@ -327,6 +330,14 @@ if __name__ == '__main__':
     # st._hash = types.MethodType(__hash, st)  # instance patching
     for k, v in items:
         st[k] = v
+
+    print(st.st)
+
+    # Test SeparateChainingLiteHashST
+    keys = string.ascii_uppercase
+    items = [(c, i) for i, c in enumerate(keys)]
+    # import ipdb; ipdb.set_trace()
+    st = SeparateChainingLiteHashST(items)
 
 # =============================================================================
 # =============================================================================
