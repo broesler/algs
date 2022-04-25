@@ -12,7 +12,7 @@
 from algs.basics import Queue as _Queue
 from algs.search.table import SequentialSearchST
 
-__all__ = ['SeparateChainingHashST']
+__all__ = ['SeparateChainingHashST', 'SeparateChainingLiteHashST']
 
 
 class SeparateChainingHashST():
@@ -39,7 +39,6 @@ class SeparateChainingHashST():
     """
     def __init__(self, items=None, M=7, cache=False):
         self.M = M
-        self.size = 0
         items = items or []  # must be iterable
         # Create M linked lists
         self.st = [SequentialSearchST() for _ in range(M)]
@@ -55,15 +54,15 @@ class SeparateChainingHashST():
     def is_empty(self):
         return self.size == 0
 
+    @property
+    def size(self):
+        return sum([t.size for t in self.st])
+
     def _hash(self, k):
         """Modular hashing using Python's built-in `hash` function."""
         # NOTE `hash` is "salted" each time python is run for security reasons,
         # so results are non-deterministic. Manual override or set seed?
         return hash(k) % self.M
-
-    def _validate_size(self):
-        """Check if `size` is self-consistent."""
-        assert self.size == sum([t.size for t in self.st])
 
     # ------------------------------------------------------------------------- 
     #         Public API
@@ -76,19 +75,14 @@ class SeparateChainingHashST():
         """Insert a new value `v` associated with key `k`.
         If `k` is in the table, change its value to `v`."""
         self.st[self._hash(k)][k] = v
-        self.size += 1
 
     # Exercise 3.4.9
     def __delitem__(self, k):
-        """Delete the item associated with `k`.
-
-        Raises
-        ------
-        KeyError
-            If `k` is not in the table.
-        """
+        """Delete the item associated with `k`."""
         del self.st[self._hash(k)][k]
-        self.size -= 1
+
+    def __len__(self):
+        return self.size
 
     def __contains__(self, k):
         """Return True if `k` is present in the table, False otherwise."""
@@ -98,11 +92,17 @@ class SeparateChainingHashST():
         except KeyError:
             return False
 
+    def __eq__(self, other):
+        return sorted(self.items()) == sorted(other.items())
+
     def __str__(self):
-        return str(st.st)
+        out = ''
+        for i, t in enumerate(self.st):
+            out += f"[{i}]: {repr(t)}\n"
+        return out
 
     def __repr__(self):
-        return f"<{self.__class__.__name__}: {self.__str__()}>"
+        return f"<{self.__class__.__name__}:\n{self.__str__()}>"
 
     # -------------------------------------------------------------------------
     #         Iterator functions
@@ -133,9 +133,6 @@ class SeparateChainingHashST():
         """Return an iterator of all of the keys in the table."""
         yield from self.keys()
 
-    # -------------------------------------------------------------------------
-    #         Private API
-    # -------------------------------------------------------------------------
     def _make_iterator(self, rtype):
         """Return an iterator over all of the items in the table."""
         def iterator(self, lo=None, hi=None):
@@ -181,7 +178,7 @@ class SeparateChainingLiteHashST():
             self.next = next
 
         def __str__(self):
-            return f"(key={repr(self.key)}, value={repr(self.val)})"
+            return f"({repr(self.key)}: {repr(self.val)})"
 
         def __repr__(self):
             return f"<{self.__class__.__name__}: {self.__str__()}>"
@@ -210,22 +207,29 @@ class SeparateChainingLiteHashST():
     # ------------------------------------------------------------------------- 
     #         Public API
     # -------------------------------------------------------------------------
-    def __len__(self):
-        return self.size
-
     def __setitem__(self, k, v):
         """Insert a new value `v` associated with key `k`.
         If `k` is in the table, change its value to `v`."""
+        # Hash into table
         idx = self._hash(k)
         x = self.st[idx]
+
+        if x is None:
+            # Create new linked list at hash table location
+            self.st[idx] = self._Node(k, v)
+            self.size += 1
+            return
+
+        # There is a hash collision. Search for key.
         while x:
             if k == x.key:
                 x.val = v
-                break
+                return
             else:
                 x = x.next
         else:
-            self.st[idx] = self._Node(k, v)
+            # Insert new node at beginning of list
+            self.st[idx] = self._Node(k, v, self.st[idx])
             self.size += 1
 
     def __getitem__(self, k):
@@ -233,7 +237,7 @@ class SeparateChainingLiteHashST():
         x = self.st[self._hash(k)]
         while x:
             if k == x.key:
-                return v
+                return x.val
             else:
                 x = x.next
         else:
@@ -241,9 +245,16 @@ class SeparateChainingLiteHashST():
 
     def __delitem__(self, k):
         """Delete the item associated with `k`."""
-        x = self.st[self._hash(k)]
+        idx = self._hash(k)
+        x = self.st[idx]
         if x is None:
             raise KeyError(k)
+
+        # Check the first node
+        if k == x.key:
+            self.st[idx] = x.next
+            self.size -= 1
+            return
 
         while x.next:
             if k == x.next.key:
@@ -255,6 +266,9 @@ class SeparateChainingLiteHashST():
         else:
             raise KeyError(k)
 
+    def __len__(self):
+        return self.size
+
     def __contains__(self, k):
         """Return True if `k` is present in the table, False otherwise."""
         try:
@@ -262,6 +276,26 @@ class SeparateChainingLiteHashST():
             return True
         except KeyError:
             return False
+
+    def __eq__(self, other):
+        return sorted(self.items()) == sorted(other.items())
+
+    def __str__(self):
+        out = ''
+        for i, t in enumerate(self.st):
+            x = t
+            out += f"[{i}]: ["
+            while x:
+                out += str(x)
+                if x.next:
+                    out += ", "
+                x = x.next
+            out += "]\n"
+        return out
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__}:\n{self.__str__()}>"
+
 
     # -------------------------------------------------------------------------
     #         Iterator functions
@@ -292,9 +326,6 @@ class SeparateChainingLiteHashST():
         """Return an iterator of all of the keys in the table."""
         yield from self.keys()
 
-    # -------------------------------------------------------------------------
-    #         Private API
-    # -------------------------------------------------------------------------
     def _make_iterator(self, rtype):
         """Return an iterator over all of the items in the table."""
         def iterator(self, lo=None, hi=None):
@@ -309,35 +340,31 @@ class SeparateChainingLiteHashST():
             return q
         return iterator
 
-
 # -----------------------------------------------------------------------------
 #         Run tests
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
-    import string
+    import types
 
     # Exercise 3.4.1
     keys = 'EASYQUTION'
     items = [(c, i) for i, c in enumerate(keys)]
-    st = SeparateChainingHashST(M=5)
 
     # Override _hash function with custom function
     def __hash(self, k):
-        return 11*(ord(k) - ord('A') + 1) % self.M
+        return 11*(ord(k) - ord('A')) % self.M
 
-    SeparateChainingHashST._hash = __hash    # class patching of all instances
-    # import types
-    # st._hash = types.MethodType(__hash, st)  # instance patching
+    # SeparateChainingHashST._hash = __hash    # class patching of all instances
+    st = SeparateChainingHashST(M=5)
+    st._hash = types.MethodType(__hash, st)  # instance patching
     for k, v in items:
         st[k] = v
 
-    print(st.st)
-
     # Test SeparateChainingLiteHashST
-    keys = string.ascii_uppercase
-    items = [(c, i) for i, c in enumerate(keys)]
-    # import ipdb; ipdb.set_trace()
-    st = SeparateChainingLiteHashST(items)
+    stl = SeparateChainingLiteHashST(M=5)
+    stl._hash = types.MethodType(__hash, stl)
+    for k, v in items:
+        stl[k] = v
 
 # =============================================================================
 # =============================================================================

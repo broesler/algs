@@ -12,11 +12,12 @@
 import numpy as np
 import pytest
 
-from algs.search import (SequentialSearchST, BinarySearchST, ArrayST, 
-                         BST, BST_nr, ThreadedST, ThreadedST_nr, ArrayBST,
+from algs.search import (SequentialSearchST, BinarySearchST, ArrayST, BST,
+                         BST_nr, ThreadedST, ThreadedST_nr, ArrayBST,
                          RedBlackBST, TopDown234, TopDown234_nr,
                          TopDown234bothways, BottomUp234, Unbalanced23,
-                         AVLTree, SeparateChainingHashST)
+                         AVLTree,
+                         SeparateChainingHashST, SeparateChainingLiteHashST)
 
 rng = np.random.default_rng(seed=565656)
 
@@ -68,13 +69,17 @@ def data_set(data):
 
 
 # ---------- Test All STs ----------
-UNORDERED_STS = set([SequentialSearchST, ArrayST])
+UNORDERED_STS = set([SequentialSearchST, ArrayST,
+                     SeparateChainingHashST, SeparateChainingLiteHashST])
 ORDERED_STS = set([BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr,
                    ArrayBST])
 BALANCED_TREES = set([RedBlackBST, TopDown234, TopDown234_nr, BottomUp234,
                       TopDown234bothways, Unbalanced23, AVLTree])
 ALL_STS = UNORDERED_STS | ORDERED_STS | BALANCED_TREES
 
+NO_CACHE = set([ArrayBST,
+                SeparateChainingHashST,
+                SeparateChainingLiteHashST])
 
 class TestUnorderedOps:
     @pytest.mark.parametrize('ST', ALL_STS)
@@ -115,8 +120,9 @@ class TestUnorderedOps:
             assert st.size == N_expect
             assert sorted(st.keys()) == sorted(test_keys)
         err_test(st, '__delitem__', 'Z', err_type=KeyError)
+        assert st.is_empty
 
-    @pytest.mark.parametrize('ST', ALL_STS - set([ArrayBST]))
+    @pytest.mark.parametrize('ST', ALL_STS - NO_CACHE)
     def test_cache_existing(self, ST, data):
         st = ST(data, cache=True)
         for k in st:
@@ -129,7 +135,7 @@ class TestUnorderedOps:
         del st[k]
         assert st._cache is None
 
-    @pytest.mark.parametrize('ST', ALL_STS - set([ArrayBST]))
+    @pytest.mark.parametrize('ST', ALL_STS - NO_CACHE)
     def test_cache_new(self, ST, data):
         st = ST(cache=True)
         for k, v in data:

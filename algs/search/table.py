@@ -37,7 +37,7 @@ class _Item():
         self.val = value
 
     def __str__(self):
-        return f"(key={repr(self.key)}, value={repr(self.val)})"
+        return f"({repr(self.key)}: {repr(self.val)})"
 
     def __repr__(self):
         return f"<{self.__class__.__name__}: {self.__str__()}>"
