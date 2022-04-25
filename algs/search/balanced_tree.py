@@ -899,7 +899,7 @@ class RandomizedBST(BST):
         t.left, t.right = left, right
         return t
 
-    def _split(k, t=None, s=None, g=None):
+    def _split(self, k, t=None, s=None, g=None):
         """Split the subtree rooted at `t` into `s` and `g`, where `s` contains
         all keys less than `k`, and `g` contains all keys greater than `k`."""
         if t is None:
@@ -913,30 +913,34 @@ class RandomizedBST(BST):
             s.right, g = self._split(k, t.right, s.right, g)
         return s, g
 
+
 # -----------------------------------------------------------------------------
 #         Interactive test setup
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
-    # import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt
     from algs.exercises.draw_tree import TreeArtist
-    EXPECT_STR = 'SEARCHXMPLJ'
+
+    # EXPECT_STR = 'SEARCHXMPLJ'
     # EXPECT_STR = 'EASYQUESTION'
-    keys = list(EXPECT_STR)
-    # keys = [3, 7, 4, 9, 10, 0, 5, 6, 8, 2, 1, -8, -3, -5]
+    # keys = list(EXPECT_STR)
+    keys = [3, 7, 4, 9, 10, 0, 5, 6, 8, 2, 1, -8, -3, -5]
+
     # st = RedBlackBST.fromkeys(keys)
     # st = Unbalanced23.fromkeys(keys)
     # st = TopDown234.fromkeys(keys)
-    # st = TopDown234_nr.fromkeys(keys)
+    # FIXME differs from recursive for 'SEARCHXMPL'. Root should be 4-node
+    st = TopDown234_nr.fromkeys(keys)  
     # st = TopDown234bothways.fromkeys(keys)
     # st = BottomUp234.fromkeys(keys)
     # st = AVLTree.fromkeys(keys)
-    st = RandomizedBST.fromkeys(keys)
+    # st = RandomizedBST.fromkeys(keys)
     TreeArtist(st).draw()
     assert st.isBST()
-    # assert st.is_balanced()
+    assert st.is_balanced()
     # assert st.is_height_balanced()  # only AVL tree
 
-    # Compare two trees
+    # # Compare two trees
     # tst = TopDown234.fromkeys(keys)
     # bst = BottomUp234.fromkeys(keys)
     # fig = plt.figure(1, clear=True)
