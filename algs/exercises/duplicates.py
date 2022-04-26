@@ -79,20 +79,31 @@ df = df.set_index(['N', 'α'])
 df = df[df.columns[[0, 2, 1, 3]]]  # swap order
 
 
-# # ----------------------------------------------------------------------------- 
-# #         Plots
-# # -----------------------------------------------------------------------------
-# M = 100
-# N = np.linspace(0, 2*M)
-# α = N / M
-# D = M * (1 - np.exp(-α))
+# ----------------------------------------------------------------------------- 
+#         Plots
+# -----------------------------------------------------------------------------
+M = 100
+N = np.linspace(0, 5*M)
+α = N / M
+P = (1 - np.exp(-α))
+D = M * P
 
-# fig = plt.figure(1, clear=True, constrained_layout=True)
-# ax = fig.add_subplot()
-# ax.plot(N, D, label=f"Distinct, M = {M}")
-# ax.plot(N, N - D, label=f"Duplicate, M = {M}")
-# ax.set(xlabel='N',
-#        ylabel='Number of Items')
+fig = plt.figure(1, clear=True, constrained_layout=True)
+ax = fig.add_subplot()
+# Asymptotes
+ax.plot(α, α - 1, 'k--', lw=1)
+ax.axhline(1, c='k', ls='--', lw=1)
+# Exponentials
+ax.plot(α, P, label=r'Distinct = $M(1 - e^{-\alpha})$')
+ax.plot(α, α - P, label=r'Duplicate = $N - M(1 - e^{-\alpha})$')
+ax.plot(α, 1 - P, label=r'Free Slots = $Me^{-\alpha}$')
+ax.set(xlabel=r'$\alpha = \dfrac{N}{M}$',
+       ylabel='Fraction of (Distinct/Duplicate) vs. M slots')
+ax.set_xlim(left=0)
+ax.set_ylim(bottom=0)
+ax.legend()
+
+plt.show()
 
 # =============================================================================
 # =============================================================================
