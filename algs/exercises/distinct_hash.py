@@ -5,7 +5,41 @@
 #   Author: Bernie Roesler
 #
 """
-  Description:
+Solution to Exercise 3.4.8. Expected number of free slots in the hash table
+using separate chaining. The number of distinct elements in an array of
+*N* integers on *[0, M-1]*  is
+
+.. math::
+    \alpha = \frac{N}{M}
+    P(\alpha) = 1 - e^{-\alpha}
+    \text{\# distinct} = MP = M (1 - e^{-\alpha})
+
+Therefore, the number of duplicates must be:
+
+.. math::
+    \text{(\# distinct) + (\# duplicates)} = N
+    \begin{align}
+        \text{\# duplicates} &= N - M P
+                             &= N - M (1 - e^{-\alpha})
+    \end{align}
+
+The number of free slots is the total number of slots less the number of
+distinct elements:
+
+.. math::
+    \begin{align}
+        \text{\# free slots} &= M - MP 
+                             &= M (1 - P)
+                             &= M (1 - (1 - e^{-\alpha}))
+                             &= M e^{\alpha}
+    \end{align}
+
+These values can also be computed as a fraction of the total slots *M*:
+
+.. math::
+    \text{fraction distinct} = P
+    \text{fraction duplicate} = \alpha - P
+    \text{fraction free} = 1 - P
 """
 # =============================================================================
 
@@ -17,10 +51,6 @@ from duplicates import count_distinct
 from algs.search.hash import SeparateChainingHashST
 
 rng = np.random.default_rng(seed=56)
-
-# Distinct: M*P
-# Duplicates: N - M*P
-# Free: M - M*P == M*(1 - P)
 
 M = 97  # choose a prime
 st = SeparateChainingHashST(M=M)
@@ -58,6 +88,7 @@ ax.axhline(1, c='k', ls='--', lw=1)
 ax.plot(α, P, label=r'Distinct = $M(1 - e^{-\alpha})$')
 ax.plot(α, α - P, label=r'Duplicate = $N - M(1 - e^{-\alpha})$')
 ax.plot(α, 1 - P, label=r'Free Slots = $Me^{-\alpha}$')
+ax.grid()
 ax.set(xlabel=r'$\alpha = \dfrac{N}{M}$',
        ylabel='Fraction of (Distinct/Duplicate) vs. M slots')
 ax.set_xlim(left=0)
