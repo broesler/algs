@@ -9,6 +9,8 @@
 """
 # =============================================================================
 
+import math
+
 from algs.search.table import SequentialSearchST as _SequentialSearchST
 
 __all__ = ['SeparateChainingHashST', 'SeparateChainingLiteHashST',
@@ -16,6 +18,37 @@ __all__ = ['SeparateChainingHashST', 'SeparateChainingLiteHashST',
 
 # TODO constructor `from_tuples` that takes items = [('a', 0), ('b', 2), ...]
 # constructor 'from_keys` that takes keys = ['a', 'b', ...] and value = None.
+
+# Table of primes greater than the nearest power of 2
+_PRIMES = dict({
+    5: 31,
+    6: 61,
+    7: 127,
+    8: 251,
+    9: 509,
+    10: 1021,
+    11: 2039,
+    12: 4093,
+    13: 8191,
+    14: 16381,
+    15: 32749,
+    16: 65521,
+    17: 131071,
+    18: 262139,
+    19: 524287,
+    20: 1048573,
+    21: 2097143,
+    22: 4194301,
+    23: 8388593,
+    24: 16777213,
+    25: 33554393,
+    26: 67108859,
+    27: 134217689,
+    28: 268435399,
+    29: 536870909,
+    30: 1073741789,
+    31: 2147483647
+})
 
 
 class SeparateChainingHashST():
@@ -40,12 +73,13 @@ class SeparateChainingHashST():
     KeyError
         If `k` is not in the table.
     """
-    INIT_CAPACITY = 5  # minimum number of hash slots
+    INIT_CAPACITY = 4  # minimum number of hash slots
 
     def __init__(self, items=None, M=None, max_probes=10, cache=False):
         self.N = 0
         self.M = M or self.INIT_CAPACITY
         self._MAX_PROBES = max_probes  # maximum average list size
+        self._lgM = int(math.log2(self.M))
         # Initialize the symbol table
         self._st = [_SequentialSearchST() for _ in range(self.M)]
         items = items or []  # must be iterable
@@ -71,7 +105,12 @@ class SeparateChainingHashST():
         """Modular hashing using Python's built-in `hash` function."""
         # NOTE `hash` is "salted" each time python is run for security reasons,
         # so results are non-deterministic. Manual override or set seed?
-        return hash(k) % self.M
+        # return hash(k) % self.M
+        # Exercise 3.4.18: ensure items evenly distributed when M is power of 2
+        t = hash(k)
+        if self._lgM < 26:
+            t = t % _PRIMES[self._lgM + 5]
+        return t % self.M
 
     def _resize(self, M):
         """Resize the array of hash slots."""
@@ -80,6 +119,7 @@ class SeparateChainingHashST():
         # Use the new table in *self*
         self._st = t._st
         self.M = t.M
+        self._lgM = int(math.log2(self.M))  # see Exercise 3.4.18
 
     # -------------------------------------------------------------------------
     #         Public API
@@ -198,7 +238,7 @@ class SeparateChainingLiteHashST():
     KeyError
         If `k` is not in the table.
     """
-    INIT_CAPACITY = 5  # minimum number of hash slots
+    INIT_CAPACITY = 4  # minimum number of hash slots
 
     # Private class of key/value pairs
     class _Node():
@@ -219,6 +259,7 @@ class SeparateChainingLiteHashST():
         self.N = 0
         self.M = M or self.INIT_CAPACITY
         self._MAX_PROBES = max_probes  # maximum average list size
+        self._lgM = int(math.log2(self.M))
         # Initialize the symbol table
         self._st = self.M*[None]   # Create M linked lists
         items = items or []  # must be iterable
@@ -239,7 +280,12 @@ class SeparateChainingLiteHashST():
 
     def _hash(self, k):
         """Modular hashing using Python's built-in `hash` function."""
-        return hash(k) % self.M
+        # return hash(k) % self.M
+        # Exercise 3.4.18: ensure items evenly distributed when M is power of 2
+        t = hash(k)
+        if self._lgM < 26:
+            t = t % _PRIMES[self._lgM + 5]
+        return t % self.M
 
     def _resize(self, M):
         """Resize the array of hash slots."""
@@ -248,6 +294,7 @@ class SeparateChainingLiteHashST():
         # Use the new table in *self*
         self._st = t._st
         self.M = t.M
+        self._lgM = int(math.log2(self.M))  # see Exercise 3.4.18
 
     # -------------------------------------------------------------------------
     #         Public API
