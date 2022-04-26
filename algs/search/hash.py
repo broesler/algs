@@ -14,6 +14,8 @@ from algs.search.table import SequentialSearchST
 
 __all__ = ['SeparateChainingHashST', 'SeparateChainingLiteHashST']
 
+# TODO constructor `from_tuples` that takes items = [('a', 0), ('b', 2), ...]
+# constructor 'from_keys` that takes keys = ['a', 'b', ...] and value = None.
 
 class SeparateChainingHashST():
     """Implements a hash table with separate chaining.
@@ -67,16 +69,16 @@ class SeparateChainingHashST():
     # ------------------------------------------------------------------------- 
     #         Public API
     # -------------------------------------------------------------------------
-    def __getitem__(self, k):
-        """Return the value associated with the given key `k`."""
-        return self.st[self._hash(k)][k]
-
     def __setitem__(self, k, v):
         """Insert a new value `v` associated with key `k`.
         If `k` is in the table, change its value to `v`."""
         self.st[self._hash(k)][k] = v
 
-    # Exercise 3.4.9
+    def __getitem__(self, k):
+        """Return the value associated with the given key `k`."""
+        return self.st[self._hash(k)][k]
+
+    # Exercise 3.4.9, eager delete
     def __delitem__(self, k):
         """Delete the item associated with `k`."""
         del self.st[self._hash(k)][k]
@@ -211,12 +213,12 @@ class SeparateChainingLiteHashST():
         """Insert a new value `v` associated with key `k`.
         If `k` is in the table, change its value to `v`."""
         # Hash into table
-        idx = self._hash(k)
-        x = self.st[idx]
+        i = self._hash(k)
+        x = self.st[i]
 
         if x is None:
             # Create new linked list at hash table location
-            self.st[idx] = self._Node(k, v)
+            self.st[i] = self._Node(k, v)
             self.size += 1
             return
 
@@ -229,7 +231,7 @@ class SeparateChainingLiteHashST():
                 x = x.next
         else:
             # Insert new node at beginning of list
-            self.st[idx] = self._Node(k, v, self.st[idx])
+            self.st[i] = self._Node(k, v, self.st[i])
             self.size += 1
 
     def __getitem__(self, k):
@@ -245,14 +247,14 @@ class SeparateChainingLiteHashST():
 
     def __delitem__(self, k):
         """Delete the item associated with `k`."""
-        idx = self._hash(k)
-        x = self.st[idx]
+        i = self._hash(k)
+        x = self.st[i]
         if x is None:
             raise KeyError(k)
 
         # Check the first node
         if k == x.key:
-            self.st[idx] = x.next
+            self.st[i] = x.next
             self.size -= 1
             return
 
@@ -340,6 +342,126 @@ class SeparateChainingLiteHashST():
             return q
         return iterator
 
+
+class LinearProbingHashST():
+    """Implements a hash table using arrays with linear probing.
+
+    Parameters
+    ----------
+    items : mapping, dict-like
+        Iterable of (key, value) pairs to be put into the table.
+    M : int
+        Number of slots in the hash table.
+
+    Attributes
+    ----------
+    size : int
+        Number of key-value pairs.
+    is_empty : bool
+        True if `size == 0`.
+
+    Raises
+    ------
+    KeyError
+        If `k` is not in the table.
+    """
+    def __init__(self, items=None, M=16):
+        self.M = M
+        self.N = 0
+        items = items or []  # must be iterable
+        # Initialize the symbol table
+        self.keys = M*[None]
+        self.vals = M*[None]
+        try:
+            for k, v in items:
+                self.__setitem__(k, v)
+        except ValueError:
+            raise ValueError(f"{self.__class__.__name__} "
+                             'expects an iterable mapping input.')
+
+    @property
+    def is_empty(self):
+        return self.size == 0
+
+    @property
+    def size(self):
+        return self.N
+
+    def _hash(self, key):
+        return hash(k) % self.M
+
+    def _resize(self, M):
+        """Resize the internal keys and values arrays."""
+        # Create a new table and hash the existing keys into it
+        t = LinearProbingHashST(M=M)
+        for i in range(self.M):
+            if self.keys[i] is not None:
+                t[self.keys[i]] = self.vals[i]
+        # Use those new arrays in *self*
+        self.keys = t.keys
+        self.vals = t.vals
+        self.M = t.M
+
+    # ------------------------------------------------------------------------- 
+    #         Public API
+    # -------------------------------------------------------------------------
+    def __setitem__(self, k, v):
+        """Insert a new value `v` associated with key `k`.
+        If `k` is in the table, change its value to `v`."""
+        if self.N >= self.M/2:
+            self._resize(2*self.M)
+        i = self._hash(k)
+        while self.keys[i] is not None:
+            if k == self.keys[i]:
+                self.vals[i] = v
+                return
+            else:
+                i = (i + 1) % self.M
+        else:
+            self.keys[i] = k
+            self.vals[i] = v
+            self.N += 1
+
+    def __getitem__(self, k):
+        """Return the value associated with the given key `k`."""
+        i = self._hash(k)
+        while self.keys[i] is not None:
+            if k == self.keys[i]:
+                return self.vals[i]
+            else:
+                i = (i + 1) % self.M
+        else:
+            raise KeyError(k)
+
+    def __delitem__(self, k):
+        """Delete the item associated with `k`."""
+        pass
+
+    def __len__(self):
+        return self.size
+
+    def __contains__(self, k):
+        """Return True if `k` is present in the table, False otherwise."""
+        try:
+            self.__getitem__(k)
+            return True
+        except KeyError:
+            return False
+
+    def __eq__(self, other):
+        return sorted(self.items()) == sorted(other.items())
+
+    # def __str__(self):
+    #     out = ''
+    #     for i, t in enumerate(self.st):
+    #         out += f"[{i}]: {repr(t)}\n"
+    #     return out
+
+    # def __repr__(self):
+    #     return f"<{self.__class__.__name__}:\n{self.__str__()}>"
+
+
+        
 # -----------------------------------------------------------------------------
 #         Run tests
 # -----------------------------------------------------------------------------
@@ -365,6 +487,17 @@ if __name__ == '__main__':
     stl._hash = types.MethodType(__hash, stl)
     for k, v in items:
         stl[k] = v
+
+    # Test LinearProbingHashST
+    stp = LinearProbingHashST(M=16)
+    stp._hash = types.MethodType(__hash, stp)
+    for k, v in items:
+        stp[k] = v
+
+    sts = LinearProbingHashST(M=10)
+    sts._hash = types.MethodType(__hash, sts)
+    for k, v in items:
+        sts[k] = v
 
 # =============================================================================
 # =============================================================================
