@@ -203,9 +203,10 @@ class SeparateChainingLiteHashST():
     # Private class of key/value pairs
     class _Node():
         """Internal item object to hold key and value."""
-        def __init__(self, key, value, next=None):
+        def __init__(self, key, value, next=None, N_before=0):
             self.key = key
             self.val = value
+            self.N_before = N_before  # entries in table when Node created
             self.next = next
 
         def __str__(self):
@@ -263,7 +264,7 @@ class SeparateChainingLiteHashST():
 
         if x is None:
             # Create new linked list at hash table location
-            self._st[i] = self._Node(k, v)
+            self._st[i] = self._Node(k, v, N_before=self.N)
             self.N += 1
             return
 
@@ -276,7 +277,7 @@ class SeparateChainingLiteHashST():
                 x = x.next
         else:
             # Insert new node at beginning of list
-            self._st[i] = self._Node(k, v, self._st[i])
+            self._st[i] = self._Node(k, v, self._st[i], N_before=self.N)
             self.N += 1
 
     def __getitem__(self, k):
@@ -316,6 +317,21 @@ class SeparateChainingLiteHashST():
         # Halve table size if average list length <= 2
         if self.M > self.INIT_CAPACITY and self.N <= 2*self.M:
             self._resize(self.M // 2)
+
+    # Exercise 3.4.3
+    def delete_later_than(self, k):
+        """Delete all entries in the table that were inserted after `k`."""
+        for i in range(self.M):
+            if self._st[i] is None:
+                continue
+            # Larger numbers will always be at the front of the table given our
+            # insert-at-front algorithm. Keep deleting from front.
+            x = self._st[i]
+            while x:
+                if x.N_before > k:
+                    self._st[i] = x.next
+                    self.N -= 1
+                x = x.next
 
     def __len__(self):
         return self.size
@@ -368,6 +384,9 @@ class SeparateChainingLiteHashST():
     def items(self):
         return self._make_iterator(rtype='items')(self)
 
+    def _nodes(self):
+        return self._make_iterator(rtype='nodes')(self)
+
     keys.__doc__   = _docstring.format(rtype='keys')
     values.__doc__ = _docstring.format(rtype='values')
     items.__doc__  = _docstring.format(rtype='items')
@@ -385,7 +404,8 @@ class SeparateChainingLiteHashST():
                 x = t
                 while x:
                     q.append(x.key if rtype == 'keys' else
-                             (x.val if rtype == 'values' else (x.key, x.val)))
+                             (x.val if rtype == 'values' else 
+                             (x.key, x.val) if rtype == 'items' else x))
                     x = x.next
             return q
         return iterator
@@ -566,6 +586,9 @@ if __name__ == '__main__':
     stl._hash = types.MethodType(__hash, stl)
     for k, v in items:
         stl[k] = v
+
+    stl.delete_later_than(5)
+    assert all([x.N_before <= 5 for x in stl._nodes()])
 
     # Test LinearProbingHashST
     stp = LinearProbingHashST(M=16)
