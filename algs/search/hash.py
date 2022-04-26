@@ -40,12 +40,15 @@ class SeparateChainingHashST():
     KeyError
         If `k` is not in the table.
     """
-    def __init__(self, items=None, M=7, cache=False):
-        self.M = M
-        items = items or []  # must be iterable
+    INIT_CAPACITY = 5  # minimum number of hash slots
+
+    def __init__(self, items=None, M=None, cache=False):
+        self.N = 0
+        self.M = M or self.INIT_CAPACITY
         # Create M linked lists
-        self.st = [SequentialSearchST() for _ in range(M)]
+        self._st = [SequentialSearchST() for _ in range(self.M)]
         # Initialize the symbol table
+        items = items or []  # must be iterable
         try:
             for k, v in items:
                 self.__setitem__(k, v)
@@ -59,7 +62,10 @@ class SeparateChainingHashST():
 
     @property
     def size(self):
-        return sum([t.size for t in self.st])
+        return self.N
+
+    def _validate_size(self):
+        assert self.size == sum([t.size for t in self._st])
 
     def _hash(self, k):
         """Modular hashing using Python's built-in `hash` function."""
@@ -67,22 +73,42 @@ class SeparateChainingHashST():
         # so results are non-deterministic. Manual override or set seed?
         return hash(k) % self.M
 
+    def _resize(self, M):
+        """Resize the array of hash slots."""
+        # Create a new table and hash the existing keys into it
+        t = SeparateChainingHashST(self.items(), M=M)
+        # Use the new table in *self*
+        self._st = t._st
+        self.M = t.M
+
     # -------------------------------------------------------------------------
     #         Public API
     # -------------------------------------------------------------------------
     def __setitem__(self, k, v):
         """Insert a new value `v` associated with key `k`.
         If `k` is in the table, change its value to `v`."""
-        self.st[self._hash(k)][k] = v
+        # Double table size if average list length >= 10
+        if self.N >= 10*self.M:
+            self._resize(2*self.M)
+        i = self._hash(k)
+        if k not in self._st[i]:
+            self.N += 1
+        self._st[i][k] = v
 
     def __getitem__(self, k):
         """Return the value associated with the given key `k`."""
-        return self.st[self._hash(k)][k]
+        return self._st[self._hash(k)][k]
 
     # Exercise 3.4.9, eager delete
     def __delitem__(self, k):
         """Delete the item associated with `k`."""
-        del self.st[self._hash(k)][k]
+        i = self._hash(k)
+        if k in self._st[i]:
+            self.N -= 1
+        del self._st[i][k]
+        # Halve table size if average list length <= 2
+        if self.M > self.INIT_CAPACITY and self.N <= 2*self.M:
+            self._resize(self.M // 2)
 
     def __len__(self):
         return self.size
@@ -100,7 +126,7 @@ class SeparateChainingHashST():
 
     def __str__(self):
         out = ''
-        for i, t in enumerate(self.st):
+        for i, t in enumerate(self._st):
             out += f"[{i}]: {repr(t)}\n"
         return out
 
@@ -141,7 +167,7 @@ class SeparateChainingHashST():
         def iterator(self, lo=None, hi=None):
             """Iterate over each symbol table."""
             q = list()
-            for t in self.st:
+            for t in self._st:
                 q.extend(t.keys() if rtype == 'keys' else
                          (t.values() if rtype == 'values' else t.items()))
             return q
@@ -172,6 +198,8 @@ class SeparateChainingLiteHashST():
     KeyError
         If `k` is not in the table.
     """
+    INIT_CAPACITY = 5  # minimum number of hash slots
+
     # Private class of key/value pairs
     class _Node():
         """Internal item object to hold key and value."""
@@ -186,12 +214,12 @@ class SeparateChainingLiteHashST():
         def __repr__(self):
             return f"<{self.__class__.__name__}: {self.__str__()}>"
 
-    def __init__(self, items=None, M=7, cache=False):
-        self.M = M
-        self.size = 0
-        items = items or []  # must be iterable
-        self.st = M*[None]   # Create M linked lists
+    def __init__(self, items=None, M=None, cache=False):
+        self.N = 0
+        self.M = M or self.INIT_CAPACITY
+        self._st = self.M*[None]   # Create M linked lists
         # Initialize the symbol table
+        items = items or []  # must be iterable
         try:
             for k, v in items:
                 self.__setitem__(k, v)
@@ -201,11 +229,23 @@ class SeparateChainingLiteHashST():
 
     @property
     def is_empty(self):
-        return self.size == 0
+        return self.N == 0
+
+    @property
+    def size(self):
+        return self.N
 
     def _hash(self, k):
         """Modular hashing using Python's built-in `hash` function."""
         return hash(k) % self.M
+
+    def _resize(self, M):
+        """Resize the array of hash slots."""
+        # Create a new table and hash the existing keys into it
+        t = SeparateChainingLiteHashST(self.items(), M=M)
+        # Use the new table in *self*
+        self._st = t._st
+        self.M = t.M
 
     # -------------------------------------------------------------------------
     #         Public API
@@ -213,14 +253,18 @@ class SeparateChainingLiteHashST():
     def __setitem__(self, k, v):
         """Insert a new value `v` associated with key `k`.
         If `k` is in the table, change its value to `v`."""
+        # Double table size if average list length >= 10
+        if self.N >= 10*self.M:
+            self._resize(2*self.M)
+
         # Hash into table
         i = self._hash(k)
-        x = self.st[i]
+        x = self._st[i]
 
         if x is None:
             # Create new linked list at hash table location
-            self.st[i] = self._Node(k, v)
-            self.size += 1
+            self._st[i] = self._Node(k, v)
+            self.N += 1
             return
 
         # There is a hash collision. Search for key.
@@ -232,12 +276,12 @@ class SeparateChainingLiteHashST():
                 x = x.next
         else:
             # Insert new node at beginning of list
-            self.st[i] = self._Node(k, v, self.st[i])
-            self.size += 1
+            self._st[i] = self._Node(k, v, self._st[i])
+            self.N += 1
 
     def __getitem__(self, k):
         """Return the value associated with the given key `k`."""
-        x = self.st[self._hash(k)]
+        x = self._st[self._hash(k)]
         while x:
             if k == x.key:
                 return x.val
@@ -249,25 +293,29 @@ class SeparateChainingLiteHashST():
     def __delitem__(self, k):
         """Delete the item associated with `k`."""
         i = self._hash(k)
-        x = self.st[i]
+        x = self._st[i]
         if x is None:
             raise KeyError(k)
 
         # Check the first node
         if k == x.key:
-            self.st[i] = x.next
-            self.size -= 1
+            self._st[i] = x.next
+            self.N -= 1
             return
 
         while x.next:
             if k == x.next.key:
                 x.next = x.next.next  # unlink the node
-                self.size -= 1
+                self.N -= 1
                 return
             else:
                 x = x.next
         else:
             raise KeyError(k)
+
+        # Halve table size if average list length <= 2
+        if self.M > self.INIT_CAPACITY and self.N <= 2*self.M:
+            self._resize(self.M // 2)
 
     def __len__(self):
         return self.size
@@ -285,7 +333,7 @@ class SeparateChainingLiteHashST():
 
     def __str__(self):
         out = ''
-        for i, t in enumerate(self.st):
+        for i, t in enumerate(self._st):
             x = t
             out += f"[{i}]: ["
             while x:
@@ -333,7 +381,7 @@ class SeparateChainingLiteHashST():
         def iterator(self, lo=None, hi=None):
             """Iterate over each symbol table."""
             q = list()
-            for t in self.st:
+            for t in self._st:
                 x = t
                 while x:
                     q.append(x.key if rtype == 'keys' else
@@ -471,14 +519,11 @@ class LinearProbingHashST():
     def __eq__(self, other):
         return sorted(self.items()) == sorted(other.items())
 
-    # def __str__(self):
-    #     out = ''
-    #     for i, t in enumerate(self.st):
-    #         out += f"[{i}]: {repr(t)}\n"
-    #     return out
+    def __str__(self):
+        return str(self.items())
 
-    # def __repr__(self):
-    #     return f"<{self.__class__.__name__}:\n{self.__str__()}>"
+    def __repr__(self):
+        return f"<{self.__class__.__name__}: {self.__str__()}>"
 
     def __iter__(self):
         """Return an iterator of all of the keys in the table."""
@@ -514,6 +559,7 @@ if __name__ == '__main__':
     st._hash = types.MethodType(__hash, st)  # instance patching
     for k, v in items:
         st[k] = v
+    st._validate_size()
 
     # Test SeparateChainingLiteHashST
     stl = SeparateChainingLiteHashST(M=5)
