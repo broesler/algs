@@ -9,7 +9,7 @@
 """
 # =============================================================================
 
-from algs.search.table import SequentialSearchST
+from algs.search.table import SequentialSearchST as _SequentialSearchST
 
 __all__ = ['SeparateChainingHashST', 'SeparateChainingLiteHashST',
            'LinearProbingHashST']
@@ -47,7 +47,7 @@ class SeparateChainingHashST():
         self.M = M or self.INIT_CAPACITY
         self._MAX_PROBES = max_probes  # maximum average list size
         # Initialize the symbol table
-        self._st = [SequentialSearchST() for _ in range(self.M)]
+        self._st = [_SequentialSearchST() for _ in range(self.M)]
         items = items or []  # must be iterable
         try:
             for k, v in items:
