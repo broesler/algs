@@ -42,12 +42,12 @@ class SeparateChainingHashST():
     """
     INIT_CAPACITY = 5  # minimum number of hash slots
 
-    def __init__(self, items=None, M=None, cache=False):
+    def __init__(self, items=None, M=None, max_probes=10, cache=False):
         self.N = 0
         self.M = M or self.INIT_CAPACITY
-        # Create M linked lists
-        self._st = [SequentialSearchST() for _ in range(self.M)]
+        self._MAX_PROBES = max_probes  # maximum average list size
         # Initialize the symbol table
+        self._st = [SequentialSearchST() for _ in range(self.M)]
         items = items or []  # must be iterable
         try:
             for k, v in items:
@@ -87,8 +87,8 @@ class SeparateChainingHashST():
     def __setitem__(self, k, v):
         """Insert a new value `v` associated with key `k`.
         If `k` is in the table, change its value to `v`."""
-        # Double table size if average list length >= 10
-        if self.N >= 10*self.M:
+        # Double table size if average list length >= MAX_PROBES (e.g. 10)
+        if self.N >= self._MAX_PROBES*self.M:
             self._resize(2*self.M)
         i = self._hash(k)
         if k not in self._st[i]:
@@ -215,11 +215,12 @@ class SeparateChainingLiteHashST():
         def __repr__(self):
             return f"<{self.__class__.__name__}: {self.__str__()}>"
 
-    def __init__(self, items=None, M=None, cache=False):
+    def __init__(self, items=None, M=None, max_probes=10, cache=False):
         self.N = 0
         self.M = M or self.INIT_CAPACITY
-        self._st = self.M*[None]   # Create M linked lists
+        self._MAX_PROBES = max_probes  # maximum average list size
         # Initialize the symbol table
+        self._st = self.M*[None]   # Create M linked lists
         items = items or []  # must be iterable
         try:
             for k, v in items:
@@ -255,7 +256,7 @@ class SeparateChainingLiteHashST():
         """Insert a new value `v` associated with key `k`.
         If `k` is in the table, change its value to `v`."""
         # Double table size if average list length >= 10
-        if self.N >= 10*self.M:
+        if self.N >= self._MAX_PROBES*self.M:
             self._resize(2*self.M)
 
         # Hash into table
