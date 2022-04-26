@@ -34,10 +34,12 @@ for i, n in enumerate(Ns):
 
 free_slots = M - ds
 df = (pd.DataFrame(data=np.c_[Ns/M, free_slots],
-                  index=Ns,
-                  columns=['α', 'free'])
+                   index=Ns,
+                   columns=['α', 'free'])
         .astype({'free': int})
       )
+df['α'] = df['α'].map("{:.2g}".format) 
+print(f"{M = }:")
 print(df)
 
 # ----------------------------------------------------------------------------- 
@@ -46,7 +48,6 @@ print(df)
 N = np.linspace(0, 5*M)
 α = N / M
 P = (1 - np.exp(-α))
-# expect = M * (1 - P)
 
 fig = plt.figure(1, clear=True, constrained_layout=True)
 ax = fig.add_subplot()
