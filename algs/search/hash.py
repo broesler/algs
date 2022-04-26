@@ -9,13 +9,14 @@
 """
 # =============================================================================
 
-from algs.basics import Queue as _Queue
 from algs.search.table import SequentialSearchST
 
-__all__ = ['SeparateChainingHashST', 'SeparateChainingLiteHashST']
+__all__ = ['SeparateChainingHashST', 'SeparateChainingLiteHashST',
+           'LinearProbingHashST']
 
 # TODO constructor `from_tuples` that takes items = [('a', 0), ('b', 2), ...]
 # constructor 'from_keys` that takes keys = ['a', 'b', ...] and value = None.
+
 
 class SeparateChainingHashST():
     """Implements a hash table with separate chaining.
@@ -66,7 +67,7 @@ class SeparateChainingHashST():
         # so results are non-deterministic. Manual override or set seed?
         return hash(k) % self.M
 
-    # ------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #         Public API
     # -------------------------------------------------------------------------
     def __setitem__(self, k, v):
@@ -206,7 +207,7 @@ class SeparateChainingLiteHashST():
         """Modular hashing using Python's built-in `hash` function."""
         return hash(k) % self.M
 
-    # ------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #         Public API
     # -------------------------------------------------------------------------
     def __setitem__(self, k, v):
@@ -298,7 +299,6 @@ class SeparateChainingLiteHashST():
     def __repr__(self):
         return f"<{self.__class__.__name__}:\n{self.__str__()}>"
 
-
     # -------------------------------------------------------------------------
     #         Iterator functions
     # -------------------------------------------------------------------------
@@ -365,13 +365,13 @@ class LinearProbingHashST():
     KeyError
         If `k` is not in the table.
     """
-    def __init__(self, items=None, M=16):
+    def __init__(self, items=None, M=16, cache=False):
         self.M = M
         self.N = 0
         items = items or []  # must be iterable
         # Initialize the symbol table
-        self.keys = M*[None]
-        self.vals = M*[None]
+        self._keys = M*[None]
+        self._vals = M*[None]
         try:
             for k, v in items:
                 self.__setitem__(k, v)
@@ -387,7 +387,7 @@ class LinearProbingHashST():
     def size(self):
         return self.N
 
-    def _hash(self, key):
+    def _hash(self, k):
         return hash(k) % self.M
 
     def _resize(self, M):
@@ -395,39 +395,39 @@ class LinearProbingHashST():
         # Create a new table and hash the existing keys into it
         t = LinearProbingHashST(M=M)
         for i in range(self.M):
-            if self.keys[i] is not None:
-                t[self.keys[i]] = self.vals[i]
+            if self._keys[i] is not None:
+                t[self._keys[i]] = self._vals[i]
         # Use those new arrays in *self*
-        self.keys = t.keys
-        self.vals = t.vals
+        self._keys = t._keys
+        self._vals = t._vals
         self.M = t.M
 
-    # ------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #         Public API
     # -------------------------------------------------------------------------
     def __setitem__(self, k, v):
         """Insert a new value `v` associated with key `k`.
         If `k` is in the table, change its value to `v`."""
-        if self.N >= self.M/2:
+        if self.N >= self.M // 2:
             self._resize(2*self.M)
         i = self._hash(k)
-        while self.keys[i] is not None:
-            if k == self.keys[i]:
-                self.vals[i] = v
+        while self._keys[i] is not None:
+            if k == self._keys[i]:
+                self._vals[i] = v
                 return
             else:
                 i = (i + 1) % self.M
         else:
-            self.keys[i] = k
-            self.vals[i] = v
+            self._keys[i] = k
+            self._vals[i] = v
             self.N += 1
 
     def __getitem__(self, k):
         """Return the value associated with the given key `k`."""
         i = self._hash(k)
-        while self.keys[i] is not None:
-            if k == self.keys[i]:
-                return self.vals[i]
+        while self._keys[i] is not None:
+            if k == self._keys[i]:
+                return self._vals[i]
             else:
                 i = (i + 1) % self.M
         else:
@@ -435,7 +435,27 @@ class LinearProbingHashST():
 
     def __delitem__(self, k):
         """Delete the item associated with `k`."""
-        pass
+        if not self.__contains__(k):
+            raise KeyError(k)
+        i = self._hash(k)
+        # Set slot of `k` to None
+        while k is not self._keys[i]:
+            i = (i + 1) % self.M
+        self._keys[i] = None
+        self._vals[i] = None
+        i = (i + 1) % self.M
+        # Rehash all keys in the cluster to the right of the deleted key
+        while self._keys[i] is not None:
+            key_to_redo = self._keys[i]
+            val_to_redo = self._vals[i]
+            self._keys[i] = None
+            self._vals[i] = None
+            self.N -= 1
+            self.__setitem__(key_to_redo, val_to_redo)
+            i = (i + 1) % self.M
+        self.N -= 1
+        if self.N > 0 and self.N <= self.M/8:
+            self._resize(self.M // 2)
 
     def __len__(self):
         return self.size
@@ -460,8 +480,21 @@ class LinearProbingHashST():
     # def __repr__(self):
     #     return f"<{self.__class__.__name__}:\n{self.__str__()}>"
 
+    def __iter__(self):
+        """Return an iterator of all of the keys in the table."""
+        yield from self.keys()
 
-        
+    def keys(self):
+        return [k for k in self._keys if k is not None]
+
+    def values(self):
+        return [v for (k, v) in zip(self._keys, self._vals) if k is not None]
+
+    def items(self):
+        return [(k, v) for (k, v) in zip(self._keys, self._vals) 
+                if k is not None]
+
+
 # -----------------------------------------------------------------------------
 #         Run tests
 # -----------------------------------------------------------------------------
@@ -476,7 +509,7 @@ if __name__ == '__main__':
     def __hash(self, k):
         return 11*(ord(k) - ord('A')) % self.M
 
-    # SeparateChainingHashST._hash = __hash    # class patching of all instances
+    # SeparateChainingHashST._hash = __hash    # class patching, all instances
     st = SeparateChainingHashST(M=5)
     st._hash = types.MethodType(__hash, st)  # instance patching
     for k, v in items:

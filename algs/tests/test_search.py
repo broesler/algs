@@ -17,7 +17,8 @@ from algs.search import (SequentialSearchST, BinarySearchST, ArrayST, BST,
                          RedBlackBST, TopDown234, TopDown234_nr,
                          TopDown234bothways, BottomUp234, Unbalanced23,
                          AVLTree,
-                         SeparateChainingHashST, SeparateChainingLiteHashST)
+                         SeparateChainingHashST, SeparateChainingLiteHashST,
+                         LinearProbingHashST)
 
 rng = np.random.default_rng(seed=565656)
 
@@ -70,7 +71,8 @@ def data_set(data):
 
 # ---------- Test All STs ----------
 UNORDERED_STS = set([SequentialSearchST, ArrayST,
-                     SeparateChainingHashST, SeparateChainingLiteHashST])
+                     SeparateChainingHashST, SeparateChainingLiteHashST,
+                     LinearProbingHashST])
 ORDERED_STS = set([BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr,
                    ArrayBST])
 BALANCED_TREES = set([RedBlackBST, TopDown234, TopDown234_nr, BottomUp234,
@@ -79,7 +81,8 @@ ALL_STS = UNORDERED_STS | ORDERED_STS | BALANCED_TREES
 
 NO_CACHE = set([ArrayBST,
                 SeparateChainingHashST,
-                SeparateChainingLiteHashST])
+                SeparateChainingLiteHashST,
+                LinearProbingHashST])
 
 class TestUnorderedOps:
     @pytest.mark.parametrize('ST', ALL_STS)
