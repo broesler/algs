@@ -24,10 +24,12 @@ MINLEN = 8  # 1, 8, 10
 filename = Path('../data/tale.txt')       # 779K
 # filename = Path('../data/leipzig1m.txt')  # 124M
 
-ST_names = ['ArrayST', 'BinarySearchST', 'BST', 'RedBlackBST']
+# ST_names = ['ArrayST', 'BinarySearchST', 'BST', 'RedBlackBST']
+# ST_names = ['ArrayST', 'RedBlackBST', 'SeparateChainingHashST']
+ST_names = ['SeparateChainingHashST', 'LinearProbingHashST']
 
 tag = filename.stem
-kind = 'app'  # 'ins', 'app', 'selforg', 'cache'
+kind = 'resize'  # 'ins', 'app', 'selforg', 'cache', 'resize'
 
 fig = plt.figure(0, clear=True)
 fig.set_size_inches((6, max(8, 3*len(ST_names))), forward=True)
@@ -35,6 +37,8 @@ fig.suptitle(f"{filename.name}, min. length = {MINLEN}")
 gs = GridSpec(nrows=len(ST_names), ncols=1)
 
 for i, ST_name in enumerate(ST_names):
+    # kind = 'resize' if ST_name == 'SeparateChainingHashST' else 'app'
+
     # Load the FrequencyCounter
     with open(f"./pkl/{tag}_{ST_name}_m{MINLEN:02d}_{kind}.pkl", 'rb') as fp:
         fc = pickle.load(fp)
@@ -45,7 +49,10 @@ for i, ST_name in enumerate(ST_names):
     # Plot the amortized cost (# cost) vs. number of `put` operations
     ax = fig.add_subplot(gs[i])
     # ax.set_title(ST_name, fontsize=12)
-    ax.annotate(ST_name,
+    note = ST_name
+    if ST_name == 'SeparateChainingHashST':
+        note += f" (M = {fc.t.M})"
+    ax.annotate(note,
                 xy=(0.01, 0.97), xycoords='axes fraction',
                 ha='left', va='top', color='k')
 
@@ -61,7 +68,7 @@ for i, ST_name in enumerate(ST_names):
     ax.scatter(ops, fc.cost, c=0.7*np.array([[1, 1, 1]]), s=1, alpha=0.8)
     ax.plot(ops[1:], mean_cmp, 'C3-')
 
-    ax.annotate(rf"$\leftarrow$ {mean_cmp[-1]:.0f}",
+    ax.annotate(rf"$\leftarrow$ {mean_cmp[-1]:.1f}",
                 xy=(fc.N, mean_cmp[-1]),
                 ha='left', va='center', color='C3')
 
@@ -91,16 +98,21 @@ if SAVE_FIGS:
 # ----------------------------------------------------------------------------- 
 #         Plot actual timings
 # -----------------------------------------------------------------------------
-ST_names = ['ArrayST', 'BinarySearchST', 'BST', 'ArrayBST', 'RedBlackBST']
+# ST_names = ['ArrayST', 'BinarySearchST', 'BST', 'ArrayBST', 'RedBlackBST', 
+#             'SeparateChainingHashST']
+ST_names = ['ArrayST', 'BinarySearchST', 'BST', 'ArrayBST', 'RedBlackBST', 
+            'SeparateChainingHashST', 'LinearProbingHashST']
 
-tag = filename.stem
-kind = 'app'  # 'ins', 'app', 'selforg', 'cache'
+# tag = filename.stem
+# kind = 'app'  # 'ins', 'app', 'selforg', 'cache'
 
 fig = plt.figure(1, clear=True)
 fig.suptitle(f"{filename.name}, min. length = {MINLEN}")
 ax = fig.add_subplot()
 
 for i, ST_name in enumerate(ST_names):
+    kind = 'resize' if 'hash' in ST_name.lower() else 'app'
+
     # Load the FrequencyCounter
     with open(f"./pkl/{tag}_{ST_name}_m{MINLEN:02d}_{kind}.pkl", 'rb') as fp:
         fc = pickle.load(fp)
@@ -115,7 +127,7 @@ for i, ST_name in enumerate(ST_names):
 ax.legend()
 
 # Place labels on axis (like ticklabels)
-# ax.set(xscale='log', yscale='log')
+ax.set(xscale='log', yscale='log')
 # ax.set(xscale='log')
 ylim = ax.get_ylim()
 ax.set_xlabel('operations')

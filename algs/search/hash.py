@@ -10,6 +10,7 @@
 # =============================================================================
 
 import math
+import numpy as np
 
 from algs.search.table import SequentialSearchST as _SequentialSearchST
 
@@ -59,7 +60,13 @@ class SeparateChainingHashST():
     items : mapping, dict-like
         Iterable of (key, value) pairs to be put into the table.
     M : int
-        Number of slots in the hash table.
+        Initial number of slots in the hash table.
+    max_probes : int >= 0
+        Desired average table size. If `max_probes > 0`, the table size `M`
+        will be adjusted such that `N/M` ~ `max_probes` as keys are added or
+        deleted. If `max_probes > 0`, the table size will *not* be adjusted.
+    cache : bool
+        Not yet implemented.
 
     Attributes
     ----------
@@ -79,7 +86,9 @@ class SeparateChainingHashST():
         self.N = 0
         self.M = M or self.INIT_CAPACITY
         self._MAX_PROBES = max_probes  # maximum average list size
+        assert self._MAX_PROBES >= 0
         self._lgM = int(math.log2(self.M))
+        self._cost = 0  # cost of last operation (number of compares)
         # Initialize the symbol table
         self._st = [_SequentialSearchST() for _ in range(self.M)]
         items = items or []  # must be iterable
@@ -128,28 +137,37 @@ class SeparateChainingHashST():
         """Insert a new value `v` associated with key `k`.
         If `k` is in the table, change its value to `v`."""
         # Double table size if average list length >= MAX_PROBES (e.g. 10)
-        if self.N >= self._MAX_PROBES*self.M:
+        if self._MAX_PROBES > 0 and self.N >= self._MAX_PROBES*self.M:
             self._resize(2*self.M)
-        i = self._hash(k)
-        if k not in self._st[i]:
+        t = self._st[self._hash(k)]
+        if k not in t:
             self.N += 1
-        self._st[i][k] = v
+        t[k] = v
+        self._cost = t._cost
 
     def __getitem__(self, k):
         """Return the value associated with the given key `k`."""
-        return self._st[self._hash(k)][k]
+        t = self._st[self._hash(k)]
+        v = t[k]
+        self._cost = t._cost
+        return v
 
     # Exercise 3.4.9, eager delete
     def __delitem__(self, k):
         """Delete the item associated with `k`."""
-        i = self._hash(k)
-        if k in self._st[i]:
+        t = self._st[self._hash(k)]
+        if k in t:
             self.N -= 1
-        del self._st[i][k]
+        del t[k]
+        self._cost = t._cost
         # Halve table size if average list length <= 2
-        if self.M > self.INIT_CAPACITY and self.N <= 2*self.M:
+        if (self._MAX_PROBES > 0 and 
+                self.M > self.INIT_CAPACITY and self.N <= 2*self.M):
             self._resize(self.M // 2)
 
+    # ------------------------------------------------------------------------- 
+    #         Utilities
+    # -------------------------------------------------------------------------
     def __len__(self):
         return self.size
 
@@ -213,6 +231,28 @@ class SeparateChainingHashST():
             return q
         return iterator
 
+    # ------------------------------------------------------------------------- 
+    #         Other
+    # -------------------------------------------------------------------------
+    # Exercise 3.4.30
+    # TODO run experiments
+    def chi_square(self):
+        r"""The χ₂ statistic for the hash table.
+
+        The statistic is defined by:
+
+        .. math::
+            \chi^2 = \frac{M}{N} ( (f_0 - \frac{N}{M})^2 
+                + (f_1 - \frac{N}{M})^2 + \dots (f_{M-1} - \frac{N}{M})^2 )
+
+        where :math:`f_i` is the number of keys with hash value :math:`i`. 
+        For :math:`N > cM`, the statistic should be :math:`M \pm \sqrt{M}` with
+        probability :math:`1 - 1/c`.
+        """
+        alpha = self.N / self.M  # typically > 1
+        table_lens = np.r_[[t.size for t in self._st]]
+        return np.sum((table_lens - alpha)**2) / alpha
+
 
 # Exercise 3.4.2
 class SeparateChainingLiteHashST():
@@ -225,6 +265,12 @@ class SeparateChainingLiteHashST():
         Iterable of (key, value) pairs to be put into the table.
     M : int
         Number of slots in the hash table.
+    max_probes : int >= 0
+        Desired average table size. If `max_probes > 0`, the table size `M`
+        will be adjusted such that `N/M` ~ `max_probes` as keys are added or
+        deleted. If `max_probes > 0`, the table size will *not* be adjusted.
+    cache : bool
+        Not yet implemented.
 
     Attributes
     ----------
@@ -260,6 +306,7 @@ class SeparateChainingLiteHashST():
         self.M = M or self.INIT_CAPACITY
         self._MAX_PROBES = max_probes  # maximum average list size
         self._lgM = int(math.log2(self.M))
+        self._cost = 0  # cost of last operation
         # Initialize the symbol table
         self._st = self.M*[None]   # Create M linked lists
         items = items or []  # must be iterable
@@ -303,12 +350,13 @@ class SeparateChainingLiteHashST():
         """Insert a new value `v` associated with key `k`.
         If `k` is in the table, change its value to `v`."""
         # Double table size if average list length >= 10
-        if self.N >= self._MAX_PROBES*self.M:
+        if self._MAX_PROBES > 0 and self.N >= self._MAX_PROBES*self.M:
             self._resize(2*self.M)
 
         # Hash into table
         i = self._hash(k)
         x = self._st[i]
+        self._cost = 1
 
         if x is None:
             # Create new linked list at hash table location
@@ -323,6 +371,7 @@ class SeparateChainingLiteHashST():
                 return
             else:
                 x = x.next
+                self._cost += 1
         else:
             # Insert new node at beginning of list
             self._st[i] = self._Node(k, v, self._st[i], N_before=self.N)
@@ -331,17 +380,20 @@ class SeparateChainingLiteHashST():
     def __getitem__(self, k):
         """Return the value associated with the given key `k`."""
         x = self._st[self._hash(k)]
+        self._cost = 1
         while x:
             if k == x.key:
                 return x.val
             else:
                 x = x.next
+                self._cost += 1
         else:
             raise KeyError(k)
 
     def __delitem__(self, k):
         """Delete the item associated with `k`."""
         i = self._hash(k)
+        self._cost = 1
         x = self._st[i]
         if x is None:
             raise KeyError(k)
@@ -359,11 +411,13 @@ class SeparateChainingLiteHashST():
                 return
             else:
                 x = x.next
+                self._cost += 1
         else:
             raise KeyError(k)
 
         # Halve table size if average list length <= 2
-        if self.M > self.INIT_CAPACITY and self.N <= 2*self.M:
+        if (self._MAX_PROBES > 0 and 
+                self.M > self.INIT_CAPACITY and self.N <= 2*self.M):
             self._resize(self.M // 2)
 
     # Exercise 3.4.3
@@ -484,8 +538,9 @@ class LinearProbingHashST():
     def __init__(self, items=None, M=16, cache=False):
         self.M = M
         self.N = 0
-        items = items or []  # must be iterable
+        self._cost = 0  # cost of last operation (at least 1 hash)
         # Initialize the symbol table
+        items = items or []  # must be iterable
         self._keys = M*[None]
         self._vals = M*[None]
         try:
@@ -526,13 +581,16 @@ class LinearProbingHashST():
         If `k` is in the table, change its value to `v`."""
         if self.N >= self.M // 2:
             self._resize(2*self.M)
+
         i = self._hash(k)
+        self._cost = 1
         while self._keys[i] is not None:
             if k == self._keys[i]:
                 self._vals[i] = v
                 return
             else:
                 i = (i + 1) % self.M
+                self._cost += 1
         else:
             self._keys[i] = k
             self._vals[i] = v
@@ -541,11 +599,13 @@ class LinearProbingHashST():
     def __getitem__(self, k):
         """Return the value associated with the given key `k`."""
         i = self._hash(k)
+        self._cost = 1
         while self._keys[i] is not None:
             if k == self._keys[i]:
                 return self._vals[i]
             else:
                 i = (i + 1) % self.M
+                self._cost += 1
         else:
             raise KeyError(k)
 
@@ -554,9 +614,11 @@ class LinearProbingHashST():
         if not self.__contains__(k):
             raise KeyError(k)
         i = self._hash(k)
+        _cost = 1
         # Set slot of `k` to None
         while k is not self._keys[i]:
             i = (i + 1) % self.M
+            _cost += 1
         self._keys[i] = None
         self._vals[i] = None
         i = (i + 1) % self.M
@@ -569,10 +631,16 @@ class LinearProbingHashST():
             self.N -= 1
             self.__setitem__(key_to_redo, val_to_redo)
             i = (i + 1) % self.M
+            _cost += self._cost  # self._cost updated in __setitem__
         self.N -= 1
+        self._cost = _cost
+        # Check for a resize if table is small enough
         if self.N > 0 and self.N <= self.M/8:
             self._resize(self.M // 2)
 
+    # ------------------------------------------------------------------------- 
+    #         Utilities
+    # -------------------------------------------------------------------------
     def __len__(self):
         return self.size
 
@@ -593,6 +661,9 @@ class LinearProbingHashST():
     def __repr__(self):
         return f"<{self.__class__.__name__}: {self.__str__()}>"
 
+    # ------------------------------------------------------------------------- 
+    #         Iterators
+    # -------------------------------------------------------------------------
     def __iter__(self):
         """Return an iterator of all of the keys in the table."""
         yield from self.keys()
@@ -606,6 +677,23 @@ class LinearProbingHashST():
     def items(self):
         return [(k, v) for (k, v) in zip(self._keys, self._vals) 
                 if k is not None]
+
+    # ------------------------------------------------------------------------- 
+    #         Other
+    # -------------------------------------------------------------------------
+    # Exercise 3.4.20
+    def _cost_of_hit(self):
+        """Average cost of a search *hit* in the table.[0]
+
+        .. [0]:: Sedgewick, p 473."""
+        return 0.5 * (1 + 1/(1 - self.N/self.M))
+
+    # Exercise 3.4.21
+    def _cost_of_miss(self):
+        """Average cost of a search *miss* in the table.[0]
+
+        .. [0]:: Sedgewick, p 473."""
+        return 0.5 * (1 + 1/(1 - self.N/self.M)**2)
 
 
 # -----------------------------------------------------------------------------

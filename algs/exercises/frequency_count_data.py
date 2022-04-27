@@ -13,7 +13,8 @@ import os
 import pandas as pd
 import pickle
 
-from algs.search import ArrayST, BinarySearchST, BST, ArrayBST, RedBlackBST
+from algs.search import (ArrayST, BinarySearchST, BST, ArrayBST, RedBlackBST,
+                         SeparateChainingHashST, LinearProbingHashST)
 from frequency_counter import FrequencyCounter
 
 filenames = ['../data/tiny_tale.txt',  # 292
@@ -22,18 +23,23 @@ filenames = ['../data/tiny_tale.txt',  # 292
 
 tags = [os.path.splitext(os.path.basename(x))[0] for x in filenames]
 cols = pd.MultiIndex.from_product([tags, ['words', 'distinct', 'max_word', 'max_freq']])
-kind = 'app'  # 'ins', 'app', 'selforg', 'LL' 
+kind = 'app'  # 'ins', 'app', 'selforg', 'LL', 'resize'
              #  for `.insert(0, item)` vs. `.append(item)`
 
 selforg = True if kind == 'selforg' else False
+max_probes = 10 if kind == 'resize' else 0
+M = 997 if max_probes == 0 else 4
 
-for ST in [ArrayST, BinarySearchST, BST, ArrayBST, RedBlackBST]:
+# for ST in [ArrayST, BinarySearchST, BST, ArrayBST, RedBlackBST]:
+for ST in [SeparateChainingHashST, LinearProbingHashST]:
     df = pd.DataFrame(columns=cols)
     for i, f in enumerate(filenames):
         tag = tags[i]
         for minlen in [1, 8, 10]:
             if ST is ArrayST:
                 fc = FrequencyCounter(ST, selforg=selforg)
+            elif ST is SeparateChainingHashST:
+                fc = FrequencyCounter(ST, M=M, max_probes=max_probes)
             else:
                 fc = FrequencyCounter(ST)
             fc.count_frequencies(f, minlen)
