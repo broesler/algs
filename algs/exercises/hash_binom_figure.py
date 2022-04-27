@@ -15,7 +15,7 @@ import numpy as np
 
 from pathlib import Path
 from scipy.special import factorial
-from scipy.stats import poisson, chi2, chisquare
+from scipy.stats import binom, poisson, chi2, chisquare
 
 from algs.search import SeparateChainingHashST
 from frequency_counter import FrequencyCounter
@@ -23,13 +23,14 @@ from frequency_counter import FrequencyCounter
 MINLEN = 1  # 1, 8, 10
 filename = Path('../data/tale.txt')  # 779K
 
+# Add each of the unique words in Tale of Two Cities to the hash table.
 fc = FrequencyCounter(SeparateChainingHashST, M=997, max_probes=0)
 fc.count_frequencies(filename, MINLEN)
 st = fc.t
 
 lengths = np.r_[[t.size for t in st._st]]  # empirical list lengths
 
-# Theoretical distribution is Poisson
+# Theoretical distribution of list lengths is binomial -> Poisson as N -> ∞.
 α = st.N / st.M              # mean list length
 k = np.linspace(0, 30, 100)  # number of keys per list
 # k = np.arange(30)
@@ -38,7 +39,7 @@ k = np.linspace(0, 30, 100)  # number of keys per list
 # NOTE The Poisson distribution is a *discrete* distribution, so this function
 # *should* be computed at integer `k` values, with a stem plot below. We'll use
 # the continuous function to match the book figure.
-# P = poisson(mu=α).pmf(k)
+# P(k) = poisson(mu=α).pmf(k)
 def P(k):
     """Poisson distribution with parameter `k`."""
     return α**k * np.exp(-α) / factorial(k)
@@ -49,24 +50,22 @@ Pk = P(k)
 # -----------------------------------------------------------------------------
 #         Chi-squared test
 # -----------------------------------------------------------------------------
-# Chi-squared test to determine if list lengths are indeed distributed as
-# a binomial (-> Poisson) distribution
-the_test = chisquare(lengths)
-print(the_test)  # automatic test assuming uniform distribution
+# Chi-squared test to determine if keys are indeed distributed uniformly
+the_test = chisquare(lengths, ddof=1)
 
 # Manually calculate the test statistic and compare to the distribution
 Tn = st.chi_square()  # compute the test statistic
 a = 0.05
-q = chi2(st.M-1).ppf(1-a)
-pvalue = 1 - chi2(st.M-1).cdf(Tn)
+q = chi2(st.M-2).ppf(1-a)
+pvalue = 1 - chi2(st.M-2).cdf(Tn)
 
 assert np.isclose(the_test.statistic, Tn)
 assert np.isclose(the_test.pvalue, pvalue)
 
 if Tn > q:
-    print("Reject H0 that list lengths are binomial-distributed.")
+    print("Reject H0 that keys are uniformly-distributed.")
 else:
-    print("Fail to reject H0 that list lenghts are binomial-distributed.")
+    print("Fail to reject H0 that keys are uniformly-distributed.")
 
 print(f"{Tn     = }")
 print(f"{pvalue = }")
@@ -100,7 +99,7 @@ ax.annotate(r"$\dfrac{\alpha^k e^{-\alpha}}{k!}$",
             arrowprops=dict(arrowstyle='->', color='C3')
             )
 
-ax.set_xlabel(rf"list lengths ({st.N:,d} keys, $M$ = {st.M})", color='C3')
+ax.set_xlabel(rf"list length ({st.N:,d} keys, $M$ = {st.M})", color='C3')
 ax.set_ylabel('frequency', color='C3', labelpad=-25)
 ax.set_yticks([0, 0.125])
 

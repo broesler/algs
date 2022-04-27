@@ -240,7 +240,6 @@ class SeparateChainingHashST():
     #         Other
     # -------------------------------------------------------------------------
     # Exercise 3.4.30
-    # TODO run experiments
     def chi_square(self):
         r"""The χ² statistic for the hash table.
 
@@ -254,7 +253,7 @@ class SeparateChainingHashST():
         For :math:`N > cM`, the statistic should be :math:`M \pm \sqrt{M}` with
         probability :math:`1 - 1/c`.
 
-        The statistic will be distributed ~ χ² with *M-1* degrees of freedom.
+        The statistic will be distributed ~ χ² with *M-2* degrees of freedom.
         """
         alpha = self.N / self.M  # typically > 1
         table_lens = np.r_[[t.size for t in self._st]]
