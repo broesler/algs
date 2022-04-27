@@ -23,28 +23,24 @@ pat = re.compile(r"[a-zA-Z']+")
 M = 97  # choose a prime
 
 def hash_code(x):
+    """Return an integer in [0, M-1]."""
     return hash(x) % M
 
-def count_lines(fp):
-    """Scan through file to count the number of lines."""
-    for i, line in enumerate(fp, 1):
-        pass
-    fp.seek(0)  # rewind file
-    return i
-
+# Keep track of *unique* words
 words = set()
 
 with open(filename, 'r') as fp:
     for line in fp:
         words.update(pat.findall(line.lower()))
 
-# unique_words = set(words)
+N = len(words)
+α = N / M
+
 hashes = [hash_code(w) for w in words]
 
 # Generate known uniform distribution of integers for comparison
 rng = np.random.default_rng(seed=56)
-rands = rng.random(size=len(hashes))
-rand_ints = np.r_[[hash_code(x) for x in rands]]
+rand_ints = rng.integers(M, size=len(hashes))
 
 # ----------------------------------------------------------------------------- 
 #         Plots
@@ -54,8 +50,8 @@ fig.set_size_inches((8, 2), forward=True)
 ax = fig.add_subplot()
 ax.hist(rand_ints, bins=M, rwidth=0.9, color='C0', alpha=0.4)
 
-n, _, _ = ax.hist(hashes, bins=M, rwidth=0.9, color='k')
-m = int(np.mean(n))  # bar height
+lengths, _, _ = ax.hist(hashes, bins=M, rwidth=0.9, color='k')
+m = int(np.mean(lengths))  # bar height == list lengths in hash table
 ax.axhline(m, lw=1, color='C3')
 ax.annotate(fr"${m} \approx {len(hashes)}~/~{M}$",
             xy=(5, m), xycoords='data',

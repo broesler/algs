@@ -65,12 +65,15 @@ ax.annotate(r"$\dfrac{\alpha^k e^{-\alpha}}{k!}$",
 
 ax.set_xlabel(rf"list lengths ({st.N:,d} keys, $M$ = {st.M})", 
               fontweight='bold', color='C3')
-ax.set_ylabel('frequency', fontweight='bold', color='C3', labelpad=-25)
+ax.set_ylabel('frequency',
+              fontweight='bold', color='C3', labelpad=-25)
 ax.set_yticks([0, 0.125])
 
 ax.spines['top'].set_visible(False)
+ax.spines['left'].set_visible(False)
 ax.spines['right'].set_visible(False)
-ax.grid(False)
+
+ax.grid(None)
 
 ylim = ax.get_ylim()
 ax.set_yticks = ylim
