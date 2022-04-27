@@ -15,7 +15,7 @@ import numpy as np
 
 from pathlib import Path
 from scipy.special import factorial
-from scipy.stats import binom, chi2, chisquare
+from scipy.stats import poisson, chi2, chisquare
 
 from algs.search import SeparateChainingHashST
 from frequency_counter import FrequencyCounter
@@ -32,14 +32,21 @@ lengths = np.r_[[t.size for t in st._st]]  # empirical list lengths
 # Theoretical distribution is Poisson
 α = st.N / st.M              # mean list length
 k = np.linspace(0, 30, 100)  # number of keys per list
+# k = np.arange(30)
 
+
+# NOTE The Poisson distribution is a *discrete* distribution, so this function
+# *should* be computed at integer `k` values, with a stem plot below. We'll use
+# the continuous function to match the book figure.
+# P = poisson(mu=α).pmf(k)
 def P(k):
     """Poisson distribution with parameter `k`."""
     return α**k * np.exp(-α) / factorial(k)
 
+
 Pk = P(k)
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 #         Chi-squared test
 # -----------------------------------------------------------------------------
 # Chi-squared test to determine if list lengths are indeed distributed as
@@ -57,7 +64,7 @@ assert np.isclose(the_test.statistic, Tn)
 assert np.isclose(the_test.pvalue, pvalue)
 
 if Tn > q:
-    print(f"Reject H0 that list lengths are binomial-distributed.")
+    print("Reject H0 that list lengths are binomial-distributed.")
 else:
     print("Fail to reject H0 that list lenghts are binomial-distributed.")
 
@@ -70,8 +77,14 @@ print(f"{pvalue = }")
 fig = plt.figure(0, clear=True, constrained_layout=True)
 fig.set_size_inches((12, 3), forward=True)
 ax = fig.add_subplot()
+
+# Plot the histogram of list lengths
 ax.hist(lengths, bins=np.arange(31)+0.5, density=True, rwidth=0.9, color='k')
+
+# Plot the theoretical distribution
 ax.plot(k, Pk, 'C3')
+# ax.stem(k, Pk, linefmt='C3-', markerfmt='C3o')
+
 ax.axvline(α, c='C3', lw=1)
 
 ax.annotate(f"{α = :.4f}...", xy=(α, 1.1*Pk.max()), xycoords='data',
@@ -87,10 +100,8 @@ ax.annotate(r"$\dfrac{\alpha^k e^{-\alpha}}{k!}$",
             arrowprops=dict(arrowstyle='->', color='C3')
             )
 
-ax.set_xlabel(rf"list lengths ({st.N:,d} keys, $M$ = {st.M})",
-              fontweight='bold', color='C3')
-ax.set_ylabel('frequency',
-              fontweight='bold', color='C3', labelpad=-25)
+ax.set_xlabel(rf"list lengths ({st.N:,d} keys, $M$ = {st.M})", color='C3')
+ax.set_ylabel('frequency', color='C3', labelpad=-25)
 ax.set_yticks([0, 0.125])
 
 ax.spines['top'].set_visible(False)
