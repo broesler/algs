@@ -20,7 +20,8 @@ __all__ = ['SeparateChainingHashST', 'SeparateChainingLiteHashST',
 # TODO constructor `from_tuples` that takes items = [('a', 0), ('b', 2), ...]
 # constructor 'from_keys` that takes keys = ['a', 'b', ...] and value = None.
 
-# Table of primes greater than the nearest power of 2
+# Table of primes less than the nearest power of 2
+# Mersenne primes like 31 are nice because 31 = 2**5 - 1 == (1 << 5) - 1.
 _PRIMES = dict({
     5: 31,
     6: 61,
@@ -64,7 +65,7 @@ class SeparateChainingHashST():
     max_probes : int >= 0
         Desired average table size. If `max_probes > 0`, the table size `M`
         will be adjusted such that `N/M` ~ `max_probes` as keys are added or
-        deleted. If `max_probes > 0`, the table size will *not* be adjusted.
+        deleted. If `max_probes == 0`, the table size will *not* be adjusted.
     cache : bool
         Not yet implemented.
 
@@ -111,15 +112,19 @@ class SeparateChainingHashST():
         assert self.size == sum([t.size for t in self._st])
 
     def _hash(self, k):
-        """Modular hashing using Python's built-in `hash` function."""
-        # NOTE `hash` is "salted" each time python is run for security reasons,
-        # so results are non-deterministic. Manual override or set seed?
-        # return hash(k) % self.M
-        # Exercise 3.4.18: ensure items evenly distributed when M is power of 2
-        t = hash(k)
-        if self._lgM < 26:
-            t = t % _PRIMES[self._lgM + 5]
-        return t % self.M
+        """Modular hashing using Python's built-in `hash` function.
+
+        .. note:: `hash` is "salted" each time python is run for security
+        reasons, so results are non-deterministic.
+        """
+        if self._MAX_PROBES == 0:
+            return hash(k) % self.M
+        else:
+            # Exercise 3.4.18: ensure even distribution when M is power of 2
+            t = hash(k)
+            if self._lgM < 26:
+                t = t % _PRIMES[self._lgM + 5]
+            return t % self.M
 
     def _resize(self, M):
         """Resize the array of hash slots."""
@@ -161,11 +166,11 @@ class SeparateChainingHashST():
         del t[k]
         self._cost = t._cost
         # Halve table size if average list length <= 2
-        if (self._MAX_PROBES > 0 and 
+        if (self._MAX_PROBES > 0 and
                 self.M > self.INIT_CAPACITY and self.N <= 2*self.M):
             self._resize(self.M // 2)
 
-    # ------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #         Utilities
     # -------------------------------------------------------------------------
     def __len__(self):
@@ -231,23 +236,25 @@ class SeparateChainingHashST():
             return q
         return iterator
 
-    # ------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #         Other
     # -------------------------------------------------------------------------
     # Exercise 3.4.30
     # TODO run experiments
     def chi_square(self):
-        r"""The χ₂ statistic for the hash table.
+        r"""The χ² statistic for the hash table.
 
         The statistic is defined by:
 
         .. math::
-            \chi^2 = \frac{M}{N} ( (f_0 - \frac{N}{M})^2 
+            \chi^2 = \frac{M}{N} ( (f_0 - \frac{N}{M})^2
                 + (f_1 - \frac{N}{M})^2 + \dots (f_{M-1} - \frac{N}{M})^2 )
 
-        where :math:`f_i` is the number of keys with hash value :math:`i`. 
+        where :math:`f_i` is the number of keys with hash value :math:`i`.
         For :math:`N > cM`, the statistic should be :math:`M \pm \sqrt{M}` with
         probability :math:`1 - 1/c`.
+
+        The statistic will be distributed ~ χ² with *M-1* degrees of freedom.
         """
         alpha = self.N / self.M  # typically > 1
         table_lens = np.r_[[t.size for t in self._st]]
@@ -416,7 +423,7 @@ class SeparateChainingLiteHashST():
             raise KeyError(k)
 
         # Halve table size if average list length <= 2
-        if (self._MAX_PROBES > 0 and 
+        if (self._MAX_PROBES > 0 and
                 self.M > self.INIT_CAPACITY and self.N <= 2*self.M):
             self._resize(self.M // 2)
 
@@ -506,7 +513,7 @@ class SeparateChainingLiteHashST():
                 x = t
                 while x:
                     q.append(x.key if rtype == 'keys' else
-                             (x.val if rtype == 'values' else 
+                             (x.val if rtype == 'values' else
                              (x.key, x.val) if rtype == 'items' else x))
                     x = x.next
             return q
@@ -638,7 +645,7 @@ class LinearProbingHashST():
         if self.N > 0 and self.N <= self.M/8:
             self._resize(self.M // 2)
 
-    # ------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #         Utilities
     # -------------------------------------------------------------------------
     def __len__(self):
@@ -661,7 +668,7 @@ class LinearProbingHashST():
     def __repr__(self):
         return f"<{self.__class__.__name__}: {self.__str__()}>"
 
-    # ------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #         Iterators
     # -------------------------------------------------------------------------
     def __iter__(self):
@@ -675,10 +682,10 @@ class LinearProbingHashST():
         return [v for (k, v) in zip(self._keys, self._vals) if k is not None]
 
     def items(self):
-        return [(k, v) for (k, v) in zip(self._keys, self._vals) 
+        return [(k, v) for (k, v) in zip(self._keys, self._vals)
                 if k is not None]
 
-    # ------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #         Other
     # -------------------------------------------------------------------------
     # Exercise 3.4.20

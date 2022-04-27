@@ -5,79 +5,98 @@
 #   Author: Bernie Roesler
 #
 """
-Description: Plot the frequency distribution of list lengths.
+Plot the frequency distribution of list lengths to match figure at
+top of page 468 in Sedgewick and Wayne, Algorithms, 4 ed.
 """
 # =============================================================================
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pickle
 
 from pathlib import Path
 from scipy.special import factorial
+from scipy.stats import binom, chi2, chisquare
+
+from algs.search import SeparateChainingHashST
+from frequency_counter import FrequencyCounter
 
 MINLEN = 1  # 1, 8, 10
-filename = Path('../data/tale.txt')       # 779K
+filename = Path('../data/tale.txt')  # 779K
 
-ST_name = 'SeparateChainingHashST'
-
-tag = filename.stem
-kind = 'app'
-
-# Load the FrequencyCounter
-with open(f"./pkl/{tag}_{ST_name}_m{MINLEN:02d}_{kind}.pkl", 'rb') as fp:
-    fc = pickle.load(fp)
-
+fc = FrequencyCounter(SeparateChainingHashST, M=997, max_probes=0)
+fc.count_frequencies(filename, MINLEN)
 st = fc.t
-lens = np.r_[[t.size for t in st._st]]  # empirical list lengths
 
-# Theoretical distribution
-α = st.N / st.M                       # mean list length
-k = np.linspace(0, 1.5*lens.max())    # number of keys per list
+lengths = np.r_[[t.size for t in st._st]]  # empirical list lengths
+
+# Theoretical distribution is Poisson
+α = st.N / st.M              # mean list length
+k = np.linspace(0, 30, 100)  # number of keys per list
 
 def P(k):
-    return α**k * np.exp(-α) / factorial(k)  # Poisson distrbution
+    """Poisson distribution with parameter `k`."""
+    return α**k * np.exp(-α) / factorial(k)
 
 Pk = P(k)
 
 # ----------------------------------------------------------------------------- 
+#         Chi-squared test
+# -----------------------------------------------------------------------------
+# Chi-squared test to determine if list lengths are indeed distributed as
+# a binomial (-> Poisson) distribution
+the_test = chisquare(lengths)
+print(the_test)  # automatic test assuming uniform distribution
+
+# Manually calculate the test statistic and compare to the distribution
+Tn = st.chi_square()  # compute the test statistic
+a = 0.05
+q = chi2(st.M-1).ppf(1-a)
+pvalue = 1 - chi2(st.M-1).cdf(Tn)
+
+assert np.isclose(the_test.statistic, Tn)
+assert np.isclose(the_test.pvalue, pvalue)
+
+if Tn > q:
+    print(f"Reject H0 that list lengths are binomial-distributed.")
+else:
+    print("Fail to reject H0 that list lenghts are binomial-distributed.")
+
+print(f"{Tn     = }")
+print(f"{pvalue = }")
+
+# -----------------------------------------------------------------------------
 #         Plot
 # -----------------------------------------------------------------------------
 fig = plt.figure(0, clear=True, constrained_layout=True)
 fig.set_size_inches((12, 3), forward=True)
 ax = fig.add_subplot()
-ax.hist(lens, bins=20, density=True, rwidth=0.9, color='k')
+ax.hist(lengths, bins=np.arange(31)+0.5, density=True, rwidth=0.9, color='k')
 ax.plot(k, Pk, 'C3')
 ax.axvline(α, c='C3', lw=1)
 
-ax.annotate(f"{α = :.4f}...", xy=(α, 1.1*Pk.max()), xycoords='data', 
-            xytext=(α+2, 1.2*Pk.max()), textcoords='data', 
+ax.annotate(f"{α = :.4f}...", xy=(α, 1.1*Pk.max()), xycoords='data',
+            xytext=(α+2, 1.2*Pk.max()), textcoords='data',
             va='top', ha='left', color='C3',
             arrowprops=dict(arrowstyle='->', color='C3')
             )
 
 ax.annotate(r"$\dfrac{\alpha^k e^{-\alpha}}{k!}$",
-            xy=(15, P(15)), xycoords='data', 
-            xytext=(18, 0.6*Pk.max()), textcoords='data', 
+            xy=(15, P(15)), xycoords='data',
+            xytext=(18, 0.6*Pk.max()), textcoords='data',
             va='top', ha='left', color='C3', fontsize=14,
             arrowprops=dict(arrowstyle='->', color='C3')
             )
 
-ax.set_xlabel(rf"list lengths ({st.N:,d} keys, $M$ = {st.M})", 
+ax.set_xlabel(rf"list lengths ({st.N:,d} keys, $M$ = {st.M})",
               fontweight='bold', color='C3')
 ax.set_ylabel('frequency',
               fontweight='bold', color='C3', labelpad=-25)
 ax.set_yticks([0, 0.125])
 
 ax.spines['top'].set_visible(False)
-ax.spines['left'].set_visible(False)
 ax.spines['right'].set_visible(False)
 
-ax.grid(None)
-
-ylim = ax.get_ylim()
-ax.set_yticks = ylim
-# ax.set_ylim(top=0.18)
+ax.grid(False)
 
 plt.show()
 # =============================================================================
