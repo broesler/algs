@@ -24,11 +24,11 @@ MINLEN = 1  # 1, 8, 10
 filename = Path('../data/tale.txt')  # 779K
 
 # Add each of the unique words in Tale of Two Cities to the hash table.
-fc = FrequencyCounter(SeparateChainingHashST, M=997, max_probes=0)
+fc = FrequencyCounter(SeparateChainingHashST, M=997, resize=False)
 fc.count_frequencies(filename, MINLEN)
 st = fc.t
 
-lengths = np.r_[[t.size for t in st._st]]  # empirical list lengths
+Ls = st._list_lengths()  # empirical list lengths
 
 # Theoretical distribution of list lengths is binomial -> Poisson as N -> ∞.
 α = st.N / st.M              # mean list length
@@ -51,7 +51,7 @@ Pk = P(k)
 #         Chi-squared test
 # -----------------------------------------------------------------------------
 # Chi-squared test to determine if keys are indeed distributed uniformly
-the_test = chisquare(lengths, ddof=1)
+the_test = chisquare(Ls, ddof=1)
 
 # Manually calculate the test statistic and compare to the distribution
 Tn = st.chi_square()  # compute the test statistic
@@ -78,7 +78,7 @@ fig.set_size_inches((12, 3), forward=True)
 ax = fig.add_subplot()
 
 # Plot the histogram of list lengths
-ax.hist(lengths, bins=np.arange(31)+0.5, density=True, rwidth=0.9, color='k')
+ax.hist(Ls, bins=np.arange(31)+0.5, density=True, rwidth=0.9, color='k')
 
 # Plot the theoretical distribution
 ax.plot(k, Pk, 'C3')

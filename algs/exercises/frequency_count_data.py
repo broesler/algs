@@ -27,8 +27,8 @@ kind = 'app'  # 'ins', 'app', 'selforg', 'LL', 'resize'
              #  for `.insert(0, item)` vs. `.append(item)`
 
 selforg = True if kind == 'selforg' else False
-max_probes = 10 if kind == 'resize' else 0
-M = 997 if max_probes == 0 else 4
+resize = True if kind == 'resize' else False
+M = 997 if not resize else 4
 
 # for ST in [ArrayST, BinarySearchST, BST, ArrayBST, RedBlackBST]:
 for ST in [SeparateChainingHashST, LinearProbingHashST]:
@@ -39,7 +39,7 @@ for ST in [SeparateChainingHashST, LinearProbingHashST]:
             if ST is ArrayST:
                 fc = FrequencyCounter(ST, selforg=selforg)
             elif ST is SeparateChainingHashST:
-                fc = FrequencyCounter(ST, M=M, max_probes=max_probes)
+                fc = FrequencyCounter(ST, M=M, resize=resize)
             else:
                 fc = FrequencyCounter(ST)
             fc.count_frequencies(f, minlen)

@@ -62,10 +62,14 @@ class SeparateChainingHashST():
         Iterable of (key, value) pairs to be put into the table.
     M : int
         Initial number of slots in the hash table.
-    max_probes : int >= 0
-        Desired average table size. If `max_probes > 0`, the table size `M`
+    resize : bool
+        If True, resize the table by powers of 2 to maintain an average list
+        length of `max_probes`. Note that resizing changes the basic hash
+        function to more evenly distribute the keys with a non-prime `M`.
+    max_probes : int > 0
+        Desired average table size. If `resize` is True, the table size `M`
         will be adjusted such that `N/M` ~ `max_probes` as keys are added or
-        deleted. If `max_probes == 0`, the table size will *not* be adjusted.
+        deleted. 
     cache : bool
         Not yet implemented.
 
@@ -83,9 +87,11 @@ class SeparateChainingHashST():
     """
     INIT_CAPACITY = 4  # minimum number of hash slots
 
-    def __init__(self, items=None, M=None, max_probes=10, cache=False):
+    def __init__(self, items=None, M=None,
+                 resize=False, max_probes=10, cache=False):
         self.N = 0
-        self.M = M or self.INIT_CAPACITY
+        self.M = int(M) or self.INIT_CAPACITY
+        self._RESIZE_FLAG = resize
         self._MAX_PROBES = max_probes  # maximum average list size
         assert self._MAX_PROBES >= 0
         self._lgM = int(math.log2(self.M))
@@ -109,7 +115,10 @@ class SeparateChainingHashST():
         return self.N
 
     def _validate_size(self):
-        assert self.size == sum([t.size for t in self._st])
+        assert self.size == sum(self._list_lengths())
+
+    def _list_lengths(self):
+        return [t.size for t in self._st]
 
     def _hash(self, k):
         """Modular hashing using Python's built-in `hash` function.
@@ -117,14 +126,14 @@ class SeparateChainingHashST():
         .. note:: `hash` is "salted" each time python is run for security
         reasons, so results are non-deterministic.
         """
-        if self._MAX_PROBES == 0:
-            return hash(k) % self.M
-        else:
+        if self._RESIZE_FLAG:
             # Exercise 3.4.18: ensure even distribution when M is power of 2
             t = hash(k)
             if self._lgM < 26:
                 t = t % _PRIMES[self._lgM + 5]
             return t % self.M
+        else:
+            return hash(k) % self.M
 
     def _resize(self, M):
         """Resize the array of hash slots."""
@@ -142,7 +151,7 @@ class SeparateChainingHashST():
         """Insert a new value `v` associated with key `k`.
         If `k` is in the table, change its value to `v`."""
         # Double table size if average list length >= MAX_PROBES (e.g. 10)
-        if self._MAX_PROBES > 0 and self.N >= self._MAX_PROBES*self.M:
+        if self._RESIZE_FLAG and self.N >= self._MAX_PROBES*self.M:
             self._resize(2*self.M)
         t = self._st[self._hash(k)]
         if k not in t:
@@ -166,7 +175,7 @@ class SeparateChainingHashST():
         del t[k]
         self._cost = t._cost
         # Halve table size if average list length <= 2
-        if (self._MAX_PROBES > 0 and
+        if (self._RESIZE_FLAG and
                 self.M > self.INIT_CAPACITY and self.N <= 2*self.M):
             self._resize(self.M // 2)
 
@@ -271,10 +280,14 @@ class SeparateChainingLiteHashST():
         Iterable of (key, value) pairs to be put into the table.
     M : int
         Number of slots in the hash table.
-    max_probes : int >= 0
-        Desired average table size. If `max_probes > 0`, the table size `M`
+    resize : bool
+        If True, resize the table by powers of 2 to maintain an average list
+        length of `max_probes`. Note that resizing changes the basic hash
+        function to more evenly distribute the keys with a non-prime `M`.
+    max_probes : int > 0
+        Desired average table size. If `resize` is True, the table size `M`
         will be adjusted such that `N/M` ~ `max_probes` as keys are added or
-        deleted. If `max_probes > 0`, the table size will *not* be adjusted.
+        deleted. 
     cache : bool
         Not yet implemented.
 
@@ -307,9 +320,11 @@ class SeparateChainingLiteHashST():
         def __repr__(self):
             return f"<{self.__class__.__name__}: {self.__str__()}>"
 
-    def __init__(self, items=None, M=None, max_probes=10, cache=False):
+    def __init__(self, items=None, M=None,
+                 resize=False, max_probes=10, cache=False):
         self.N = 0
         self.M = M or self.INIT_CAPACITY
+        self._RESIZE_FLAG = resize
         self._MAX_PROBES = max_probes  # maximum average list size
         self._lgM = int(math.log2(self.M))
         self._cost = 0  # cost of last operation
@@ -333,12 +348,14 @@ class SeparateChainingLiteHashST():
 
     def _hash(self, k):
         """Modular hashing using Python's built-in `hash` function."""
-        # return hash(k) % self.M
-        # Exercise 3.4.18: ensure items evenly distributed when M is power of 2
-        t = hash(k)
-        if self._lgM < 26:
-            t = t % _PRIMES[self._lgM + 5]
-        return t % self.M
+        if self._RESIZE_FLAG:
+            # Exercise 3.4.18: ensure items evenly distributed when M is power of 2
+            t = hash(k)
+            if self._lgM < 26:
+                t = t % _PRIMES[self._lgM + 5]
+            return t % self.M
+        else:
+            return hash(k) % self.M
 
     def _resize(self, M):
         """Resize the array of hash slots."""
@@ -356,7 +373,7 @@ class SeparateChainingLiteHashST():
         """Insert a new value `v` associated with key `k`.
         If `k` is in the table, change its value to `v`."""
         # Double table size if average list length >= 10
-        if self._MAX_PROBES > 0 and self.N >= self._MAX_PROBES*self.M:
+        if self._RESIZE_FLAG and self.N >= self._MAX_PROBES*self.M:
             self._resize(2*self.M)
 
         # Hash into table
@@ -422,7 +439,7 @@ class SeparateChainingLiteHashST():
             raise KeyError(k)
 
         # Halve table size if average list length <= 2
-        if (self._MAX_PROBES > 0 and
+        if (self._RESIZE_FLAG and
                 self.M > self.INIT_CAPACITY and self.N <= 2*self.M):
             self._resize(self.M // 2)
 
