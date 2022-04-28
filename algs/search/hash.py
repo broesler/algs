@@ -573,6 +573,12 @@ class LinearProbingHashST():
             raise ValueError(f"{self.__class__.__name__} "
                              'expects an iterable mapping input.')
 
+    def from_keys(self, keys, value=None):
+        """Initialize the table using only the keys."""
+        for k in keys:
+            self.__setitem__(k, value)
+        return self
+
     @property
     def is_empty(self):
         return self.size == 0
@@ -582,6 +588,7 @@ class LinearProbingHashST():
         return self.N
 
     def _hash(self, k):
+        # TODO implement lgM here to handle table doubling
         return hash(k) % self.M
 
     def _resize(self, M):
@@ -702,26 +709,63 @@ class LinearProbingHashST():
                 if k is not None]
 
     # -------------------------------------------------------------------------
-    #         Other
+    #         Exercises
     # -------------------------------------------------------------------------
     # Exercise 3.4.20
-    def _cost_of_hit(self):
-        """Average cost of a search *hit* in the table.[0]
+    def cost_of_hit(self):
+        """Average cost of a search *hit* in the table.
 
-        .. [0]:: Sedgewick, p 473."""
-        return 0.5 * (1 + 1/(1 - self.N/self.M))
+        Probability theory gives :math:`1/2 (1 + 1/(1 - α))`.[0]
 
+        .. [0]:: Sedgewick, p 473.
+        """
+        return np.mean(self._cluster_lengths())
+        
     # Exercise 3.4.21
-    def _cost_of_miss(self):
+    def cost_of_miss(self):
         """Average cost of a search *miss* in the table.[0]
 
-        .. [0]:: Sedgewick, p 473."""
-        return 0.5 * (1 + 1/(1 - self.N/self.M)**2)
+        Probability theory gives :math:`1/2 (1 + 1/(1 - α)²)`.[0]
+
+        .. [0]:: Sedgewick, p 473.
+        """
+        return 1 + (self.N + np.sum(self._cluster_lengths()**2)) / (2*self.M)
+
+    def _cluster_lengths(self):
+        """Compute the lengths of each cluster of keys in the table."""
+        # cost of cluster length t is t*(t+1)
+        # Find first null slot so we can count wrap-around index as one cluster
+        lo = 0
+        for k in self._keys:
+            if k is None:
+                break
+            lo += 1
+
+        # Count the cluster lengths
+        clusters = list()
+        i = lo + 1
+        t = 0
+        while True:
+            # Reset counter at new cluster
+            if self._keys[i] is None: 
+                if t != 0:
+                    clusters.append(t)
+                    t = 0
+            else:
+                t += 1
+
+            # Increment and check for wrap-around finish
+            i = (i + 1) % self.M
+            if i == lo + 1:
+                break
+
+        return np.r_[clusters]
 
 
 # -----------------------------------------------------------------------------
 #         Run tests
 # -----------------------------------------------------------------------------
+# TODO move to unit tests test_hash.py
 if __name__ == '__main__':
     import types
 
@@ -755,10 +799,14 @@ if __name__ == '__main__':
     for k, v in items:
         stp[k] = v
 
+    assert np.allclose(stp._cluster_lengths(), [1, 1, 2, 2, 2, 2])
+
     sts = LinearProbingHashST(M=10)
     sts._hash = types.MethodType(__hash, sts)
     for k, v in items:
         sts[k] = v
+
+    assert np.allclose(sts._cluster_lengths(), [2, 2, 3, 3])
 
 # =============================================================================
 # =============================================================================
