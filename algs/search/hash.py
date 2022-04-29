@@ -558,11 +558,11 @@ class LinearProbingHashST():
     KeyError
         If `k` is not in the table.
     """
-    # TODO add hidden _resize=False flag for testing
-    def __init__(self, items=None, M=16, cache=False):
+    def __init__(self, items=None, M=16, resize=True, cache=False):
         self.M = M
         self.N = 0
         self._cost = 0  # cost of last operation (at least 1 hash)
+        self._RESIZE_FLAG = bool(resize)
         # Initialize the symbol table
         items = items or []  # must be iterable
         self._keys = M*[None]
@@ -610,7 +610,7 @@ class LinearProbingHashST():
     def __setitem__(self, k, v):
         """Insert a new value `v` associated with key `k`.
         If `k` is in the table, change its value to `v`."""
-        if self.N >= self.M // 2:
+        if self._RESIZE_FLAG and self.N >= self.M // 2:
             self._resize(2*self.M)
 
         i = self._hash(k)
@@ -666,7 +666,7 @@ class LinearProbingHashST():
         self.N -= 1
         self._cost = _cost
         # Check for a resize if table is small enough
-        if self.N > 0 and self.N <= self.M/8:
+        if self._RESIZE_FLAG and (self.N > 0 and self.N <= self.M // 8):
             self._resize(self.M // 2)
 
     # -------------------------------------------------------------------------
@@ -754,6 +754,10 @@ class LinearProbingHashST():
 
     def _cluster_lengths(self):
         """Compute the lengths of each cluster of keys in the table."""
+        # Check if table is full
+        if self.N == self.M:
+            return np.r_[self.N]
+
         # Find first null slot so we can count wrap-around index as one cluster
         lo = 0
         for k in self._keys:
@@ -780,8 +784,6 @@ class LinearProbingHashST():
                 break
 
         return np.r_[clusters]
-
-
 
 # -----------------------------------------------------------------------------
 #         Run tests
@@ -811,23 +813,27 @@ if __name__ == '__main__':
     for k, v in items:
         stl[k] = v
 
-    stl.delete_later_than(5)
+    stl.delete_later_than(5)  # corresponds to 'U'
     assert all([x.N_before <= 5 for x in stl._nodes()])
+    assert stl.keys() == list('EASYQU')
 
     # Test LinearProbingHashST
-    stp = LinearProbingHashST(M=16)
+    stp = LinearProbingHashST(M=16, resize=False)
     stp._hash = types.MethodType(__hash, stp)
     for k, v in items:
         stp[k] = v
 
-    # NOTE specific to the hash function... override the built-in for testing.
-    # assert np.allclose(stp._cluster_lengths(), [1, 1, 2, 2, 2, 2])
+    # NOTE specific to the hash function and assumes no resizing
+    assert stp.keys() == list('AQTSYIOEUN')
+    assert np.allclose(stp._cluster_lengths(), [1, 3, 2, 4])
 
-    sts = LinearProbingHashST(M=10)
+    sts = LinearProbingHashST(M=10, resize=False)
     sts._hash = types.MethodType(__hash, sts)
     for k, v in items:
         sts[k] = v
 
+    assert sts.keys() == list('AUINEYQOST')
+    assert np.allclose(sts._cluster_lengths(), [10])
     # assert np.allclose(sts._cluster_lengths(), [2, 2, 3, 3])
 
 # =============================================================================
