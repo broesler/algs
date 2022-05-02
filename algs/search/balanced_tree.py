@@ -12,7 +12,8 @@
 import random
 
 from algs.basics import Stack as _Stack
-from algs.search.tree import _empty_check, BST
+from algs.search.table import _empty_check
+from algs.search.tree import BST
 
 __all__ = ['RedBlackBST', 'TopDown234', 'TopDown234_nr', 'TopDown234bothways',
            'BottomUp234', 'Unbalanced23', 'AVLTree']

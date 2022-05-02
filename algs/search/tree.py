@@ -13,7 +13,7 @@ import random  # only needed for Ex 3.2.42 (deletion methods)
 
 from algs.basics import Stack as _Stack, \
                         Queue as _Queue
-from algs.search.table import _empty_check
+from algs.search.table import OrderedSymbolTable
 
 __all__ = ['BST', 'BST_nr', 'ThreadedST', 'ThreadedST_nr', 'ArrayBST']
 
@@ -22,32 +22,16 @@ __all__ = ['BST', 'BST_nr', 'ThreadedST', 'ThreadedST_nr', 'ArrayBST']
 #   * provision for `key is None` in BST._Node, etc.
 
 
-class BST():
-    r"""Implements a binary search tree data structure.
+class BST(OrderedSymbolTable):
+    __doc__ = ("Implements a binary search tree data structure."
+        + OrderedSymbolTable._attribs_doc +
+        """height : int
+            The height of the binary tree == maximum path length ~ 2.99 log2 N
+        internal_path_length : int
+            The sum of the depths of all nodes in the tree ~ 1.39 log2 N - 1.85
+        """
+        + OrderedSymbolTable._other_doc)
 
-    Parameters
-    ----------
-    items : mapping, dict-like
-        Iterable of (key, value) tuples to be put onto the tree.
-    cache : bool, optional
-        Cache the latest item searched.
-    delete_method : str \in {'Hibbard', 'random'}
-        Select method to use for deletion:
-            * 'Hibbard' will replace the requested node with its successor.
-            * 'random' will replace the requested node with a random choice
-               between its predecessor and its successor.
-
-    Attributes
-    ----------
-    size : int
-        Number of items on the tree.
-    height : int
-        The height of the binary tree == maximum path length ~ 2.99 log2 N
-    internal_path_length : int
-        The sum of the depths of all nodes in the tree ~ 1.39 log2 N - 1.85
-    is_empty : bool
-        True if `size == 0`.
-    """
     # Deletion method value is constant with the class
     _THRESH = dict({'Hibbard': 1, 'Hibbard_p': 0, 'random': 0.5})
 
@@ -74,28 +58,25 @@ class BST():
         def __repr__(self):
             return f"<{self.__class__.__name__}: {self.__str__()}>"
 
-    # -------------------------------------------------------------------------
-    #         Public API
-    # -------------------------------------------------------------------------
-    def __init__(self, items=list(), cache=True, delete_method='Hibbard'):
-        self._root = None
-        self._CACHE_FLAG = cache       # Ex 3.2.28
-        self._cache = None             # store the most recently accessed Node.
-        self._cost = 0                 # Ex 3.2.39, 3.2.40, 3.2.44, 3.2.47
-
+    def __init__(self, items=None, cache=True, delete_method='Hibbard'):
+        # See Ex 3.2.28 for cache, Ex 3.2.39, 3.2.40, 3.2.44, 3.2.47 for cost
         try:
             self._RAND_THRESH = self._THRESH[delete_method]
         except KeyError:
             raise ValueError(f"Invalid delete_method '{delete_method}'!")
+        super().__init__(items, cache)
 
-        try:
-            for k, v in items:
-                self.__setitem__(k, v)
-            return
-        except ValueError:
-            raise ValueError(f"{self.__class__.__name__} "
-                             'expects an iterable mapping input.')
+    __init__.__doc__ = (OrderedSymbolTable.__init__.__doc__ +
+        r"""delete_method : str \in {'Hibbard', 'random'}
+            Select method to use for deletion:
+                * 'Hibbard' will replace the requested node with its successor.
+                * 'random' will replace the requested node with a random choice
+                between its predecessor and its successor.
+        """)
 
+    # -------------------------------------------------------------------------
+    #         Public API
+    # -------------------------------------------------------------------------
     # Add to make BST behave more like python dict
     @classmethod
     def fromkeys(cls, keys=list(), value=None, **kwargs):
@@ -119,15 +100,7 @@ class BST():
         """Return the internal path length of the BST in O(1) time."""
         return self._internal_path_length(self._root)
 
-    @property
-    def is_empty(self):
-        return self.size == 0
-
-    def __len__(self):
-        return self.size
-
     def __getitem__(self, k):
-        """Return the value associated with the given `k`."""
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
             return self._cache.val
         else:
@@ -137,8 +110,6 @@ class BST():
             return x.val
 
     def __setitem__(self, k, v):
-        """Add a new node to subtree at `x`, associating `k` with `v`.
-        If `k` is in subtree rooted at `x`, change its value to `v`."""
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
             self._cache.val = v
             return
@@ -147,111 +118,51 @@ class BST():
             self._root = self._set(k, v, self._root)
 
     def __delitem__(self, k):
-        """Delete the node associated with `k`.
-
-        ..note:: Implements eager Hibbard deletion.
-
-        Raises
-        ------
-        KeyError
-            If `k` is not in the table.
-        """
         self._root = self._delete(k, self._root)
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
             self._cache = None
 
-    def __contains__(self, k):
-        """Return True if `k` is present in the tree, False otherwise."""
-        try:
-            self.__getitem__(k)
-            return True
-        except KeyError:
-            return False
-
-    def __eq__(self, other):
-        return self.items() == sorted(other.items())
+    __delitem__.__doc__ = (OrderedSymbolTable.__delitem__.__doc__ +
+        """
+        ..note:: Implements eager Hibbard deletion.
+        """)
 
     def __str__(self):
         return str(dict(self.items()))
-
-    def __repr__(self):
-        return f"<{self.__class__.__name__}: {self.__str__()}>"
 
     # -------------------------------------------------------------------------
     #         Other Public Methods
     # -------------------------------------------------------------------------
     def min(self):
-        """Return the minimum key in the tree.
-
-        Raises
-        ------
-        KeyError
-            If the table is empty.
-        """
-        _empty_check(self)
+        self._empty_check()
         return self._min(self._root).key
 
     def max(self):
-        """Return the maximum key in the tree.
-
-        Raises
-        ------
-        KeyError
-            If the table is empty.
-        """
-        _empty_check(self)
+        self._empty_check()
         return self._max(self._root).key
 
     def floor(self, k):
-        """Return the largest key less than or equal to `k`, or None if `k` is
-        less than the smallest key in the table.
-        """
         x = self._floor(k, self._root)  # self._floor returns a Node
         return x.key if x else None
 
     def ceil(self, k):
-        """Return the smallest key greater than or equal to `k`, or None if `k`
-        is greater than the largest key in the table.
-        """
         x = self._ceil(k, self._root)  # self._ceil returns a Node
         return x.key if x else None
 
     def rank(self, k):
-        """Return the number of keys strictly less than `k`."""
         return self._rank(k, self._root)
 
     def select(self, r):
-        """Return the key of rank `r`.
-
-        Raises
-        ------
-        IndexError
-            If there are fewer than `r`+1 keys in the table.
-        """
         return self._select(r, self._root).key
 
     def delete_min(self):
-        """Delete the smallest key.
-
-        Raises
-        ------
-        KeyError
-            If the table is empty.
-        """
-        _empty_check(self)
+        self._empty_check()
         self._root = self._delete_min(self._root)
         if self._CACHE_FLAG:
             self._cache = None
 
     def delete_max(self):
-        """Delete the largest key.
-
-        Raises
-        ------
-        KeyError
-            If the table is empty.
-        """
-        _empty_check(self)
+        self._empty_check()
         self._root = self._delete_max(self._root)
         if self._CACHE_FLAG:
             self._cache = None
@@ -282,7 +193,7 @@ class BST():
             do *not* necessarily mean a balanced tree. Draw the tree with the
             input string 'AXCSERH' as an example.
         """
-        _empty_check(self)
+        self._empty_check()
         return self._center_of_mass(self._root) / (self.size - 1)
 
     # Exercise 3.2.37
@@ -315,7 +226,7 @@ class BST():
             If `k` is not in the table, and default is not given.
         """
         try:
-            _empty_check(self)
+            self._empty_check()
             v = self.__getitem__(k)
             self._root = self._delete(k, self._root)
             if self._CACHE_FLAG and self._cache and k == self._cache.key:
@@ -1846,6 +1757,12 @@ class ArrayBST():
         self._lefts.append(None)
         self._rights.append(None)
         return self.size - 1  # index of the new node
+
+
+if __name__ == '__main__':
+    keys = list('SEARCHEXAMPLE')
+    items = list((c, i) for i, c in enumerate(keys))
+    st = BST(items)
 
 # =============================================================================
 # =============================================================================

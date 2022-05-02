@@ -57,11 +57,12 @@ class SymbolTable(ABC):
         self._cost = 0            # cost of previous get/put/delete
         self._CACHE_FLAG = cache  # to cache or not to cache
         self._cache = None        # store latest search hit
+        self._root = None         # store the root of a tree object
         # Initialize the symbol table
         items = items or []
         try:
             for k, v in items:
-                self.__setitem__(k, v)
+                self._root = self.__setitem__(k, v)
         except ValueError:
             raise ValueError(f"{self.__class__.__name__} "
                              'expects an iterable mapping input.')
@@ -160,7 +161,24 @@ class SymbolTable(ABC):
 
 class OrderedSymbolTable(SymbolTable):
     # An abstract base class implementing an ordered symbol table.
-    __doc__ = SymbolTable.__doc__
+    # NOTE define doc parts separately for subclasses to augment.
+    _attribs_doc = """ 
+    Attributes
+    ----------
+    size : int
+        Number of items in the table.
+    is_empty : bool
+        True if `size == 0`.
+    """
+
+    _other_doc ="""
+    Raises
+    ------
+    KeyError
+        If `k` is not in the table, or if the table is empty.
+    """
+
+    __doc__ = _attribs_doc + _other_doc
 
     @abstractmethod
     def min(self):
@@ -248,7 +266,6 @@ class OrderedSymbolTable(SymbolTable):
     values.__doc__ = _docstring.format(rtype='values')
     items.__doc__  = _docstring.format(rtype='items')
 
-    @abstractmethod
     def _make_range_iterator(self, rtype):
         """Return an iterator over all of the items in the table."""
         pass
