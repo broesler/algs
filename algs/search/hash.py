@@ -218,8 +218,8 @@ class SeparateChainingLiteHashST(SymbolTable):
         def __repr__(self):
             return f"<{self.__class__.__name__}: {self.__str__()}>"
 
-    def __init__(self, items=None, M=None,
-                 resize=False, max_probes=10, cache=False):
+    def __init__(self, items=None, M=None, resize=False, max_probes=10,
+                 cache=False):
         self.N = 0
         self.M = M or self.INIT_CAPACITY
         self._RESIZE_FLAG = resize
@@ -408,6 +408,7 @@ class LinearProbingHashST(SymbolTable):
 
     # __init__.__doc__ = SymbolTable.__init__.__doc__
 
+    # TODO move to abstract method see also BST.fromkeys
     def from_keys(self, keys, value=None):
         """Initialize the table using only the keys."""
         for k in keys:
@@ -524,8 +525,7 @@ class LinearProbingHashST(SymbolTable):
 
         .. [0]:: Sedgewick, p 473.
         """
-        d = np.sum(self._hash_displacements())
-        return 1 + d/self.N
+        return 1 + np.sum(self._hash_displacements()) / self.N
         
     # Exercise 3.4.21
     def cost_of_miss(self):
@@ -618,7 +618,7 @@ if __name__ == '__main__':
 
     stl.delete_later_than(5)  # corresponds to 'U'
     assert all([x.N_before <= 5 for x in stl._nodes()])
-    assert stl.keys() == list('EASYQU')
+    assert all([k in list('EASYQU') for k in stl.keys()])
 
     # Test LinearProbingHashST
     stp = LinearProbingHashST(M=16, resize=False)
