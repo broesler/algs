@@ -54,7 +54,6 @@ class SymbolTable(ABC):
         cache : bool, optional
             If True, cache the most recent search result.
         """
-        self.size = 0             # number of elements in the table
         self._cost = 0            # cost of previous get/put/delete
         self._CACHE_FLAG = cache  # to cache or not to cache
         self._cache = None        # store latest search hit
@@ -68,6 +67,12 @@ class SymbolTable(ABC):
                              'expects an iterable mapping input.')
 
     @property
+    @abstractmethod
+    def size(self):
+        """Number of elements in the table."""
+        pass
+
+    @property
     def is_empty(self):
         return self.size == 0
 
@@ -79,7 +84,6 @@ class SymbolTable(ABC):
     def __len__(self):
         return self.size
 
-    # Internals that occasionally get overridden in subclasses
     def __contains__(self, k):
         """Return True if `k` is present in the table, False otherwise."""
         try:
@@ -120,7 +124,12 @@ class SymbolTable(ABC):
     #         Iterator functions
     # -------------------------------------------------------------------------
     def __iter__(self):
-        """Return an iterator of all of the keys in the table."""
+        """Return an iterator of all of the keys in the table.
+        
+        Yields
+        ------
+        keys : iterable of keys
+        """
         yield from self.keys()
 
     _docstring = """Return an in-order iterator over the {rtype}`.
@@ -280,8 +289,13 @@ class SequentialSearchST(SymbolTable):
             self.next = next  # pointer to next item
 
     def __init__(self, items=None, cache=True):
+        self._size = 0
         self._first = None
         super().__init__(items, cache)
+
+    @property
+    def size(self):
+        return self._size
 
     # -------------------------------------------------------------------------
     #         Public API
@@ -309,7 +323,7 @@ class SequentialSearchST(SymbolTable):
             self._cost = self.size   # tested all the keys!
             item = self._Item(k, v, self._first)  # add new key to beginning
             self._first = item
-            self.size += 1
+            self._size += 1
             if self._CACHE_FLAG:
                 self._cache = self._first  # update the cache
 
@@ -347,7 +361,7 @@ class SequentialSearchST(SymbolTable):
             if self._CACHE_FLAG and self._cache and k == self._cache.key:
                 self._cache = None
             self._first = x.next
-            self.size -= 1
+            self._size -= 1
             return
 
         # Search
@@ -359,7 +373,7 @@ class SequentialSearchST(SymbolTable):
                 if self._CACHE_FLAG and self._cache and k == self._cache.key:
                     self._cache = None
                 x.next = x.next.next  # unlink the node
-                self.size -= 1
+                self._size -= 1
                 return
             else:
                 i += 1
@@ -402,6 +416,11 @@ class ArrayST(SymbolTable):
             If True, move each search hit to the front of the array to improve
             search times for commonly-searched keys.
         """)
+
+    @property
+    def size(self):
+        """Overrides `SymbolTable.size`."""
+        return len(self._items)
 
     # -------------------------------------------------------------------------
     #         Public API
@@ -471,18 +490,15 @@ class ArrayST(SymbolTable):
     #         Iterator methods
     # -------------------------------------------------------------------------
     def keys(self):
-        """Return an iterator of all of the keys in the table. 
-        Overrides the `SymbolTable` method."""
+        """Return an iterator of all of the keys in the table."""
         return [x.key for x in self._items]
 
     def values(self):
-        """Return an iterator of all of the values in the table.
-        Overrides the `SymbolTable` method."""
+        """Return an iterator of all of the values in the table."""
         return [x.val for x in self._items]
 
     def items(self):
-        """Return an iterator of all of the items in the table.
-        Overrides the `SymbolTable` method."""
+        """Return an iterator of all of the items in the table."""
         return [(x.key, x.val) for x in self._items]
 
 
@@ -495,9 +511,13 @@ class BinarySearchST(OrderedSymbolTable):
     def __init__(self, items=None, cache=True):
         self._items = list()  # internal array of items
         # Ex 3.1.12(b) sort by keys for O(N log N) construction vs. O(N^2)
-        items = _mergesort(items)
+        items = _mergesort(items or [])
         super().__init__(items, cache)
         self._assert_integrity()
+
+    @property
+    def size(self):
+        return len(self._items)
 
     # -------------------------------------------------------------------------
     #         Public API
@@ -553,9 +573,6 @@ class BinarySearchST(OrderedSymbolTable):
         else:
             raise KeyError(k)
         # self._assert_integrity()
-
-    def __str__(self):
-        return str(dict(self._items))
 
     # ------------------------------------------------------------------------- 
     #         Ordered Methods
@@ -667,11 +684,6 @@ class BinarySearchST(OrderedSymbolTable):
                 return False
         return True
 
-
-if __name__ == '__main__':
-    keys = 'SEARCHEXAMPLE'
-    items = [(c, i) for i, c in enumerate(keys)]
-    st = BinarySearchST(items)
 
 # =============================================================================
 # =============================================================================

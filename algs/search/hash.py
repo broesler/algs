@@ -12,13 +12,13 @@
 import math
 import numpy as np
 
-from algs.search.table import SequentialSearchST as _SequentialSearchST
+from algs.search.table import (SymbolTable, 
+                               SequentialSearchST as _SequentialSearchST)
 
 __all__ = ['SeparateChainingHashST', 'SeparateChainingLiteHashST',
            'LinearProbingHashST']
 
 # TODO constructor `from_tuples` that takes items = [('a', 0), ('b', 2), ...]
-# constructor 'from_keys` that takes keys = ['a', 'b', ...] and value = None.
 
 # Table of primes less than the nearest power of 2
 # Mersenne primes like 31 are nice because 31 = 2**5 - 1 == (1 << 5) - 1.
@@ -53,62 +53,37 @@ _PRIMES = dict({
 })
 
 
-class SeparateChainingHashST():
-    """Implements a hash table with separate chaining.
+class SeparateChainingHashST(SymbolTable):
+    __doc__ = ("Implements a hash table with separate chaining." 
+               + SymbolTable.__doc__)
 
-    Parameters
-    ----------
-    items : mapping, dict-like
-        Iterable of (key, value) pairs to be put into the table.
-    M : int
-        Initial number of slots in the hash table.
-    resize : bool
-        If True, resize the table by powers of 2 to maintain an average list
-        length of `max_probes`. Note that resizing changes the basic hash
-        function to more evenly distribute the keys with a non-prime `M`.
-    max_probes : int > 0
-        Desired average table size. If `resize` is True, the table size `M`
-        will be adjusted such that `N/M` ~ `max_probes` as keys are added or
-        deleted. 
-    cache : bool
-        Not yet implemented.
-
-    Attributes
-    ----------
-    size : int
-        Number of key-value pairs.
-    is_empty : bool
-        True if `size == 0`.
-
-    Raises
-    ------
-    KeyError
-        If `k` is not in the table.
-    """
     INIT_CAPACITY = 4  # minimum number of hash slots
 
-    def __init__(self, items=None, M=None,
-                 resize=False, max_probes=10, cache=False):
+    def __init__(self, items=None, M=None, resize=False, max_probes=10,
+                 cache=False):
         self.N = 0
         self.M = M or self.INIT_CAPACITY
         self._RESIZE_FLAG = resize
         self._MAX_PROBES = max_probes  # maximum average list size
         assert self._MAX_PROBES >= 0
         self._lgM = int(math.log2(self.M))
-        self._cost = 0  # cost of last operation (number of compares)
-        # Initialize the symbol table
+        # Initialize the actual symbol table
         self._st = [_SequentialSearchST() for _ in range(self.M)]
-        items = items or []  # must be iterable
-        try:
-            for k, v in items:
-                self.__setitem__(k, v)
-        except ValueError:
-            raise ValueError(f"{self.__class__.__name__} "
-                             'expects an iterable mapping input.')
+        super().__init__(items, cache)
 
-    @property
-    def is_empty(self):
-        return self.size == 0
+    __init__.__doc__ = (SymbolTable.__init__.__doc__ + 
+        """M : int
+            Initial number of slots in the hash table.
+        resize : bool
+            If True, resize the table by powers of 2 to maintain an average
+            list length of `max_probes`. Note that resizing changes the basic
+            hash function to more evenly distribute the keys with a non-prime
+            `M`.
+        max_probes : int > 0
+            Desired average table size. If `resize` is True, the table size `M`
+            will be adjusted such that `N/M` ~ `max_probes` as keys are added
+            or deleted. 
+        """)
 
     @property
     def size(self):
@@ -148,8 +123,6 @@ class SeparateChainingHashST():
     #         Public API
     # -------------------------------------------------------------------------
     def __setitem__(self, k, v):
-        """Insert a new value `v` associated with key `k`.
-        If `k` is in the table, change its value to `v`."""
         # Double table size if average list length >= MAX_PROBES (e.g. 10)
         if self._RESIZE_FLAG and self.N >= self._MAX_PROBES*self.M:
             self._resize(2*self.M)
@@ -160,7 +133,6 @@ class SeparateChainingHashST():
         self._cost = t._cost
 
     def __getitem__(self, k):
-        """Return the value associated with the given key `k`."""
         t = self._st[self._hash(k)]
         v = t[k]
         self._cost = t._cost
@@ -168,7 +140,6 @@ class SeparateChainingHashST():
 
     # Exercise 3.4.9, eager delete
     def __delitem__(self, k):
-        """Delete the item associated with `k`."""
         t = self._st[self._hash(k)]
         if k in t:
             self.N -= 1
@@ -179,64 +150,19 @@ class SeparateChainingHashST():
                 self.M > self.INIT_CAPACITY and self.N <= 2*self.M):
             self._resize(self.M // 2)
 
-    # -------------------------------------------------------------------------
-    #         Utilities
-    # -------------------------------------------------------------------------
-    def __len__(self):
-        return self.size
-
-    def __contains__(self, k):
-        """Return True if `k` is present in the table, False otherwise."""
-        try:
-            self.__getitem__(k)
-            return True
-        except KeyError:
-            return False
-
-    def __eq__(self, other):
-        return sorted(self.items()) == sorted(other.items())
-
     def __str__(self):
+        """Overrides `SymbolTable`."""
         out = ''
         for i, t in enumerate(self._st):
             out += f"[{i}]: {repr(t)}\n"
         return out
 
-    def __repr__(self):
-        return f"<{self.__class__.__name__}:\n{self.__str__()}>"
-
     # -------------------------------------------------------------------------
     #         Iterator functions
     # -------------------------------------------------------------------------
-    # Exercise 3.4.19
-    _docstring = """Return an in-order iterator over the {rtype}`.
-
-    Returns
-    -------
-    q : iterator
-        iterator over the {rtype}.
-    """
-
-    def keys(self):
-        return self._make_iterator(rtype='keys')(self)
-
-    def values(self):
-        return self._make_iterator(rtype='values')(self)
-
-    def items(self):
-        return self._make_iterator(rtype='items')(self)
-
-    keys.__doc__   = _docstring.format(rtype='keys')
-    values.__doc__ = _docstring.format(rtype='values')
-    items.__doc__  = _docstring.format(rtype='items')
-
-    def __iter__(self):
-        """Return an iterator of all of the keys in the table."""
-        yield from self.keys()
-
     def _make_iterator(self, rtype):
         """Return an iterator over all of the items in the table."""
-        def iterator(self, lo=None, hi=None):
+        def iterator(self):
             """Iterate over each symbol table."""
             q = list()
             for t in self._st:
@@ -270,39 +196,11 @@ class SeparateChainingHashST():
 
 
 # Exercise 3.4.2
-class SeparateChainingLiteHashST():
-    """Implements a hash table with separate chaining, but uses a nested linked
-    list insteady of `SequentialSearchST` dependency.
+class SeparateChainingLiteHashST(SymbolTable):
+    __doc__ = ("""Implements a hash table with separate chaining, but uses
+        a nested linked list insteady of `SequentialSearchST` dependency."""
+        + SymbolTable.__doc__)
 
-    Parameters
-    ----------
-    items : mapping, dict-like
-        Iterable of (key, value) pairs to be put into the table.
-    M : int
-        Number of slots in the hash table.
-    resize : bool
-        If True, resize the table by powers of 2 to maintain an average list
-        length of `max_probes`. Note that resizing changes the basic hash
-        function to more evenly distribute the keys with a non-prime `M`.
-    max_probes : int > 0
-        Desired average table size. If `resize` is True, the table size `M`
-        will be adjusted such that `N/M` ~ `max_probes` as keys are added or
-        deleted. 
-    cache : bool
-        Not yet implemented.
-
-    Attributes
-    ----------
-    size : int
-        Number of key-value pairs.
-    is_empty : bool
-        True if `size == 0`.
-
-    Raises
-    ------
-    KeyError
-        If `k` is not in the table.
-    """
     INIT_CAPACITY = 4  # minimum number of hash slots
 
     # Private class of key/value pairs
@@ -327,20 +225,22 @@ class SeparateChainingLiteHashST():
         self._RESIZE_FLAG = resize
         self._MAX_PROBES = max_probes  # maximum average list size
         self._lgM = int(math.log2(self.M))
-        self._cost = 0  # cost of last operation
         # Initialize the symbol table
         self._st = self.M*[None]   # Create M linked lists
-        items = items or []  # must be iterable
-        try:
-            for k, v in items:
-                self.__setitem__(k, v)
-        except ValueError:
-            raise ValueError(f"{self.__class__.__name__} "
-                             'expects an iterable mapping input.')
+        super().__init__(items, cache)
 
-    @property
-    def is_empty(self):
-        return self.N == 0
+    __init__.__doc__ = (SymbolTable.__init__.__doc__ + 
+    """M : int
+        Number of slots in the hash table.
+    resize : bool
+        If True, resize the table by powers of 2 to maintain an average list
+        length of `max_probes`. Note that resizing changes the basic hash
+        function to more evenly distribute the keys with a non-prime `M`.
+    max_probes : int > 0
+        Desired average table size. If `resize` is True, the table size `M`
+        will be adjusted such that `N/M` ~ `max_probes` as keys are added or
+        deleted. 
+    """)
 
     @property
     def size(self):
@@ -370,8 +270,6 @@ class SeparateChainingLiteHashST():
     #         Public API
     # -------------------------------------------------------------------------
     def __setitem__(self, k, v):
-        """Insert a new value `v` associated with key `k`.
-        If `k` is in the table, change its value to `v`."""
         # Double table size if average list length >= 10
         if self._RESIZE_FLAG and self.N >= self._MAX_PROBES*self.M:
             self._resize(2*self.M)
@@ -401,7 +299,6 @@ class SeparateChainingLiteHashST():
             self.N += 1
 
     def __getitem__(self, k):
-        """Return the value associated with the given key `k`."""
         x = self._st[self._hash(k)]
         self._cost = 1
         while x:
@@ -414,7 +311,6 @@ class SeparateChainingLiteHashST():
             raise KeyError(k)
 
     def __delitem__(self, k):
-        """Delete the item associated with `k`."""
         i = self._hash(k)
         self._cost = 1
         x = self._st[i]
@@ -458,21 +354,8 @@ class SeparateChainingLiteHashST():
                     self.N -= 1
                 x = x.next
 
-    def __len__(self):
-        return self.size
-
-    def __contains__(self, k):
-        """Return True if `k` is present in the table, False otherwise."""
-        try:
-            self.__getitem__(k)
-            return True
-        except KeyError:
-            return False
-
-    def __eq__(self, other):
-        return sorted(self.items()) == sorted(other.items())
-
     def __str__(self):
+        """Overrides `SymbolTable`."""
         out = ''
         for i, t in enumerate(self._st):
             x = t
@@ -486,42 +369,17 @@ class SeparateChainingLiteHashST():
         return out
 
     def __repr__(self):
+        """Overrides `SymbolTable`."""
         return f"<{self.__class__.__name__}:\n{self.__str__()}>"
 
+    # ------------------------------------------------------------------------- 
+    #         Iteration
     # -------------------------------------------------------------------------
-    #         Iterator functions
-    # -------------------------------------------------------------------------
-    # Exercise 3.4.19
-    _docstring = """Return an in-order iterator over the {rtype}`.
-
-    Returns
-    -------
-    q : iterator
-        iterator over the {rtype}.
-    """
-
-    def keys(self):
-        return self._make_iterator(rtype='keys')(self)
-
-    def values(self):
-        return self._make_iterator(rtype='values')(self)
-
-    def items(self):
-        return self._make_iterator(rtype='items')(self)
-
     def _nodes(self):
         return self._make_iterator(rtype='nodes')(self)
 
-    keys.__doc__   = _docstring.format(rtype='keys')
-    values.__doc__ = _docstring.format(rtype='values')
-    items.__doc__  = _docstring.format(rtype='items')
-
-    def __iter__(self):
-        """Return an iterator of all of the keys in the table."""
-        yield from self.keys()
-
+    # Exercise 3.4.19
     def _make_iterator(self, rtype):
-        """Return an iterator over all of the items in the table."""
         def iterator(self, lo=None, hi=None):
             """Iterate over each symbol table."""
             q = list()
@@ -536,43 +394,19 @@ class SeparateChainingLiteHashST():
         return iterator
 
 
-class LinearProbingHashST():
-    """Implements a hash table using arrays with linear probing.
-
-    Parameters
-    ----------
-    items : mapping, dict-like
-        Iterable of (key, value) pairs to be put into the table.
-    M : int
-        Number of slots in the hash table.
-
-    Attributes
-    ----------
-    size : int
-        Number of key-value pairs.
-    is_empty : bool
-        True if `size == 0`.
-
-    Raises
-    ------
-    KeyError
-        If `k` is not in the table.
-    """
+class LinearProbingHashST(SymbolTable):
+    __doc__ = ("Implements a hash table using arrays with linear probing."
+                + SymbolTable.__doc__)
     def __init__(self, items=None, M=16, resize=True, cache=False):
-        self.M = M
         self.N = 0
-        self._cost = 0  # cost of last operation (at least 1 hash)
+        self.M = M
         self._RESIZE_FLAG = bool(resize)
         # Initialize the symbol table
-        items = items or []  # must be iterable
         self._keys = M*[None]
         self._vals = M*[None]
-        try:
-            for k, v in items:
-                self.__setitem__(k, v)
-        except ValueError:
-            raise ValueError(f"{self.__class__.__name__} "
-                             'expects an iterable mapping input.')
+        super().__init__(items, cache)
+
+    # __init__.__doc__ = SymbolTable.__init__.__doc__
 
     def from_keys(self, keys, value=None):
         """Initialize the table using only the keys."""
@@ -581,16 +415,16 @@ class LinearProbingHashST():
         return self
 
     @property
-    def is_empty(self):
-        return self.size == 0
-
-    @property
     def size(self):
         return self.N
 
     def _hash(self, k):
         # TODO implement lgM here to handle table doubling
         return hash(k) % self.M
+
+    def _load_factor(self):
+        """Return the fraction of the hash slots used."""
+        return self.N / self.M
 
     def _resize(self, M):
         """Resize the internal keys and values arrays."""
@@ -608,8 +442,6 @@ class LinearProbingHashST():
     #         Public API
     # -------------------------------------------------------------------------
     def __setitem__(self, k, v):
-        """Insert a new value `v` associated with key `k`.
-        If `k` is in the table, change its value to `v`."""
         if self._RESIZE_FLAG and self.N >= self.M // 2:
             self._resize(2*self.M)
 
@@ -628,7 +460,6 @@ class LinearProbingHashST():
             self.N += 1
 
     def __getitem__(self, k):
-        """Return the value associated with the given key `k`."""
         i = self._hash(k)
         self._cost = 1
         while self._keys[i] is not None:
@@ -641,7 +472,6 @@ class LinearProbingHashST():
             raise KeyError(k)
 
     def __delitem__(self, k):
-        """Delete the item associated with `k`."""
         if not self.__contains__(k):
             raise KeyError(k)
         i = self._hash(k)
@@ -670,35 +500,8 @@ class LinearProbingHashST():
             self._resize(self.M // 2)
 
     # -------------------------------------------------------------------------
-    #         Utilities
-    # -------------------------------------------------------------------------
-    def __len__(self):
-        return self.size
-
-    def __contains__(self, k):
-        """Return True if `k` is present in the table, False otherwise."""
-        try:
-            self.__getitem__(k)
-            return True
-        except KeyError:
-            return False
-
-    def __eq__(self, other):
-        return sorted(self.items()) == sorted(other.items())
-
-    def __str__(self):
-        return str(self.items())
-
-    def __repr__(self):
-        return f"<{self.__class__.__name__}: {self.__str__()}>"
-
-    # -------------------------------------------------------------------------
     #         Iterators
     # -------------------------------------------------------------------------
-    def __iter__(self):
-        """Return an iterator of all of the keys in the table."""
-        yield from self.keys()
-
     def keys(self):
         return [k for k in self._keys if k is not None]
 
