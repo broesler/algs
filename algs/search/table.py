@@ -149,6 +149,101 @@ class SymbolTable(ABC):
         pass
 
 
+class OrderedSymbolTable(SymbolTable):
+    # An abstract base class implementing an ordered symbol table.
+    __doc__ = SymbolTable.__doc__
+
+    @abstractmethod
+    def min(self):
+        """Return the minimum key in the table."""
+        pass
+
+    @abstractmethod
+    def max(self):
+        """Return the maximum key in the table."""
+        pass
+
+    @abstractmethod
+    def floor(self, k):
+        """Return the largest key less than or equal to `k`, or None if `k` is
+        less than the smallest key in the table.
+        """
+        pass
+
+    @abstractmethod
+    def ceil(self, k):
+        """Return the smallest key greater than or equal to `k`, or None if `k`
+        is greater than the largest key in the table.
+        """
+        pass
+
+    @abstractmethod
+    def rank(self, k):
+        """Return the number of keys strictly less than `k`."""
+        pass
+
+    @abstractmethod
+    def select(self, r):
+        """Return the key of rank `r`.
+
+        Raises
+        ------
+        IndexError
+            If there are fewer than `r`+1 keys in the table.
+        """
+        pass
+
+    @abstractmethod
+    def delete_min(self):
+        """Delete the minimum key in the table."""
+        pass
+
+    @abstractmethod
+    def delete_max(self):
+        """Delete the maximum key in the table."""
+        pass
+
+    # ------------------------------------------------------------------------- 
+    #         Ordered Iteration
+    # -------------------------------------------------------------------------
+    _docstring = """Return an in-order iterator over the {rtype} between the
+    keys `lo` and `hi`, inclusive. Guaranteed to be the same order as
+    `BST.keys()`.
+
+    Parameters
+    ----------
+    lo : key
+        Minimum key over which to search, inclusive.
+    hi : key
+        Maximum key over which to search, inclusive.
+
+    Returns
+    -------
+    q : iterator
+        iterator over the {rtype} between `lo` and `hi`, inclusive.
+    """
+
+    def keys(self, lo=None, hi=None):
+        func = self._make_range_iterator(rtype='keys')
+        return func(self, lo, hi)
+
+    def values(self, lo=None, hi=None):
+        func = self._make_range_iterator(rtype='values')
+        return func(self, lo, hi)
+
+    def items(self, lo=None, hi=None):
+        func = self._make_range_iterator(rtype='items')
+        return func(self, lo, hi)
+
+    keys.__doc__   = _docstring.format(rtype='keys')
+    values.__doc__ = _docstring.format(rtype='values')
+    items.__doc__  = _docstring.format(rtype='items')
+
+    @abstractmethod
+    def _make_range_iterator(self, rtype):
+        """Return an iterator over all of the items in the table."""
+        pass
+
 
 # TODO remove usage in tree.py and balanced_tree.py
 def _empty_check(self):
@@ -393,54 +488,21 @@ class ArrayST(SymbolTable):
 
 # Ex 3.1.12(a) Implement BST as an array of key/val objects. The original book
 # implementation uses two parallel arrays for keys and values.
-class BinarySearchST():
-    """Implements an ordered-array with binary search symbol table.
+class BinarySearchST(OrderedSymbolTable):
+    __doc__ = ("Implements an ordered-array with binary search symbol table."
+                + OrderedSymbolTable.__doc__)
 
-    Parameters
-    ----------
-    items : mapping, dict-like
-        Iterable of (key, value) pairs to be put into the table.
-
-    Attributes
-    ----------
-    size : int
-        Number of items in the table.
-    is_empty : bool
-        True if `size == 0`.
-    """
-    def __init__(self, items=list(), cache=True):
-        self._items = list()
-        self._cost = 0              # track number of compares + array accesses
-        self._CACHE_FLAG = cache
-        self._cache = None
-        # Initialize the symbol table
-        try:
-            # Ex 3.1.12(b) sort by keys for O(N log N) construction vs. O(N^2)
-            for k, v in _mergesort(items):
-                self.__setitem__(k, v)
-            self._assert_integrity()
-        except ValueError:
-            raise ValueError(f"{self.__class__.__name__} "
-                             'expects an iterable mapping input.')
-
-    @property
-    def size(self):
-        return len(self._items)
-
-    @property
-    def is_empty(self):
-        return self.size == 0
+    def __init__(self, items=None, cache=True):
+        self._items = list()  # internal array of items
+        # Ex 3.1.12(b) sort by keys for O(N log N) construction vs. O(N^2)
+        items = _mergesort(items)
+        super().__init__(items, cache)
+        self._assert_integrity()
 
     # -------------------------------------------------------------------------
     #         Public API
     # -------------------------------------------------------------------------
-    def __len__(self):
-        return self.size
-
     def __setitem__(self, k, v):
-        """Insert a new value `v` associated with key `k`.
-        If `k` is in the table, change its value to `v`.
-        """
         # Ex 3.1.25 Check the cache
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
             self._cache.val = v
@@ -467,13 +529,6 @@ class BinarySearchST():
         # self._assert_integrity()
 
     def __getitem__(self, k):
-        """Return the value associated with the given key `k`.
-
-        Raises
-        ------
-        KeyError
-            If `k` is not in the table.
-        """
         # See if we have cached the key
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
             return self._cache.val
@@ -487,13 +542,6 @@ class BinarySearchST():
             raise KeyError(k)
 
     def __delitem__(self, k):
-        """Delete the item associated with `k`.
-
-        Raises
-        ------
-        KeyError
-            If `k` is not in the table.
-        """
         i = self.rank(k)
         if i < self.size and self._items[i].key == k:
             # Clear cache of item if necessary
@@ -506,49 +554,21 @@ class BinarySearchST():
             raise KeyError(k)
         # self._assert_integrity()
 
-    def __contains__(self, k):
-        """Return True if `k` is present in the table, False otherwise."""
-        try:
-            self.__getitem__(k)
-            return True
-        except KeyError:
-            return False
-
-    def __eq__(self, other):
-        return self.items() == sorted(other.items())
-
     def __str__(self):
         return str(dict(self._items))
 
-    def __repr__(self):
-        return f"<{self.__class__.__name__}: {self.__str__()}>"
-
+    # ------------------------------------------------------------------------- 
+    #         Ordered Methods
+    # -------------------------------------------------------------------------
     def min(self):
-        """Return the minimum key in the table.
-
-        Raises
-        ------
-        KeyError
-            If the table is empty.
-        """
         _empty_check(self)
         return self._items[0].key
 
     def max(self):
-        """Return the maximum key in the table.
-
-        Raises
-        ------
-        KeyError
-            If the table is empty.
-        """
         _empty_check(self)
         return self._items[-1].key
 
     def floor(self, k):
-        """Return the largest key less than or equal to `k`, or None if `k` is
-        less than the smallest key in the table.
-        """
         i = self.rank(k)
         if i < self.size and self._items[i].key == k:
             return self._items[i].key
@@ -558,9 +578,6 @@ class BinarySearchST():
             return None
 
     def ceil(self, k):
-        """Return the smallest key greater than or equal to `k`, or None if `k`
-        is greater than the largest key in the table.
-        """
         i = self.rank(k)
         if i < self.size:
             return self._items[i].key
@@ -568,7 +585,6 @@ class BinarySearchST():
             return None
 
     def rank(self, k):
-        """Return the number of keys strictly less than `k`."""
         # Non-recursive binary search algorithm
         self._cost = 0
         lo = 0
@@ -585,26 +601,12 @@ class BinarySearchST():
         return lo
 
     def select(self, r):
-        """Return the key of rank `r`.
-
-        Raises
-        ------
-        IndexError
-            If there are fewer than `r`+1 keys in the table.
-        """
         if 0 <= r < self.size:
             return self._items[r].key
         else:
             raise IndexError(r)
 
     def delete_min(self):
-        """Delete the smallest key.
-
-        Raises
-        ------
-        KeyError
-            If the table is empty.
-        """
         _empty_check(self)
         if self._CACHE_FLAG and self._cache is self._items[0]:
             self._cache = None
@@ -612,13 +614,6 @@ class BinarySearchST():
         # self._assert_integrity()
 
     def delete_max(self):
-        """Delete the largest key.
-
-        Raises
-        ------
-        KeyError
-            If the table is empty.
-        """
         _empty_check(self)
         if self._CACHE_FLAG and self._cache is self._items[-1]:
             self._cache = None
@@ -626,46 +621,7 @@ class BinarySearchST():
         # self._assert_integrity()
 
     # -------------------------------------------------------------------------
-    #         Iterator functions
-    # -------------------------------------------------------------------------
-    _docstring = """Return an in-order iterator over the {rtype} between the keys `lo`
-    and `hi`, inclusive. Guaranteed to be the same order as `BST.keys()`.
-
-    Parameters
-    ----------
-    lo : key
-        Minimum key over which to search, inclusive.
-    hi : key
-        Maximum key over which to search, inclusive.
-
-    Returns
-    -------
-    q : iterator
-        iterator over the {rtype} between `lo` and `hi`, inclusive.
-    """
-
-    def keys(self, lo=None, hi=None):
-        func = self._make_range_iterator(rtype='keys')
-        return func(self, lo, hi)
-
-    def values(self, lo=None, hi=None):
-        func = self._make_range_iterator(rtype='values')
-        return func(self, lo, hi)
-
-    def items(self, lo=None, hi=None):
-        func = self._make_range_iterator(rtype='items')
-        return func(self, lo, hi)
-
-    keys.__doc__   = _docstring.format(rtype='keys')
-    values.__doc__ = _docstring.format(rtype='values')
-    items.__doc__  = _docstring.format(rtype='items')
-
-    def __iter__(self):
-        """Return an iterator of all of the keys in the table."""
-        yield from self.keys()
-
-    # -------------------------------------------------------------------------
-    #         Private API
+    #         Iteration
     # -------------------------------------------------------------------------
     def _make_range_iterator(self, rtype):
         """Return an iterator over all of the items in the table."""
@@ -715,7 +671,7 @@ class BinarySearchST():
 if __name__ == '__main__':
     keys = 'SEARCHEXAMPLE'
     items = [(c, i) for i, c in enumerate(keys)]
-    st = SequentialSearchST(items)
+    st = BinarySearchST(items)
 
 # =============================================================================
 # =============================================================================
