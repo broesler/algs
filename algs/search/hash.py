@@ -90,7 +90,7 @@ class SeparateChainingHashST():
     def __init__(self, items=None, M=None,
                  resize=False, max_probes=10, cache=False):
         self.N = 0
-        self.M = int(M) or self.INIT_CAPACITY
+        self.M = M or self.INIT_CAPACITY
         self._RESIZE_FLAG = resize
         self._MAX_PROBES = max_probes  # maximum average list size
         assert self._MAX_PROBES >= 0
