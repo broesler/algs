@@ -117,8 +117,18 @@ class SymbolTable(ABC):
         return f"<{self.__class__.__name__}: {self.__str__()}>"
 
     # -------------------------------------------------------------------------
-    #         Core abstract methods
+    #         Core methods
     # -------------------------------------------------------------------------
+    # Aliased methods to match with Algorithms book API
+    def put(self, k, v):
+        return self.__setitem__(k, v)
+
+    def get(self, k):
+        return self.__getitem__(k)
+
+    def delete(self, k):
+        return self.__delitem__(k)
+
     @abstractmethod
     def __setitem__(self, k, v):
         """Insert a new value `v` associated with key `k`.

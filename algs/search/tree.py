@@ -17,9 +17,6 @@ from algs.search.table import SymbolTable, OrderedSymbolTable
 
 __all__ = ['BST', 'BST_nr', 'ThreadedST', 'ThreadedST_nr', 'ArrayBST']
 
-# TODO
-#   * provision for `key is None` in BST._Node, etc.
-
 
 class BST(OrderedSymbolTable):
     __doc__ = (

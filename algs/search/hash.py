@@ -18,8 +18,6 @@ from algs.search.table import (SymbolTable,
 __all__ = ['SeparateChainingHashST', 'SeparateChainingLiteHashST',
            'LinearProbingHashST']
 
-# TODO constructor `from_tuples` that takes items = [('a', 0), ('b', 2), ...]
-
 # Table of primes less than the nearest power of 2
 # Mersenne primes like 31 are nice because 31 = 2**5 - 1 == (1 << 5) - 1.
 _PRIMES = dict({
