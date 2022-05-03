@@ -75,7 +75,7 @@ class SymbolTable(ABC):
     @classmethod
     def fromkeys(cls, keys=None, value=None, **kwargs):
         """Create a new BST with keys from iterable and values set to value."""
-        keys = keys or []
+        keys = [] if keys is None else keys
         st = cls(**kwargs)
         for k in keys:
             st[k] = value
@@ -111,7 +111,11 @@ class SymbolTable(ABC):
         return sorted(self.items()) == sorted(other.items())
 
     def __str__(self):
-        return str(self.items())
+        if len(self) < 30:
+            return str(self.items())
+        else:
+            a = self.items()
+            return str(a[:10]) + ' ... ' + str(a[-10:])
 
     def __repr__(self):
         return f"<{self.__class__.__name__}: {self.__str__()}>"
