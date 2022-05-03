@@ -19,25 +19,31 @@ from algs.search.hash import LinearProbingHashST
 rng = np.random.default_rng(seed=56)
 
 # TODO 
-#   * store results in dataframe
-#   * look at distribution of cluster lengths
 #   * look at longest cluster length vs. N
 
 # Insert N random non-negative integers into a table of size N/100.
 Ms = [10**x for x in range(1, 6)]
-T = 10
 costs = list()
 
 for M in Ms:
     N = M // 2
-    all_keys = rng.integers(N, size=(T, N))
-    trials = list()
-    for keys in all_keys:
-        st = LinearProbingHashST(M=M, resize=False).fromkeys(keys)
-        trials.append(st.cost_of_miss())
-    costs.append(np.mean(trials))
+    keys = rng.integers(N, size=N)
+    st = LinearProbingHashST(M=M, resize=False).fromkeys(keys)
+    costs.append(st.cost_of_miss())
 
 costs = np.r_[costs]
+
+# Discussion: costs are marginally lower for actual vs. theory, but approach
+# the theoretical value as N increases.
+# [5]>>> list(zip(Ms, costs))
+# [5]===
+# [(   10, 1.375),
+# (   100, 1.828125),
+# (  1000, 2.1669921875),
+# ( 10000, 2.0484619140625),
+# (100000, 2.2954559326171875)]
+
+
 
 α = N / M
 th_hit = 1/2 * (1 + 1/(1 - α))
@@ -56,7 +62,7 @@ ax.hist(a, bins=bins, color='k', rwidth=0.8, density=True)
 ax.plot(x, rv.pdf(x), 'C3-', label=rf"${p[0]:.1f}e^{{{p[1]:.2f}x}}$")
 
 ax.set(xticks=bins[1:]+0.5,
-       xlabel=rf"Cluster Length ($M=${M:,g}, $\alpha = {α:.1f}$)",
+       xlabel=rf"Cluster Length ($M=${M:,d}, $\alpha = {α:.1f}$)",
        ylabel='Frequency')
 ax.legend()
 ax.spines['top'].set_visible(False)
