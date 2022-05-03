@@ -157,12 +157,12 @@ class SymbolTable(ABC):
         """
         yield from self.keys()
 
-    _docstring = """Return an in-order iterator over the {rtype}`.
+    _docstring = """Return a list of the {rtype}`.
 
     Returns
     -------
-    q : iterator
-        iterator over the {rtype}.
+    q : list
+        list of the {rtype}.
     """
 
     def keys(self):
@@ -238,9 +238,8 @@ class OrderedSymbolTable(SymbolTable):
     # -------------------------------------------------------------------------
     #         Ordered Iteration
     # -------------------------------------------------------------------------
-    _docstring = """Return an in-order iterator over the {rtype} between the
-    keys `lo` and `hi`, inclusive. Guaranteed to be the same order as
-    `BST.keys()`.
+    _docstring = """Return an in-order list of the {rtype} between the keys
+    `lo` and `hi`, inclusive. Guaranteed to be the same order as `ST.keys()`.
 
     Parameters
     ----------
@@ -251,8 +250,8 @@ class OrderedSymbolTable(SymbolTable):
 
     Returns
     -------
-    q : iterator
-        iterator over the {rtype} between `lo` and `hi`, inclusive.
+    q : list
+        list of the {rtype} between `lo` and `hi`, inclusive.
     """
 
     def keys(self, lo=None, hi=None):
