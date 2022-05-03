@@ -22,14 +22,15 @@ __all__ = ['BST', 'BST_nr', 'ThreadedST', 'ThreadedST_nr', 'ArrayBST']
 
 
 class BST(OrderedSymbolTable):
-    __doc__ = f"""Implements a binary search tree data structure.
+    __doc__ = (
+    f"""Implements a binary search tree data structure.
     {OrderedSymbolTable._attribs_doc}
     height : int
         The height of the binary tree == maximum path length ~ 2.99 log2 N
     internal_path_length : int
         The sum of the depths of all nodes in the tree ~ 1.39 log2 N - 1.85
     {OrderedSymbolTable._other_doc}
-    """
+    """)
 
     # Deletion method value is constant with the class
     _THRESH = dict({'Hibbard': 1, 'Hibbard_p': 0, 'random': 0.5})
@@ -63,29 +64,19 @@ class BST(OrderedSymbolTable):
     def __init__(self, items=None, cache=False, delete_method='Hibbard'):
         self._root = None
         super().__init__(items, cache)
+        # Ex 3.2.42
         try:
-            # Ex 3.2.42
             self._RAND_THRESH = self._THRESH[delete_method]
         except KeyError:
             raise ValueError(f"Invalid delete_method '{delete_method}'!")
 
-    __init__.__doc__ = (OrderedSymbolTable.__init__.__doc__ +
-        r"""delete_method : str \in {'Hibbard', 'random'}
+    __init__.__doc__ = (OrderedSymbolTable.__init__.__doc__ + 
+        """delete_method : str in {'Hibbard', 'random'}
             Select method to use for deletion:
                 * 'Hibbard' will replace the requested node with its successor.
                 * 'random' will replace the requested node with a random choice
                 between its predecessor and its successor.
         """)
-
-    # TODO move to SymbolTable
-    # Add to make BST behave more like python dict
-    @classmethod
-    def fromkeys(cls, keys=list(), value=None, **kwargs):
-        """Create a new BST with keys from iterable and values set to value."""
-        st = cls(**kwargs)
-        for k in keys:
-            st[k] = value
-        return st
 
     @property
     def size(self):
@@ -124,10 +115,9 @@ class BST(OrderedSymbolTable):
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
             self._cache = None
 
-    __delitem__.__doc__ = (OrderedSymbolTable.__delitem__.__doc__ +
-        """
+    __delitem__.__doc__ = f"""{OrderedSymbolTable.__delitem__.__doc__}
         ..note:: Implements eager Hibbard deletion.
-        """)
+        """
 
     def __str__(self):
         return str(dict(self.items()))
@@ -1730,7 +1720,7 @@ class ArrayBST(SymbolTable):
 if __name__ == '__main__':
     keys = list('SEARCHEXAMPLE')
     items = list((c, i) for i, c in enumerate(keys))
-    st = ArrayBST(items)
+    st = BST(items)
 
 # =============================================================================
 # =============================================================================

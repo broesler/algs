@@ -54,8 +54,8 @@ _PRIMES = dict({
 
 
 class SeparateChainingHashST(SymbolTable):
-    __doc__ = ("Implements a hash table with separate chaining." 
-               + SymbolTable.__doc__)
+    __doc__ = f"""Implements a hash table with separate chaining.
+               {SymbolTable.__doc__}"""
 
     INIT_CAPACITY = 4  # minimum number of hash slots
 
@@ -197,9 +197,9 @@ class SeparateChainingHashST(SymbolTable):
 
 # Exercise 3.4.2
 class SeparateChainingLiteHashST(SymbolTable):
-    __doc__ = ("""Implements a hash table with separate chaining, but uses
-        a nested linked list insteady of `SequentialSearchST` dependency."""
-        + SymbolTable.__doc__)
+    __doc__ = f"""Implements a hash table with separate chaining, but uses
+        a nested linked list insteady of `SequentialSearchST` dependency.
+        {SymbolTable.__doc__}"""
 
     INIT_CAPACITY = 4  # minimum number of hash slots
 
@@ -395,8 +395,9 @@ class SeparateChainingLiteHashST(SymbolTable):
 
 
 class LinearProbingHashST(SymbolTable):
-    __doc__ = ("Implements a hash table using arrays with linear probing."
-                + SymbolTable.__doc__)
+    __doc__ = f"""Implements a hash table using arrays with linear probing.
+                {SymbolTable.__doc__}"""
+
     def __init__(self, items=None, M=16, resize=True, cache=False):
         self.N = 0
         self.M = M
@@ -407,13 +408,6 @@ class LinearProbingHashST(SymbolTable):
         super().__init__(items, cache)
 
     # __init__.__doc__ = SymbolTable.__init__.__doc__
-
-    # TODO move to abstract method see also BST.fromkeys
-    def from_keys(self, keys, value=None):
-        """Initialize the table using only the keys."""
-        for k in keys:
-            self.__setitem__(k, value)
-        return self
 
     @property
     def size(self):

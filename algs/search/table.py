@@ -22,6 +22,7 @@ __all__ = ['SequentialSearchST', 'BinarySearchST', 'ArrayST']
 #   * implement `t.put(k, v)` method instead of just t[k] = v assignment
 #   * use collections.abc.[Keys|Values|Items]View classes?
 
+
 # -----------------------------------------------------------------------------
 #         Define Abstract Base Classes
 # -----------------------------------------------------------------------------
@@ -32,7 +33,7 @@ class SymbolTable(ABC):
     # BST, etc.) can efficiently implement.
 
     # Define doc parts separately for subclasses to augment.
-    _attribs_doc = """ 
+    _attribs_doc = """
     Attributes
     ----------
     size : int
@@ -41,14 +42,13 @@ class SymbolTable(ABC):
         True if `size == 0`."""
 
     _other_doc = """
-
     Raises
     ------
     KeyError
         If `k` is not in the table, or if the table is empty.
     """
 
-    __doc__ = _attribs_doc + _other_doc
+    __doc__ = _attribs_doc + "\n" + _other_doc
 
     def __init__(self, items=None, cache=False):
         """
@@ -70,6 +70,16 @@ class SymbolTable(ABC):
         except ValueError:
             raise ValueError(f"{self.__class__.__name__} "
                              'expects an iterable mapping input.')
+
+    # Additional constructor
+    @classmethod
+    def fromkeys(cls, keys=None, value=None, **kwargs):
+        """Create a new BST with keys from iterable and values set to value."""
+        keys = keys or []
+        st = cls(**kwargs)
+        for k in keys:
+            st[k] = value
+        return st
 
     @property
     @abstractmethod
@@ -130,7 +140,7 @@ class SymbolTable(ABC):
     # -------------------------------------------------------------------------
     def __iter__(self):
         """Return an iterator of all of the keys in the table.
-        
+
         Yields
         ------
         keys : iterable of keys
@@ -215,7 +225,7 @@ class OrderedSymbolTable(SymbolTable):
         """Delete the maximum key in the table."""
         pass
 
-    # ------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #         Ordered Iteration
     # -------------------------------------------------------------------------
     _docstring = """Return an in-order iterator over the {rtype} between the
@@ -281,8 +291,8 @@ class _Item():
 
 
 class SequentialSearchST(SymbolTable):
-    __doc__ = ("Implements an unordered symbol table with a linked list."
-               + SymbolTable.__doc__)
+    __doc__ = f"""Implements an unordered symbol table with a linked list.
+              {SymbolTable.__doc__}"""
 
     class _Item(_Item):
         """Custom Item for singly-linked list."""
@@ -405,15 +415,15 @@ class SequentialSearchST(SymbolTable):
 # NOTE this class is implemented as an array of Item objects, but could also be
 # done with parallel arrays of keys and values.
 class ArrayST(SymbolTable):
-    __doc__ = ("Implements an unordered symbol table with an array."
-                + SymbolTable.__doc__)
+    __doc__ = f"""Implements an unordered symbol table with an array.
+              {SymbolTable.__doc__}"""
 
-    def __init__(self, items=list(), cache=True, selforg=False):
+    def __init__(self, items=None, cache=True, selforg=False):
         self._items = list()           # Ex 3.1.2 (ArrayST)
         self._SELF_ORG_FLAG = selforg  # reorganize most recent results
         super().__init__(items, cache)
 
-    __init__.__doc__ = (SymbolTable.__init__.__doc__ + 
+    __init__.__doc__ = (SymbolTable.__init__.__doc__ +
         """selforg : bool, optional
             If True, move each search hit to the front of the array to improve
             search times for commonly-searched keys.
@@ -507,8 +517,8 @@ class ArrayST(SymbolTable):
 # Ex 3.1.12(a) Implement BST as an array of key/val objects. The original book
 # implementation uses two parallel arrays for keys and values.
 class BinarySearchST(OrderedSymbolTable):
-    __doc__ = ("Implements an ordered-array with binary search symbol table."
-                + SymbolTable.__doc__)
+    __doc__ = f"""Implements an ordered-array with binary search symbol table.
+              {OrderedSymbolTable.__doc__}"""
 
     def __init__(self, items=None, cache=True):
         self._items = list()  # internal array of items
@@ -576,7 +586,7 @@ class BinarySearchST(OrderedSymbolTable):
             raise KeyError(k)
         # self._assert_integrity()
 
-    # ------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #         Ordered Methods
     # -------------------------------------------------------------------------
     def min(self):
