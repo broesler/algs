@@ -18,19 +18,20 @@ from algs.search.table import OrderedSymbolTable
 __all__ = ['BST', 'BST_nr', 'ThreadedST', 'ThreadedST_nr', 'ArrayBST']
 
 # TODO
-#   * put parameters and attributes into general string and set the doc.
 #   * provision for `key is None` in BST._Node, etc.
 
 
 class BST(OrderedSymbolTable):
-    __doc__ = ("Implements a binary search tree data structure."
-        + OrderedSymbolTable._attribs_doc +
-        """height : int
-            The height of the binary tree == maximum path length ~ 2.99 log2 N
-        internal_path_length : int
-            The sum of the depths of all nodes in the tree ~ 1.39 log2 N - 1.85
-        """
-        + OrderedSymbolTable._other_doc)
+    __doc__ = f"""Implements a binary search tree data structure.
+
+    {OrderedSymbolTable._attribs_doc}
+    height : int
+        The height of the binary tree == maximum path length ~ 2.99 log2 N
+    internal_path_length : int
+        The sum of the depths of all nodes in the tree ~ 1.39 log2 N - 1.85
+
+    {OrderedSymbolTable._other_doc}
+    """
 
     # Deletion method value is constant with the class
     _THRESH = dict({'Hibbard': 1, 'Hibbard_p': 0, 'random': 0.5})
@@ -58,13 +59,17 @@ class BST(OrderedSymbolTable):
         def __repr__(self):
             return f"<{self.__class__.__name__}: {self.__str__()}>"
 
-    def __init__(self, items=None, cache=True, delete_method='Hibbard'):
-        # See Ex 3.2.28 for cache, Ex 3.2.39, 3.2.40, 3.2.44, 3.2.47 for cost
+    # -------------------------------------------------------------------------
+    #         Public API
+    # -------------------------------------------------------------------------
+    def __init__(self, items=None, cache=False, delete_method='Hibbard'):
+        self._root = None
+        super().__init__(items, cache)
         try:
+            # Ex 3.2.42
             self._RAND_THRESH = self._THRESH[delete_method]
         except KeyError:
             raise ValueError(f"Invalid delete_method '{delete_method}'!")
-        super().__init__(items, cache)
 
     __init__.__doc__ = (OrderedSymbolTable.__init__.__doc__ +
         r"""delete_method : str \in {'Hibbard', 'random'}
@@ -74,9 +79,7 @@ class BST(OrderedSymbolTable):
                 between its predecessor and its successor.
         """)
 
-    # -------------------------------------------------------------------------
-    #         Public API
-    # -------------------------------------------------------------------------
+    # TODO move to SymbolTable
     # Add to make BST behave more like python dict
     @classmethod
     def fromkeys(cls, keys=list(), value=None, **kwargs):
@@ -101,6 +104,7 @@ class BST(OrderedSymbolTable):
         return self._internal_path_length(self._root)
 
     def __getitem__(self, k):
+        # Ex 3.2.28 cache latest
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
             return self._cache.val
         else:
@@ -114,7 +118,7 @@ class BST(OrderedSymbolTable):
             self._cache.val = v
             return
         else:
-            self._cost = 0  # Ex 3.2.44
+            self._cost = 0  # Ex 3.2.39, 3.2.40, 3.2.44
             self._root = self._set(k, v, self._root)
 
     def __delitem__(self, k):

@@ -27,24 +27,28 @@ __all__ = ['SequentialSearchST', 'BinarySearchST', 'ArrayST']
 # -----------------------------------------------------------------------------
 class SymbolTable(ABC):
     # An abstract base class implementing an unordered symbol table.
-    """
+    # NOTE `SymbolTable` lacks methods like `min`/`max`,
+    # `floor`/`ceil`, etc. that the ordered symbol tables (`BinarySearchST`,
+    # BST, etc.) can efficiently implement.
 
+    # Define doc parts separately for subclasses to augment.
+    _attribs_doc = """ 
     Attributes
     ----------
     size : int
         Number of items in the table.
     is_empty : bool
-        True if `size == 0`.
+        True if `size == 0`."""
 
+    _other_doc = """
     Raises
     ------
     KeyError
         If `k` is not in the table, or if the table is empty.
-
-    .. note:: `SymbolTable` lacks methods like `min`/`max`,
-        `floor`/`ceil`, etc. that the ordered symbol tables (`BinarySearchST`,
-        BST, etc.) can efficiently implement.
     """
+
+    __doc__ = _attribs_doc + _other_doc
+
     def __init__(self, items=None, cache=False):
         """
         Parameters
@@ -57,12 +61,11 @@ class SymbolTable(ABC):
         self._cost = 0            # cost of previous get/put/delete
         self._CACHE_FLAG = cache  # to cache or not to cache
         self._cache = None        # store latest search hit
-        self._root = None         # store the root of a tree object
         # Initialize the symbol table
         items = items or []
         try:
             for k, v in items:
-                self._root = self.__setitem__(k, v)
+                self.__setitem__(k, v)
         except ValueError:
             raise ValueError(f"{self.__class__.__name__} "
                              'expects an iterable mapping input.')
@@ -161,25 +164,6 @@ class SymbolTable(ABC):
 
 class OrderedSymbolTable(SymbolTable):
     # An abstract base class implementing an ordered symbol table.
-    # NOTE define doc parts separately for subclasses to augment.
-    _attribs_doc = """ 
-    Attributes
-    ----------
-    size : int
-        Number of items in the table.
-    is_empty : bool
-        True if `size == 0`.
-    """
-
-    _other_doc ="""
-    Raises
-    ------
-    KeyError
-        If `k` is not in the table, or if the table is empty.
-    """
-
-    __doc__ = _attribs_doc + _other_doc
-
     @abstractmethod
     def min(self):
         """Return the minimum key in the table."""
@@ -523,7 +507,7 @@ class ArrayST(SymbolTable):
 # implementation uses two parallel arrays for keys and values.
 class BinarySearchST(OrderedSymbolTable):
     __doc__ = ("Implements an ordered-array with binary search symbol table."
-                + OrderedSymbolTable.__doc__)
+                + SymbolTable.__doc__)
 
     def __init__(self, items=None, cache=True):
         self._items = list()  # internal array of items
