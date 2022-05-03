@@ -12,7 +12,7 @@
 import math
 import numpy as np
 
-from algs.search.table import (SymbolTable, 
+from algs.search.table import (SymbolTable,
                                SequentialSearchST as _SequentialSearchST)
 
 __all__ = ['SeparateChainingHashST', 'SeparateChainingLiteHashST',
@@ -69,18 +69,18 @@ class SeparateChainingHashST(SymbolTable):
         self._st = [_SequentialSearchST() for _ in range(self.M)]
         super().__init__(items, cache)
 
-    __init__.__doc__ = (SymbolTable.__init__.__doc__ + 
-        """M : int
+    __init__.__doc__ = (SymbolTable.__init__.__doc__ +
+        """M : int, optional
             Initial number of slots in the hash table.
-        resize : bool
+        resize : bool, optional
             If True, resize the table by powers of 2 to maintain an average
             list length of `max_probes`. Note that resizing changes the basic
             hash function to more evenly distribute the keys with a non-prime
             `M`.
-        max_probes : int > 0
+        max_probes : int > 0, optional
             Desired average table size. If `resize` is True, the table size `M`
             will be adjusted such that `N/M` ~ `max_probes` as keys are added
-            or deleted. 
+            or deleted.
         """)
 
     @property
@@ -227,18 +227,7 @@ class SeparateChainingLiteHashST(SymbolTable):
         self._st = self.M*[None]   # Create M linked lists
         super().__init__(items, cache)
 
-    __init__.__doc__ = (SymbolTable.__init__.__doc__ + 
-    """M : int
-        Number of slots in the hash table.
-    resize : bool
-        If True, resize the table by powers of 2 to maintain an average list
-        length of `max_probes`. Note that resizing changes the basic hash
-        function to more evenly distribute the keys with a non-prime `M`.
-    max_probes : int > 0
-        Desired average table size. If `resize` is True, the table size `M`
-        will be adjusted such that `N/M` ~ `max_probes` as keys are added or
-        deleted. 
-    """)
+    __init__.__doc__ = SeparateChainingHashST.__init__.__doc__
 
     @property
     def size(self):
@@ -370,7 +359,7 @@ class SeparateChainingLiteHashST(SymbolTable):
         """Overrides `SymbolTable`."""
         return f"<{self.__class__.__name__}:\n{self.__str__()}>"
 
-    # ------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #         Iteration
     # -------------------------------------------------------------------------
     def _nodes(self):
@@ -400,20 +389,30 @@ class LinearProbingHashST(SymbolTable):
         self.N = 0
         self.M = M
         self._RESIZE_FLAG = bool(resize)
+        self._lgM = int(math.log2(self.M))
         # Initialize the symbol table
         self._keys = M*[None]
         self._vals = M*[None]
         super().__init__(items, cache)
-
-    # __init__.__doc__ = SymbolTable.__init__.__doc__
 
     @property
     def size(self):
         return self.N
 
     def _hash(self, k):
-        # TODO implement lgM here to handle table doubling
-        return hash(k) % self.M
+        """Modular hashing using Python's built-in `hash` function.
+
+        .. note:: `hash` is "salted" each time python is run for security
+        reasons, so results are non-deterministic.
+        """
+        if self._RESIZE_FLAG:
+            # Exercise 3.4.18: ensure even distribution when M is power of 2
+            t = hash(k)
+            if self._lgM < 26:
+                t = t % _PRIMES[self._lgM + 5]
+            return t % self.M
+        else:
+            return hash(k) % self.M
 
     def _load_factor(self):
         """Return the fraction of the hash slots used."""
@@ -430,6 +429,7 @@ class LinearProbingHashST(SymbolTable):
         self._keys = t._keys
         self._vals = t._vals
         self.M = t.M
+        self._lgM = int(math.log2(self.M))  # see Exercise 3.4.18
 
     # -------------------------------------------------------------------------
     #         Public API
@@ -518,7 +518,7 @@ class LinearProbingHashST(SymbolTable):
         .. [0]:: Sedgewick, p 473.
         """
         return 1 + np.sum(self._hash_displacements()) / self.N
-        
+
     # Exercise 3.4.21
     def cost_of_miss(self):
         r"""Average cost of a search *miss* in the table.[0]
@@ -533,7 +533,7 @@ class LinearProbingHashST(SymbolTable):
 
     def _hash_displacements(self):
         """Compute the distance of each key from its hash location."""
-        return [(self._get_index(k) - self._hash(k)) % self.M 
+        return [(self._get_index(k) - self._hash(k)) % self.M
                  for k in self.keys()]
 
     def _get_index(self, k):
@@ -566,7 +566,7 @@ class LinearProbingHashST(SymbolTable):
         t = 0
         while True:
             # Reset counter at new cluster
-            if self._keys[i] is None: 
+            if self._keys[i] is None:
                 if t != 0:
                     clusters.append(t)
                     t = 0
