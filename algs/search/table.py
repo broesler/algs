@@ -41,6 +41,7 @@ class SymbolTable(ABC):
         True if `size == 0`."""
 
     _other_doc = """
+
     Raises
     ------
     KeyError

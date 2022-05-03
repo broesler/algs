@@ -13,7 +13,7 @@ import random  # only needed for Ex 3.2.42 (deletion methods)
 
 from algs.basics import Stack as _Stack, \
                         Queue as _Queue
-from algs.search.table import OrderedSymbolTable
+from algs.search.table import SymbolTable, OrderedSymbolTable
 
 __all__ = ['BST', 'BST_nr', 'ThreadedST', 'ThreadedST_nr', 'ArrayBST']
 
@@ -23,13 +23,11 @@ __all__ = ['BST', 'BST_nr', 'ThreadedST', 'ThreadedST_nr', 'ArrayBST']
 
 class BST(OrderedSymbolTable):
     __doc__ = f"""Implements a binary search tree data structure.
-
     {OrderedSymbolTable._attribs_doc}
     height : int
         The height of the binary tree == maximum path length ~ 2.99 log2 N
     internal_path_length : int
         The sum of the depths of all nodes in the tree ~ 1.39 log2 N - 1.85
-
     {OrderedSymbolTable._other_doc}
     """
 
@@ -1634,48 +1632,22 @@ class ThreadedST_nr(BST_nr):
 
 
 # Ex 3.2.41 array representation
-class ArrayBST():
-    """Implements a binary search tree represented by parallel arrays.
+class ArrayBST(SymbolTable):
+    __doc__ = f"""Implements a binary search tree using parallel arrays.
+               {SymbolTable.__doc__}
+               """
 
-    Parameters
-    ----------
-    items : mapping, dict-like
-        Iterable of (key, value) tuples to be put onto the tree.
-
-    Attributes
-    ----------
-    size : int
-        Number of items on the tree.
-    is_empty : bool
-        True if `size == 0`.
-    """
-    def __init__(self, items=list(), cache=True):
+    def __init__(self, items=None, cache=True):
         self._root = None      # index of the information on the root
         self._keys = list()
         self._vals = list()
         self._lefts = list()   # indices of left-links
         self._rights = list()  # indices of right-links
-        self._CACHE_FLAG = cache
-        self._cache = None
-        self._cost = 0
-        try:
-            for k, v in items:
-                self._root = self.__setitem__(k, v)
-            return
-        except ValueError:
-            raise ValueError(f"{self.__class__.__name__} "
-                             'expects an iterable mapping input.')
+        super().__init__(items, cache)
 
     @property
     def size(self):
         return len(self._keys)
-
-    @property
-    def is_empty(self):
-        return self.size == 0
-
-    def __len__(self):
-        return self.size
 
     def __getitem__(self, k):
         """Return the value associated with the given key `k`."""
@@ -1697,6 +1669,9 @@ class ArrayBST():
 
     def __setitem__(self, k, v):
         """Insert a new value `v` associated with key `k`."""
+        self._root = self._set(k, v)
+
+    def _set(self, k, v):
         p = x = self._root
         while x is not None:
             if k == self._keys[x]:
@@ -1730,14 +1705,6 @@ class ArrayBST():
         """Delete the item associated with `k`."""
         pass
 
-    def __contains__(self, k):
-        """Return True if `k` is present in the tree, False otherwise."""
-        try:
-            self.__getitem__(k)
-            return True
-        except KeyError:
-            return False
-
     # NOTE no guarantees on order of keys in output yet
     def keys(self):
         return self._keys
@@ -1747,9 +1714,6 @@ class ArrayBST():
 
     def items(self):
         return list(zip(self._keys, self._vals))
-
-    def __iter__(self):
-        yield from self.keys()
 
     # -------------------------------------------------------------------------
     #         Private API
@@ -1766,7 +1730,7 @@ class ArrayBST():
 if __name__ == '__main__':
     keys = list('SEARCHEXAMPLE')
     items = list((c, i) for i, c in enumerate(keys))
-    st = BST(items)
+    st = ArrayBST(items)
 
 # =============================================================================
 # =============================================================================
