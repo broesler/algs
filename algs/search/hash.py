@@ -57,13 +57,13 @@ class SeparateChainingHashST(SymbolTable):
 
     INIT_CAPACITY = 4  # minimum number of hash slots
 
-    def __init__(self, items=None, M=None, resize=False, max_probes=10,
+    def __init__(self, items=None, M=None, resize=False, avg_probes=10,
                  cache=False):
         self.N = 0
         self.M = M or self.INIT_CAPACITY
         self._RESIZE_FLAG = bool(resize)
-        self._MAX_PROBES = max_probes  # maximum average list size
-        assert self._MAX_PROBES >= 0
+        self._AVG_PROBES = avg_probes  # maximum average list size
+        assert self._AVG_PROBES >= 0
         self._lgM = int(math.log2(self.M))
         # Initialize the actual symbol table
         self._st = [_SequentialSearchST() for _ in range(self.M)]
@@ -74,12 +74,12 @@ class SeparateChainingHashST(SymbolTable):
             Initial number of slots in the hash table.
         resize : bool, optional
             If True, resize the table by powers of 2 to maintain an average
-            list length of `max_probes`. Note that resizing changes the basic
+            list length of `avg_probes`. Note that resizing changes the basic
             hash function to more evenly distribute the keys with a non-prime
             `M`.
-        max_probes : int > 0, optional
+        avg_probes : int > 0, optional
             Desired average table size. If `resize` is True, the table size `M`
-            will be adjusted such that `N/M` ~ `max_probes` as keys are added
+            will be adjusted such that `N/M` ~ `avg_probes` as keys are added
             or deleted.
         """)
 
@@ -121,8 +121,8 @@ class SeparateChainingHashST(SymbolTable):
     #         Public API
     # -------------------------------------------------------------------------
     def __setitem__(self, k, v):
-        # Double table size if average list length >= MAX_PROBES (e.g. 10)
-        if self._RESIZE_FLAG and self.N >= self._MAX_PROBES*self.M:
+        # Double table size if average list length >= AVG_PROBES (e.g. 10)
+        if self._RESIZE_FLAG and self.N >= self._AVG_PROBES*self.M:
             self._resize(2*self.M)
             self._lgM += 1
         t = self._st[self._hash(k)]
@@ -218,12 +218,12 @@ class SeparateChainingLiteHashST(SymbolTable):
         def __repr__(self):
             return f"<{self.__class__.__name__}: {self.__str__()}>"
 
-    def __init__(self, items=None, M=None, resize=False, max_probes=10,
+    def __init__(self, items=None, M=None, resize=False, avg_probes=10,
                  cache=False):
         self.N = 0
         self.M = M or self.INIT_CAPACITY
         self._RESIZE_FLAG = bool(resize)
-        self._MAX_PROBES = max_probes  # maximum average list size
+        self._AVG_PROBES = avg_probes  # maximum average list size
         self._lgM = int(math.log2(self.M))
         # Initialize the symbol table
         self._st = self.M*[None]   # Create M linked lists
@@ -260,7 +260,7 @@ class SeparateChainingLiteHashST(SymbolTable):
     # -------------------------------------------------------------------------
     def __setitem__(self, k, v):
         # Double table size if average list length >= 10
-        if self._RESIZE_FLAG and self.N >= self._MAX_PROBES*self.M:
+        if self._RESIZE_FLAG and self.N >= self._AVG_PROBES*self.M:
             self._resize(2*self.M)
             self._lgM += 1
 
