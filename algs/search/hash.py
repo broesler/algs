@@ -61,7 +61,7 @@ class SeparateChainingHashST(SymbolTable):
                  cache=False):
         self.N = 0
         self.M = M or self.INIT_CAPACITY
-        self._RESIZE_FLAG = resize
+        self._RESIZE_FLAG = bool(resize)
         self._MAX_PROBES = max_probes  # maximum average list size
         assert self._MAX_PROBES >= 0
         self._lgM = int(math.log2(self.M))
@@ -115,7 +115,7 @@ class SeparateChainingHashST(SymbolTable):
         # Use the new table in *self*
         self._st = t._st
         self.M = t.M
-        self._lgM = int(math.log2(self.M))  # see Exercise 3.4.18
+        # self._lgM = int(math.log2(self.M))  # see Exercise 3.4.18
 
     # -------------------------------------------------------------------------
     #         Public API
@@ -124,6 +124,7 @@ class SeparateChainingHashST(SymbolTable):
         # Double table size if average list length >= MAX_PROBES (e.g. 10)
         if self._RESIZE_FLAG and self.N >= self._MAX_PROBES*self.M:
             self._resize(2*self.M)
+            self._lgM += 1
         t = self._st[self._hash(k)]
         if k not in t:
             self.N += 1
@@ -147,6 +148,7 @@ class SeparateChainingHashST(SymbolTable):
         if (self._RESIZE_FLAG and
                 self.M > self.INIT_CAPACITY and self.N <= 2*self.M):
             self._resize(self.M // 2)
+            self._lgM -= 1
 
     def __str__(self):
         """Overrides `SymbolTable`."""
@@ -220,7 +222,7 @@ class SeparateChainingLiteHashST(SymbolTable):
                  cache=False):
         self.N = 0
         self.M = M or self.INIT_CAPACITY
-        self._RESIZE_FLAG = resize
+        self._RESIZE_FLAG = bool(resize)
         self._MAX_PROBES = max_probes  # maximum average list size
         self._lgM = int(math.log2(self.M))
         # Initialize the symbol table
@@ -251,7 +253,7 @@ class SeparateChainingLiteHashST(SymbolTable):
         # Use the new table in *self*
         self._st = t._st
         self.M = t.M
-        self._lgM = int(math.log2(self.M))  # see Exercise 3.4.18
+        # self._lgM = int(math.log2(self.M))  # see Exercise 3.4.18
 
     # -------------------------------------------------------------------------
     #         Public API
@@ -260,6 +262,7 @@ class SeparateChainingLiteHashST(SymbolTable):
         # Double table size if average list length >= 10
         if self._RESIZE_FLAG and self.N >= self._MAX_PROBES*self.M:
             self._resize(2*self.M)
+            self._lgM += 1
 
         # Hash into table
         i = self._hash(k)
@@ -325,6 +328,7 @@ class SeparateChainingLiteHashST(SymbolTable):
         if (self._RESIZE_FLAG and
                 self.M > self.INIT_CAPACITY and self.N <= 2*self.M):
             self._resize(self.M // 2)
+            self._lgM -= 1
 
     # Exercise 3.4.3
     def delete_later_than(self, k):
@@ -429,7 +433,7 @@ class LinearProbingHashST(SymbolTable):
         self._keys = t._keys
         self._vals = t._vals
         self.M = t.M
-        self._lgM = int(math.log2(self.M))  # see Exercise 3.4.18
+        # self._lgM = int(math.log2(self.M))  # see Exercise 3.4.18
 
     # -------------------------------------------------------------------------
     #         Public API
@@ -437,6 +441,7 @@ class LinearProbingHashST(SymbolTable):
     def __setitem__(self, k, v):
         if self._RESIZE_FLAG and self.N >= self.M // 2:
             self._resize(2*self.M)
+            self._lgM += 1
 
         i = self._hash(k)
         self._cost = 1
@@ -491,6 +496,7 @@ class LinearProbingHashST(SymbolTable):
         # Check for a resize if table is small enough
         if self._RESIZE_FLAG and (self.N > 0 and self.N <= self.M // 8):
             self._resize(self.M // 2)
+            self._lgM -= 1
 
     # -------------------------------------------------------------------------
     #         Iterators
