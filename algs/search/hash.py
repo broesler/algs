@@ -160,6 +160,10 @@ class SeparateChainingHashST(SymbolTable):
             out += f"[{i}]: {repr(t)}\n"
         return out
 
+    def __repr__(self):
+        """Overrides `SymbolTable`."""
+        return f"<{self.__class__.__name__}:\n{self.__str__()}>"
+
     # -------------------------------------------------------------------------
     #         Iterator functions
     # -------------------------------------------------------------------------
@@ -381,7 +385,7 @@ class SeparateChainingLiteHashST(SymbolTable):
 
     # Exercise 3.4.19
     def _make_iterator(self, rtype):
-        def iterator(self, lo=None, hi=None):
+        def iterator(self):
             """Iterate over each symbol table."""
             q = list()
             for t in self._st:
