@@ -53,15 +53,16 @@ _PRIMES = dict({
 })
 
 
+_MIN_CAPACITY = 4  # minimum number of hash slots
+
 class HashTable(SymbolTable):
     # An abstract implementation of a hash table
-    _MIN_CAPACITY = 4  # minimum number of hash slots
-
-    def __init__(self, items=None, M=None, resize=False, cache=False):
+    def __init__(self, items=None, M=_MIN_CAPACITY, resize=False):
         self.N = 0
+        self.M = M
         self._RESIZE_FLAG = bool(resize)
-        self._lgM = int(math.log2(M))
-        super().__init__(items, cache)
+        self._lgM = int(math.log2(self.M))
+        super().__init__(items)
 
     __init__.__doc__ = (SymbolTable.__init__.__doc__ +
         """M : int, optional
@@ -105,14 +106,13 @@ class SeparateChainingHashST(HashTable):
     __doc__ = f"""Implements a hash table with separate chaining.
                {SymbolTable.__doc__}"""
 
-    def __init__(self, items=None, M=None, resize=False, avg_probes=10,
+    def __init__(self, items=None, M=_MIN_CAPACITY, resize=False, avg_probes=10,
                  cache=False):
-        self.M = M or self._MIN_CAPACITY
         self._AVG_PROBES = avg_probes  # maximum average list size
-        assert self._AVG_PROBES >= 0
+        assert self._AVG_PROBES > 0
         # Initialize the actual symbol table
-        self._st = [_SequentialSearchST() for _ in range(self.M)]
-        super().__init__(items=items, M=self.M, resize=resize, cache=cache)
+        self._st = [_SequentialSearchST() for _ in range(M)]
+        super().__init__(items=items, M=M, resize=resize)
 
     __init__.__doc__ = (HashTable.__init__.__doc__ +
         """avg_probes : int > 0, optional
@@ -164,7 +164,7 @@ class SeparateChainingHashST(HashTable):
         self._cost = t._cost
         # Halve table size if average list length <= 2
         if (self._RESIZE_FLAG and
-                self.M > self._MIN_CAPACITY and self.N <= 2*self.M):
+                self.M > _MIN_CAPACITY and self.N <= 2*self.M):
             self._resize(self.M // 2)
             self._lgM -= 1
 
@@ -238,13 +238,13 @@ class SeparateChainingLiteHashST(HashTable):
         def __repr__(self):
             return f"<{self.__class__.__name__}: {self.__str__()}>"
 
-    def __init__(self, items=None, M=None, resize=False, avg_probes=10,
+    def __init__(self, items=None, M=_MIN_CAPACITY, resize=False, avg_probes=10,
                  cache=False):
-        self.M = M or self._MIN_CAPACITY
-        self._AVG_PROBES = avg_probes  # maximum average list size
+        self._AVG_PROBES = avg_probes  # desired average list size
+        assert self._AVG_PROBES > 0
         # Initialize the symbol table
-        self._st = self.M*[None]   # Create M linked lists
-        super().__init__(items=items, M=self.M, resize=resize, cache=cache)
+        self._st = M*[None]   # Create M linked lists
+        super().__init__(items=items, M=M, resize=resize)
 
     __init__.__doc__ = SeparateChainingHashST.__init__.__doc__
 
@@ -321,7 +321,7 @@ class SeparateChainingLiteHashST(HashTable):
 
         # Halve table size if average list length <= 2
         if (self._RESIZE_FLAG and
-                self.M > self._MIN_CAPACITY and self.N <= 2*self.M):
+                self.M > _MIN_CAPACITY and self.N <= 2*self.M):
             self._resize(self.M // 2)
             self._lgM -= 1
 
@@ -384,12 +384,11 @@ class LinearProbingHashST(HashTable):
     __doc__ = f"""Implements a hash table using arrays with linear probing.
                 {SymbolTable.__doc__}"""
 
-    def __init__(self, items=None, M=None, resize=True, cache=False):
-        self.M = M or self._MIN_CAPACITY
+    def __init__(self, items=None, M=_MIN_CAPACITY, resize=True, cache=False):
         # Initialize the symbol table
-        self._keys = self.M*[None]
-        self._vals = self.M*[None]
-        super().__init__(items=items, M=self.M, resize=resize, cache=cache)
+        self._keys = M*[None]
+        self._vals = M*[None]
+        super().__init__(items=items, M=M, resize=resize)
 
     def _resize(self, M):
         """Resize the internal keys and values arrays."""
