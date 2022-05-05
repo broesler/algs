@@ -94,24 +94,27 @@ class SeparateChainingHashST(SymbolTable):
         return [t.size for t in self._st]
 
     def _hash(self, k):
-        """Modular hashing using Python's built-in `hash` function.
+        """Return an integer hash code for the key `k`.
 
-        .. note:: `hash` is "salted" each time python is run for security
-        reasons, so results are non-deterministic.
+        To be a proper hash function, the returned value must be:
+            - deterministic: if key_a == key_b, then hash(key_a) == hash(key_b)
+            - efficient to compute
+            - uniformly distribute the keys across `M` slots in the table.
+
+        .. note:: built-in `hash` is "salted" each time python is run for
+        security reasons, so results are non-deterministic.
         """
-        if self._RESIZE_FLAG:
-            # Exercise 3.4.18: ensure even distribution when M is power of 2
-            t = hash(k)
-            if self._lgM < 26:
-                t = t % _PRIMES[self._lgM + 5]
-            return t % self.M
-        else:
-            return hash(k) % self.M
+        t = hash(k)
+        # Exercise 3.4.18 (see Q&A p 478)
+        # Ensure even distribution when M is power of 2
+        if self._RESIZE_FLAG and self._lgM < 26:
+            t = t % _PRIMES[self._lgM + 5]
+        return t % self.M
 
     def _resize(self, M):
         """Resize the array of hash slots."""
         # Create a new table and hash the existing keys into it
-        t = SeparateChainingHashST(self.items(), M=M)
+        t = self.__class__(self.items(), M=M)
         # Use the new table in *self*
         self._st = t._st
         self.M = t.M
@@ -236,20 +239,27 @@ class SeparateChainingLiteHashST(SymbolTable):
         return self.N
 
     def _hash(self, k):
-        """Modular hashing using Python's built-in `hash` function."""
-        if self._RESIZE_FLAG:
-            # Exercise 3.4.18: ensure items evenly distributed when M is power of 2
-            t = hash(k)
-            if self._lgM < 26:
-                t = t % _PRIMES[self._lgM + 5]
-            return t % self.M
-        else:
-            return hash(k) % self.M
+        """Return an integer hash code for the key `k`.
+
+        To be a proper hash function, the returned value must be:
+            - deterministic: if key_a == key_b, then hash(key_a) == hash(key_b)
+            - efficient to compute
+            - uniformly distribute the keys across `M` slots in the table.
+
+        .. note:: built-in `hash` is "salted" each time python is run for
+        security reasons, so results are non-deterministic.
+        """
+        t = hash(k)
+        # Exercise 3.4.18 (see Q&A p 478)
+        # Ensure even distribution when M is power of 2
+        if self._RESIZE_FLAG and self._lgM < 26:
+            t = t % _PRIMES[self._lgM + 5]
+        return t % self.M
 
     def _resize(self, M):
         """Resize the array of hash slots."""
         # Create a new table and hash the existing keys into it
-        t = SeparateChainingLiteHashST(self.items(), M=M)
+        t = self.__class__(self.items(), M=M)
         # Use the new table in *self*
         self._st = t._st
         self.M = t.M
@@ -598,28 +608,26 @@ class LinearProbingHashST(SymbolTable):
 # -----------------------------------------------------------------------------
 # TODO move to unit tests test_hash.py
 if __name__ == '__main__':
-    import types
-
     # Exercise 3.4.1
     keys = 'EASYQUTION'
     items = [(c, i) for i, c in enumerate(keys)]
 
-    # Override _hash function with custom function
-    def hash_func(self, k):
-        return 11*(ord(k) - ord('A')) % self.M
+    # Override _hash function with custom subclass
+    class MySeparateChainingHashST(SeparateChainingHashST):
+        def _hash(self, k):
+            return 11*(ord(k) - ord('A')) % self.M
 
-    # SeparateChainingHashST._hash = hash_func  # class patching, all instances
-    st = SeparateChainingHashST(M=5)
-    st._hash = types.MethodType(hash_func, st)  # instance patching
-    for k, v in items:
-        st[k] = v
+    st = MySeparateChainingHashST(items, M=5)
     st._validate_size()
+    assert st.keys() == list('UAQNISOTYE')
 
     # Repeat with SeparateChainingLiteHashST
-    stl = SeparateChainingLiteHashST(M=5)
-    stl._hash = types.MethodType(hash_func, stl)
-    for k, v in items:
-        stl[k] = v
+    class MySeparateChainingLiteHashST(SeparateChainingLiteHashST):
+        def _hash(self, k):
+            return 11*(ord(k) - ord('A')) % self.M
+
+    stl = MySeparateChainingLiteHashST(items, M=5)
+    assert stl.keys() == list('UAQNISOTYE')
 
     # Exercise 3.4.3
     stl.delete_later_than(5)  # corresponds to 'U'
