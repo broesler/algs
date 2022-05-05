@@ -389,12 +389,10 @@ class LinearProbingHashST(SymbolTable):
     __doc__ = f"""Implements a hash table using arrays with linear probing.
                 {SymbolTable.__doc__}"""
 
-    def __init__(self, items=None, M=16, resize=True, hash_func=None, 
-                 cache=False):
+    def __init__(self, items=None, M=16, resize=True, cache=False):
         self.N = 0
         self.M = M
         self._RESIZE_FLAG = bool(resize)
-        self._hash_code = hash_func or self.__hash_code
         self._lgM = int(math.log2(self.M))
         # Initialize the symbol table
         self._keys = M*[None]
@@ -405,7 +403,7 @@ class LinearProbingHashST(SymbolTable):
     def size(self):
         return self.N
 
-    def __hash_code(self, k):
+    def _hash(self, k):
         """Return an integer hash code for the key `k`.
 
         To be a proper hash function, the returned value must be:
@@ -413,21 +411,15 @@ class LinearProbingHashST(SymbolTable):
             - efficient to compute
             - uniformly distribute the keys across `M` slots in the table.
 
-        .. note:: `hash` is "salted" each time python is run for security
-        reasons, so results are non-deterministic.
+        .. note:: built-in `hash` is "salted" each time python is run for
+        security reasons, so results are non-deterministic.
         """
-        if self._RESIZE_FLAG:
-            # Exercise 3.4.18: ensure even distribution when M is power of 2
-            t = hash(k)
-            if self._lgM < 26:
-                t = t % _PRIMES[self._lgM + 5]
-            return t
-        else:
-            return hash(k)
-
-    def _hash(self, k):
-        """Modular hashing using the instance's `_hash_code` method."""
-        return self._hash_code(k) % self.M
+        t = hash(k)
+        # Exercise 3.4.18 (see Q&A p 478)
+        # Ensure even distribution when M is power of 2
+        if self._RESIZE_FLAG and self._lgM < 26:
+            t = t % _PRIMES[self._lgM + 5]
+        return t % self.M
 
     def _load_factor(self):
         """Return the fraction of the hash slots used."""
@@ -436,12 +428,7 @@ class LinearProbingHashST(SymbolTable):
     def _resize(self, M):
         """Resize the internal keys and values arrays."""
         # Create a new table and hash the existing keys into it
-        # NOTE setting hash_func like this works when hash_func(k) is not
-        # a bound method (`hash_func(self, k)`). The default `__hash_code`
-        # requires `self` since it needs lgM, but passing it as an argument to
-        # the constructor of `t` gives `t` the `_hash_code` bound to THIS
-        # object, not bound to its own values.
-        t = LinearProbingHashST(M=M, hash_func=self._hash_code)
+        t = self.__class__(M=M)
         for k, v in zip(self._keys, self._vals):
             if k is not None:
                 t[k] = v
@@ -640,24 +627,25 @@ if __name__ == '__main__':
     assert all([k in list('EASYQU') for k in stl.keys()])
 
     # Exercise 3.4.10 (a)
-    # Override _hash_code function with custom function
-    def hash_func(k):
-        return 11*(ord(k) - ord('A'))
+    # Override _hash function with custom subclass
+    class MyLinearProbingHashST(LinearProbingHashST):
+        def _hash(self, k):
+            return 11*(ord(k) - ord('A')) % self.M
 
-    sta = LinearProbingHashST(items, M=16, resize=False, hash_func=hash_func)
+    sta = MyLinearProbingHashST(items, M=16, resize=False)
 
     # NOTE specific to the hash function and assumes no resizing
     assert sta.keys() == list('AQTSYIOEUN')
     assert np.allclose(sta._cluster_lengths(), [1, 3, 2, 4])
 
     # Exercise 3.4.10 (b)
-    stb = LinearProbingHashST(items, M=10, resize=False, hash_func=hash_func)
+    stb = MyLinearProbingHashST(items, M=10, resize=False)
 
     assert stb.keys() == list('AUINEYQOST')
     assert np.allclose(stb._cluster_lengths(), [10])
 
     # Exercise 3.4.11
-    stc = LinearProbingHashST(items, M=4, resize=True, hash_func=hash_func)
+    stc = MyLinearProbingHashST(items, M=4, resize=True)
 
 
 # =============================================================================
