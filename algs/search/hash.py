@@ -557,7 +557,7 @@ class LinearProbingHashST(SymbolTable):
         """Compute the lengths of each cluster of keys in the table."""
         # Check if table is full
         if self.N == self.M:
-            return np.r_[self.N]
+            return self.N
 
         # Find first null slot so we can count wrap-around index as one cluster
         lo = 0
@@ -584,7 +584,7 @@ class LinearProbingHashST(SymbolTable):
             if i == lo + 1:
                 break
 
-        return np.r_[clusters]
+        return clusters
 
 # -----------------------------------------------------------------------------
 #         Run tests
