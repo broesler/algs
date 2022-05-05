@@ -598,29 +598,30 @@ if __name__ == '__main__':
     items = [(c, i) for i, c in enumerate(keys)]
 
     # Override _hash function with custom function
-    def __hash(self, k):
+    def hash_func(self, k):
         return 11*(ord(k) - ord('A')) % self.M
 
-    # SeparateChainingHashST._hash = __hash    # class patching, all instances
+    # SeparateChainingHashST._hash = hash_func  # class patching, all instances
     st = SeparateChainingHashST(M=5)
-    st._hash = types.MethodType(__hash, st)  # instance patching
+    st._hash = types.MethodType(hash_func, st)  # instance patching
     for k, v in items:
         st[k] = v
     st._validate_size()
 
-    # Test SeparateChainingLiteHashST
+    # Repeat with SeparateChainingLiteHashST
     stl = SeparateChainingLiteHashST(M=5)
-    stl._hash = types.MethodType(__hash, stl)
+    stl._hash = types.MethodType(hash_func, stl)
     for k, v in items:
         stl[k] = v
 
+    # Exercise 3.4.3
     stl.delete_later_than(5)  # corresponds to 'U'
     assert all([x.N_before <= 5 for x in stl._nodes()])
     assert all([k in list('EASYQU') for k in stl.keys()])
 
     # Test LinearProbingHashST
     stp = LinearProbingHashST(M=16, resize=False)
-    stp._hash = types.MethodType(__hash, stp)
+    stp._hash = types.MethodType(hash_func, stp)
     for k, v in items:
         stp[k] = v
 
@@ -629,7 +630,7 @@ if __name__ == '__main__':
     assert np.allclose(stp._cluster_lengths(), [1, 3, 2, 4])
 
     sts = LinearProbingHashST(M=10, resize=False)
-    sts._hash = types.MethodType(__hash, sts)
+    sts._hash = types.MethodType(hash_func, sts)
     for k, v in items:
         sts[k] = v
 
