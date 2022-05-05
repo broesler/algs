@@ -12,6 +12,8 @@
 import math
 import numpy as np
 
+from abc import ABC, abstractmethod
+
 from algs.search.table import (SymbolTable,
                                SequentialSearchST as _SequentialSearchST)
 
@@ -51,22 +53,14 @@ _PRIMES = dict({
 })
 
 
-class SeparateChainingHashST(SymbolTable):
-    __doc__ = f"""Implements a hash table with separate chaining.
-               {SymbolTable.__doc__}"""
+class HashTable(SymbolTable):
+    # An abstract implementation of a hash table
+    _MIN_CAPACITY = 4  # minimum number of hash slots
 
-    INIT_CAPACITY = 4  # minimum number of hash slots
-
-    def __init__(self, items=None, M=None, resize=False, avg_probes=10,
-                 cache=False):
+    def __init__(self, items=None, M=None, resize=False, cache=False):
         self.N = 0
-        self.M = M or self.INIT_CAPACITY
         self._RESIZE_FLAG = bool(resize)
-        self._AVG_PROBES = avg_probes  # maximum average list size
-        assert self._AVG_PROBES >= 0
-        self._lgM = int(math.log2(self.M))
-        # Initialize the actual symbol table
-        self._st = [_SequentialSearchST() for _ in range(self.M)]
+        self._lgM = int(math.log2(M))
         super().__init__(items, cache)
 
     __init__.__doc__ = (SymbolTable.__init__.__doc__ +
@@ -77,21 +71,16 @@ class SeparateChainingHashST(SymbolTable):
             list length of `avg_probes`. Note that resizing changes the basic
             hash function to more evenly distribute the keys with a non-prime
             `M`.
-        avg_probes : int > 0, optional
-            Desired average table size. If `resize` is True, the table size `M`
-            will be adjusted such that `N/M` ~ `avg_probes` as keys are added
-            or deleted.
         """)
 
     @property
     def size(self):
         return self.N
 
-    def _validate_size(self):
-        assert self.size == sum(self._list_lengths())
-
-    def _list_lengths(self):
-        return [t.size for t in self._st]
+    @property
+    def _load_factor(self):
+        """Return the ratio of items in the table to the number of slots."""
+        return self.N / self.M
 
     def _hash(self, k):
         """Return an integer hash code for the key `k`.
@@ -111,6 +100,33 @@ class SeparateChainingHashST(SymbolTable):
             t = t % _PRIMES[self._lgM + 5]
         return t % self.M
 
+
+class SeparateChainingHashST(HashTable):
+    __doc__ = f"""Implements a hash table with separate chaining.
+               {SymbolTable.__doc__}"""
+
+    def __init__(self, items=None, M=None, resize=False, avg_probes=10,
+                 cache=False):
+        self.M = M or self._MIN_CAPACITY
+        self._AVG_PROBES = avg_probes  # maximum average list size
+        assert self._AVG_PROBES >= 0
+        # Initialize the actual symbol table
+        self._st = [_SequentialSearchST() for _ in range(self.M)]
+        super().__init__(items=items, M=self.M, resize=resize, cache=cache)
+
+    __init__.__doc__ = (HashTable.__init__.__doc__ +
+        """avg_probes : int > 0, optional
+            Desired average table size. If `resize` is True, the table size `M`
+            will be adjusted such that `N/M` ~ `avg_probes` as keys are added
+            or deleted.
+        """)
+
+    def _validate_size(self):
+        assert self.size == sum(self._list_lengths())
+
+    def _list_lengths(self):
+        return [t.size for t in self._st]
+
     def _resize(self, M):
         """Resize the array of hash slots."""
         # Create a new table and hash the existing keys into it
@@ -118,7 +134,6 @@ class SeparateChainingHashST(SymbolTable):
         # Use the new table in *self*
         self._st = t._st
         self.M = t.M
-        # self._lgM = int(math.log2(self.M))  # see Exercise 3.4.18
 
     # -------------------------------------------------------------------------
     #         Public API
@@ -149,20 +164,9 @@ class SeparateChainingHashST(SymbolTable):
         self._cost = t._cost
         # Halve table size if average list length <= 2
         if (self._RESIZE_FLAG and
-                self.M > self.INIT_CAPACITY and self.N <= 2*self.M):
+                self.M > self._MIN_CAPACITY and self.N <= 2*self.M):
             self._resize(self.M // 2)
             self._lgM -= 1
-
-    def __str__(self):
-        """Overrides `SymbolTable`."""
-        out = ''
-        for i, t in enumerate(self._st):
-            out += f"[{i}]: {repr(t)}\n"
-        return out
-
-    def __repr__(self):
-        """Overrides `SymbolTable`."""
-        return f"<{self.__class__.__name__}:\n{self.__str__()}>"
 
     # -------------------------------------------------------------------------
     #         Iterator functions
@@ -178,8 +182,19 @@ class SeparateChainingHashST(SymbolTable):
             return q
         return iterator
 
+    def __str__(self):
+        """Overrides `SymbolTable`."""
+        out = ''
+        for i, t in enumerate(self._st):
+            out += f"[{i}]: {repr(t)}\n"
+        return out
+
+    def __repr__(self):
+        """Overrides `SymbolTable`."""
+        return f"<{self.__class__.__name__}:\n{self.__str__()}>"
+
     # -------------------------------------------------------------------------
-    #         Other
+    #         Exercises
     # -------------------------------------------------------------------------
     # Exercise 3.4.30
     def chi_square(self):
@@ -203,12 +218,10 @@ class SeparateChainingHashST(SymbolTable):
 
 
 # Exercise 3.4.2
-class SeparateChainingLiteHashST(SymbolTable):
+class SeparateChainingLiteHashST(HashTable):
     __doc__ = f"""Implements a hash table with separate chaining, but uses
         a nested linked list insteady of `SequentialSearchST` dependency.
         {SymbolTable.__doc__}"""
-
-    INIT_CAPACITY = 4  # minimum number of hash slots
 
     # Private class of key/value pairs
     class _Node():
@@ -227,47 +240,15 @@ class SeparateChainingLiteHashST(SymbolTable):
 
     def __init__(self, items=None, M=None, resize=False, avg_probes=10,
                  cache=False):
-        self.N = 0
-        self.M = M or self.INIT_CAPACITY
-        self._RESIZE_FLAG = bool(resize)
+        self.M = M or self._MIN_CAPACITY
         self._AVG_PROBES = avg_probes  # maximum average list size
-        self._lgM = int(math.log2(self.M))
         # Initialize the symbol table
         self._st = self.M*[None]   # Create M linked lists
-        super().__init__(items, cache)
+        super().__init__(items=items, M=self.M, resize=resize, cache=cache)
 
     __init__.__doc__ = SeparateChainingHashST.__init__.__doc__
 
-    @property
-    def size(self):
-        return self.N
-
-    def _hash(self, k):
-        """Return an integer hash code for the key `k`.
-
-        To be a proper hash function, the returned value must be:
-            - deterministic: if key_a == key_b, then hash(key_a) == hash(key_b)
-            - efficient to compute
-            - uniformly distribute the keys across `M` slots in the table.
-
-        .. note:: built-in `hash` is "salted" each time python is run for
-        security reasons, so results are non-deterministic.
-        """
-        t = hash(k)
-        # Exercise 3.4.18 (see Q&A p 478)
-        # Ensure even distribution when M is power of 2
-        if self._RESIZE_FLAG and self._lgM < 26:
-            t = t % _PRIMES[self._lgM + 5]
-        return t % self.M
-
-    def _resize(self, M):
-        """Resize the array of hash slots."""
-        # Create a new table and hash the existing keys into it
-        t = self.__class__(self.items(), M=M)
-        # Use the new table in *self*
-        self._st = t._st
-        self.M = t.M
-        # self._lgM = int(math.log2(self.M))  # see Exercise 3.4.18
+    _resize = SeparateChainingHashST._resize
 
     # -------------------------------------------------------------------------
     #         Public API
@@ -340,7 +321,7 @@ class SeparateChainingLiteHashST(SymbolTable):
 
         # Halve table size if average list length <= 2
         if (self._RESIZE_FLAG and
-                self.M > self.INIT_CAPACITY and self.N <= 2*self.M):
+                self.M > self._MIN_CAPACITY and self.N <= 2*self.M):
             self._resize(self.M // 2)
             self._lgM -= 1
 
@@ -358,24 +339,6 @@ class SeparateChainingLiteHashST(SymbolTable):
                     self._st[i] = x.next
                     self.N -= 1
                 x = x.next
-
-    def __str__(self):
-        """Overrides `SymbolTable`."""
-        out = ''
-        for i, t in enumerate(self._st):
-            x = t
-            out += f"[{i}]: ["
-            while x:
-                out += str(x)
-                if x.next:
-                    out += ", "
-                x = x.next
-            out += "]\n"
-        return out
-
-    def __repr__(self):
-        """Overrides `SymbolTable`."""
-        return f"<{self.__class__.__name__}:\n{self.__str__()}>"
 
     # -------------------------------------------------------------------------
     #         Iteration
@@ -398,46 +361,35 @@ class SeparateChainingLiteHashST(SymbolTable):
             return q
         return iterator
 
+    def __str__(self):
+        """Overrides `SymbolTable`."""
+        out = ''
+        for i, t in enumerate(self._st):
+            x = t
+            out += f"[{i}]: ["
+            while x:
+                out += str(x)
+                if x.next:
+                    out += ", "
+                x = x.next
+            out += "]\n"
+        return out
 
-class LinearProbingHashST(SymbolTable):
+    def __repr__(self):
+        """Overrides `SymbolTable`."""
+        return f"<{self.__class__.__name__}:\n{self.__str__()}>"
+
+
+class LinearProbingHashST(HashTable):
     __doc__ = f"""Implements a hash table using arrays with linear probing.
                 {SymbolTable.__doc__}"""
 
-    def __init__(self, items=None, M=16, resize=True, cache=False):
-        self.N = 0
-        self.M = M
-        self._RESIZE_FLAG = bool(resize)
-        self._lgM = int(math.log2(self.M))
+    def __init__(self, items=None, M=None, resize=True, cache=False):
+        self.M = M or self._MIN_CAPACITY
         # Initialize the symbol table
-        self._keys = M*[None]
-        self._vals = M*[None]
-        super().__init__(items, cache)
-
-    @property
-    def size(self):
-        return self.N
-
-    def _hash(self, k):
-        """Return an integer hash code for the key `k`.
-
-        To be a proper hash function, the returned value must be:
-            - deterministic: if key_a == key_b, then hash(key_a) == hash(key_b)
-            - efficient to compute
-            - uniformly distribute the keys across `M` slots in the table.
-
-        .. note:: built-in `hash` is "salted" each time python is run for
-        security reasons, so results are non-deterministic.
-        """
-        t = hash(k)
-        # Exercise 3.4.18 (see Q&A p 478)
-        # Ensure even distribution when M is power of 2
-        if self._RESIZE_FLAG and self._lgM < 26:
-            t = t % _PRIMES[self._lgM + 5]
-        return t % self.M
-
-    def _load_factor(self):
-        """Return the fraction of the hash slots used."""
-        return self.N / self.M
+        self._keys = self.M*[None]
+        self._vals = self.M*[None]
+        super().__init__(items=items, M=self.M, resize=resize, cache=cache)
 
     def _resize(self, M):
         """Resize the internal keys and values arrays."""
@@ -450,7 +402,6 @@ class LinearProbingHashST(SymbolTable):
         self._keys = t._keys
         self._vals = t._vals
         self.M = t.M
-        # self._lgM = int(math.log2(self.M))  # see Exercise 3.4.18
 
     # -------------------------------------------------------------------------
     #         Public API
@@ -657,6 +608,7 @@ if __name__ == '__main__':
     assert np.allclose(stb._cluster_lengths(), [10])
 
     # Exercise 3.4.11
+    # TODO overwrite _resize to print _keys on each resize for visualization
     stc = MyLinearProbingHashST(items, M=4, resize=True)
 
 
