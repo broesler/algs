@@ -389,10 +389,12 @@ class LinearProbingHashST(SymbolTable):
     __doc__ = f"""Implements a hash table using arrays with linear probing.
                 {SymbolTable.__doc__}"""
 
-    def __init__(self, items=None, M=16, resize=True, cache=False):
+    def __init__(self, items=None, M=16, resize=True, hash_func=None, 
+                 cache=False):
         self.N = 0
         self.M = M
         self._RESIZE_FLAG = bool(resize)
+        self._hash_code = hash_func or self.__hash_code
         self._lgM = int(math.log2(self.M))
         # Initialize the symbol table
         self._keys = M*[None]
@@ -403,8 +405,13 @@ class LinearProbingHashST(SymbolTable):
     def size(self):
         return self.N
 
-    def _hash(self, k):
-        """Modular hashing using Python's built-in `hash` function.
+    def __hash_code(self, k):
+        """Return an integer hash code for the key `k`.
+
+        To be a proper hash function, the returned value must be:
+            - deterministic: if key_a == key_b, then hash(key_a) == hash(key_b)
+            - efficient to compute
+            - uniformly distribute the keys across `M` slots in the table.
 
         .. note:: `hash` is "salted" each time python is run for security
         reasons, so results are non-deterministic.
@@ -414,9 +421,13 @@ class LinearProbingHashST(SymbolTable):
             t = hash(k)
             if self._lgM < 26:
                 t = t % _PRIMES[self._lgM + 5]
-            return t % self.M
+            return t
         else:
-            return hash(k) % self.M
+            return hash(k)
+
+    def _hash(self, k):
+        """Modular hashing using the instance's `_hash_code` method."""
+        return self._hash_code(k) % self.M
 
     def _load_factor(self):
         """Return the fraction of the hash slots used."""
@@ -425,10 +436,15 @@ class LinearProbingHashST(SymbolTable):
     def _resize(self, M):
         """Resize the internal keys and values arrays."""
         # Create a new table and hash the existing keys into it
-        t = LinearProbingHashST(M=M)
-        for i in range(self.M):
-            if self._keys[i] is not None:
-                t[self._keys[i]] = self._vals[i]
+        # NOTE setting hash_func like this works when hash_func(k) is not
+        # a bound method (`hash_func(self, k)`). The default `__hash_code`
+        # requires `self` since it needs lgM, but passing it as an argument to
+        # the constructor of `t` gives `t` the `_hash_code` bound to THIS
+        # object, not bound to its own values.
+        t = LinearProbingHashST(M=M, hash_func=self._hash_code)
+        for k, v in zip(self._keys, self._vals):
+            if k is not None:
+                t[k] = v
         # Use those new arrays in *self*
         self._keys = t._keys
         self._vals = t._vals
@@ -439,6 +455,10 @@ class LinearProbingHashST(SymbolTable):
     #         Public API
     # -------------------------------------------------------------------------
     def __setitem__(self, k, v):
+        if not self._RESIZE_FLAG and self.N == self.M:
+            raise RuntimeError(("Trying to insert into a full table! "
+                                "Set `resize=True`."))
+
         if self._RESIZE_FLAG and self.N >= self.M // 2:
             self._resize(2*self.M)
             self._lgM += 1
@@ -619,24 +639,26 @@ if __name__ == '__main__':
     assert all([x.N_before <= 5 for x in stl._nodes()])
     assert all([k in list('EASYQU') for k in stl.keys()])
 
-    # Test LinearProbingHashST
-    stp = LinearProbingHashST(M=16, resize=False)
-    stp._hash = types.MethodType(hash_func, stp)
-    for k, v in items:
-        stp[k] = v
+    # Exercise 3.4.10 (a)
+    # Override _hash_code function with custom function
+    def hash_func(k):
+        return 11*(ord(k) - ord('A'))
+
+    sta = LinearProbingHashST(items, M=16, resize=False, hash_func=hash_func)
 
     # NOTE specific to the hash function and assumes no resizing
-    assert stp.keys() == list('AQTSYIOEUN')
-    assert np.allclose(stp._cluster_lengths(), [1, 3, 2, 4])
+    assert sta.keys() == list('AQTSYIOEUN')
+    assert np.allclose(sta._cluster_lengths(), [1, 3, 2, 4])
 
-    sts = LinearProbingHashST(M=10, resize=False)
-    sts._hash = types.MethodType(hash_func, sts)
-    for k, v in items:
-        sts[k] = v
+    # Exercise 3.4.10 (b)
+    stb = LinearProbingHashST(items, M=10, resize=False, hash_func=hash_func)
 
-    assert sts.keys() == list('AUINEYQOST')
-    assert np.allclose(sts._cluster_lengths(), [10])
-    # assert np.allclose(sts._cluster_lengths(), [2, 2, 3, 3])
+    assert stb.keys() == list('AUINEYQOST')
+    assert np.allclose(stb._cluster_lengths(), [10])
+
+    # Exercise 3.4.11
+    stc = LinearProbingHashST(items, M=4, resize=True, hash_func=hash_func)
+
 
 # =============================================================================
 # =============================================================================
