@@ -9,7 +9,6 @@
 """
 # =============================================================================
 
-import math
 import numpy as np
 
 from abc import ABC, abstractmethod
@@ -61,12 +60,12 @@ class HashTable(SymbolTable):
         self.N = 0
         self.M = M
         self._RESIZE_FLAG = bool(resize)
-        self._lgM = int(math.log2(self.M))
+        self._lgM = int(np.log2(self.M))
         super().__init__(items)
 
     __init__.__doc__ = (SymbolTable.__init__.__doc__ +
         """M : int, optional
-            Initial number of slots in the hash table.
+            Minimum number of slots in the hash table.
         resize : bool, optional
             If True, resize the table by powers of 2 to maintain an average
             list length of `avg_probes`. Note that resizing changes the basic
