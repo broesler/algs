@@ -496,18 +496,6 @@ class LinearProbingHashST(HashTable):
         """
         return 1 + np.sum(self._hash_displacements()) / self.N
 
-    # Exercise 3.4.21
-    def cost_of_miss(self):
-        r"""Average cost of a search *miss* in the table.[0]
-
-        .. note::
-            Probability theory gives :math:`1/2 (1 + 1/(1 - \alpha)^2)`.[0]
-            Cost of cluster length :math:`t` is :math:`\frac{t(t+1)}{2M}`.
-
-        .. [0]:: Sedgewick, p 473.
-        """
-        return 1 + (self.N + np.sum(self._cluster_lengths()**2)) / (2*self.M)
-
     def _hash_displacements(self):
         """Compute the distance of each key from its hash location."""
         return [(self._get_index(k) - self._hash(k)) % self.M
@@ -524,11 +512,24 @@ class LinearProbingHashST(HashTable):
         else:
             raise KeyError(k)
 
+    # Exercise 3.4.21
+    def cost_of_miss(self):
+        r"""Average cost of a search *miss* in the table.[0]
+
+        .. note::
+            Probability theory gives :math:`1/2 (1 + 1/(1 - \alpha)^2)`.[0]
+            Cost of cluster length :math:`t` is :math:`\frac{t(t+1)}{2M}`.
+
+        .. [0]:: Sedgewick, p 473.
+        """
+        return 1 + ((self.N + np.sum(np.r_[self._cluster_lengths()]**2))
+                    / (2*self.M))
+
     def _cluster_lengths(self):
         """Compute the lengths of each cluster of keys in the table."""
         # Check if table is full
         if self.N == self.M:
-            return self.N
+            return [self.N]
 
         # Find first null slot so we can count wrap-around index as one cluster
         lo = 0
