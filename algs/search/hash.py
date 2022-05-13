@@ -13,8 +13,7 @@ import numpy as np
 
 from abc import ABC, abstractmethod
 
-from algs.search.table import (SymbolTable,
-                               SequentialSearchST as _SequentialSearchST)
+from algs.search.table import SymbolTable, SequentialSearchST
 
 __all__ = ['SeparateChainingHashST', 'SeparateChainingLiteHashST',
            'LinearProbingHashST']
@@ -110,7 +109,7 @@ class SeparateChainingHashST(HashTable):
         self._AVG_PROBES = avg_probes  # maximum average list size
         assert self._AVG_PROBES > 0
         # Initialize the actual symbol table
-        self._st = [_SequentialSearchST() for _ in range(M)]
+        self._st = [SequentialSearchST() for _ in range(M)]
         super().__init__(items=items, M=M, resize=resize)
 
     __init__.__doc__ = (HashTable.__init__.__doc__ +

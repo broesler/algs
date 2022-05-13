@@ -11,8 +11,8 @@
 
 from abc import ABC, abstractmethod
 
-from algs.basics import Queue as _Queue
-from algs.sort import mergesort as _mergesort
+from algs.basics import Queue
+from algs.sort import mergesort
 
 __all__ = ['SequentialSearchST', 'BinarySearchST', 'ArrayST']
 
@@ -414,7 +414,7 @@ class SequentialSearchST(SymbolTable):
         """Return an iterator over all of the items in the table."""
         def iterator(self):
             """Iterate over items."""
-            q = _Queue()
+            q = Queue()
             x = self._first
             while x:
                 q.enqueue(x.key if rtype == 'keys' else
@@ -536,7 +536,7 @@ class BinarySearchST(OrderedSymbolTable):
     def __init__(self, items=None, cache=True):
         self._items = list()  # internal array of items
         # Ex 3.1.12(b) sort by keys for O(N log N) construction vs. O(N^2)
-        items = _mergesort(items or [])
+        items = mergesort(items or [])
         super().__init__(items, cache)
         self._assert_integrity()
 
@@ -682,7 +682,7 @@ class BinarySearchST(OrderedSymbolTable):
                 if hv < self.size and self._items[hv].key == hi:
                     hv += 1
 
-            q = _Queue()
+            q = Queue()
             for x in self._items[lv:hv]:
                 q.enqueue(x.key if rtype == 'keys' else
                           (x.val if rtype == 'values' else (x.key, x.val)))

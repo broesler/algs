@@ -11,8 +11,7 @@
 
 import random
 
-from algs.basics import Stack as _Stack
-from algs.search.table import _empty_check
+from algs.basics import Stack
 from algs.search.tree import BST
 
 __all__ = ['RedBlackBST', 'TopDown234', 'TopDown234_nr', 'TopDown234bothways',
@@ -138,7 +137,7 @@ class RedBlackBST(BST):
         KeyError
             If the table is empty.
         """
-        _empty_check(self)
+        self._empty_check()
         # If root is a 2-node, make it a 3-node
         if (not self._is_red(self._root.left) and
               not self._is_red(self._root.right)):
@@ -157,7 +156,7 @@ class RedBlackBST(BST):
         KeyError
             If the table is empty.
         """
-        _empty_check(self)
+        self._empty_check()
         # If root is a 2-node, make it a 3-node
         if (not self._is_red(self._root.right) and
               not self._is_red(self._root.left)):
@@ -530,7 +529,7 @@ class TopDown234_nr(RedBlackBST):
                 self._cache = self._root
             return self._root
 
-        s = _Stack()
+        s = Stack()
         pp = p = None
         while h:
             if k == h.key:
