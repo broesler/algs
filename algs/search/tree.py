@@ -11,8 +11,7 @@
 
 import random  # only needed for Ex 3.2.42 (deletion methods)
 
-from algs.basics import Stack as _Stack, \
-                        Queue as _Queue
+from algs.basics import Stack, Queue
 from algs.search.table import SymbolTable, OrderedSymbolTable
 
 __all__ = ['BST', 'BST_nr', 'ThreadedST', 'ThreadedST_nr', 'ArrayBST']
@@ -190,8 +189,8 @@ class BST(OrderedSymbolTable):
         """Iterate over the keys in level-order (breadth-first)."""
         if x is None:
             x = self._root
-        out = _Queue()  # output queue (only grows)
-        q = _Queue()     # queue of out to visit
+        out = Queue()  # output queue (only grows)
+        q = Queue()     # queue of out to visit
         q.enqueue(x)
         while q:
             x = q.dequeue()
@@ -557,7 +556,7 @@ class BST(OrderedSymbolTable):
         if x is None:
             return
         if q is None:
-            q = _Queue()
+            q = Queue()
         # Operate on nodes in key order
         self._in_order_all(x.left, q, op)
         q.enqueue(op(x) if op else x.key)
@@ -569,7 +568,7 @@ class BST(OrderedSymbolTable):
         if x is None:
             return
         if q is None:
-            q = _Queue()
+            q = Queue()
         # Operate on nodes in key order, within range
         if lo < x.key:
             self._in_order_range(lo, hi, x.left, q, op)
@@ -589,7 +588,7 @@ class BST(OrderedSymbolTable):
         if x is None:
             return
         if q is None:
-            q = _Queue()
+            q = Queue()
         q.enqueue(op(x) if op else x.key)
         self._pre_order(x.left, q, op)
         self._pre_order(x.right, q, op)
@@ -604,7 +603,7 @@ class BST(OrderedSymbolTable):
         if x is None:
             return
         if q is None:
-            q = _Queue()
+            q = Queue()
         self._post_order(x.left, q, op)
         self._post_order(x.right, q, op)
         q.enqueue(op(x) if op else x.key)
@@ -947,7 +946,7 @@ class ThreadedST(BST):
         if x is None:
             return
         if q is None:
-            q = _Queue()
+            q = Queue()
         # Enqueue by key order
         if lo <= x.key <= hi:
             q.enqueue(op(x) if op else x.key)
@@ -968,7 +967,7 @@ class ThreadedST(BST):
         if x is None:
             return
         if q is None:
-            q = _Queue()
+            q = Queue()
         # Yield in order
         q.enqueue(op(x) if op else x.key)
         self.__iterate_all(x.next, q, op)
@@ -1028,7 +1027,7 @@ class BST_nr(BST):
         ..note:: in the non-recursive implementation, `x` will always be
             `self._root`, as called from the BST parent class.
         """
-        s = _Stack()  # track all nodes on path for updates
+        s = Stack()  # track all nodes on path for updates
         p = self._root
         while x:
             if k == x.key:
@@ -1078,7 +1077,7 @@ class BST_nr(BST):
         KeyError
             If `k` is not in the table.
         """
-        s = _Stack()  # stack of visited nodes to update counts
+        s = Stack()  # stack of visited nodes to update counts
 
         # find node to delete
         p = t
@@ -1277,8 +1276,8 @@ class BST_nr(BST):
     # Exercise 3.2.36
     def _iterate_range(self, lo, hi, op=None, **kwargs):
         """Add items to a Queue, in key-order from `lo` to `hi`."""
-        q = _Queue()    # the output queue
-        s = _Stack()    # visited nodes so we can pop back up the tree
+        q = Queue()    # the output queue
+        s = Stack()    # visited nodes so we can pop back up the tree
         x = self._root
         while s or x:
             # Move left until `lo` is found
@@ -1300,8 +1299,8 @@ class BST_nr(BST):
     # Overwrite BST._iterate_all recursive function
     def _iterate_all(self, op=None, **kwargs):
         """Add items to a Queue, in key-order over all keys."""
-        q = _Queue()    # the output queue
-        s = _Stack()    # visited nodes so we can pop back up the tree
+        q = Queue()    # the output queue
+        s = Stack()    # visited nodes so we can pop back up the tree
         x = self._root
         while s or x:
             # Move left until `lo` is found
@@ -1352,7 +1351,7 @@ class ThreadedST_nr(BST_nr):
         ..note:: in the non-recursive implementation, `x` will always be
             `self._root`, as called from the BST parent class.
         """
-        s = _Stack()  # track all nodes on path for updates
+        s = Stack()  # track all nodes on path for updates
         p = self._root
         while x:
             if k == x.key:
@@ -1410,7 +1409,7 @@ class ThreadedST_nr(BST_nr):
         KeyError
             If `k` is not in the table.
         """
-        s = _Stack()  # stack of visited nodes to update counts
+        s = Stack()  # stack of visited nodes to update counts
 
         # find node to delete
         p = t
@@ -1541,7 +1540,7 @@ class ThreadedST_nr(BST_nr):
 
     def _find_next(self, k):
         """Return the Node that follows `k`, None if `k` is the maximum."""
-        s = _Stack()  # track all nodes on path for updates
+        s = Stack()  # track all nodes on path for updates
         x = p = self._root
         while x:
             p = x  # track parent node
@@ -1567,7 +1566,7 @@ class ThreadedST_nr(BST_nr):
 
     def _find_prev(self, k):
         """Return the Node that precedes `k`, None if `k` is the minimum."""
-        s = _Stack()  # track all nodes on path for updates
+        s = Stack()  # track all nodes on path for updates
         x = p = self._root
         while x:
             p = x  # track parent node
@@ -1596,7 +1595,7 @@ class ThreadedST_nr(BST_nr):
     # -------------------------------------------------------------------------
     def _iterate_range(self, lo, hi, op=None, **kwargs):
         """Add items to a Queue, in key-order from `lo` to `hi`."""
-        q = _Queue()               # the output queue
+        q = Queue()               # the output queue
         x = self._min(self._root)  # get the minimum Node
         while x:
             if lo > x.key:
@@ -1610,7 +1609,7 @@ class ThreadedST_nr(BST_nr):
 
     def _iterate_all(self, op=None, **kwargs):
         """Add all items to a Queue, in key-order."""
-        q = _Queue()               # the output queue
+        q = Queue()               # the output queue
         x = self._min(self._root)  # get the minimum Node
         while x:
             q.enqueue(op(x) if op else x.key)

@@ -11,10 +11,7 @@
 
 import numpy as np
 
-from abc import ABC, abstractmethod
-
-from algs.search.table import (SymbolTable,
-                               SequentialSearchST as _SequentialSearchST)
+from algs.search.table import SymbolTable, SequentialSearchST
 
 __all__ = ['SeparateChainingHashST', 'SeparateChainingLiteHashST',
            'LinearProbingHashST']
@@ -52,7 +49,7 @@ _PRIMES = dict({
 })
 
 
-_MIN_CAPACITY = 4  # minimum number of hash slots
+_MIN_CAPACITY = 5  # minimum number of hash slots
 
 class HashTable(SymbolTable):
     # An abstract implementation of a hash table
@@ -105,12 +102,12 @@ class SeparateChainingHashST(HashTable):
     __doc__ = f"""Implements a hash table with separate chaining.
                {SymbolTable.__doc__}"""
 
-    def __init__(self, items=None, M=_MIN_CAPACITY, resize=False, avg_probes=10,
-                 cache=False):
+    def __init__(self, items=None, M=_MIN_CAPACITY, resize=False,
+                 avg_probes=10, cache=False):
         self._AVG_PROBES = avg_probes  # maximum average list size
         assert self._AVG_PROBES > 0
         # Initialize the actual symbol table
-        self._st = [_SequentialSearchST() for _ in range(M)]
+        self._st = [SequentialSearchST() for _ in range(M)]
         super().__init__(items=items, M=M, resize=resize)
 
     __init__.__doc__ = (HashTable.__init__.__doc__ +
@@ -237,8 +234,8 @@ class SeparateChainingLiteHashST(HashTable):
         def __repr__(self):
             return f"<{self.__class__.__name__}: {self.__str__()}>"
 
-    def __init__(self, items=None, M=_MIN_CAPACITY, resize=False, avg_probes=10,
-                 cache=False):
+    def __init__(self, items=None, M=_MIN_CAPACITY, resize=False,
+                 avg_probes=10, cache=False):
         self._AVG_PROBES = avg_probes  # desired average list size
         assert self._AVG_PROBES > 0
         # Initialize the symbol table

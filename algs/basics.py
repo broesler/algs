@@ -11,9 +11,9 @@
 
 import operator as _operator
 
-from collections import deque as _deque
-from collections.abc import MutableMapping as _MutableMapping
-from copy import deepcopy as _deepcopy
+from collections import deque
+from collections.abc import MutableMapping
+from copy import deepcopy
 
 __all__ = ['Bag', 'Stack', 'Queue', 'PriorityQueue', 'IndexPQ']
 
@@ -154,7 +154,7 @@ class Queue():
     """
     def __init__(self, items=list()):
         # _items[-1] is "front" of queue
-        self._items = _deque(items)
+        self._items = deque(items)
 
     @property
     def size(self):
@@ -338,7 +338,7 @@ class PriorityQueue():
 
     # Iterator methods: make a copy because in-order iteration is destructive.
     def __iter__(self):
-        self._pq_copy = _deepcopy(self)
+        self._pq_copy = deepcopy(self)
         return self
 
     def __next__(self):
@@ -348,7 +348,7 @@ class PriorityQueue():
             return self._pq_copy.dequeue()
 
 
-class IndexPQ(_MutableMapping):
+class IndexPQ(MutableMapping):
     """Priority queue as a native python dictionary. 'Pythonic' version of
     IndexPriorityQueue.
 
@@ -568,7 +568,7 @@ class IndexPQ(_MutableMapping):
 
     def __iter__(self):
         """Return an iterator with a copy."""
-        self._pq_copy = _deepcopy(self)
+        self._pq_copy = deepcopy(self)
         return self
 
     def __next__(self):
@@ -579,7 +579,7 @@ class IndexPQ(_MutableMapping):
             return self._pq_copy.dequeue()[0]  # iterate over keys
 
     # -------------------------------------------------------------------------
-    #        _MutableMapping required methods
+    #        MutableMapping required methods
     # -------------------------------------------------------------------------
     def __getitem__(self, k):
         return self._items[k]
