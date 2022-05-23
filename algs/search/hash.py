@@ -14,7 +14,7 @@ import numpy as np
 from algs.search.table import SymbolTable, SequentialSearchST
 
 __all__ = ['SeparateChainingHashST', 'SeparateChainingLiteHashST',
-           'LinearProbingHashST']
+           'LinearProbingHashST', 'DoubleProbingHashST', 'DoubleHashingHashST']
 
 # Table of primes less than the nearest power of 2
 # Mersenne primes like 31 are nice because 31 = 2**5 - 1 == (1 << 5) - 1.
@@ -377,6 +377,55 @@ class SeparateChainingLiteHashST(HashTable):
         return f"<{self.__class__.__name__}:\n{self.__str__()}>"
 
 
+# Exercise 3.4.27
+class DoubleProbingHashST(SeparateChainingHashST):
+    __doc__ = f"""Implements a hash table with separate chaining, but uses two
+               hash functions to double probe.
+               {SymbolTable.__doc__}"""
+
+    # NOTE resizing not yet supported
+
+    def _hash_b(self, k):
+        """Return an integer hash code for the key `k` that is distinct from
+        that of `HashTable._hash`.
+        """
+        return (31 * hash(k)) % self.M
+
+    # -------------------------------------------------------------------------
+    #         Public API
+    # -------------------------------------------------------------------------
+    def __setitem__(self, k, v):
+        # Hash into 2 lists and choose the shorter
+        ta = self._st[self._hash(k)]
+        tb = self._st[self._hash_b(k)]
+        t = ta if len(ta) < len(tb) else tb
+        if k not in t:
+            self.N += 1
+        t[k] = v
+        self._cost = t._cost
+
+    def __getitem__(self, k):
+        # Hash into 2 lists and search for key in each
+        ta = self._st[self._hash(k)]
+        tb = self._st[self._hash_b(k)]
+
+        try:
+            return self._get(k, ta)
+        except KeyError:
+            pass
+
+        try:
+            return self._get(k, tb)
+        except KeyError:
+            raise KeyError(k)
+
+    def _get(self, k, t):
+        """Get the value associated with `k` from a sub-table `t`."""
+        v = t[k]
+        self._cost = t._cost
+        return v
+
+
 class LinearProbingHashST(HashTable):
     __doc__ = f"""Implements a hash table using arrays with linear probing.
                 {SymbolTable.__doc__}"""
@@ -556,6 +605,65 @@ class LinearProbingHashST(HashTable):
         return clusters
 
 
+# Exercise 3.4.28
+class DoubleHashingHashST(LinearProbingHashST):
+    __doc__ = f"""Implements a hash table using arrays with linear probing, but
+                uses a second hash function to define the probe sequence.
+                {SymbolTable.__doc__}"""
+
+    # NOTE this class assumes that `M` is prime. If M is not prime, we may get
+    # stuck in an infinite loop where we never find an empty slot.
+    # TODO guarantee size of table is prime. Use dictionary similar to
+    # `PRIMES`, but with primes *greater* than the powers of 2, so we always
+    # have a slightly too-large table. We could also then eliminate the extra
+    # mod operation in `_hash` and use `hash(k) % M` directly.
+
+    def _hash_b(self, k):
+        """Return a non-zero integer to define the probe sequence."""
+        return 31 - (hash(k) % 31)
+
+    # -------------------------------------------------------------------------
+    #         Public API
+    # -------------------------------------------------------------------------
+    def __setitem__(self, k, v):
+        if not self._RESIZE_FLAG and self.N == self.M:
+            raise RuntimeError(("Trying to insert into a full table! "
+                                "Set `resize=True`."))
+
+        if self._RESIZE_FLAG and self.N >= self.M // 2:
+            self._resize(2*self.M)
+            self._lgM += 1
+
+        i = self._hash(k)
+        x = self._hash_b(k)
+        self._cost = 1
+        while self._keys[i] is not None:
+            if k == self._keys[i]:
+                self._vals[i] = v
+                return
+            else:
+                i = (i + x) % self.M
+                self._cost += 1
+        else:
+            self._keys[i] = k
+            self._vals[i] = v
+            self.N += 1
+
+    def __getitem__(self, k):
+        i = self._hash(k)
+        x = self._hash_b(k)
+        self._cost = 1
+        while self._keys[i] is not None:
+            if k == self._keys[i]:
+                return self._vals[i]
+            else:
+                i = (i + x) % self.M
+                self._cost += 1
+        else:
+            raise KeyError(k)
+
+
+# See Exercise 3.4.23, 3.4.32
 def java_hash(k, R=31):
     r"""Define the hash code function used by Java for strings.
 
@@ -581,10 +689,15 @@ if __name__ == '__main__':
     keys = 'EASYQUTION'
     items = [(c, i) for i, c in enumerate(keys)]
 
+    def _hash_code(k, R=11):
+        return R*(ord(k) - ord('A'))
+
+    def _hash(self, k, **kwargs):
+        return _hash_code(k, **kwargs) % self.M
+
     # Override _hash function with custom subclass
     class MySeparateChainingHashST(SeparateChainingHashST):
-        def _hash(self, k):
-            return 11*(ord(k) - ord('A')) % self.M
+        _hash = _hash
 
     st = MySeparateChainingHashST(items, M=5)
     st._validate_size()
@@ -592,8 +705,7 @@ if __name__ == '__main__':
 
     # Repeat with SeparateChainingLiteHashST
     class MySeparateChainingLiteHashST(SeparateChainingLiteHashST):
-        def _hash(self, k):
-            return 11*(ord(k) - ord('A')) % self.M
+        _hash = _hash
 
     stl = MySeparateChainingLiteHashST(items, M=5)
     assert stl.keys() == list('UAQNISOTYE')
@@ -606,24 +718,40 @@ if __name__ == '__main__':
     # Exercise 3.4.10 (a)
     # Override _hash function with custom subclass
     class MyLinearProbingHashST(LinearProbingHashST):
-        def _hash(self, k):
-            return 11*(ord(k) - ord('A')) % self.M
+        _hash = _hash
 
     sta = MyLinearProbingHashST(items, M=16, resize=False)
-
-    # NOTE specific to the hash function and assumes no resizing
     assert sta.keys() == list('AQTSYIOEUN')
     assert np.allclose(sta._cluster_lengths(), [1, 3, 2, 4])
 
     # Exercise 3.4.10 (b)
     stb = MyLinearProbingHashST(items, M=10, resize=False)
-
     assert stb.keys() == list('AUINEYQOST')
     assert np.allclose(stb._cluster_lengths(), [10])
 
     # Exercise 3.4.11
     # TODO overwrite _resize to print _keys on each resize for visualization
     stc = MyLinearProbingHashST(items, M=4, resize=True)
+    assert stc.keys() == list('ASYENQTIOU')
+
+    # Exercise 3.4.27
+    class MyDoubleProbingHashST(DoubleProbingHashST):
+        _hash = _hash  # R = 11
+
+        def _hash_b(self, k):
+            return self._hash(k, R=7)
+
+    std = MyDoubleProbingHashST(items, M=3)
+    assert std.keys() == list('YSANOTEIUQ')
+
+    # Exercise 3.4.28
+    class MyDoubleHashingHashST(DoubleHashingHashST):
+        _hash = _hash  # R = 11
+
+        def _hash_b(self, k):
+            return (self._hash(k, R=17) % self.M) + 1  # must be non-zero
+
+    ste = MyDoubleHashingHashST(items, M=11)
 
 
 # =============================================================================

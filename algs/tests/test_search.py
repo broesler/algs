@@ -18,7 +18,8 @@ from algs.search import (SequentialSearchST, BinarySearchST, ArrayST, BST,
                          TopDown234bothways, BottomUp234, Unbalanced23,
                          AVLTree,
                          SeparateChainingHashST, SeparateChainingLiteHashST,
-                         LinearProbingHashST)
+                         LinearProbingHashST,
+                         DoubleProbingHashST, DoubleHashingHashST)
 
 rng = np.random.default_rng(seed=565656)
 
@@ -72,7 +73,8 @@ def data_set(data):
 # ---------- Test All STs ----------
 UNORDERED_STS = set([SequentialSearchST, ArrayST,
                      SeparateChainingHashST, SeparateChainingLiteHashST,
-                     LinearProbingHashST])
+                     LinearProbingHashST, 
+                     DoubleProbingHashST, DoubleHashingHashST])
 ORDERED_STS = set([BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr,
                    ArrayBST])
 BALANCED_TREES = set([RedBlackBST, TopDown234, TopDown234_nr, BottomUp234,
@@ -82,7 +84,10 @@ ALL_STS = UNORDERED_STS | ORDERED_STS | BALANCED_TREES
 NO_CACHE = set([ArrayBST,
                 SeparateChainingHashST,
                 SeparateChainingLiteHashST,
-                LinearProbingHashST])
+                LinearProbingHashST,
+                DoubleProbingHashST,
+                DoubleHashingHashST])
+
 
 class TestUnorderedOps:
     @pytest.mark.parametrize('ST', ALL_STS)
@@ -111,7 +116,9 @@ class TestUnorderedOps:
         assert sorted(st.items()) == sorted(data_set)
         err_test(st, '__getitem__', 'Z', err_type=KeyError)
 
-    @pytest.mark.parametrize('ST', ALL_STS - set([ArrayBST, Unbalanced23]))
+    @pytest.mark.parametrize('ST', ALL_STS - set([ArrayBST, Unbalanced23,
+                                                  DoubleProbingHashST,
+                                                  DoubleHashingHashST]))
     def test_delete(self, ST, data, expect_set):
         st = ST(data, cache=False)
         test_keys = expect_set.copy()
@@ -268,8 +275,8 @@ class TestOrderedOps:
         assert list(t.keys('F', 'P')) == list('HLMP')
         assert list(t.keys(hi='P')) == list('ACEHLMP')
         assert list(t.values()) == [v for k, v in sorted(data_set)]
-        assert list(t.values('F', 'P')) == \
-                    [v for k, v in sorted(data_set)[3:7]]
+        assert (list(t.values('F', 'P')) ==
+                [v for k, v in sorted(data_set)[3:7]])
         assert list(t.items()) == sorted(data_set)
         assert list(t.items('F', 'P')) == sorted(data_set)[3:7]
 
