@@ -40,6 +40,10 @@ These values can also be computed as a fraction of the total slots *M*:
     \text{fraction distinct} = P
     \text{fraction duplicate} = \alpha - P
     \text{fraction free} = 1 - P
+
+See Also
+--------
+Exercise 2.5.31 Duplicates: Count duplicates in random integer lists.
 """
 # =============================================================================
 
@@ -81,13 +85,16 @@ P = (1 - np.exp(-α))
 
 fig = plt.figure(1, clear=True, constrained_layout=True)
 ax = fig.add_subplot()
+
 # Asymptotes
 ax.plot(α, α - 1, 'k--', lw=1)
 ax.axhline(1, c='k', ls='--', lw=1)
+
 # Exponentials
 ax.plot(α, P, label=r'Distinct = $M(1 - e^{-\alpha})$')
 ax.plot(α, α - P, label=r'Duplicate = $N - M(1 - e^{-\alpha})$')
 ax.plot(α, 1 - P, label=r'Free Slots = $Me^{-\alpha}$')
+
 ax.grid()
 ax.set(xlabel=r'$\alpha = \dfrac{N}{M}$',
        ylabel='Fraction of (Distinct/Duplicate) vs. M slots')
