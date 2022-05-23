@@ -557,6 +557,23 @@ class LinearProbingHashST(HashTable):
 
         return clusters
 
+
+def java_hash(k, R=31):
+    """Define the hash code function used by Java for strings.
+
+    .. math::
+        s_0 R^{N-1} + s_1 R^{N-2} + \dots + s_{N-1}
+
+    See Also
+    --------
+    `Java standard: <https://docs.oracle.com/javase/6/docs/api/java/lang//String.html>`_
+    """
+    h = 0
+    for c in k:
+        h = (h * R) + ord(c)
+    return h
+
+
 # -----------------------------------------------------------------------------
 #         Run tests
 # -----------------------------------------------------------------------------
