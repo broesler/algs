@@ -18,7 +18,7 @@ __all__ = ['SeparateChainingHashST', 'SeparateChainingLiteHashST',
 
 # Table of primes less than the nearest power of 2
 # Mersenne primes like 31 are nice because 31 = 2**5 - 1 == (1 << 5) - 1.
-_PRIMES = dict({
+PRIMES = dict({
     5: 31,
     6: 61,
     7: 127,
@@ -49,11 +49,12 @@ _PRIMES = dict({
 })
 
 
-_MIN_CAPACITY = 5  # minimum number of hash slots
+MIN_CAPACITY = 5  # minimum number of hash slots
+
 
 class HashTable(SymbolTable):
     # An abstract implementation of a hash table
-    def __init__(self, items=None, M=_MIN_CAPACITY, resize=False):
+    def __init__(self, items=None, M=MIN_CAPACITY, resize=False):
         self.N = 0
         self.M = M
         self._RESIZE_FLAG = bool(resize)
@@ -94,7 +95,7 @@ class HashTable(SymbolTable):
         # Exercise 3.4.18 (see Q&A p 478)
         # Ensure even distribution when M is power of 2
         if self._RESIZE_FLAG and self._lgM < 26:
-            t = t % _PRIMES[self._lgM + 5]
+            t = t % PRIMES[self._lgM + 5]
         return t % self.M
 
 
@@ -102,7 +103,7 @@ class SeparateChainingHashST(HashTable):
     __doc__ = f"""Implements a hash table with separate chaining.
                {SymbolTable.__doc__}"""
 
-    def __init__(self, items=None, M=_MIN_CAPACITY, resize=False,
+    def __init__(self, items=None, M=MIN_CAPACITY, resize=False,
                  avg_probes=10, cache=False):
         self._AVG_PROBES = avg_probes  # maximum average list size
         assert self._AVG_PROBES > 0
@@ -160,7 +161,7 @@ class SeparateChainingHashST(HashTable):
         self._cost = t._cost
         # Halve table size if average list length <= 2
         if (self._RESIZE_FLAG and
-                self.M > _MIN_CAPACITY and self.N <= 2*self.M):
+                self.M > MIN_CAPACITY and self.N <= 2*self.M):
             self._resize(self.M // 2)
             self._lgM -= 1
 
@@ -234,7 +235,7 @@ class SeparateChainingLiteHashST(HashTable):
         def __repr__(self):
             return f"<{self.__class__.__name__}: {self.__str__()}>"
 
-    def __init__(self, items=None, M=_MIN_CAPACITY, resize=False,
+    def __init__(self, items=None, M=MIN_CAPACITY, resize=False,
                  avg_probes=10, cache=False):
         self._AVG_PROBES = avg_probes  # desired average list size
         assert self._AVG_PROBES > 0
@@ -317,7 +318,7 @@ class SeparateChainingLiteHashST(HashTable):
 
         # Halve table size if average list length <= 2
         if (self._RESIZE_FLAG and
-                self.M > _MIN_CAPACITY and self.N <= 2*self.M):
+                self.M > MIN_CAPACITY and self.N <= 2*self.M):
             self._resize(self.M // 2)
             self._lgM -= 1
 
@@ -380,7 +381,7 @@ class LinearProbingHashST(HashTable):
     __doc__ = f"""Implements a hash table using arrays with linear probing.
                 {SymbolTable.__doc__}"""
 
-    def __init__(self, items=None, M=_MIN_CAPACITY, resize=True, cache=False):
+    def __init__(self, items=None, M=MIN_CAPACITY, resize=True, cache=False):
         # Initialize the symbol table
         self._keys = M*[None]
         self._vals = M*[None]
@@ -495,7 +496,7 @@ class LinearProbingHashST(HashTable):
     def _hash_displacements(self):
         """Compute the distance of each key from its hash location."""
         return [(self._get_index(k) - self._hash(k)) % self.M
-                 for k in self.keys()]
+                for k in self.keys()]
 
     def _get_index(self, k):
         """Return the internal index of `k`."""
@@ -556,7 +557,7 @@ class LinearProbingHashST(HashTable):
 
 
 def java_hash(k, R=31):
-    """Define the hash code function used by Java for strings.
+    r"""Define the hash code function used by Java for strings.
 
     .. math::
         s_0 R^{N-1} + s_1 R^{N-2} + \dots + s_{N-1}
