@@ -720,6 +720,17 @@ if __name__ == '__main__':
     class MyLinearProbingHashST(LinearProbingHashST):
         _hash = _hash
 
+        # overwrite _resize to print _keys for visualization
+        def _print_keys(func):
+            def wrapper(self, *args, **kwargs):
+                print(f"M = {self.M:2d}: {self._keys}")
+                func(self, *args, **kwargs)
+            return wrapper
+
+        @_print_keys
+        def _resize(self, M):
+            super()._resize(M)
+
     sta = MyLinearProbingHashST(items, M=16, resize=False)
     assert sta.keys() == list('AQTSYIOEUN')
     assert np.allclose(sta._cluster_lengths(), [1, 3, 2, 4])
@@ -730,8 +741,8 @@ if __name__ == '__main__':
     assert np.allclose(stb._cluster_lengths(), [10])
 
     # Exercise 3.4.11
-    # TODO overwrite _resize to print _keys on each resize for visualization
     stc = MyLinearProbingHashST(items, M=4, resize=True)
+    print(f"M = {stc.M:2d}: {stc._keys}")
     assert stc.keys() == list('ASYENQTIOU')
 
     # Exercise 3.4.27
@@ -752,6 +763,7 @@ if __name__ == '__main__':
             return (self._hash(k, R=17) % self.M) + 1  # must be non-zero
 
     ste = MyDoubleHashingHashST(items, M=11)
+    assert ste.keys() == list('EATQIUYNOS')
 
 
 # =============================================================================
