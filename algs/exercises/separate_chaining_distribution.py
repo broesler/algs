@@ -41,17 +41,17 @@ min_Ls = list()
 max_Ls = list()
 
 for N in Ns:
-    M = N // α
-    st = SeparateChainingHashST(M=M, resize=True)
     # TODO run T trials and compute avg length of longest list
-    keys = rng.integers(N, size=N)
-    # NOTE don't build the entire table for speed. Just hash the values and
-    # compute the frequencies of each
-    hashes = [st._hash(k) for k in keys]
-    counts, bin_edges = np.histogram(hashes, bins=np.arange(M+1))
+    M = N // α
+    keys = rng.integers(N*N, size=N)
+    st = SeparateChainingHashST.fromkeys(keys, M=M, resize=False)
+    counts = np.r_[st._list_lengths()]
     Ls[N] = counts
     min_Ls.append(counts.min())
     max_Ls.append(counts.max())
+
+min_Ls = np.r_[min_Ls]
+max_Ls = np.r_[max_Ls]
 
 n = np.logspace(2, 7.1)
 avg_longest = np.log(n) / np.log(np.log(n))
@@ -62,6 +62,13 @@ ax.plot(n, avg_longest)
 ax.scatter(Ns, max_Ls)
 ax.set(xlabel='N',
        ylabel='Longest List')
+
+fig = plt.figure(2, clear=True, constrained_layout=True)
+ax = fig.add_subplot()
+ax.hist(counts, bins=np.arange(counts.min()-0.5, counts.max()+1), 
+        density=True, rwidth=0.9)
+ax.set(xlabel='list length',
+       ylabel='frequency')
 
 plt.show()
 

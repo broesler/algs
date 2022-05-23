@@ -20,8 +20,6 @@ from scipy.stats import binom, poisson, chi2, chisquare
 from algs.search import SeparateChainingHashST
 from frequency_counter import FrequencyCounter
 
-# TODO plot actual list lengths as a histogram for bins = [0, 1, ..., M-1]
-
 MINLEN = 1  # 1, 8, 10
 filename = Path('../data/tale.txt')  # 779K
 

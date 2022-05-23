@@ -144,12 +144,12 @@ class SeparateChainingHashST(HashTable):
         if k not in t:
             self.N += 1
         t[k] = v
-        self._cost = t._cost
+        self._cost = 1 + t._cost
 
     def __getitem__(self, k):
         t = self._st[self._hash(k)]
         v = t[k]
-        self._cost = t._cost
+        self._cost = 1 + t._cost
         return v
 
     # Exercise 3.4.9, eager delete
@@ -158,7 +158,7 @@ class SeparateChainingHashST(HashTable):
         if k in t:
             self.N -= 1
         del t[k]
-        self._cost = t._cost
+        self._cost = 1 + t._cost
         # Halve table size if average list length <= 2
         if (self._RESIZE_FLAG and
                 self.M > MIN_CAPACITY and self.N <= 2*self.M):
@@ -217,7 +217,7 @@ class SeparateChainingHashST(HashTable):
 # Exercise 3.4.2
 class SeparateChainingLiteHashST(HashTable):
     __doc__ = f"""Implements a hash table with separate chaining, but uses
-        a nested linked list insteady of `SequentialSearchST` dependency.
+        a nested linked list insteady of `ArrayST` dependency.
         {SymbolTable.__doc__}"""
 
     # Private class of key/value pairs
@@ -389,7 +389,7 @@ class DoubleProbingHashST(SeparateChainingHashST):
         """Return an integer hash code for the key `k` that is distinct from
         that of `HashTable._hash`.
         """
-        return (31 * hash(k)) % self.M
+        return (31 * self._hash(k)) % self.M
 
     # -------------------------------------------------------------------------
     #         Public API
@@ -398,16 +398,25 @@ class DoubleProbingHashST(SeparateChainingHashST):
         # Hash into 2 lists and choose the shorter
         ta = self._st[self._hash(k)]
         tb = self._st[self._hash_b(k)]
-        t = ta if len(ta) < len(tb) else tb
-        if k not in t:
+        self._cost = 2
+        if k in ta:
+            ta[k] = v
+            self._cost += ta._cost
+        elif k in tb:
+            tb[k] = v
+            self._cost += tb._cost
+        else:
             self.N += 1
-        t[k] = v
-        self._cost = t._cost
+            t = ta if len(ta) < len(tb) else tb  # choose the shorter list
+            t[k] = v
+            self._cost += t._cost
+
 
     def __getitem__(self, k):
         # Hash into 2 lists and search for key in each
         ta = self._st[self._hash(k)]
         tb = self._st[self._hash_b(k)]
+        self._cost = 2
 
         try:
             return self._get(k, ta)
@@ -422,7 +431,7 @@ class DoubleProbingHashST(SeparateChainingHashST):
     def _get(self, k, t):
         """Get the value associated with `k` from a sub-table `t`."""
         v = t[k]
-        self._cost = t._cost
+        self._cost += t._cost
         return v
 
 
@@ -636,7 +645,7 @@ class DoubleHashingHashST(LinearProbingHashST):
 
         i = self._hash(k)
         x = self._hash_b(k)
-        self._cost = 1
+        self._cost = 2
         while self._keys[i] is not None:
             if k == self._keys[i]:
                 self._vals[i] = v
@@ -652,7 +661,7 @@ class DoubleHashingHashST(LinearProbingHashST):
     def __getitem__(self, k):
         i = self._hash(k)
         x = self._hash_b(k)
-        self._cost = 1
+        self._cost = 2
         while self._keys[i] is not None:
             if k == self._keys[i]:
                 return self._vals[i]
