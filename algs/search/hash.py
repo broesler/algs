@@ -567,7 +567,7 @@ def java_hash(k, R=31):
     """
     h = 0
     for c in k:
-        h = (h * R) + ord(c)
+        h = (R * h) + ord(c)
     return h
 
 
