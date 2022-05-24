@@ -92,7 +92,7 @@ MAX_PRIMES = dict({
 MIN_CAPACITY = 5  # minimum number of hash slots
 
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 #         Functions
 # -----------------------------------------------------------------------------
 # See Exercise 3.4.23, 3.4.32
@@ -127,7 +127,7 @@ def is_prime(n):
             return False
         i += 6
     return True
-        
+
 
 def next_prime(n):
     """Find the next prime number that is >= `n` >= 0."""
@@ -162,7 +162,7 @@ def prev_prime(n):
         return None
 
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 #         Classes
 # -----------------------------------------------------------------------------
 class HashTable(SymbolTable):
@@ -261,17 +261,24 @@ class SeparateChainingHashST(HashTable):
 
     def __getitem__(self, k):
         t = self._st[self._hash(k)]
-        v = t[k]
-        self._cost = 1 + t._cost
+        try:
+            v = t[k]
+            self._cost = 1 + t._cost
+        except KeyError:
+            self._cost = 1 + t._cost
+            raise KeyError(k)
         return v
 
     # Exercise 3.4.9, eager delete
     def __delitem__(self, k):
         t = self._st[self._hash(k)]
-        if k in t:
+        try:
+            del t[k]
             self.N -= 1
-        del t[k]
-        self._cost = 1 + t._cost
+            self._cost = 1 + t._cost
+        except KeyError:
+            self._cost = 1 + t._cost
+            raise KeyError(k)
         # Halve table size if average list length <= 2
         if (self._RESIZE_FLAG and
                 self.M > MIN_CAPACITY and self.N <= 2*self.M):
@@ -511,40 +518,31 @@ class DoubleProbingHashST(SeparateChainingHashST):
         # Hash into 2 lists and choose the shorter
         ta = self._st[self._hash(k)]
         tb = self._st[self._hash_b(k)]
-        self._cost = 2
         if k in ta:
             ta[k] = v
-            self._cost += ta._cost
+            self._cost = 2 + ta._cost  # assume "caching"
         elif k in tb:
             tb[k] = v
-            self._cost += tb._cost
+            self._cost = 2 + ta._cost + tb._cost
         else:
             self.N += 1
             t = ta if len(ta) < len(tb) else tb  # choose the shorter list
             t[k] = v
-            self._cost += t._cost
-
+            self._cost = 2 + ta._cost + tb._cost + t._cost
 
     def __getitem__(self, k):
         # Hash into 2 lists and search for key in each
         ta = self._st[self._hash(k)]
         tb = self._st[self._hash_b(k)]
-        self._cost = 2
-
-        try:
-            return self._get(k, ta)
-        except KeyError:
-            pass
-
-        try:
-            return self._get(k, tb)
-        except KeyError:
+        if k in ta:
+            v = ta[k]
+            self._cost = 2 + ta._cost
+        elif k in tb:
+            v = tb[k]
+            self._cost = 2 + ta._cost + tb._cost
+        else:
+            self._cost = 2 + ta._cost + tb._cost
             raise KeyError(k)
-
-    def _get(self, k, t):
-        """Get the value associated with `k` from a sub-table `t`."""
-        v = t[k]
-        self._cost += t._cost
         return v
 
     def __delitem__(self, k):
@@ -562,6 +560,7 @@ class DoubleProbingHashST(SeparateChainingHashST):
             self._cost = 2 + ta._cost + tb._cost
             raise KeyError(k)
         self.N -= 1
+
 
 class LinearProbingHashST(HashTable):
     __doc__ = f"""Implements a hash table using arrays with linear probing.
@@ -624,7 +623,7 @@ class LinearProbingHashST(HashTable):
             raise KeyError(k)
 
     def __delitem__(self, k):
-        if not self.__contains__(k):
+        if k not in self:
             raise KeyError(k)
         i = self._hash(k)
         _cost = 1
@@ -748,12 +747,8 @@ class DoubleHashingHashST(LinearProbingHashST):
                 uses a second hash function to define the probe sequence.
                 {SymbolTable.__doc__}"""
 
-    # NOTE this class assumes that `M` is prime. If M is not prime, we may get
-    # stuck in an infinite loop where we never find an empty slot.
-    # TODO guarantee size of table is prime. Use dictionary similar to
-    # `PRIMES`, but with primes *greater* than the powers of 2, so we always
-    # have a slightly too-large table. We could also then eliminate the extra
-    # mod operation in `_hash` and use `hash(k) % M` directly.
+    # NOTE we guarantee M to be prime in this class, so no need to re-mod the
+    # hash code to a prime number.
 
     def _hash(self, k):
         """Return an integer hash code for the key `k`."""
@@ -859,6 +854,12 @@ if __name__ == '__main__':
     st = MySeparateChainingHashST(items, M=5)
     st._validate_size()
     assert st.keys() == list('UAQNISOTYE')
+
+    try:
+        del st['X']
+    except KeyError:
+        pass
+    assert st._cost == 4  # _hash('X') == 3, len(st[3]) == 3 + 1 = 4
 
     # Repeat with SeparateChainingLiteHashST
     class MySeparateChainingLiteHashST(SeparateChainingLiteHashST):
