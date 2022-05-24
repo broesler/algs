@@ -14,8 +14,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from pathlib import Path
-from scipy.special import factorial
-from scipy.stats import binom, poisson, chi2, chisquare
+from scipy.special import loggamma  # , factorial
+from scipy.stats import chi2, chisquare  # , binom, poisson
 
 from algs.search import SeparateChainingHashST
 from frequency_counter import FrequencyCounter
@@ -39,11 +39,13 @@ k = np.linspace(0, 30, 100)  # number of keys per list
 # NOTE The Poisson distribution is a *discrete* distribution, so this function
 # *should* be computed at integer `k` values, with a stem plot below. We'll use
 # the continuous function to match the book figure.
-# def P(k): 
+# def P(k):
 #     return poisson(mu=α).pmf(k)
 def P(k):
     """Poisson distribution with parameter `k`."""
-    return α**k * np.exp(-α) / factorial(k)
+    # The definition is numerically unstable because λ^k and k! may overflow:
+    # return α**k * np.exp(-α) / factorial(k)
+    return np.exp(k*np.log(α) - α - loggamma(k + 1))
 
 
 Pk = P(k)
@@ -96,7 +98,7 @@ ax.annotate(f"{α = :.4f}...", xy=(α, 1.1*Pk.max()), xycoords='data',
 ax.annotate(r"$\dfrac{\alpha^k e^{-\alpha}}{k!}$",
             xy=(15, P(15)), xycoords='data',
             xytext=(18, 0.6*Pk.max()), textcoords='data',
-            va='top', ha='left', color='C3', fontsize=14,
+            va='top', ha='left', color='C3',
             arrowprops=dict(arrowstyle='->', color='C3')
             )
 
