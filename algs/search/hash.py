@@ -19,6 +19,9 @@ __all__ = ['SeparateChainingHashST', 'SeparateChainingLiteHashST',
 # Table of primes less than the nearest power of 2
 # Mersenne primes like 31 are nice because 31 = 2**5 - 1 == (1 << 5) - 1.
 MIN_PRIMES = dict({
+    2: 3,
+    3: 7,
+    4: 13,
     5: 31,
     6: 61,
     7: 127,
@@ -132,11 +135,27 @@ def next_prime(n):
         raise ValueError(f"{n = } must be a postivie integer!")
     if n < 2:
         return 2
-	# Start with the next odd number
+    # Start with the next odd number
     if n % 2 == 0:
         n += 1
     # Follow Bertrand's postulate for n > 1
     for i in range(n, 2*n+1, 2):
+        if is_prime(i):
+            return i
+    else:
+        return None
+
+
+def prev_prime(n):
+    """Find the previous prime number `p` that is 2 <= p < `n`."""
+    if n < 0:
+        raise ValueError(f"{n = } must be a postivie integer!")
+    if n < 2:
+        return None
+    # Start with the next odd number
+    if (n-1) % 2 == 0:
+        n -= 1
+    for i in range(n-1, 2, -2):
         if is_prime(i):
             return i
     else:
@@ -721,9 +740,15 @@ class DoubleHashingHashST(LinearProbingHashST):
     # have a slightly too-large table. We could also then eliminate the extra
     # mod operation in `_hash` and use `hash(k) % M` directly.
 
+    def _hash(self, k):
+        """Return an integer hash code for the key `k`."""
+        return hash(k) % self.M
+
     def _hash_b(self, k):
-        """Return a non-zero integer to define the probe sequence."""
-        return 31 - (hash(k) % 31)
+        """Return a key-dependent, non-zero integer to define the probe
+        sequence."""
+        R = MIN_PRIMES[self._lgM]  # NOTE `R` must be prime < self.M
+        return R - (hash(k) % R)
 
     # -------------------------------------------------------------------------
     #         Public API
@@ -734,8 +759,9 @@ class DoubleHashingHashST(LinearProbingHashST):
                                 "Set `resize=True`."))
 
         if self._RESIZE_FLAG and self.N >= self.M // 2:
-            self._resize(2*self.M)
+            # "double" the table size to the prime > the next power of 2
             self._lgM += 1
+            self._resize(MAX_PRIMES[self._lgM])
 
         i = self._hash(k)
         x = self._hash_b(k)
@@ -849,7 +875,7 @@ if __name__ == '__main__':
             return (self._hash(k, R=17) % self.M) + 1  # must be non-zero
 
     ste = MyDoubleHashingHashST(items, M=11)
-    assert ste.keys() == list('EATQIUYNOS')
+    assert ste.keys() == list('AYOESITQNU')
 
 
 # =============================================================================
