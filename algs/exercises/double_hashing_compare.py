@@ -42,6 +42,8 @@ for ST, c in zip([LinearProbingHashST, DoubleHashingHashST], ['k', 'C3']):
     ax.hist(Ls, bins=np.arange(23)+0.5, 
             density=True, rwidth=0.9, color=c, alpha=0.8, 
             label=ST.__name__)
+    
+    # TODO fit exponential distribution to each and compare parameters
 
 ax.axvline(α, c='k', lw=1)
 

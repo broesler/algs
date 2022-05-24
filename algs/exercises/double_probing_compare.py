@@ -20,7 +20,7 @@ from scipy.stats import binom, poisson, chi2, chisquare
 from algs.search import SeparateChainingHashST, DoubleProbingHashST
 from frequency_counter import FrequencyCounter
 
-MINLEN = 1  # 1, 8, 10
+MINLEN = 8  # 1, 8, 10
 filename = Path('../data/tale.txt')  # 779K
 
 # -----------------------------------------------------------------------------
@@ -41,6 +41,8 @@ for ST, c in zip([SeparateChainingHashST, DoubleProbingHashST], ['k', 'C3']):
     ax.hist(Ls, bins=np.arange(23)+0.5, 
             density=True, rwidth=0.9, color=c, alpha=0.8, 
             label=ST.__name__)
+
+    # TODO fit Poisson distribution and compare parameters
 
 ax.axvline(α, c='k', lw=1)
 
