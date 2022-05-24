@@ -39,7 +39,8 @@ k = np.linspace(0, 30, 100)  # number of keys per list
 # NOTE The Poisson distribution is a *discrete* distribution, so this function
 # *should* be computed at integer `k` values, with a stem plot below. We'll use
 # the continuous function to match the book figure.
-# P(k) = poisson(mu=α).pmf(k)
+# def P(k): 
+#     return poisson(mu=α).pmf(k)
 def P(k):
     """Poisson distribution with parameter `k`."""
     return α**k * np.exp(-α) / factorial(k)
