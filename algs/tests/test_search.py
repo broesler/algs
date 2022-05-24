@@ -81,6 +81,11 @@ BALANCED_TREES = set([RedBlackBST, TopDown234, TopDown234_nr, BottomUp234,
                       TopDown234bothways, Unbalanced23, AVLTree])
 ALL_STS = UNORDERED_STS | ORDERED_STS | BALANCED_TREES
 
+NO_DELETE = set([ArrayBST,
+                 Unbalanced23,
+                 DoubleProbingHashST,
+                 DoubleHashingHashST])
+
 NO_CACHE = set([ArrayBST,
                 SeparateChainingHashST,
                 SeparateChainingLiteHashST,
@@ -116,9 +121,7 @@ class TestUnorderedOps:
         assert sorted(st.items()) == sorted(data_set)
         err_test(st, '__getitem__', 'Z', err_type=KeyError)
 
-    @pytest.mark.parametrize('ST', ALL_STS - set([ArrayBST, Unbalanced23,
-                                                  DoubleProbingHashST,
-                                                  DoubleHashingHashST]))
+    @pytest.mark.parametrize('ST', ALL_STS - NO_DELETE)
     def test_delete(self, ST, data, expect_set):
         st = ST(data, cache=False)
         test_keys = expect_set.copy()
