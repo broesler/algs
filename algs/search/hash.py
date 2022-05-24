@@ -18,7 +18,7 @@ __all__ = ['SeparateChainingHashST', 'SeparateChainingLiteHashST',
 
 # Table of primes less than the nearest power of 2
 # Mersenne primes like 31 are nice because 31 = 2**5 - 1 == (1 << 5) - 1.
-PRIMES = dict({
+MIN_PRIMES = dict({
     5: 31,
     6: 61,
     7: 127,
@@ -49,9 +49,103 @@ PRIMES = dict({
 })
 
 
+# Define next prime after each power of 2
+# MAX_PRIMES = dict({i: next_prime(2**i) for i in range(32)})
+MAX_PRIMES = dict({
+    0: 2,
+    1: 3,
+    2: 5,
+    3: 11,
+    4: 17,
+    5: 37,
+    6: 67,
+    7: 131,
+    8: 257,
+    9: 521,
+    10: 1031,
+    11: 2053,
+    12: 4099,
+    13: 8209,
+    14: 16411,
+    15: 32771,
+    16: 65537,
+    17: 131101,
+    18: 262147,
+    19: 524309,
+    20: 1048583,
+    21: 2097169,
+    22: 4194319,
+    23: 8388617,
+    24: 16777259,
+    25: 33554467,
+    26: 67108879,
+    27: 134217757,
+    28: 268435459,
+    29: 536870923,
+    30: 1073741827,
+    31: 2147483659
+})
+
 MIN_CAPACITY = 5  # minimum number of hash slots
 
 
+# ----------------------------------------------------------------------------- 
+#         Functions
+# -----------------------------------------------------------------------------
+# See Exercise 3.4.23, 3.4.32
+def java_hash(k, R=31):
+    r"""Define the hash code function used by Java for strings.
+
+    .. math::
+        s_0 R^{N-1} + s_1 R^{N-2} + \dots + s_{N-1}
+
+    See Also
+    --------
+    `Java standard: <https://docs.oracle.com/javase/6/docs/api/java/lang//String.html>`_
+    """
+    h = 0
+    for c in k:
+        h = (R * h) + ord(c)
+    return h
+
+
+def is_prime(n):
+    """Returns True if `n` is prime."""
+    # 0 and 1 are not prime, 2 is prime.
+    if n <= 3:
+        return n > 1
+    # Cannot be divisible by 2 or 3
+    if not n % 2 or not n % 3:
+        return False
+    # Check up to sqrt(n) for divisible factors
+    i = 5
+    while i < n**0.5:
+        if not n % i or not n % (i + 2):
+            return False
+        i += 6
+    return True
+        
+
+def next_prime(n):
+    """Find the next prime number that is >= `n` >= 0."""
+    if n < 0:
+        raise ValueError(f"{n = } must be a postivie integer!")
+    if n < 2:
+        return 2
+	# Start with the next odd number
+    if n % 2 == 0:
+        n += 1
+    # Follow Bertrand's postulate for n > 1
+    for i in range(n, 2*n+1, 2):
+        if is_prime(i):
+            return i
+    else:
+        return None
+
+
+# ----------------------------------------------------------------------------- 
+#         Classes
+# -----------------------------------------------------------------------------
 class HashTable(SymbolTable):
     # An abstract implementation of a hash table
     def __init__(self, items=None, M=MIN_CAPACITY, resize=False):
@@ -95,7 +189,7 @@ class HashTable(SymbolTable):
         # Exercise 3.4.18 (see Q&A p 478)
         # Ensure even distribution when M is power of 2
         if self._RESIZE_FLAG and self._lgM < 26:
-            t = t % PRIMES[self._lgM + 5]
+            t = t % MIN_PRIMES[self._lgM + 5]
         return t % self.M
 
 
@@ -670,23 +764,6 @@ class DoubleHashingHashST(LinearProbingHashST):
                 self._cost += 1
         else:
             raise KeyError(k)
-
-
-# See Exercise 3.4.23, 3.4.32
-def java_hash(k, R=31):
-    r"""Define the hash code function used by Java for strings.
-
-    .. math::
-        s_0 R^{N-1} + s_1 R^{N-2} + \dots + s_{N-1}
-
-    See Also
-    --------
-    `Java standard: <https://docs.oracle.com/javase/6/docs/api/java/lang//String.html>`_
-    """
-    h = 0
-    for c in k:
-        h = (R * h) + ord(c)
-    return h
 
 
 # -----------------------------------------------------------------------------
