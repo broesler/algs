@@ -28,7 +28,7 @@ costs = list()
 for M in Ms:
     N = M // 2
     keys = rng.integers(N, size=N)
-    st = LinearProbingHashST(M=M, resize=False).fromkeys(keys)
+    st = LinearProbingHashST.fromkeys(keys, M=M, resize=False)
     costs.append(st.cost_of_miss())
 
 costs = np.r_[costs]
@@ -44,24 +44,28 @@ costs = np.r_[costs]
 # (100000, 2.2954559326171875)]
 
 
+a = np.r_[st._cluster_lengths()]
 
 α = N / M
 th_hit = 1/2 * (1 + 1/(1 - α))
 th_miss = 1/2 * (1 + 1/(1 - α)**2)
 
 # Fit an exponential distribution to the cluster lengths
-a = st._cluster_lengths()
-p = expon.fit(a)
-rv = expon(loc=p[0], scale=p[1])
-x = np.linspace(rv.ppf(0.0001), rv.ppf(0.9999))
-bins = np.r_[0, np.arange(a.max()+1)+0.5]
+# <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.expon.html>
+loc, scale = expon.fit(a)
+λ = 1 / scale
+rv = expon(loc=loc, scale=scale)
+x = np.linspace(a.min(), a.max())
+bins = np.arange(a.max()+1) + 0.5
+
+assert np.isclose(a.mean(), loc + scale)  # definition of X ~ Exp(λ)
 
 fig = plt.figure(1, clear=True, constrained_layout=True)
 ax = fig.add_subplot()
-ax.hist(a, bins=bins, color='k', rwidth=0.8, density=True)
-ax.plot(x, rv.pdf(x), 'C3-', label=rf"${p[0]:.1f}e^{{{p[1]:.2f}x}}$")
+ax.hist(a, bins=bins, color='k', rwidth=0.9, density=True)
+ax.plot(x, rv.pdf(x), 'C3-', label=rf"${λ:.2f}e^{{{λ:.2f}(x - {loc:.0f})}}$")
 
-ax.set(xticks=bins[1:]+0.5,
+ax.set(xticks=bins+0.5,
        xlabel=rf"Cluster Length ($M=${M:,d}, $\alpha = {α:.1f}$)",
        ylabel='Frequency')
 ax.legend()
