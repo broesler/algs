@@ -18,7 +18,7 @@ from algs.search import (SequentialSearchST, BinarySearchST, ArrayST, BST,
                          TopDown234bothways, BottomUp234, Unbalanced23,
                          AVLTree,
                          SeparateChainingHashST, SeparateChainingLiteHashST,
-                         LinearProbingHashST,
+                         LinearProbingHashST, LazyLinearProbingHashST,
                          DoubleProbingHashST, DoubleHashingHashST)
 
 rng = np.random.default_rng(seed=565656)
@@ -73,7 +73,7 @@ def data_set(data):
 # ---------- Test All STs ----------
 UNORDERED_STS = set([SequentialSearchST, ArrayST,
                      SeparateChainingHashST, SeparateChainingLiteHashST,
-                     LinearProbingHashST, 
+                     LinearProbingHashST, LazyLinearProbingHashST,
                      DoubleProbingHashST, DoubleHashingHashST])
 ORDERED_STS = set([BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr,
                    ArrayBST])
@@ -89,8 +89,10 @@ NO_CACHE = set([ArrayBST,
                 SeparateChainingHashST,
                 SeparateChainingLiteHashST,
                 LinearProbingHashST,
+                LazyLinearProbingHashST,
                 DoubleProbingHashST,
-                DoubleHashingHashST])
+                DoubleHashingHashST
+                ])
 
 
 class TestUnorderedOps:
@@ -252,8 +254,8 @@ class TestOrderedOps:
         assert t.ceil('H')  == 'H'
         assert t.floor('Q') == 'P'
         assert t.ceil('Q')  == 'R'
-        assert t.floor(chr(ord('A') - 1)) is None  # char < t.min(
-        assert t.ceil('Z') is None                 # char > t.max(
+        assert t.floor(chr(ord('A') - 1)) is None  # char < t.min()
+        assert t.ceil('Z') is None                 # char > t.max()
 
     def test_rankselect(self, t, expect_set):
         # Select and Rank tests

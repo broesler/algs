@@ -14,7 +14,8 @@ import numpy as np
 from algs.search.table import SymbolTable, SequentialSearchST
 
 __all__ = ['SeparateChainingHashST', 'SeparateChainingLiteHashST',
-           'LinearProbingHashST', 'DoubleProbingHashST', 'DoubleHashingHashST']
+           'LinearProbingHashST', 'LazyLinearProbingHashST',
+           'DoubleProbingHashST', 'DoubleHashingHashST']
 
 # Table of primes less than the nearest power of 2
 # Mersenne primes like 31 are nice because 31 = 2**5 - 1 == (1 << 5) - 1.
@@ -739,6 +740,74 @@ class LinearProbingHashST(HashTable):
                 break
 
         return clusters
+
+
+# Exercise 3.4.26
+class LazyLinearProbingHashST(LinearProbingHashST):
+    __doc__ = f"""Implements a hash table using arrays with linear probing, but
+                performs delete lazily, only removing keys on resize.
+                {SymbolTable.__doc__}"""
+
+    # NOTE the `fromkeys` class method will fail with this class since `None`
+    # is used as a sentinel, and the default `value=None`.
+
+    def _resize(self, M):
+        """Resize the internal keys and values arrays."""
+        # Create a new table and hash the existing keys into it
+        t = self.__class__(M=M)
+        for k, v in zip(self._keys, self._vals):
+            # Do not copy keys if value is None == "deletion"
+            if k is not None and v is not None:
+                t[k] = v
+        # Use those new arrays in *self*
+        self._keys = t._keys
+        self._vals = t._vals
+        self.M = t.M
+
+    def __getitem__(self, k):
+        i = self._hash(k)
+        self._cost = 1
+        while self._keys[i] is not None:
+            # None marks "deleted" keys
+            if k == self._keys[i] and self._vals[i] is not None:
+                return self._vals[i]
+            else:
+                i = (i + 1) % self.M
+                self._cost += 1
+        else:
+            raise KeyError(k)
+
+    def __delitem__(self, k):
+        if k not in self:
+            raise KeyError(k)
+        i = self._hash(k)
+        self._cost = 1
+        # Set *value* slot of `k` to None, but leave *key* in place
+        while k is not self._keys[i]:
+            i = (i + 1) % self.M
+            self._cost += 1
+        self._vals[i] = None
+        # Do *not* rehash the keys in the cluster! We're being lazy.
+        self.N -= 1  # count this as a deletion
+        # Check for a resize if table is small enough
+        if self._RESIZE_FLAG and (self.N > 0 and self.N <= self.M // 8):
+            self._resize(self.M // 2)
+            self._lgM -= 1
+
+    # -------------------------------------------------------------------------
+    #         Iterators
+    # -------------------------------------------------------------------------
+    def keys(self):
+        return [k for (k, v) in zip(self._keys, self._vals) 
+                if k is not None and v is not None]
+
+    def values(self):
+        return [v for (k, v) in zip(self._keys, self._vals) 
+                if k is not None and v is not None]
+
+    def items(self):
+        return [(k, v) for (k, v) in zip(self._keys, self._vals) 
+                if k is not None and v is not None]
 
 
 # Exercise 3.4.28
