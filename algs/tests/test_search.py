@@ -83,8 +83,7 @@ ALL_STS = UNORDERED_STS | ORDERED_STS | BALANCED_TREES
 
 NO_DELETE = set([ArrayBST,
                  Unbalanced23,
-                 DoubleProbingHashST,
-                 DoubleHashingHashST])
+                 ])
 
 NO_CACHE = set([ArrayBST,
                 SeparateChainingHashST,

@@ -547,6 +547,21 @@ class DoubleProbingHashST(SeparateChainingHashST):
         self._cost += t._cost
         return v
 
+    def __delitem__(self, k):
+        # Hash into 2 lists and search for key in each
+        ta = self._st[self._hash(k)]
+        tb = self._st[self._hash_b(k)]
+        self._cost = 2
+        if k in ta:
+            del ta[k]
+            self._cost = 2 + ta._cost
+        elif k in tb:
+            del tb[k]
+            self._cost = 2 + ta._cost + tb._cost
+        else:
+            self._cost = 2 + ta._cost + tb._cost
+            raise KeyError(k)
+        self.N -= 1
 
 class LinearProbingHashST(HashTable):
     __doc__ = f"""Implements a hash table using arrays with linear probing.
@@ -790,6 +805,36 @@ class DoubleHashingHashST(LinearProbingHashST):
                 self._cost += 1
         else:
             raise KeyError(k)
+
+    def __delitem__(self, k):
+        if k not in self:
+            raise KeyError(k)
+        i = self._hash(k)
+        x = self._hash_b(k)
+        _cost = 2
+        # Set slot of `k` to None
+        while k is not self._keys[i]:
+            i = (i + x) % self.M
+            _cost += 1
+        self._keys[i] = None
+        self._vals[i] = None
+        i = (i + x) % self.M
+        # Rehash all keys in the cluster to the right of the deleted key
+        while self._keys[i] is not None:
+            key_to_redo = self._keys[i]
+            val_to_redo = self._vals[i]
+            self._keys[i] = None
+            self._vals[i] = None
+            self.N -= 1
+            self.__setitem__(key_to_redo, val_to_redo)
+            i = (i + x) % self.M
+            _cost += self._cost  # self._cost updated in __setitem__
+        self.N -= 1
+        self._cost = _cost
+        # Check for a resize if table is small enough
+        if self._RESIZE_FLAG and (self.N > 0 and self.N <= self.M // 8):
+            self._lgM -= 1
+            self._resize(MAX_PRIMES[self._lgM])
 
 
 # -----------------------------------------------------------------------------
