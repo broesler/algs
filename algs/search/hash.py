@@ -932,7 +932,8 @@ class CuckooHashST(HashTable):
     class HashArrayB(HashArrayA):
         """A local container class with a distinct hash function."""
         def hash(self, k):
-            return (31 * hash(k)) % self.M
+            # return (31 * hash(k)) % self.M
+            return (hash(k) // self.M) % self.M
 
     # ------------------------------------------------------------------------- 
     #         Initialize
