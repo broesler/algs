@@ -925,7 +925,8 @@ class CuckooHashST(HashTable):
             return hash(k) % self.M
 
         def __str__(self):
-            return str(list(zip(self.keys, self.vals)))
+            # return str(list(zip(self.keys, self.vals)))
+            return str(self.keys)
 
         __repr__ = SymbolTable.__repr__
 
@@ -935,7 +936,7 @@ class CuckooHashST(HashTable):
             # return (31 * hash(k)) % self.M
             return (hash(k) // self.M) % self.M
 
-    # ------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #         Initialize
     # -------------------------------------------------------------------------
     def __init__(self, items=None, M=MIN_CAPACITY, resize=True, cache=False):
@@ -968,10 +969,10 @@ class CuckooHashST(HashTable):
         self.M = self._ta.M + self._tb.M
 
     def _rehash(self):
-        """Choose new hash functions? And rebuild the data structure."""
+        """Choose new hash functions and rebuild the data structure."""
         pass
 
-    # ------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #         Public API
     # -------------------------------------------------------------------------
     def __setitem__(self, k, v):
@@ -1041,8 +1042,12 @@ class CuckooHashST(HashTable):
                 k, v = yk, yv
                 c += 1
         else:
-            self._rehash()
-            self._set(k, v, depth=depth+1)
+            raise RuntimeError(("Cycle occurred! "
+                                f"({k=}, {self._ta.hash(k)}, {self._tb.hash(k)}), "
+                                f"({xk=}, {self._ta.hash(xk)}, {self._tb.hash(xk)}), "
+                                f"({yk=}, {self._ta.hash(yk)}, {self._tb.hash(yk)})"))
+            # self._rehash()
+            # self._set(k, v, depth=depth+1)
 
     def __getitem__(self, k):
         t = self._ta
@@ -1196,7 +1201,23 @@ if __name__ == '__main__':
     ste = MyDoubleHashingHashST(items, M=11)
     assert ste.keys() == list('AYOESITQNU')
 
-    stf = CuckooHashST(items, M=23)
+    # Exercise 3.4.31
+    # Override the hash functions for testing
+    class MyCuckooHashST(CuckooHashST):
+        class HashArrayA(CuckooHashST.HashArrayA):
+            hash = _hash  # R = 11
+
+        class HashArrayB(CuckooHashST.HashArrayB):
+            def hash(self, k):
+                return _hash_code(k, R=17) % self.M
+
+    # choose M = next_prime(2*len(keys))
+    stf = MyCuckooHashST(items, M=23, resize=False)
+    assert stf.keys() == list('ATNYUSQOIE')
+
+    # test resizing
+    st = MyCuckooHashST(items)
+    assert st.keys() == list('AYOESITQNU')
 
     keys = 'SEARCHEXAMPLE'
     items = [(c, i) for i, c in enumerate(keys)]
