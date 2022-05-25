@@ -933,7 +933,7 @@ class CuckooHashST(HashTable):
     # ------------------------------------------------------------------------- 
     #         Initialize
     # -------------------------------------------------------------------------
-    def __init__(self, items=None, M=MIN_CAPACITY, resize=True, cache=False):
+    def __init__(self, items=None, M=997, resize=True, cache=False):
         self._ta = self.HashArrayA(M)
         self._tb = self.HashArrayB(M)
         super().__init__(items=items, M=M, resize=resize)
@@ -986,7 +986,32 @@ class CuckooHashST(HashTable):
             raise KeyError(k)
 
     def __delitem__(self, k):
-        pass
+        # Hash into table A first
+        t = self._ta
+        i = t.hash(k)
+        self._cost = 1
+        if k == t.keys[i]:
+            t.keys[i] = None
+            t.vals[i] = None
+        else:
+            # if key is not there, hash into table B
+            t = self._tb
+            i = t.hash(k)
+            self._cost = 2
+            if k == t.keys[i]:
+                t.keys[i] = None
+                t.vals[i] = None
+            else:
+                raise KeyError(k)
+
+        # track key counts
+        t.N -= 1
+        self.N -= 1
+
+        # Check for a resize if table is small enough
+        if self._RESIZE_FLAG and (t.N > 0 and t.N <= t.M // 8):
+            self._lgM -= 1
+            self._resize(MAX_PRIMES[self._lgM])
 
     # ------------------------------------------------------------------------- 
     #         Private API

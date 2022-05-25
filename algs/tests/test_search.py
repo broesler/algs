@@ -85,7 +85,6 @@ ALL_STS = UNORDERED_STS | ORDERED_STS | BALANCED_TREES
 
 NO_DELETE = set([ArrayBST,
                  Unbalanced23,
-                 CuckooHashST,
                  ])
 
 NO_CACHE = set([ArrayBST,
