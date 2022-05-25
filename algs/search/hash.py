@@ -906,6 +906,9 @@ class CuckooHashST(HashTable):
     __doc__ = f"""Implements a hash table using two arrays with two hashes.
                 {SymbolTable.__doc__}"""
 
+    # ------------------------------------------------------------------------- 
+    #         Internal tables
+    # -------------------------------------------------------------------------
     class HashArrayA():
         """A local container class."""
         def __init__(self, M):
@@ -917,15 +920,46 @@ class CuckooHashST(HashTable):
         def hash(self, k):
             return hash(k) % self.M
 
+        def __str__(self):
+            return str(list(zip(self.keys, self.vals)))
+
+        __repr__ = SymbolTable.__repr__
+
     class HashArrayB(HashArrayA):
         """A local container class with a distinct hash function."""
         def hash(self, k):
             return (31 * hash(k)) % self.M
 
-    def __init__(self, items=None, M=97, resize=False, cache=False):
+    # ------------------------------------------------------------------------- 
+    #         Initialize
+    # -------------------------------------------------------------------------
+    def __init__(self, items=None, M=MIN_CAPACITY, resize=True, cache=False):
         self._ta = self.HashArrayA(M)
         self._tb = self.HashArrayB(M)
         super().__init__(items=items, M=M, resize=resize)
+
+    @property
+    def _keys(self):
+        return self._ta.keys + self._tb.keys
+
+    @property
+    def _vals(self):
+        return self._ta.vals + self._tb.vals
+
+    def _validate_size(self):
+        assert self.size == (self._ta.N + self._tb.N)
+
+    def _resize(self, M):
+        """Resize the internal tables."""
+        # Create a new table and hash the existing keys into it
+        t = self.__class__(M=M, resize=True)
+        for k, v in zip(self._keys, self._vals):
+            if k is not None:
+                t[k] = v
+        # Use those new tables in *self*
+        self._ta = t._ta
+        self._tb = t._tb
+        self.M = t.M
 
     # ------------------------------------------------------------------------- 
     #         Public API
@@ -941,15 +975,15 @@ class CuckooHashST(HashTable):
         self._cost = 1
         if k == t.keys[i]:
             return t.vals[i]
+
+        # if key is not there, hash into table B
+        t = self._tb
+        i = t.hash(k)
+        self._cost = 2
+        if k == t.keys[i]:
+            return t.vals[i]
         else:
-            # if key is not there, hash into table B
-            t = self._tb
-            j = t.hash(k)
-            self._cost = 2
-            if k == t.keys[j]:
-                return t.vals[j]
-            else:
-                raise KeyError(k)
+            raise KeyError(k)
 
     def __delitem__(self, k):
         pass
@@ -987,14 +1021,6 @@ class CuckooHashST(HashTable):
     # ------------------------------------------------------------------------- 
     #         Iterators
     # -------------------------------------------------------------------------
-    @property
-    def _keys(self):
-        return self._ta.keys + self._tb.keys
-
-    @property
-    def _vals(self):
-        return self._ta.vals + self._tb.vals
-
     def keys(self):
         return [k for k in self._keys if k is not None]
 
