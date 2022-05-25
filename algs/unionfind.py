@@ -16,7 +16,7 @@ from pathlib import Path
 
 
 class UF(ABC):
-    # An abstract base class for the Union Find algorithms.
+    # An abstract base class for the Union Find algorithms. See p 219.
     _attribs_doc = """
     Attributes
     ----------
@@ -39,13 +39,16 @@ class UF(ABC):
             If True, print unique pairs
         """
         self.N = N
+        self.count = N
         self.id = list(range(N))
+        self._made_connections = list()
         items = [] or items
         try:
             for p, q in items:
                 if self.connected(p, q):
                     continue
                 self.union(p, q)
+                self._made_connections.append((p, q))
                 if verbose:
                     print(f"{p} {q}")
             if verbose:
@@ -58,16 +61,16 @@ class UF(ABC):
     def fromfile(cls, filename, verbose=False):
         pat = re.compile(r"(\d+)\s+(\d+)")
         with open(Path(filename), 'r') as fp:
+            if verbose:
+                print(f"Reading from {filename}... ", end='')
             N = int(fp.readline().strip())
             items = list()
             for line in fp.readlines():
                 p, q = pat.findall(line.strip())[0]
                 items.append((int(p), int(q)))
+            if verbose:
+                print("done.")
             return cls(N, items, verbose)
-
-    @property
-    def count(self):
-        return self.N
 
     @abstractmethod
     def union(self, p, q):
@@ -114,9 +117,19 @@ class UF(ABC):
         """
         return self.find(p) == self.find(q)
 
+    # NOTE this is a convenience for testing reference implementations. This
+    # does not provide a robust comparison of graph structuers.
+    def __eq__(self, other):
+        """Comparison for like inputs."""
+        return (self.count == other.count
+                and self._made_connections == other._made_connections)
 
+
+# Exercise 1.5.7 (see p 222)
 class QuickFindUF(UF):
     __doc__ = f"""Implements a UnionFind with the quick-find algorithm.
+
+                Performance is linear.
                {UF.__doc__}"""
 
     def find(self, p):
@@ -137,12 +150,118 @@ class QuickFindUF(UF):
         for i in range(len(self.id)):
             if self.id[i] == pid:
                 self.id[i] = qid
-        self.N -= 1
+        self.count -= 1
+
+
+# Exercise 1.5.7 (see p 224)
+class QuickUnionUF(UF):
+    __doc__ = f"""Implements a UnionFind with the quick-union algorithm.
+
+               This class implements a parent-link representation of a forest
+               of trees. Worst-case performance may be quadratic.
+               {UF.__doc__}"""
+
+    def find(self, p):
+        # Follow links up to the rood
+        while p != self.id[p]:
+            p = self.id[p]
+        return p
+
+    def union(self, p, q):
+        # Compare the roots of each node's tree component
+        p_root = self.find(p)
+        q_root = self.find(q)
+        if p_root == q_root:
+            return
+        # Add p to q's tree
+        self.id[p_root] = q_root
+        self.count -= 1
+
+
+# Exercise 1.5.11
+class WeightedQuickFindUF(QuickFindUF):
+    __doc__ = f"""Implements a weighted quick-find algorithm.
+
+               Similar to quick-find, but tracks component sizes to merge the
+               smaller component into the larger component.
+               {UF.__doc__}."""
+
+    def __init__(self, N, items=None, verbose=False):
+        self.sz = N*[1]  # track tree sizes
+        super().__init__(N, items, verbose)
+
+    def union(self, p, q):
+        # Put p and q into the same component
+        pid = self.find(p)
+        qid = self.find(q)
+
+        # Nothing to do if they're already connected
+        if pid == qid:
+            return
+
+        # Rename the smaller component to the larger
+        if self.sz[pid] < self.sz[qid]:
+            for i in range(len(self.id)):
+                if self.id[i] == pid:
+                    self.id[i] = qid
+        else:
+            for i in range(len(self.id)):
+                if self.id[i] == qid:
+                    self.id[i] = pid
+        self.count -= 1
+
+
+# Algorithm 1.5 (p 228)
+class WeightedQuickUnionUF(QuickUnionUF):
+    __doc__ = f"""Implements a weighted quick-union algorithm.
+
+               Similar to quick-union, but tracks tree heights for balance.
+               Performance is guaranteed logarithmic.
+               {UF.__doc__}."""
+
+    def __init__(self, N, items=None, verbose=False):
+        self.sz = N*[1]  # track tree sizes
+        super().__init__(N, items, verbose)
+
+    def union(self, p, q):
+        # Compare the roots of each node's tree component
+        i = self.find(p)
+        j = self.find(q)
+        if i == j:
+            return
+        # Make the smaller root point to the larger one
+        if self.sz[i] < self.sz[j]:
+            self.id[i] = j
+            self.sz[j] += self.sz[i]
+        else:
+            self.id[j] = i
+            self.sz[i] += self.sz[j]
+        self.count -= 1
 
 
 if __name__ == "__main__":
+    # Test reading from a file
     filename = './data/tinyUF.txt'
     uf = QuickFindUF.fromfile(filename, verbose=True)
+
+    # Exercise 1.5.1, 1.5.2, 1.5.3, 1.5.11
+    N = 10  # == 1 + max(max(items))  # number of sites
+    items = [(9, 0),
+             (3, 4),
+             (5, 8),
+             (7, 2),
+             (2, 1),
+             (5, 7),
+             (0, 3),
+             (4, 2),]
+
+    qf = QuickFindUF(N, items)
+    qu = QuickUnionUF(N, items)
+    wq = WeightedQuickUnionUF(N, items)
+    wf = WeightedQuickFindUF(N, items)
+    assert qf == qu
+    assert qu == wq
+    assert wq == wf
 
 # =============================================================================
 # =============================================================================
