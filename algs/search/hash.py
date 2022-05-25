@@ -906,6 +906,8 @@ class CuckooHashST(HashTable):
     __doc__ = f"""Implements a hash table using two arrays with two hashes.
                 {SymbolTable.__doc__}"""
 
+    _MAX_ITER = 10
+
     # ------------------------------------------------------------------------- 
     #         Internal tables
     # -------------------------------------------------------------------------
@@ -959,14 +961,79 @@ class CuckooHashST(HashTable):
         # Use those new tables in *self*
         self._ta = t._ta
         self._tb = t._tb
-        self.M = t.M
+
+    def _rehash(self):
+        """Choose new hash functions? And rebuild the data structure."""
+        pass
 
     # ------------------------------------------------------------------------- 
     #         Public API
     # -------------------------------------------------------------------------
     def __setitem__(self, k, v):
         self._cost = 0
-        self._set(k, v, hash_a=True)
+        self._set(k, v)
+
+    def _set(self, k, v, depth=0):
+        if depth > self._MAX_ITER:
+            raise RuntimeError('Cycle occurred!')
+
+        if (not self._RESIZE_FLAG and
+            (self._ta.N == self._ta.M) or
+            (self._tb.N == self._tb.M)):
+            raise RuntimeError(("Trying to insert into a full table! "
+                                "Set `resize=True`."))
+
+        if (self._RESIZE_FLAG and
+            (self._ta.N >= self._ta.M // 2) or
+            (self._tb.N >= self._tb.M // 2)):
+            self._lgM += 1
+            self._resize(MAX_PRIMES[self._lgM])
+
+        c = 0
+        while c < self._MAX_ITER:
+            # Hash into table A
+            i = self._ta.hash(k)
+            xk, xv = self._ta.keys[i], self._ta.vals[i]
+            self._cost += 1
+            if k == xk:
+                self._ta.vals[i] = v
+                return
+            else:
+                # put the new key/value in table A
+                self._ta.keys[i] = k
+                self._ta.vals[i] = v
+                # If it's the first time through, we're adding a new key
+                if c == 0:
+                    self.N += 1
+
+            # If the existing slot was empty, we're done
+            if xk is None:
+                self._ta.N += 1
+                return
+
+            # Hash collision: hash into table B with xk
+            i = self._tb.hash(xk)
+            yk, yv = self._tb.keys[i], self._tb.vals[i]
+            self._cost += 1
+            if xk == yk:
+                raise RuntimeError(("Table is inconsistent! "
+                                    f"Two instances of k = {xk}"))
+            else:
+                # move the existing key `xk` into the table B
+                self._tb.keys[i] = xk
+                self._tb.vals[i] = xv
+
+            # If the existing slot was empty, we're done
+            if yk is None:
+                self._tb.N += 1
+                return
+            else:
+                # repeat cycle with the next key/value pair
+                k, v = yk, yv
+                c += 1
+        else:
+            self._rehash()
+            self._set(k, v, depth=depth+1)
 
     def __getitem__(self, k):
         t = self._ta
@@ -1012,44 +1079,6 @@ class CuckooHashST(HashTable):
         if self._RESIZE_FLAG and (t.N > 0 and t.N <= t.M // 8):
             self._lgM -= 1
             self._resize(MAX_PRIMES[self._lgM])
-
-    # ------------------------------------------------------------------------- 
-    #         Private API
-    # -------------------------------------------------------------------------
-    def _set(self, k, v, hash_a=True, MAX_DEPTH=0):
-        """Put an item into table A if `hash_a` is True, otherwise table B."""
-        if MAX_DEPTH >= 10:
-            raise RuntimeError('Cycle occured!')
-
-        if hash_a:
-            t = self._ta
-        else:
-            t = self._tb
-
-        if not self._RESIZE_FLAG and t.N == t.M:
-            raise RuntimeError(("Trying to insert into a full table! "
-                                "Set `resize=True`."))
-
-        if self._RESIZE_FLAG and t.N >= t.M // 2:
-            self._lgM += 1
-            self._resize(MAX_PRIMES[self._lgM])
-
-        # Hash into the table
-        i = t.hash(k)
-        x = t.keys[i] 
-        self._cost += 1
-        if k == x:
-            t.vals[i] = v
-            return
-        elif x is not None and k != x:
-            # Hash collision: move the key `x` into the other table
-            self._set(x, t.vals[i], hash_a=(not hash_a), MAX_DEPTH=MAX_DEPTH+1)
-
-        # Place `k` in this table
-        t.keys[i] = k
-        t.vals[i] = v
-        t.N += 1
-        self.N += 1
 
     # ------------------------------------------------------------------------- 
     #         Iterators
@@ -1159,7 +1188,7 @@ if __name__ == '__main__':
     # stf = CuckooHashST(items)
     keys = 'SEARCHEXAMPLE'
     items = [(c, i) for i, c in enumerate(keys)]
-    stg = CuckooHashST(items, M=97)
+    stg = CuckooHashST(items)
 
 
 # =============================================================================
