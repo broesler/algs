@@ -902,6 +902,8 @@ class DoubleHashingHashST(LinearProbingHashST):
 
 
 # Exercise 3.4.31
+# TODO Try implementing with a single table, where hashes go to different
+# locations in the table like DoubleHashingHashST.
 class CuckooHashST(HashTable):
     __doc__ = f"""Implements a hash table using two arrays with two hashes.
                 {SymbolTable.__doc__}"""
@@ -939,6 +941,7 @@ class CuckooHashST(HashTable):
         self._ta = self.HashArrayA(M)
         self._tb = self.HashArrayB(M)
         super().__init__(items=items, M=M, resize=resize)
+        self.M = self._ta.M + self._tb.M  # may be wrong without resizing
 
     @property
     def _keys(self):
@@ -961,6 +964,7 @@ class CuckooHashST(HashTable):
         # Use those new tables in *self*
         self._ta = t._ta
         self._tb = t._tb
+        self.M = self._ta.M + self._tb.M
 
     def _rehash(self):
         """Choose new hash functions? And rebuild the data structure."""
@@ -1185,7 +1189,8 @@ if __name__ == '__main__':
     ste = MyDoubleHashingHashST(items, M=11)
     assert ste.keys() == list('AYOESITQNU')
 
-    # stf = CuckooHashST(items)
+    stf = CuckooHashST(items, M=23)
+
     keys = 'SEARCHEXAMPLE'
     items = [(c, i) for i, c in enumerate(keys)]
     stg = CuckooHashST(items)
