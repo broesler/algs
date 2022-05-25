@@ -979,14 +979,14 @@ class CuckooHashST(HashTable):
 
     def _set(self, k, v, depth=0):
         if (not self._RESIZE_FLAG and
-            (self._ta.N == self._ta.M) or
-            (self._tb.N == self._tb.M)):
+                ((self._ta.N == self._ta.M) or
+                 (self._tb.N == self._tb.M))):
             raise RuntimeError(("Trying to insert into a full table! "
                                 "Set `resize=True`."))
 
         if (self._RESIZE_FLAG and
-            (self._ta.N >= self._ta.M // 2) or
-            (self._tb.N >= self._tb.M // 2)):
+                ((self._ta.N >= self._ta.M // 2) or
+                 (self._tb.N >= self._tb.M // 2))):
             self._lgM += 1
             self._resize(MAX_PRIMES[self._lgM])
 
@@ -1084,7 +1084,9 @@ class CuckooHashST(HashTable):
         self.N -= 1
 
         # Check for a resize if table is small enough
-        if self._RESIZE_FLAG and (t.N > 0 and t.N <= t.M // 8):
+        if (self._RESIZE_FLAG and
+                ((self._ta.N > 0 and self._ta.N <= self._ta.M // 8) or
+                 (self._tb.N > 0 and self._tb.N <= self._tb.M // 8))):
             self._lgM -= 1
             self._resize(MAX_PRIMES[self._lgM])
 
