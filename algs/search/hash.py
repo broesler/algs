@@ -131,16 +131,16 @@ def is_prime(n):
 
 
 def next_prime(n):
-    """Find the next prime number that is >= `n` >= 0."""
+    """Find the next prime number p > `n` >= 0."""
     if n < 0:
         raise ValueError(f"{n = } must be a postivie integer!")
     if n < 2:
         return 2
     # Start with the next odd number
-    if n % 2 == 0:
+    if (n+1) % 2 == 0:
         n += 1
     # Follow Bertrand's postulate for n > 1
-    for i in range(n, 2*n+1, 2):
+    for i in range(n+1, 2*n+1, 2):
         if is_prime(i):
             return i
     else:
@@ -148,7 +148,7 @@ def next_prime(n):
 
 
 def prev_prime(n):
-    """Find the previous prime number `p` that is 2 <= p < `n`."""
+    """Find the previous prime number 2 <= p < `n`."""
     if n < 0:
         raise ValueError(f"{n = } must be a postivie integer!")
     if n < 2:
