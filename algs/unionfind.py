@@ -85,8 +85,8 @@ class UF(ABC):
 
     @abstractmethod
     def find(self, p):
-        """Component identifier for site `p`. 
-        
+        """Component identifier for site `p`.
+
         .. note:: Returns the same integer for every site in each connected
         component. `union` must maintain this invariant.
 
@@ -119,6 +119,7 @@ class UF(ABC):
 
     # NOTE this is a convenience for testing reference implementations. This
     # does not provide a robust comparison of graph structuers.
+    # Would need to compare the components in each group. 
     def __eq__(self, other):
         """Comparison for like inputs."""
         return (self.count == other.count
@@ -204,10 +205,12 @@ class WeightedQuickFindUF(QuickFindUF):
             for i in range(len(self.id)):
                 if self.id[i] == pid:
                     self.id[i] = qid
+            self.sz[qid] += self.sz[pid]
         else:
             for i in range(len(self.id)):
                 if self.id[i] == qid:
                     self.id[i] = pid
+            self.sz[pid] += self.sz[qid]
         self.count -= 1
 
 
@@ -253,7 +256,7 @@ if __name__ == "__main__":
              (2, 1),
              (5, 7),
              (0, 3),
-             (4, 2),]
+             (4, 2)]
 
     qf = QuickFindUF(N, items)
     qu = QuickUnionUF(N, items)
