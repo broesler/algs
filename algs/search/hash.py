@@ -15,7 +15,7 @@ from algs.search.table import SymbolTable, SequentialSearchST
 
 __all__ = ['SeparateChainingHashST', 'SeparateChainingLiteHashST',
            'LinearProbingHashST', 'LazyLinearProbingHashST',
-           'DoubleProbingHashST', 'DoubleHashingHashST']
+           'DoubleProbingHashST', 'DoubleHashingHashST', 'CuckooHashST']
 
 # Table of primes less than the nearest power of 2
 # Mersenne primes like 31 are nice because 31 = 2**5 - 1 == (1 << 5) - 1.
@@ -901,6 +901,111 @@ class DoubleHashingHashST(LinearProbingHashST):
             self._resize(MAX_PRIMES[self._lgM])
 
 
+# Exercise 3.4.31
+class CuckooHashST(HashTable):
+    __doc__ = f"""Implements a hash table using two arrays with two hashes.
+                {SymbolTable.__doc__}"""
+
+    class HashArrayA():
+        """A local container class."""
+        def __init__(self, M):
+            self.keys = M*[None]
+            self.vals = M*[None]
+            self.M = M
+            self.N = 0
+
+        def hash(self, k):
+            return hash(k) % self.M
+
+    class HashArrayB(HashArrayA):
+        """A local container class with a distinct hash function."""
+        def hash(self, k):
+            return (31 * hash(k)) % self.M
+
+    def __init__(self, items=None, M=97, resize=False, cache=False):
+        self._ta = self.HashArrayA(M)
+        self._tb = self.HashArrayB(M)
+        super().__init__(items=items, M=M, resize=resize)
+
+    # ------------------------------------------------------------------------- 
+    #         Public API
+    # -------------------------------------------------------------------------
+    def __setitem__(self, k, v):
+        self._cost = 0
+        self._set(k, v, hash_a=True)
+
+    def __getitem__(self, k):
+        t = self._ta
+        # Hash into table A first
+        i = t.hash(k)
+        self._cost = 1
+        if k == t.keys[i]:
+            return t.vals[i]
+        else:
+            # if key is not there, hash into table B
+            t = self._tb
+            j = t.hash(k)
+            self._cost = 2
+            if k == t.keys[j]:
+                return t.vals[j]
+            else:
+                raise KeyError(k)
+
+    def __delitem__(self, k):
+        pass
+
+    # ------------------------------------------------------------------------- 
+    #         Private API
+    # -------------------------------------------------------------------------
+    def _set(self, k, v, hash_a=True):
+        """Put an item into table A if `hash_a` is True, otherwise table B."""
+        if hash_a:
+            t = self._ta
+        else:
+            t = self._tb
+
+        if not self._RESIZE_FLAG and t.N == t.M:
+            raise RuntimeError(("Trying to insert into a full table! "
+                                "Set `resize=True`."))
+
+        i = t.hash(k)
+        x = t.keys[i] 
+        self._cost += 1
+        if k == x:
+            t.vals[i] = v
+            return
+        elif x is not None and k != x:
+            # Hash collision: move the key `x` into the other table
+            self._set(x, t.vals[i], hash_a=(not hash_a))
+
+        # Place `k` in this table
+        t.keys[i] = k
+        t.vals[i] = v
+        t.N += 1
+        self.N += 1
+
+    # ------------------------------------------------------------------------- 
+    #         Iterators
+    # -------------------------------------------------------------------------
+    @property
+    def _keys(self):
+        return self._ta.keys + self._tb.keys
+
+    @property
+    def _vals(self):
+        return self._ta.vals + self._tb.vals
+
+    def keys(self):
+        return [k for k in self._keys if k is not None]
+
+    def values(self):
+        return [v for (k, v) in zip(self._keys, self._vals) if k is not None]
+
+    def items(self):
+        return [(k, v) for (k, v) in zip(self._keys, self._vals)
+                if k is not None]
+
+
 # -----------------------------------------------------------------------------
 #         Run tests
 # -----------------------------------------------------------------------------
@@ -991,6 +1096,8 @@ if __name__ == '__main__':
 
     ste = MyDoubleHashingHashST(items, M=11)
     assert ste.keys() == list('AYOESITQNU')
+
+    stf = CuckooHashST(items, M=11)
 
 
 # =============================================================================

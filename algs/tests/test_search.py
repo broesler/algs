@@ -19,7 +19,8 @@ from algs.search import (SequentialSearchST, BinarySearchST, ArrayST, BST,
                          AVLTree,
                          SeparateChainingHashST, SeparateChainingLiteHashST,
                          LinearProbingHashST, LazyLinearProbingHashST,
-                         DoubleProbingHashST, DoubleHashingHashST)
+                         DoubleProbingHashST, DoubleHashingHashST,
+                         CuckooHashST)
 
 rng = np.random.default_rng(seed=565656)
 
@@ -74,7 +75,8 @@ def data_set(data):
 UNORDERED_STS = set([SequentialSearchST, ArrayST,
                      SeparateChainingHashST, SeparateChainingLiteHashST,
                      LinearProbingHashST, LazyLinearProbingHashST,
-                     DoubleProbingHashST, DoubleHashingHashST])
+                     DoubleProbingHashST, DoubleHashingHashST,
+                     CuckooHashST])
 ORDERED_STS = set([BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr,
                    ArrayBST])
 BALANCED_TREES = set([RedBlackBST, TopDown234, TopDown234_nr, BottomUp234,
@@ -83,6 +85,7 @@ ALL_STS = UNORDERED_STS | ORDERED_STS | BALANCED_TREES
 
 NO_DELETE = set([ArrayBST,
                  Unbalanced23,
+                 CuckooHashST,
                  ])
 
 NO_CACHE = set([ArrayBST,
@@ -91,7 +94,8 @@ NO_CACHE = set([ArrayBST,
                 LinearProbingHashST,
                 LazyLinearProbingHashST,
                 DoubleProbingHashST,
-                DoubleHashingHashST
+                DoubleHashingHashST,
+                CuckooHashST,
                 ])
 
 
