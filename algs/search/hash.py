@@ -798,15 +798,15 @@ class LazyLinearProbingHashST(LinearProbingHashST):
     #         Iterators
     # -------------------------------------------------------------------------
     def keys(self):
-        return [k for (k, v) in zip(self._keys, self._vals) 
+        return [k for (k, v) in zip(self._keys, self._vals)
                 if k is not None and v is not None]
 
     def values(self):
-        return [v for (k, v) in zip(self._keys, self._vals) 
+        return [v for (k, v) in zip(self._keys, self._vals)
                 if k is not None and v is not None]
 
     def items(self):
-        return [(k, v) for (k, v) in zip(self._keys, self._vals) 
+        return [(k, v) for (k, v) in zip(self._keys, self._vals)
                 if k is not None and v is not None]
 
 
@@ -908,9 +908,7 @@ class CuckooHashST(HashTable):
     __doc__ = f"""Implements a hash table using two arrays with two hashes.
                 {SymbolTable.__doc__}"""
 
-    _MAX_ITER = 10
-
-    # ------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #         Internal tables
     # -------------------------------------------------------------------------
     class HashArrayA():
@@ -920,6 +918,8 @@ class CuckooHashST(HashTable):
             self.vals = M*[None]
             self.M = M
             self.N = 0
+
+        _load_factor = HashTable._load_factor
 
         def hash(self, k):
             return hash(k) % self.M
@@ -978,9 +978,6 @@ class CuckooHashST(HashTable):
         self._set(k, v)
 
     def _set(self, k, v, depth=0):
-        if depth > self._MAX_ITER:
-            raise RuntimeError('Cycle occurred!')
-
         if (not self._RESIZE_FLAG and
             (self._ta.N == self._ta.M) or
             (self._tb.N == self._tb.M)):
@@ -993,8 +990,15 @@ class CuckooHashST(HashTable):
             self._lgM += 1
             self._resize(MAX_PRIMES[self._lgM])
 
+        # See Pagh and Rodler, 3.1.2
+        if np.isclose(self._ta._load_factor, 0):
+            _MAX_ITER = 1
+        else: 
+            _MAX_IDEAL = 3 * np.log(self.N) / np.log(1 + self._ta._load_factor)
+            _MAX_ITER = int(np.max([1, _MAX_IDEAL]))
+
         c = 0
-        while c < self._MAX_ITER:
+        while c < _MAX_ITER:
             # Hash into table A
             i = self._ta.hash(k)
             xk, xv = self._ta.keys[i], self._ta.vals[i]
