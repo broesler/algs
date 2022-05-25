@@ -978,6 +978,7 @@ class CuckooHashST(HashTable):
     def __setitem__(self, k, v):
         self._cost = 0
         self._set(k, v)
+        self._validate_size()
 
     def _set(self, k, v, depth=0):
         if (not self._RESIZE_FLAG and
@@ -1096,7 +1097,9 @@ class CuckooHashST(HashTable):
             self._lgM -= 1
             self._resize(MAX_PRIMES[self._lgM])
 
-    # ------------------------------------------------------------------------- 
+        self._validate_size()
+
+    # -------------------------------------------------------------------------
     #         Iterators
     # -------------------------------------------------------------------------
     def keys(self):
@@ -1219,10 +1222,11 @@ if __name__ == '__main__':
     st = MyCuckooHashST(items)
     assert st.keys() == list('AYOESITQNU')
 
+    # test string with repeats
     keys = 'SEARCHEXAMPLE'
     items = [(c, i) for i, c in enumerate(keys)]
+    expect_set = set(keys)
     stg = CuckooHashST(items)
-
 
 # =============================================================================
 # =============================================================================
