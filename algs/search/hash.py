@@ -933,7 +933,7 @@ class CuckooHashST(HashTable):
     # ------------------------------------------------------------------------- 
     #         Initialize
     # -------------------------------------------------------------------------
-    def __init__(self, items=None, M=997, resize=True, cache=False):
+    def __init__(self, items=None, M=MIN_CAPACITY, resize=True, cache=False):
         self._ta = self.HashArrayA(M)
         self._tb = self.HashArrayB(M)
         super().__init__(items=items, M=M, resize=resize)
@@ -1016,8 +1016,11 @@ class CuckooHashST(HashTable):
     # ------------------------------------------------------------------------- 
     #         Private API
     # -------------------------------------------------------------------------
-    def _set(self, k, v, hash_a=True):
+    def _set(self, k, v, hash_a=True, MAX_DEPTH=0):
         """Put an item into table A if `hash_a` is True, otherwise table B."""
+        if MAX_DEPTH >= 10:
+            raise RuntimeError('Cycle occured!')
+
         if hash_a:
             t = self._ta
         else:
@@ -1027,6 +1030,11 @@ class CuckooHashST(HashTable):
             raise RuntimeError(("Trying to insert into a full table! "
                                 "Set `resize=True`."))
 
+        if self._RESIZE_FLAG and t.N >= t.M // 2:
+            self._lgM += 1
+            self._resize(MAX_PRIMES[self._lgM])
+
+        # Hash into the table
         i = t.hash(k)
         x = t.keys[i] 
         self._cost += 1
@@ -1035,7 +1043,7 @@ class CuckooHashST(HashTable):
             return
         elif x is not None and k != x:
             # Hash collision: move the key `x` into the other table
-            self._set(x, t.vals[i], hash_a=(not hash_a))
+            self._set(x, t.vals[i], hash_a=(not hash_a), MAX_DEPTH=MAX_DEPTH+1)
 
         # Place `k` in this table
         t.keys[i] = k
@@ -1148,7 +1156,10 @@ if __name__ == '__main__':
     ste = MyDoubleHashingHashST(items, M=11)
     assert ste.keys() == list('AYOESITQNU')
 
-    stf = CuckooHashST(items, M=11)
+    # stf = CuckooHashST(items)
+    keys = 'SEARCHEXAMPLE'
+    items = [(c, i) for i, c in enumerate(keys)]
+    stg = CuckooHashST(items, M=97)
 
 
 # =============================================================================
