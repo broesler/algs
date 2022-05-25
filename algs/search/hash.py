@@ -241,7 +241,7 @@ class SeparateChainingHashST(HashTable):
     def _resize(self, M):
         """Resize the array of hash slots."""
         # Create a new table and hash the existing keys into it
-        t = self.__class__(self.items(), M=M)
+        t = self.__class__(self.items(), M=M, resize=True)
         # Use the new table in *self*
         self._st = t._st
         self.M = t.M
@@ -576,7 +576,7 @@ class LinearProbingHashST(HashTable):
     def _resize(self, M):
         """Resize the internal keys and values arrays."""
         # Create a new table and hash the existing keys into it
-        t = self.__class__(M=M)
+        t = self.__class__(M=M, resize=True)
         for k, v in zip(self._keys, self._vals):
             if k is not None:
                 t[k] = v
@@ -754,7 +754,7 @@ class LazyLinearProbingHashST(LinearProbingHashST):
     def _resize(self, M):
         """Resize the internal keys and values arrays."""
         # Create a new table and hash the existing keys into it
-        t = self.__class__(M=M)
+        t = self.__class__(M=M, resize=True)
         for k, v in zip(self._keys, self._vals):
             # Do not copy keys if value is None == "deletion"
             if k is not None and v is not None:
