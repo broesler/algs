@@ -981,27 +981,12 @@ class CuckooHashST(HashTable):
             self._set_value(k, v)
         else:
             self._set(k, v)
-        self._validate_size()
 
     def _set_value(self, k, v):
         """Set the value of a key that is already in the table."""
-        t = self._ta
-        # Hash into table A first
-        i = t.hash(k)
-        self._cost = 1
-        if k == t.keys[i]:
+        def func(self, t, i, v):
             t.vals[i] = v
-            return
-
-        # if key is not there, hash into table B
-        t = self._tb
-        i = t.hash(k)
-        self._cost = 2
-        if k == t.keys[i]:
-            t.vals[i] = v
-            return
-        else:
-            raise KeyError(k)
+        self._double_hash(func, k, v)
 
     def _set(self, k, v, depth=0):
         """Put a new key into the table, rehashing if necessary."""
@@ -1071,44 +1056,20 @@ class CuckooHashST(HashTable):
             # self._set(k, v, depth=depth+1)
 
     def __getitem__(self, k):
-        t = self._ta
-        # Hash into table A first
-        i = t.hash(k)
-        self._cost = 1
-        if k == t.keys[i]:
+        def func(self, t, i, v):
             return t.vals[i]
-
-        # if key is not there, hash into table B
-        t = self._tb
-        i = t.hash(k)
-        self._cost = 2
-        if k == t.keys[i]:
-            return t.vals[i]
-        else:
-            raise KeyError(k)
+        return self._double_hash(func, k)
 
     def __delitem__(self, k):
-        # Hash into table A first
-        t = self._ta
-        i = t.hash(k)
-        self._cost = 1
-        if k == t.keys[i]:
+        def func(self, t, i, v):
             t.keys[i] = None
             t.vals[i] = None
-        else:
-            # if key is not there, hash into table B
-            t = self._tb
-            i = t.hash(k)
-            self._cost = 2
-            if k == t.keys[i]:
-                t.keys[i] = None
-                t.vals[i] = None
-            else:
-                raise KeyError(k)
+            t.N -= 1
+            self.N -= 1
+            return
 
-        # track key counts
-        t.N -= 1
-        self.N -= 1
+        # Apply the deletion function to the table containing the key
+        self._double_hash(func, k)
 
         # Check for a resize if table is small enough
         if (self._RESIZE_FLAG and
@@ -1117,7 +1078,38 @@ class CuckooHashST(HashTable):
             self._lgM -= 1
             self._resize(MAX_PRIMES[self._lgM])
 
-        self._validate_size()
+    def _double_hash(self, func, k, v=None):
+        """Hash into each table and apply `func` to `k`.
+
+        Parameters
+        ----------
+        func : callable, func(self, t, i, v=None)
+            A function of a `HashArray` and a hash index `i`, corresponding to
+            key `k` in table `t`. A value `v` may also be provided.
+        k : Key
+            The key to which `func` is applied.
+        v : Value, optional
+            The value to be associated with `k`.
+
+        Returns
+        -------
+        result : the output of `func`.
+        """
+        t = self._ta
+        # Hash into table A first
+        i = t.hash(k)
+        self._cost = 1
+        if k == t.keys[i]:
+            return func(self, t, i, v)
+
+        # if key is not there, hash into table B
+        t = self._tb
+        i = t.hash(k)
+        self._cost = 2
+        if k == t.keys[i]:
+            return func(self, t, i, v)
+        else:
+            raise KeyError(k)
 
     # -------------------------------------------------------------------------
     #         Iterators
