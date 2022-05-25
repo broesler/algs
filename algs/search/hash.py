@@ -281,8 +281,8 @@ class SeparateChainingHashST(HashTable):
             self._cost = 1 + t._cost
             raise KeyError(k)
         # Halve table size if average list length <= 2
-        if (self._RESIZE_FLAG and
-                self.M > MIN_CAPACITY and self.N <= 2*self.M):
+        if (self._RESIZE_FLAG
+                and self.M > MIN_CAPACITY and self.N <= 2*self.M):
             self._resize(self.M // 2)
             self._lgM -= 1
 
@@ -438,8 +438,8 @@ class SeparateChainingLiteHashST(HashTable):
             raise KeyError(k)
 
         # Halve table size if average list length <= 2
-        if (self._RESIZE_FLAG and
-                self.M > MIN_CAPACITY and self.N <= 2*self.M):
+        if (self._RESIZE_FLAG
+                and self.M > MIN_CAPACITY and self.N <= 2*self.M):
             self._resize(self.M // 2)
             self._lgM -= 1
 
@@ -990,22 +990,22 @@ class CuckooHashST(HashTable):
 
     def _set(self, k, v, depth=0):
         """Put a new key into the table, rehashing if necessary."""
-        if (not self._RESIZE_FLAG and
-                ((self._ta.N == self._ta.M) or
-                 (self._tb.N == self._tb.M))):
+        if (not self._RESIZE_FLAG
+            and ((self._ta.N == self._ta.M)
+                 or (self._tb.N == self._tb.M))):
             raise RuntimeError(("Trying to insert into a full table! "
                                 "Set `resize=True`."))
 
-        if (self._RESIZE_FLAG and
-                ((self._ta.N >= self._ta.M // 2) or
-                 (self._tb.N >= self._tb.M // 2))):
+        if (self._RESIZE_FLAG
+            and ((self._ta.N >= self._ta.M // 2)
+                 or (self._tb.N >= self._tb.M // 2))):
             self._lgM += 1
             self._resize(MAX_PRIMES[self._lgM])
 
         # See Pagh and Rodler, 3.1.2
         if np.isclose(self._ta._load_factor, 0):
             _MAX_ITER = 1
-        else: 
+        else:
             _MAX_IDEAL = 3 * np.log(self.N) / np.log(1 + self._ta._load_factor)
             _MAX_ITER = int(np.max([1, _MAX_IDEAL]))
 
@@ -1072,9 +1072,9 @@ class CuckooHashST(HashTable):
         self._double_hash(func, k)
 
         # Check for a resize if table is small enough
-        if (self._RESIZE_FLAG and
-                ((self._ta.N > 0 and self._ta.N <= self._ta.M // 8) or
-                 (self._tb.N > 0 and self._tb.N <= self._tb.M // 8))):
+        if (self._RESIZE_FLAG
+            and ((self._ta.N > 0 and self._ta.N <= self._ta.M // 8)
+                 or (self._tb.N > 0 and self._tb.N <= self._tb.M // 8))):
             self._lgM -= 1
             self._resize(MAX_PRIMES[self._lgM])
 
