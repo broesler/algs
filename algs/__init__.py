@@ -1,6 +1,7 @@
 from .basics import *
+from .unionfind import *
+from .sort import *
 from .search import *
 from .graph import *
-from .sort import *
 
 __all__ = [s for s in dir() if not s.startswith('_')]

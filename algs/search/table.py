@@ -19,7 +19,6 @@ __all__ = ['SequentialSearchST', 'BinarySearchST', 'ArrayST']
 # TODO
 #   * implement `clear`, `copy`, `get`, `popitem`, `__reverse__`,
 #     `setdefault`, and `update` like true dictionaries
-#   * implement `t.put(k, v)` method instead of just t[k] = v assignment
 #   * use collections.abc.[Keys|Values|Items]View classes?
 
 
