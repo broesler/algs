@@ -977,10 +977,34 @@ class CuckooHashST(HashTable):
     # -------------------------------------------------------------------------
     def __setitem__(self, k, v):
         self._cost = 0
-        self._set(k, v)
+        if k in self:
+            self._set_value(k, v)
+        else:
+            self._set(k, v)
         self._validate_size()
 
+    def _set_value(self, k, v):
+        """Set the value of a key that is already in the table."""
+        t = self._ta
+        # Hash into table A first
+        i = t.hash(k)
+        self._cost = 1
+        if k == t.keys[i]:
+            t.vals[i] = v
+            return
+
+        # if key is not there, hash into table B
+        t = self._tb
+        i = t.hash(k)
+        self._cost = 2
+        if k == t.keys[i]:
+            t.vals[i] = v
+            return
+        else:
+            raise KeyError(k)
+
     def _set(self, k, v, depth=0):
+        """Put a new key into the table, rehashing if necessary."""
         if (not self._RESIZE_FLAG and
                 ((self._ta.N == self._ta.M) or
                  (self._tb.N == self._tb.M))):
@@ -1006,16 +1030,12 @@ class CuckooHashST(HashTable):
             i = self._ta.hash(k)
             xk, xv = self._ta.keys[i], self._ta.vals[i]
             self._cost += 1
-            if k == xk:
-                self._ta.vals[i] = v
-                return
-            else:
-                # put the new key/value in table A
-                self._ta.keys[i] = k
-                self._ta.vals[i] = v
-                # If it's the first time through, we're adding a new key
-                if c == 0:
-                    self.N += 1
+            # put the new key/value in table A
+            self._ta.keys[i] = k
+            self._ta.vals[i] = v
+            # If it's the first time through, we're adding a new key
+            if c == 0:
+                self.N += 1
 
             # If the existing slot was empty, we're done
             if xk is None:
