@@ -66,6 +66,8 @@ class UF(ABC):
         self.N = N
         self.count = N
         self.id = list(range(N))
+        self._cost = 0   # cost of last operation
+        self._total = 0  # total cost of all operations
         if store:
             self._made_connections = list()
         items = [] or items
@@ -132,6 +134,7 @@ class UF(ABC):
         result : bool
             True if `p` and `q` are in the same component.
         """
+        self._cost = 2
         return self.find(p) == self.find(q)
 
     # NOTE this is a convenience for testing reference implementations. This
@@ -153,12 +156,14 @@ class QuickFindUF(UF):
     def find(self, p):
         # The internal array `id` represents the name of the component to which
         # the node is connected, so `find` is just a quick lookup.
+        self._cost = 1
         return self.id[p]
 
     def union(self, p, q):
         # Put p and q into the same component
         pid = self.find(p)
         qid = self.find(q)
+        self._cost = 2
 
         # Nothing to do if they're already connected
         if pid == qid:
@@ -168,7 +173,9 @@ class QuickFindUF(UF):
         for i in range(len(self.id)):
             if self.id[i] == pid:
                 self.id[i] = qid
+                self._cost += 1
         self.count -= 1
+        self._total += self._cost
 
 
 # Exercise 1.5.7 (see p 224)
