@@ -15,6 +15,31 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 
 
+def read_uf_file(filename):
+    """Read a file with the standard union-find format.
+
+    Parameters
+    ----------
+    filename : str
+        Name of the file. May be a `Path` object.
+
+    Returns
+    -------
+    N : int
+        Number of sites.
+    items : list of tuples of (int, int)
+        Pairs of site IDs defining connections.
+    """
+    pat = re.compile(r"(\d+)\s+(\d+)")
+    with open(Path(filename), 'r') as fp:
+        N = int(fp.readline().strip())
+        items = list()
+        for line in fp.readlines():
+            p, q = pat.findall(line.strip())[0]
+            items.append((int(p), int(q)))
+    return N, items
+
+
 class UF(ABC):
     # An abstract base class for the Union Find algorithms. See p 219.
     _attribs_doc = """
@@ -58,19 +83,9 @@ class UF(ABC):
                              "expects an iterable mapping input.")
 
     @classmethod
-    def fromfile(cls, filename, verbose=False):
-        pat = re.compile(r"(\d+)\s+(\d+)")
-        with open(Path(filename), 'r') as fp:
-            if verbose:
-                print(f"Reading from {filename}... ", end='')
-            N = int(fp.readline().strip())
-            items = list()
-            for line in fp.readlines():
-                p, q = pat.findall(line.strip())[0]
-                items.append((int(p), int(q)))
-            if verbose:
-                print("done.")
-            return cls(N, items, verbose)
+    def fromfile(cls, filename, **kwargs):
+        N, items = read_uf_file(filename)
+        return cls(N, items, **kwargs)
 
     @abstractmethod
     def union(self, p, q):
