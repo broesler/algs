@@ -287,7 +287,7 @@ class QuickUnionUF(UF):
 class WeightedQuickUnionUF(QuickUnionUF):
     __doc__ = f"""Implements a weighted quick-union algorithm.
 
-               Similar to quick-union, but tracks tree heights for balance.
+               Similar to quick-union, but tracks tree sizes for balance.
                Performance is guaranteed logarithmic.
                {UF.__doc__}."""
 
@@ -315,6 +315,46 @@ class WeightedQuickUnionUF(QuickUnionUF):
             self.id[j] = i
             self.sz[i] += self.sz[j]
         cost += 2
+
+        # Update counts
+        self.count -= 1
+        self._cost = cost
+        self._total += cost
+
+class HeightWeightedQuickUnionUF(WeightedQuickUnionUF):
+    __doc__ = f"""Implements a weighted quick-union algorithm, but uses tree
+               height for comparison instead of size.
+
+               Performance is guaranteed logarithmic.
+               {UF.__doc__}."""
+
+    def __init__(self, N, *args, **kwargs):
+        self.height = N*[0]
+        super().__init__(N, *args, **kwargs)
+
+    def union(self, p, q):
+        # Compare the roots of each node's tree component
+        cost = 0
+        i = self.find(p); cost += self._cost
+        j = self.find(q); cost += self._cost
+
+        # Nothing to do if they're already connected
+        if i == j:
+            self._cost = cost
+            self._total += cost
+            return
+
+        # Make the shorter root point to the taller one
+        if self.height[i] < self.height[j]:
+            self.id[i] = j
+            cost += 1
+        elif self.height[i] > self.height[j]:
+            self.id[j] = i
+            cost += 1
+        else:
+            self.id[j] = i
+            self.height[i] += 1
+            cost += 2
 
         # Update counts
         self.count -= 1

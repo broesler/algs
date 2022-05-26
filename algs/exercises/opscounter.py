@@ -44,7 +44,7 @@ def cost_plot(oc, ax=None, title='', y_max=0):
                 arrowprops=dict(arrowstyle="-|>", color="C3"))
 
     ax.set_title(title, color='C3', fontweight='bold', fontsize=9,
-                 x=-0.1, ha='left', pad=10, va='bottom')
+                 x=0, ha='left', pad=10, va='bottom')
 
     ax.set_xlim((0, oc.M))
 
