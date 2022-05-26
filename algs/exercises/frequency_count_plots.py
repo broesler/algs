@@ -16,6 +16,10 @@ import pickle
 from matplotlib.gridspec import GridSpec
 from pathlib import Path
 
+# TODO
+# * update label coords to just use `labelpad=-15`
+# * update `np.array` calls to `np.r_`, etc.
+
 SAVE_FIGS = False
 
 MINLEN = 8  # 1, 8, 10
