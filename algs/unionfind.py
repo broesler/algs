@@ -144,7 +144,7 @@ class UF(ABC):
     # NOTE this is a convenience for testing reference implementations. This
     # does not provide a robust comparison of graph structuers.
     # Would need to compare the components in each group. 
-    def __eq__(self, other):
+    def compare(self, other):
         """Comparison for like inputs."""
         return (self.count == other.count
                 and self._made_connections == other._made_connections)
@@ -327,9 +327,9 @@ if __name__ == "__main__":
     qu = QuickUnionUF(N, items, store=True)
     wq = WeightedQuickUnionUF(N, items, store=True)
     wf = WeightedQuickFindUF(N, items, store=True)
-    assert qf == qu
-    assert qu == wq
-    assert wq == wf
+    assert qf.compare(qu)
+    assert qu.compare(wq)
+    assert wq.compare(wf)
 
 # =============================================================================
 # =============================================================================
