@@ -70,7 +70,7 @@ class UF(ABC):
         self._total = 0  # total cost of all operations
         if store:
             self._made_connections = list()
-        items = [] or items
+        items = items or []
         try:
             for p, q in items:
                 if self.connected(p, q):
