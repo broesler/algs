@@ -134,8 +134,10 @@ class UF(ABC):
         result : bool
             True if `p` and `q` are in the same component.
         """
+        cmp = self.find(p) == self.find(q)
         self._cost = 2
-        return self.find(p) == self.find(q)
+        self._total += 2
+        return cmp
 
     # NOTE this is a convenience for testing reference implementations. This
     # does not provide a robust comparison of graph structuers.
@@ -156,7 +158,6 @@ class QuickFindUF(UF):
     def find(self, p):
         # The internal array `id` represents the name of the component to which
         # the node is connected, so `find` is just a quick lookup.
-        self._cost = 1
         return self.id[p]
 
     def union(self, p, q):
@@ -167,14 +168,18 @@ class QuickFindUF(UF):
 
         # Nothing to do if they're already connected
         if pid == qid:
+            self._total += self._cost
             return
 
         # Rename p's component to q's name
-        for i in range(len(self.id)):
+        for i in range(self.N):
             if self.id[i] == pid:
                 self.id[i] = qid
                 self._cost += 1
+
+        # Update counts
         self.count -= 1
+        self._cost += self.N
         self._total += self._cost
 
 
