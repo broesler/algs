@@ -134,10 +134,12 @@ class UF(ABC):
         result : bool
             True if `p` and `q` are in the same component.
         """
-        cmp = self.find(p) == self.find(q)
-        self._cost = 2
-        self._total += 2
-        return cmp
+        cost = 0
+        pid = self.find(p); cost += self._cost 
+        qid = self.find(q); cost += self._cost
+        self._cost = cost
+        self._total += cost
+        return pid == qid
 
     # NOTE this is a convenience for testing reference implementations. This
     # does not provide a robust comparison of graph structuers.
@@ -158,29 +160,32 @@ class QuickFindUF(UF):
     def find(self, p):
         # The internal array `id` represents the name of the component to which
         # the node is connected, so `find` is just a quick lookup.
+        self._cost = 1
         return self.id[p]
 
     def union(self, p, q):
         # Put p and q into the same component
-        pid = self.find(p)
-        qid = self.find(q)
-        self._cost = 2
+        cost = 0
+        pid = self.find(p); cost += self._cost
+        qid = self.find(q); cost += self._cost
 
         # Nothing to do if they're already connected
         if pid == qid:
-            self._total += self._cost
+            self._cost = cost
+            self._total += cost
             return
 
         # Rename p's component to q's name
         for i in range(self.N):
             if self.id[i] == pid:
                 self.id[i] = qid
-                self._cost += 1
+                cost += 1
+        cost += self.N
 
         # Update counts
         self.count -= 1
-        self._cost += self.N
-        self._total += self._cost
+        self._cost = cost
+        self._total += cost
 
 
 # Exercise 1.5.7 (see p 224)
@@ -193,19 +198,28 @@ class QuickUnionUF(UF):
 
     def find(self, p):
         # Follow links up to the rood
+        self._cost = 0
         while p != self.id[p]:
             p = self.id[p]
+            self._cost += 1
         return p
 
     def union(self, p, q):
         # Compare the roots of each node's tree component
-        p_root = self.find(p)
-        q_root = self.find(q)
+        cost = 0
+        p_root = self.find(p); cost += self._cost
+        q_root = self.find(q); cost += self._cost
         if p_root == q_root:
+            self._cost = cost
+            self._total += cost
             return
         # Add p to q's tree
         self.id[p_root] = q_root
+        cost += 1
+        # Update counts
         self.count -= 1
+        self._cost = cost
+        self._total += cost
 
 
 # Exercise 1.5.11
@@ -222,25 +236,36 @@ class WeightedQuickFindUF(QuickFindUF):
 
     def union(self, p, q):
         # Put p and q into the same component
-        pid = self.find(p)
-        qid = self.find(q)
+        cost = 0
+        pid = self.find(p); cost += self._cost
+        qid = self.find(q); cost += self._cost
 
         # Nothing to do if they're already connected
         if pid == qid:
+            self._cost = cost
+            self._total += cost
             return
 
         # Rename the smaller component to the larger
         if self.sz[pid] < self.sz[qid]:
-            for i in range(len(self.id)):
+            for i in range(self.N):
                 if self.id[i] == pid:
                     self.id[i] = qid
+                    cost += 1
             self.sz[qid] += self.sz[pid]
+            cost += self.N + 1
         else:
-            for i in range(len(self.id)):
+            for i in range(self.N):
                 if self.id[i] == qid:
                     self.id[i] = pid
+                    cost += 1
             self.sz[pid] += self.sz[qid]
+            cost += self.N + 1
+
+        # Update counts
         self.count -= 1
+        self._cost = cost
+        self._total += cost
 
 
 # Algorithm 1.5 (p 228)
@@ -257,10 +282,16 @@ class WeightedQuickUnionUF(QuickUnionUF):
 
     def union(self, p, q):
         # Compare the roots of each node's tree component
-        i = self.find(p)
-        j = self.find(q)
+        cost = 0
+        i = self.find(p); cost += self._cost
+        j = self.find(q); cost += self._cost
+
+        # Nothing to do if they're already connected
         if i == j:
+            self._cost = cost
+            self._total += cost
             return
+
         # Make the smaller root point to the larger one
         if self.sz[i] < self.sz[j]:
             self.id[i] = j
@@ -268,7 +299,12 @@ class WeightedQuickUnionUF(QuickUnionUF):
         else:
             self.id[j] = i
             self.sz[i] += self.sz[j]
+        cost += 2
+
+        # Update counts
         self.count -= 1
+        self._cost = cost
+        self._total += cost
 
 
 if __name__ == "__main__":
