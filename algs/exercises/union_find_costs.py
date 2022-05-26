@@ -26,7 +26,7 @@ fig.set_size_inches((8, 10), forward=True)
 
 mosaic = [
         ['quick-find', 'weighted quick-find'],
-        ['quick-union', 'X'],
+        ['quick-union', 'quick-union (path compression)'],
         ['weighted quick-union', 'X'],
     ]
 axd = fig.subplot_mosaic(
@@ -35,17 +35,24 @@ axd = fig.subplot_mosaic(
         gridspec_kw=dict(height_ratios=[10, 2, 1], hspace=0.05)
     )
 
-ufs = [QuickFindUF, QuickUnionUF, WeightedQuickUnionUF, WeightedQuickFindUF]
+ufs = [QuickFindUF, QuickUnionUF,
+       WeightedQuickUnionUF, WeightedQuickFindUF,
+       QuickUnionUF]
 titles = ['quick-find', 'quick-union',
-          'weighted quick-union', 'weighted quick-find']
+          'weighted quick-union', 'weighted quick-find',
+          'quick-union (path compression)']
 
 # Match book figure
 y_maxes = dict({'quick-find': 1300, 'weighted quick-find': 1300,
-                'quick-union': 110, 'weighted quick-union': 20,})
+                'quick-union': 110, 'weighted quick-union': 20,
+                'quick-union (path compression)': 110,})
 
 for i, (UF, title) in enumerate(zip(ufs, titles)):
     # Manually iterate through connections to track costs along the way
-    uf = UF(N)
+    if 'path compression' in title:
+        uf = UF(N, compress_paths=True)
+    else:
+        uf = UF(N)
     costs = list()
     totals = list()
     for p, q in items:

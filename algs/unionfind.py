@@ -196,19 +196,40 @@ class QuickUnionUF(UF):
                of trees. Worst-case performance may be quadratic.
                {UF.__doc__}"""
 
+    def __init__(self, *args, compress_paths=False, **kwargs):
+        self._COMPRESS_PATHS = bool(compress_paths)  # Exercise 1.5.12
+        super().__init__(*args, **kwargs)
+
     def find(self, p):
-        # Follow links up to the rood
+        # Follow links up to the root
         self._cost = 0
         while p != self.id[p]:
             p = self.id[p]
             self._cost += 1
         return p
 
+    def compress_paths(self, p):
+        # Follow links up to the root
+        cost = 0
+        r = self.find(p); cost += self._cost
+        while p != self.id[p]:
+            x = p           # keep a pointer to the previous leaf
+            p = self.id[p]  # move the pointer up
+            self.id[x] = r  # change the parent of the leaf to the root
+            cost += 1
+        self._cost = cost
+
     def union(self, p, q):
         # Compare the roots of each node's tree component
         cost = 0
         p_root = self.find(p); cost += self._cost
         q_root = self.find(q); cost += self._cost
+
+        # Exercise 1.5.12
+        if self._COMPRESS_PATHS:
+            self.compress_paths(p); cost += self._cost
+            self.compress_paths(q); cost += self._cost
+
         if p_root == q_root:
             self._cost = cost
             self._total += cost
@@ -330,6 +351,8 @@ if __name__ == "__main__":
     assert qf.compare(qu)
     assert qu.compare(wq)
     assert wq.compare(wf)
+
+    qup = QuickUnionUF(N, items, compress_paths=True)
 
 # =============================================================================
 # =============================================================================
