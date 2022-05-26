@@ -204,9 +204,9 @@ class WeightedQuickFindUF(QuickFindUF):
                smaller component into the larger component.
                {UF.__doc__}."""
 
-    def __init__(self, N, items=None, verbose=False):
+    def __init__(self, N, *args, **kwargs):
         self.sz = N*[1]  # track tree sizes
-        super().__init__(N, items, verbose)
+        super().__init__(N, *args, **kwargs)
 
     def union(self, p, q):
         # Put p and q into the same component
@@ -239,9 +239,9 @@ class WeightedQuickUnionUF(QuickUnionUF):
                Performance is guaranteed logarithmic.
                {UF.__doc__}."""
 
-    def __init__(self, N, items=None, verbose=False):
+    def __init__(self, N, *args, **kwargs):
         self.sz = N*[1]  # track tree sizes
-        super().__init__(N, items, verbose)
+        super().__init__(N, *args, **kwargs)
 
     def union(self, p, q):
         # Compare the roots of each node's tree component
