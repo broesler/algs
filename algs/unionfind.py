@@ -188,6 +188,52 @@ class QuickFindUF(UF):
         self._total += cost
 
 
+# Exercise 1.5.11
+class WeightedQuickFindUF(QuickFindUF):
+    __doc__ = f"""Implements a weighted quick-find algorithm.
+
+               Similar to quick-find, but tracks component sizes to merge the
+               smaller component into the larger component.
+               {UF.__doc__}."""
+
+    def __init__(self, N, *args, **kwargs):
+        self.sz = N*[1]  # track tree sizes
+        super().__init__(N, *args, **kwargs)
+
+    def union(self, p, q):
+        # Put p and q into the same component
+        cost = 0
+        pid = self.find(p); cost += self._cost
+        qid = self.find(q); cost += self._cost
+
+        # Nothing to do if they're already connected
+        if pid == qid:
+            self._cost = cost
+            self._total += cost
+            return
+
+        # Rename the smaller component to the larger
+        if self.sz[pid] < self.sz[qid]:
+            for i in range(self.N):
+                if self.id[i] == pid:
+                    self.id[i] = qid
+                    cost += 1
+            self.sz[qid] += self.sz[pid]
+            cost += self.N + 1
+        else:
+            for i in range(self.N):
+                if self.id[i] == qid:
+                    self.id[i] = pid
+                    cost += 1
+            self.sz[pid] += self.sz[qid]
+            cost += self.N + 1
+
+        # Update counts
+        self.count -= 1
+        self._cost = cost
+        self._total += cost
+
+
 # Exercise 1.5.7 (see p 224)
 class QuickUnionUF(UF):
     __doc__ = f"""Implements a UnionFind with the quick-union algorithm.
@@ -237,52 +283,6 @@ class QuickUnionUF(UF):
         # Add p to q's tree
         self.id[p_root] = q_root
         cost += 1
-        # Update counts
-        self.count -= 1
-        self._cost = cost
-        self._total += cost
-
-
-# Exercise 1.5.11
-class WeightedQuickFindUF(QuickFindUF):
-    __doc__ = f"""Implements a weighted quick-find algorithm.
-
-               Similar to quick-find, but tracks component sizes to merge the
-               smaller component into the larger component.
-               {UF.__doc__}."""
-
-    def __init__(self, N, *args, **kwargs):
-        self.sz = N*[1]  # track tree sizes
-        super().__init__(N, *args, **kwargs)
-
-    def union(self, p, q):
-        # Put p and q into the same component
-        cost = 0
-        pid = self.find(p); cost += self._cost
-        qid = self.find(q); cost += self._cost
-
-        # Nothing to do if they're already connected
-        if pid == qid:
-            self._cost = cost
-            self._total += cost
-            return
-
-        # Rename the smaller component to the larger
-        if self.sz[pid] < self.sz[qid]:
-            for i in range(self.N):
-                if self.id[i] == pid:
-                    self.id[i] = qid
-                    cost += 1
-            self.sz[qid] += self.sz[pid]
-            cost += self.N + 1
-        else:
-            for i in range(self.N):
-                if self.id[i] == qid:
-                    self.id[i] = pid
-                    cost += 1
-            self.sz[pid] += self.sz[qid]
-            cost += self.N + 1
-
         # Update counts
         self.count -= 1
         self._cost = cost
