@@ -51,7 +51,7 @@ class UF(ABC):
 
     __doc__ = _attribs_doc
 
-    def __init__(self, N, items=None, verbose=False):
+    def __init__(self, N, items=None, verbose=False, store=False):
         """Initialize `N` sites with integer names (0 to `N`-1).
 
         Parameters
@@ -66,14 +66,16 @@ class UF(ABC):
         self.N = N
         self.count = N
         self.id = list(range(N))
-        self._made_connections = list()
+        if store:
+            self._made_connections = list()
         items = [] or items
         try:
             for p, q in items:
                 if self.connected(p, q):
                     continue
                 self.union(p, q)
-                self._made_connections.append((p, q))
+                if store:
+                    self._made_connections.append((p, q))
                 if verbose:
                     print(f"{p} {q}")
             if verbose:
@@ -273,10 +275,10 @@ if __name__ == "__main__":
              (0, 3),
              (4, 2)]
 
-    qf = QuickFindUF(N, items)
-    qu = QuickUnionUF(N, items)
-    wq = WeightedQuickUnionUF(N, items)
-    wf = WeightedQuickFindUF(N, items)
+    qf = QuickFindUF(N, items, store=True)
+    qu = QuickUnionUF(N, items, store=True)
+    wq = WeightedQuickUnionUF(N, items, store=True)
+    wf = WeightedQuickFindUF(N, items, store=True)
     assert qf == qu
     assert qu == wq
     assert wq == wf
