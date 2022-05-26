@@ -247,23 +247,20 @@ class QuickUnionUF(UF):
         super().__init__(*args, **kwargs)
 
     def find(self, p):
-        # Follow links up to the root
         self._cost = 0
-        while p != self.id[p]:
-            p = self.id[p]
-            self._cost += 1
-        return p
-
-    def compress_paths(self, p):
         # Follow links up to the root
-        cost = 0
-        r = self.find(p); cost += self._cost
-        while p != self.id[p]:
-            x = p           # keep a pointer to the previous leaf
-            p = self.id[p]  # move the pointer up
-            self.id[x] = r  # change the parent of the leaf to the root
-            cost += 1
-        self._cost = cost
+        r = p
+        while r != self.id[r]:
+            r = self.id[r]
+            self._cost += 1
+        # Exercise 1.5.12
+        if self._COMPRESS_PATHS:
+            while p != r:
+                x = self.id[p]  # pointer to next node up
+                self.id[p] = r  # change the parent of the leaf to the root
+                p = x           # move the pointer up
+                self._cost += 1
+        return r
 
     def union(self, p, q):
         # Compare the roots of each node's tree component
@@ -271,18 +268,15 @@ class QuickUnionUF(UF):
         p_root = self.find(p); cost += self._cost
         q_root = self.find(q); cost += self._cost
 
-        # Exercise 1.5.12
-        if self._COMPRESS_PATHS:
-            self.compress_paths(p); cost += self._cost
-            self.compress_paths(q); cost += self._cost
-
         if p_root == q_root:
             self._cost = cost
             self._total += cost
             return
+
         # Add p to q's tree
         self.id[p_root] = q_root
         cost += 1
+
         # Update counts
         self.count -= 1
         self._cost = cost
