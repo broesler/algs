@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # =============================================================================
-#     File: erdos_renyi.py
+#     File: erdos_renyi_model.py
 #  Created: 2022-05-26 20:50
 #   Author: Bernie Roesler
 #
@@ -32,11 +32,11 @@ else:
                     columns=['mean', 'std'])
 
     for N in tqdm(Ns):
-        # print(f"{N = }")
         edges = np.zeros(T)
         for i in tqdm(range(T), leave=False):
             uf = ErdosRenyi(N)
             edges[i] = uf.edges
+
         df.loc[N, 'mean'] = edges.mean()
         df.loc[N, 'std'] = edges.std()
 

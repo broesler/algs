@@ -363,6 +363,7 @@ class HeightWeightedQuickUnionUF(WeightedQuickUnionUF):
         self._total += cost
 
 
+# Exercise 1.5.17
 class ErdosRenyi():
     """Creates a random fully-connected graph.
 
