@@ -17,6 +17,8 @@ import time
 from pathlib import Path
 from tqdm import tqdm
 
+from scipy.optimize import curve_fit
+
 from algs.unionfind import (ErdosRenyi, QuickFindUF, QuickUnionUF,
                             WeightedQuickUnionUF)
 
@@ -55,8 +57,28 @@ ratios = np.full((df.index.size, len(UFs)), np.nan)
 ratios[1:] = df['time'].iloc[1:].values / df['time'].iloc[:-1].values
 idx = pd.MultiIndex.from_product([['ratio'], names])
 df[idx] = ratios
+print(df['ratio'])
 
-# Fit power law to the data T(N) ~ a * N**b
+# Fit power law to the data T(N) ~ a * N**b -> log-space
+def power_func(N, a, b):
+    return a + b*np.log2(N)
+
+tf = df['ratio'].dropna(axis=0)
+
+popt = dict()
+pcov = dict()
+for name in names:
+    popt[name], pcov[name]  = curve_fit(power_func,
+                                        np.log2(tf.index.values),
+                                        np.log2(tf[name].values),
+                                        )
+print(popt)
+
+x = np.log2(tf.index.values)
+A = np.c_[np.ones_like(x), x]  # linear matrix
+b = np.log2(tf.values)
+theta = np.linalg.lstsq(A, b, rcond=None)
+print(theta[0])
 
 # =============================================================================
 # =============================================================================
