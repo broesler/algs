@@ -16,11 +16,6 @@ from algs.sort import mergesort
 
 __all__ = ['SequentialSearchST', 'BinarySearchST', 'ArrayST']
 
-# TODO
-#   * implement `clear`, `copy`, `get`, `popitem`, `__reverse__`,
-#     `setdefault`, and `update` like true dictionaries
-#   * use collections.abc.[Keys|Values|Items]View classes?
-
 
 # -----------------------------------------------------------------------------
 #         Define Abstract Base Classes
