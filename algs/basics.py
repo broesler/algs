@@ -17,7 +17,7 @@ from collections import deque
 from collections.abc import MutableMapping
 from copy import deepcopy
 
-__all__ = ['Bag', 'Stack', 'Queue', 'PriorityQueue', 'IndexPQ', 
+__all__ = ['Bag', 'Stack', 'Queue', 'PriorityQueue', 'IndexPQ',
            'RandomBag', 'RandomQueue']
 
 
@@ -175,6 +175,11 @@ class RandomQueue(Queue):
         self._empty_check()
         k = random.randint(0, self.size-1)
         return self._items[k]
+
+    def __iter__(self):
+        """Return an iterator over the items in a random order."""
+        random.shuffle(self._items)
+        yield from self._items
 
 
 class PriorityQueue(Collection):

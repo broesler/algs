@@ -14,7 +14,8 @@ import pytest
 from random import shuffle
 import string
 
-from algs.basics import Bag, Stack, Queue, PriorityQueue, IndexPQ, RandomBag
+from algs.basics import (Bag, Stack, Queue, PriorityQueue, IndexPQ,
+                         RandomBag, RandomQueue)
 
 
 def err_test(container, op, *args, err_type=IndexError):
@@ -111,6 +112,24 @@ class TestQueue:
         for c, item in zip(['B', 'C', 'D'], q):
             assert c == item
         err_test(q, 'dequeue')
+
+    def test_random_queue(self):
+        vals = list(range(10))
+        q = RandomQueue(vals)
+        assert q.sample() in vals
+        out = list()
+        for _ in vals:
+            out.append(q.dequeue())
+        assert q.is_empty
+        assert out != vals
+        assert sorted(out) == vals
+
+    def test_random_queue_iterator(self):
+        vals = list(range(10))
+        q = RandomQueue(vals)
+        out = [x for x in q]
+        assert out != vals
+        assert sorted(out) == vals
 
 
 @pytest.fixture
