@@ -14,7 +14,7 @@ import pytest
 from random import shuffle
 import string
 
-from algs.basics import Bag, Stack, Queue, PriorityQueue, IndexPQ
+from algs.basics import Bag, Stack, Queue, PriorityQueue, IndexPQ, RandomBag
 
 
 def err_test(container, op, *args, err_type=IndexError):
@@ -67,6 +67,21 @@ class TestBag:
             std += (x - mean)*(x - mean) / (N - 1)
         assert np.isclose(mean, 100.6)
         assert np.isclose(std, 110.489)
+
+    def test_random_bag(self):
+        b = Bag()
+        r = RandomBag()
+        for i in range(10):
+            b.add(i)
+            r.add(i)
+        assert b == r
+
+    def test_random_bag_order(self):
+        # Test random bag in order twice
+        r = RandomBag(range(10))
+        order_1 = [x for x in r]
+        order_2 = [x for x in r]
+        assert order_1 != order_2
 
 
 class TestStack:

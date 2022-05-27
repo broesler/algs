@@ -11,12 +11,13 @@
 
 import operator as _operator
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from collections import deque
 from collections.abc import MutableMapping
 from copy import deepcopy
+from random import shuffle
 
-__all__ = ['Bag', 'Stack', 'Queue', 'PriorityQueue', 'IndexPQ']
+__all__ = ['Bag', 'Stack', 'Queue', 'PriorityQueue', 'IndexPQ', 'RandomBag']
 
 
 class Collection(ABC):
@@ -55,10 +56,6 @@ class Collection(ABC):
         if self.is_empty:
             raise IndexError(f"{self.__class__.__name__} is empty!")
 
-    # dunder(-mifflin) methods
-    def __iter__(self):
-        yield from self._items
-
     def __len__(self):
         return self.size
 
@@ -74,6 +71,9 @@ class Collection(ABC):
     def __str__(self):
         return str(list(self._items))
 
+    def __iter__(self):
+        yield from self._items
+
 
 class Bag(Collection):
     __doc__ = f"""Implements a Bag data structure.
@@ -82,6 +82,23 @@ class Bag(Collection):
     def add(self, item):
         """Add item to the bag."""
         self._items.append(item)
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return sorted(self._items) == sorted(other._items)
+        else:
+            return NotImplemented
+
+
+# Exercise 1.3.4
+class RandomBag(Bag):
+    __doc__ = f"""Implements a Bag data structure, but items are iterated in
+              a random order.
+              {Collection.__doc__}"""
+
+    def __iter__(self):
+        shuffle(self._items)
+        yield from self._items
 
 
 class Stack(Collection):
@@ -159,6 +176,7 @@ class PriorityQueue(Collection):
 
     See: <https://algs4.cs.princeton.edu/24pq/> for details.
     """
+
     def __init__(self, items=None, kind='min', key=None):
         super().__init__(items)
         self._items = list([None] + self._items)  # ignore index 0
@@ -307,6 +325,7 @@ class IndexPQ(Collection, MutableMapping):
     #   * implement self.copy()
     #   * write setter functions for self.kind and self.key to reorganize the
     #     heap if they are changed.
+
     def __init__(self, items=None, kind='min', key=None):
         """
         Parameters
