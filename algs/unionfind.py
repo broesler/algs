@@ -10,6 +10,7 @@ Description: Implementations of the Union-Find algorithms in §1.5.
 # =============================================================================
 
 import re
+import numpy as np
 
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -360,6 +361,24 @@ class HeightWeightedQuickUnionUF(WeightedQuickUnionUF):
         self.count -= 1
         self._cost = cost
         self._total += cost
+
+
+class ErdosRenyi(WeightedQuickUnionUF):
+    __doc__ = f"""Implements a weighted quick-union algorithm to generate
+               a random graph.
+               {UF.__doc__}."""
+
+    rng = np.random.default_rng()
+
+    def __init__(self, N):
+        self.edges = 0
+        super().__init__(N)
+        # Generate random pairs of sites until all are connected
+        while self.count > 1:
+            p, q = self.rng.integers(self.N, size=2)
+            if not self.connected(p, q):
+                self.union(p, q)
+            self.edges += 1
 
 
 if __name__ == "__main__":
