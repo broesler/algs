@@ -48,11 +48,15 @@ class UF(ABC):
     ----------
     count : int
         Number of components.
+    N : int
+        Number of sites.
+    made_connections : list of (int, int)
+        If `store=True`, keeps list of `(p, q)` tuples of edges made.
     """
 
     __doc__ = _attribs_doc
 
-    def __init__(self, N, items=None, verbose=False, store=False):
+    def __init__(self, N, items=None, store=False):
         """Initialize `N` sites with integer names (0 to `N`-1).
 
         Parameters
@@ -61,8 +65,8 @@ class UF(ABC):
             Number of sites.
         items : iterable of (int, int) tuples, optional
             List of connections to make.
-        verbose : bool, optional
-            If True, print unique pairs
+        store : bool, optional
+            If True, keep a list `made_connections` of tuples `(p, q)`.
         """
         self.N = N
         self.count = N
@@ -70,19 +74,14 @@ class UF(ABC):
         self._cost = 0   # cost of last operation
         self._total = 0  # total cost of all operations
         if store:
-            self._made_connections = list()
+            self.made_connections = list()
         items = items or []
         try:
             for p, q in items:
-                if self.connected(p, q):
-                    continue
-                self.union(p, q)
-                if store:
-                    self._made_connections.append((p, q))
-                if verbose:
-                    print(f"{p} {q}")
-            if verbose:
-                print(f"{self.count} components")
+                if not self.connected(p, q):
+                    self.union(p, q)
+                    if store:
+                        self.made_connections.append((p, q))
         except ValueError:
             raise ValueError(f"{self.__class__.__name__} "
                              "expects an iterable mapping input.")
@@ -136,7 +135,7 @@ class UF(ABC):
             True if `p` and `q` are in the same component.
         """
         cost = 0
-        pid = self.find(p); cost += self._cost 
+        pid = self.find(p); cost += self._cost
         qid = self.find(q); cost += self._cost
         self._cost = cost
         self._total += cost
@@ -144,11 +143,11 @@ class UF(ABC):
 
     # NOTE this is a convenience for testing reference implementations. This
     # does not provide a robust comparison of graph structuers.
-    # Would need to compare the components in each group. 
+    # Would need to compare the components in each group.
     def compare(self, other):
         """Comparison for like inputs."""
         return (self.count == other.count
-                and self._made_connections == other._made_connections)
+                and self.made_connections == other.made_connections)
 
 
 # Exercise 1.5.7 (see p 222)
@@ -322,6 +321,7 @@ class WeightedQuickUnionUF(QuickUnionUF):
         self._cost = cost
         self._total += cost
 
+
 class HeightWeightedQuickUnionUF(WeightedQuickUnionUF):
     __doc__ = f"""Implements a weighted quick-union algorithm, but uses tree
                height for comparison instead of size.
@@ -363,28 +363,46 @@ class HeightWeightedQuickUnionUF(WeightedQuickUnionUF):
         self._total += cost
 
 
-class ErdosRenyi(WeightedQuickUnionUF):
-    __doc__ = f"""Implements a weighted quick-union algorithm to generate
-               a random graph.
-               {UF.__doc__}."""
+class ErdosRenyi():
+    """Creates a random fully-connected graph.
 
+    Parameters
+    ----------
+    N : int
+        Number of sites.
+    UF : UnionFind class
+        Class of union-find algorithm to compute the graph.
+
+    Attributes
+    -------
+    uf : UnionFind class
+        The provided `UF` class with completed connections.
+    edges : int
+        The number of edges in the graph.
+    """
     rng = np.random.default_rng()
 
-    def __init__(self, N):
+    def __init__(self, N, UF=WeightedQuickUnionUF, store=False, **kwargs):
+        self.N = N
+        self.uf = UF(N, store=store, **kwargs)
         self.edges = 0
-        super().__init__(N)
         # Generate random pairs of sites until all are connected
-        while self.count > 1:
+        while self.uf.count > 1:
             p, q = self.rng.integers(self.N, size=2)
-            if not self.connected(p, q):
-                self.union(p, q)
+            if not self.uf.connected(p, q):
+                self.uf.union(p, q)
+                if store:
+                    self.made_connections.append((p, q))
             self.edges += 1
 
 
 if __name__ == "__main__":
     # Test reading from a file
     filename = './data/tinyUF.txt'
-    uf = QuickFindUF.fromfile(filename, verbose=True)
+    uf = QuickFindUF.fromfile(filename, store=True)
+    for p, q in uf.made_connections:
+        print(f"{p} {q}")
+    print(f"{uf.count} components")
 
     # Exercise 1.5.1, 1.5.2, 1.5.3, 1.5.11
     N = 10  # == 1 + max(max(items))  # number of sites
