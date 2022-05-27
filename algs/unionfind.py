@@ -11,9 +11,12 @@ Description: Implementations of the Union-Find algorithms in §1.5.
 
 import re
 import numpy as np
+import matplotlib.transforms as mtransforms
 
 from abc import ABC, abstractmethod
 from pathlib import Path
+
+from algs.basics import RandomBag
 
 
 def read_uf_file(filename):
@@ -398,8 +401,8 @@ class ErdosRenyi():
 
 
 # Exercise 1.5.18
-def random_grid(N):
-    """Create a randomized list of the connections in an `N`-by-`N` grid.
+def full_grid(N):
+    """Create a list of the connections in an `N`-by-`N` grid.
 
     Parameters
     ----------
@@ -421,6 +424,92 @@ def random_grid(N):
             if i < N-1:
                 items.append((j, j+N))
     return items
+
+
+# Exercise 1.5.18
+def random_grid(N):
+    """Create a randomized list of the connections in an `N`-by-`N` grid.
+
+    Parameters
+    ----------
+    N : int
+        Number of sites.
+
+    Returns
+    -------
+    connections : list of (int, int)
+        A list of every connection made in the graph.
+    """
+    rng = np.random.default_rng()
+    items = RandomBag()
+    for i in range(N):
+        for j in range(i*N, (i+1)*N):
+            r, s = rng.random(2)  # randomly order the pairs
+            # Connect across a row
+            if j < (i+1)*N-1:
+                if r > 0.5:
+                    item = (j, j+1)
+                else:
+                    item = (j+1, j)
+                items.add(item)
+            # Connect to next column
+            if i < N-1:
+                if s > 0.5:
+                    item = (j, j+N)
+                else:
+                    item = (j+N, j)
+                items.add(item)
+    return items
+
+
+def plot_grid(N, g, label_nodes=False, fig=None, ax=None):
+    """Plot an `N`-by-`N` grid of sites and their connections.
+
+    Parameters
+    ----------
+    N : int
+        Number of sites per side.
+    g : list of (int, int)
+        List of edges.
+    label_nodes : bool
+        If True, label the sites with integer indices.
+    fig, ax : Figure and Axes
+        The figure and axes in which to make the plot. If None, the current
+        figure and axes will be used, respectively.
+
+    Returns
+    -------
+    ax : Axes
+        The axes in which the plot is drawn.
+    """
+    if fig is None:
+        fig = plt.gcf()
+    if ax is None:
+        ax = plt.gca()
+
+    y, x = np.mgrid[:N, :N]
+    x, y = np.ravel(x), np.ravel(y)
+
+    ax.scatter(x, y, c='k', zorder=2)
+
+    # Plot the edges
+    for p, q in g:
+        ax.plot((x[p], x[q]), (y[p], y[q]), 'k-', lw=2)
+
+    if label_nodes:
+        # Label the nodes
+        trans_offset = mtransforms.offset_copy(ax.transData, fig=fig,
+                                                x=-5, y=5, units='points')
+        for i, (xn, yn) in enumerate(zip(x, y)):
+            ax.text(xn, yn, f"{i}", ha='right', va='bottom', transform=trans_offset)
+
+    ax.set_aspect('equal')
+    ax.invert_yaxis()  # top-down as drawn by hand
+    # ax.grid('on')
+    ax.axis('off')  # hide everything but the grid
+
+    return ax
+
 
 if __name__ == "__main__":
     # Test reading from a file
