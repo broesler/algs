@@ -28,6 +28,7 @@ def parentheses(a):
             x = s.pop()
             if c != pairs[x]:
                 return False
+        # else: skip over any other characters
     return True
 
 
