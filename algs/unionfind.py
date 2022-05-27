@@ -365,7 +365,7 @@ class HeightWeightedQuickUnionUF(WeightedQuickUnionUF):
 
 # Exercise 1.5.17
 class ErdosRenyi():
-    """Creates a random fully-connected graph.
+    """Creates a random connected graph.
 
     Parameters
     ----------
@@ -396,6 +396,31 @@ class ErdosRenyi():
                     self.made_connections.append((p, q))
             self.edges += 1
 
+
+# Exercise 1.5.18
+def random_grid(N):
+    """Create a randomized list of the connections in an `N`-by-`N` grid.
+
+    Parameters
+    ----------
+    N : int
+        Number of sites.
+
+    Returns
+    -------
+    connections : list of (int, int)
+        A list of every connection made in the graph.
+    """
+    items = list()
+    for i in range(N):
+        for j in range(i*N, (i+1)*N):
+            # Connect across a row
+            if j < (i+1)*N-1:
+                items.append((j, j+1))
+            # Connect to next column
+            if i < N-1:
+                items.append((j, j+N))
+    return items
 
 if __name__ == "__main__":
     # Test reading from a file
