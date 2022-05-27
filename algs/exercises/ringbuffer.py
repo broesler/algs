@@ -1,0 +1,106 @@
+#!/usr/bin/env python3
+# =============================================================================
+#     File: ringbuffer.py
+#  Created: 2022-05-27 16:52
+#   Author: Bernie Roesler
+#
+"""
+Exercise 1.3.39 Implement a ring buffer of fixed size N.
+"""
+# =============================================================================
+
+from algs.basics import Collection, Queue
+
+# Exercise 1.3.39
+class RingBuffer(Collection):
+    """Implements a ring buffer of fixed size. If the buffer is full and an
+    enqueue operation is performed, the oldest item is overwritten.
+
+    Parameters
+    ----------
+    N : int
+        The number of slots in the buffer.
+
+    Attributes
+    -------
+    N : int
+        The total number of slots in the buffer.
+    size : int
+        The number of items currently stored in the buffer.
+    """
+
+    def __init__(self, N, items=None):
+        self.N = N
+        self.M = 0
+        self._items = N*[None]
+        self._first = 0  # pointers to the first and last elements
+        self._last = 0
+        self._p = 0      # pointer for iteration
+        items = items or []
+        for x in items:
+            self.enqueue(x)
+
+    @property
+    def size(self):
+        return self.M
+
+    @property
+    def is_full(self):
+        return self.N == self.M
+
+    def enqueue(self, k):
+        """Add an item to the buffer."""
+        if self.is_full:
+            self._first = (self._first + 1) % self.N
+        self._items[self._last] = k
+        self._last = (self._last + 1) % self.N  # circular, feeling the flow
+        self.M = min(self.N, self.M + 1)        # allow for overwrites
+
+    def dequeue(self):
+        """Remove the oldest item from the buffer."""
+        self._empty_check()
+        v = self._items[self._first]
+        self._items[self._first] = None
+        self._first = (self._first + 1) % self.N
+        self.M -= 1
+        return v
+
+    def peek(self):
+        """Return the least recent item added without dequeuing."""
+        return self._items[self._first]
+
+    def __iter__(self):
+        self._p = self._first
+        return self
+
+    def __next__(self):
+        v = self._items[self._p]
+        if self._p == self._last:
+            raise StopIteration
+        else:
+            self._p = (self._p + 1) % self.N
+            return v
+
+
+
+if __name__ == '__main__':
+    q = RingBuffer(10, list('Hello'))
+    assert q.M == 5
+    assert q._first == 0
+    assert q._last == 5
+    print(q)
+    for c in 'World!':
+        q.enqueue(c)
+    assert q.is_full
+    print(q)
+
+    out = list()
+    for x in q:
+        out.append(x)
+    print(out)
+
+    assert q.dequeue() == 'e'
+    print(q)
+
+# =============================================================================
+# =============================================================================

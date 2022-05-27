@@ -11,6 +11,7 @@ Exercise 1.3.44 text editor buffer data type.
 
 from algs.basics import Collection, Stack
 
+
 class Buffer(Collection):
     """Implements a buffer as would be used in a text editor.
 
