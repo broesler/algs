@@ -10,14 +10,15 @@
 # =============================================================================
 
 import operator as _operator
+import random
 
 from abc import ABC
 from collections import deque
 from collections.abc import MutableMapping
 from copy import deepcopy
-from random import shuffle
 
-__all__ = ['Bag', 'Stack', 'Queue', 'PriorityQueue', 'IndexPQ', 'RandomBag']
+__all__ = ['Bag', 'Stack', 'Queue', 'PriorityQueue', 'IndexPQ', 
+           'RandomBag', 'RandomQueue']
 
 
 class Collection(ABC):
@@ -97,7 +98,7 @@ class RandomBag(Bag):
               {Collection.__doc__}"""
 
     def __iter__(self):
-        shuffle(self._items)
+        random.shuffle(self._items)
         yield from self._items
 
 
@@ -154,6 +155,26 @@ class Queue(Collection):
         """Remove and return item from the front of the queue."""
         self._empty_check()
         return self._items.popleft()
+
+
+# Exercise 1.3.35
+class RandomQueue(Queue):
+    __doc__ = f"""Iterable queue object, but in random order.
+              {Collection.__doc__}"""
+
+    def dequeue(self):
+        """Remove and return a random item."""
+        self._empty_check()
+        k = random.randint(0, self.size-1)
+        v = self._items[k]
+        del self._items[k]
+        return v
+
+    def sample(self):
+        """Return a random item without deletion."""
+        self._empty_check()
+        k = random.randint(0, self.size-1)
+        return self._items[k]
 
 
 class PriorityQueue(Collection):
