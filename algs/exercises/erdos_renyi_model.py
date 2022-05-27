@@ -32,13 +32,13 @@ else:
                     columns=['mean', 'std'])
 
     for N in tqdm(Ns):
-        edges = np.zeros(T)
+        Es = np.zeros(T)
         for i in tqdm(range(T), leave=False):
             uf = ErdosRenyi(N)
-            edges[i] = uf.edges
+            Es[i] = uf.E
 
-        df.loc[N, 'mean'] = edges.mean()
-        df.loc[N, 'std'] = edges.std()
+        df.loc[N, 'mean'] = Es.mean()
+        df.loc[N, 'std'] = Es.std()
 
     df['theory'] = 1/2 * df.index * np.log(df.index)
     df.to_pickle(pkl_file)

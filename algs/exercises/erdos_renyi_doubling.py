@@ -41,13 +41,14 @@ else:
 
     for N in tqdm(Ns):
         for name, UF in zip(names, UFs):
-            edges = np.zeros(T)
+            Es = np.zeros(T)
             for i in tqdm(range(T), leave=False):
-                tic = time.perf_counter()
+                tic = time.time()
                 uf = ErdosRenyi(N, UF=UF)
-                toc = time.perf_counter()
-                edges[i] = uf.edges
-            df.loc[N, ('edges', name)] = edges.mean()
+                toc = time.time()
+                Es[i] = uf.E
+
+            df.loc[N, ('edges', name)] = Es.mean()
             df.loc[N, ('time', name)] = toc - tic
 
     df.to_pickle(pkl_file)

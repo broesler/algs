@@ -53,7 +53,9 @@ class UF(ABC):
         Number of components.
     N : int
         Number of sites.
-    made_connections : list of (int, int)
+    E : int
+        Number of edges.
+    edges : list of (int, int), optional
         If `store=True`, keeps list of `(p, q)` tuples of edges made.
     """
 
@@ -69,22 +71,24 @@ class UF(ABC):
         items : iterable of (int, int) tuples, optional
             List of connections to make.
         store : bool, optional
-            If True, keep a list `made_connections` of tuples `(p, q)`.
+            If True, keep a list `edges` of tuples `(p, q)`.
         """
         self.N = N
         self.count = N
+        self.E = 0
         self.id = list(range(N))
         self._cost = 0   # cost of last operation
         self._total = 0  # total cost of all operations
         if store:
-            self.made_connections = list()
+            self.edges = list()
         items = items or []
         try:
             for p, q in items:
                 if not self.connected(p, q):
                     self.union(p, q)
+                    self.E += 1
                     if store:
-                        self.made_connections.append((p, q))
+                        self.edges.append((p, q))
         except ValueError:
             raise ValueError(f"{self.__class__.__name__} "
                              "expects an iterable mapping input.")
@@ -93,6 +97,9 @@ class UF(ABC):
     def fromfile(cls, filename, **kwargs):
         N, items = read_uf_file(filename)
         return cls(N, items, **kwargs)
+
+    def _validate_edges(self):
+        assert self.E == len(self.edges)
 
     @abstractmethod
     def union(self, p, q):
@@ -150,7 +157,7 @@ class UF(ABC):
     def compare(self, other):
         """Comparison for like inputs."""
         return (self.count == other.count
-                and self.made_connections == other.made_connections)
+                and self.edges == other.edges)
 
 
 # Exercise 1.5.7 (see p 222)
@@ -381,7 +388,7 @@ class ErdosRenyi():
     -------
     uf : UnionFind class
         The provided `UF` class with completed connections.
-    edges : int
+    E : int
         The number of edges in the graph.
     """
     rng = np.random.default_rng()
@@ -389,7 +396,7 @@ class ErdosRenyi():
     def __init__(self, N, UF=WeightedQuickUnionUF, store=False, **kwargs):
         self.N = N
         self.uf = UF(N, store=store, **kwargs)
-        self.edges = 0
+        self.E = 0
         # Generate random pairs of sites until all are connected
         while self.uf.count > 1:
             p, q = self.rng.integers(self.N, size=2)
@@ -397,7 +404,7 @@ class ErdosRenyi():
                 self.uf.union(p, q)
                 if store:
                     self.made_connections.append((p, q))
-            self.edges += 1
+            self.E += 1
 
 
 # Exercise 1.5.18
@@ -462,7 +469,7 @@ def random_grid(N):
     return items
 
 
-def plot_grid(N, g, label_nodes=False, fig=None, ax=None):
+def plot_grid(N, g, label_nodes=False, fig=None, ax=None, **kwargs):
     """Plot an `N`-by-`N` grid of sites and their connections.
 
     Parameters
@@ -490,11 +497,11 @@ def plot_grid(N, g, label_nodes=False, fig=None, ax=None):
     y, x = np.mgrid[:N, :N]
     x, y = np.ravel(x), np.ravel(y)
 
-    ax.scatter(x, y, c='k', zorder=2)
+    ax.scatter(x, y, c='k', s=10, zorder=2)
 
     # Plot the edges
     for p, q in g:
-        ax.plot((x[p], x[q]), (y[p], y[q]), 'k-', lw=2)
+        ax.plot((x[p], x[q]), (y[p], y[q]), 'k-', **kwargs)
 
     if label_nodes:
         # Label the nodes
@@ -515,7 +522,7 @@ if __name__ == "__main__":
     # Test reading from a file
     filename = './data/tinyUF.txt'
     uf = QuickFindUF.fromfile(filename, store=True)
-    for p, q in uf.made_connections:
+    for p, q in uf.edges:
         print(f"{p} {q}")
     print(f"{uf.count} components")
 

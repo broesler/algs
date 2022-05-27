@@ -17,8 +17,8 @@ from algs.unionfind import (full_grid, random_grid, plot_grid,
                             WeightedQuickUnionUF)
 
 # Generate a random grid
-N = 5
-# g = full_grid(N)
+N = 25  # 625 sites
+f = full_grid(N)
 g = random_grid(N)
 
 # Connect components using UnionFind
@@ -26,7 +26,10 @@ uf = WeightedQuickUnionUF(N*N, items=g, store=True)
 
 # Plot
 fig, ax = plt.subplots(num=1, clear=True, tight_layout=True)
-plot_grid(N, uf.made_connections, label_nodes=True, fig=fig, ax=ax)
+fig.set_size_inches((8, 8), forward=True)
+plot_grid(N, f, label_nodes=False, fig=fig, ax=ax, alpha=0.1)
+plot_grid(N, uf.edges, label_nodes=False, fig=fig, ax=ax)
+ax.set_title(f"{N = }, {N*N = }")
 
 plt.show()
 # =============================================================================
