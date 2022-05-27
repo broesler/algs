@@ -70,17 +70,29 @@ class RingBuffer(Collection):
         return self._items[self._first]
 
     def __iter__(self):
-        self._p = self._first
-        return self
+        q = Queue()
+        i = self._first
+        while True:
+            q.enqueue(self._items[i])
+            i = (i + 1) % self.N
+            if i == self._last:
+                break
+        yield from q
 
-    def __next__(self):
-        v = self._items[self._p]
-        if self._p == self._last:
-            raise StopIteration
-        else:
-            self._p = (self._p + 1) % self.N
-            return v
+    # TODO how to replicate this loop without needing the extra storage??
+    # next() breaks too early because we can't both return the value and stop
+    # the iteration. Issues is that first == last when self.is_full.
+    # def __iter__(self):
+    #     self._p = self._first
+    #     return self
 
+    # def __next__(self):
+    #     v = self._items[self._p]
+    #     if self._p == self._last:
+    #         raise StopIteration
+    #     else:
+    #         self._p = (self._p + 1) % self.N
+    #         return v
 
 
 if __name__ == '__main__':
