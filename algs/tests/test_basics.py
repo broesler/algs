@@ -65,8 +65,8 @@ class TestBag:
             mean += x / N
         for x in b:
             std += (x - mean)*(x - mean) / (N - 1)
-        assert mean == 100.6
-        np.testing.assert_almost_equal(std, 110.489, decimal=3)
+        assert np.isclose(mean, 100.6)
+        assert np.isclose(std, 110.489)
 
 
 class TestStack:

@@ -11,6 +11,7 @@
 
 import operator as _operator
 
+from abc import ABC, abstractmethod
 from collections import deque
 from collections.abc import MutableMapping
 from copy import deepcopy
@@ -18,28 +19,11 @@ from copy import deepcopy
 __all__ = ['Bag', 'Stack', 'Queue', 'PriorityQueue', 'IndexPQ']
 
 
-def _equals(self, other):
-    """General __eq__ function for container classes."""
-    if isinstance(other, self.__class__):
-        return self._items == other._items
-    else:
-        return NotImplemented
-
-
-def _empty_check(self):
-    """General assertion that container is not empty before indexing."""
-    if self.is_empty:
-        raise IndexError(f"{self.__class__.__name__} is empty!")
-
-
-class Bag():
-    """Implements a Bag data structure.
-
-    Parameters
-    ----------
-    items : iterable
-        List of items in the bag.
-
+class Collection(ABC):
+    # An abstract base class implementing a collection class. The concrete data
+    # types differ in the specification of which object is to be removed or
+    # examined next.
+    """
     Attributes
     -------
     size : int
@@ -47,7 +31,15 @@ class Bag():
     is_empty : bool
         True if `size == 0`.
     """
-    def __init__(self, items=list()):
+
+    def __init__(self, items=None):
+        """
+        Parameters
+        ----------
+        items : iterable
+            List of items to store in the collection.
+        """
+        items = items or []
         self._items = list(items)
 
     @property
@@ -58,9 +50,10 @@ class Bag():
     def is_empty(self):
         return self.size == 0
 
-    def add(self, item):
-        """Add item to the bag."""
-        self._items.append(item)
+    def _empty_check(self):
+        """General assertion that container is not empty before indexing."""
+        if self.is_empty:
+            raise IndexError(f"{self.__class__.__name__} is empty!")
 
     # dunder(-mifflin) methods
     def __iter__(self):
@@ -70,7 +63,10 @@ class Bag():
         return self.size
 
     def __eq__(self, other):
-        return _equals(self, other)
+        if isinstance(other, self.__class__):
+            return self._items == other._items
+        else:
+            return NotImplemented
 
     def __repr__(self):
         return '<{}: {}>'.format(self.__class__.__name__, self.__str__())
@@ -79,41 +75,32 @@ class Bag():
         return str(list(self._items))
 
 
-class Stack():
-    """Implements a Stack data structure.
+class Bag(Collection):
+    __doc__ = f"""Implements a Bag data structure.
+              {Collection.__doc__}"""
 
-    Parameters
-    ----------
-    items : iterable
-        List of items on the stack, in FIFO order.
+    def add(self, item):
+        """Add item to the bag."""
+        self._items.append(item)
 
-    Attributes
-    -------
-    size : int
-        Number of items on the stack.
-    is_empty : bool
-        True if `size == 0`.
-    """
-    def __init__(self, items=list()):
+
+class Stack(Collection):
+    __doc__ = f"""Implements a Stack data structure.
+              {Collection.__doc__}"""
+
+    def __init__(self, items=None):
+        super().__init__(items)
         # _items[-1] is "top" of stack
-        self._items = list(reversed(items))
-
-    @property
-    def size(self):
-        return len(self._items)
-
-    @property
-    def is_empty(self):
-        return self.size == 0
+        self._items = list(reversed(self._items))
 
     def peek(self):
         """Look at top of stack without popping."""
-        _empty_check(self)
+        self._empty_check()
         return self._items[-1]
 
     def pop(self):
         """Remove and return item from top of stack."""
-        _empty_check(self)
+        self._empty_check()
         return self._items.pop()
 
     def push(self, item):
@@ -124,49 +111,22 @@ class Stack():
     def __iter__(self):
         yield from reversed(self._items)
 
-    def __len__(self):
-        return self.size
-
-    def __eq__(self, other):
-        return _equals(self, other)
-
-    def __repr__(self):
-        return '<{}: {}>'.format(self.__class__.__name__, self.__str__())
-
     def __str__(self):
         return str(list(reversed(self._items)))
 
 
-class Queue():
-    """Iterable queue object.
+class Queue(Collection):
+    __doc__ = f"""Iterable queue object.
+              {Collection.__doc__}"""
 
-    Parameters
-    ----------
-    items : List of objects
-        Items to add to the queue, in FIFO order.
-
-    Attributes
-    ----------
-    size : int
-        Number of items in queue.
-    is_empty : bool
-        True if `size == 0`
-    """
-    def __init__(self, items=list()):
+    def __init__(self, items=None):
+        super().__init__(items)
         # _items[-1] is "front" of queue
-        self._items = deque(items)
-
-    @property
-    def size(self):
-        return len(self._items)
-
-    @property
-    def is_empty(self):
-        return self.size == 0
+        self._items = deque(self._items)
 
     def peek(self):
         """Look at first item in queue without dequeue-ing."""
-        _empty_check(self)
+        self._empty_check()
         return self._items[0]
 
     def enqueue(self, item):
@@ -175,46 +135,15 @@ class Queue():
 
     def dequeue(self):
         """Remove and return item from the front of the queue."""
-        _empty_check(self)
+        self._empty_check()
         return self._items.popleft()
 
-    # dunder(-mifflin) methods
-    def __iter__(self):
-        yield from self._items
 
-    def __eq__(self, other):
-        return _equals(self, other)
-
-    def __len__(self):
-        return self.size
-
-    def __repr__(self):
-        return '<{}: {}>'.format(self.__class__.__name__, self.__str__())
-
-    def __str__(self):
-        return str(list(self._items))
-
-
-class PriorityQueue():
-    """Iterable priority queue object.
+class PriorityQueue(Collection):
+    __doc__ = f"""Iterable priority queue object.
 
     A custom key function can be supplied to determine the sort order.
-
-    Parameters
-    ----------
-    items : list of objects, optional
-        Items to add to the queue.
-    kind : str in {'min', 'max'}, optional, default='min'
-        How to order the priority queue: minimum item at the front, or maximum.
-    key : callable, optional
-        Transformation function used in item comparison, *see* `sorted`.
-
-    Attributes
-    ----------
-    size : int
-        Number of items in queue.
-    is_empty : bool
-        True if `size == 0`
+    {Collection.__doc__}
 
     Notes
     -----
@@ -230,8 +159,9 @@ class PriorityQueue():
 
     See: <https://algs4.cs.princeton.edu/24pq/> for details.
     """
-    def __init__(self, items=list(), kind='min', key=None):
-        self._items = list([None] + list(items))  # ignore index 0
+    def __init__(self, items=None, kind='min', key=None):
+        super().__init__(items)
+        self._items = list([None] + self._items)  # ignore index 0
         self._op = _operator.gt if kind == 'min' else _operator.lt
         self._key = key or (lambda x: x)
         # Sink nodes from right-to-left
@@ -239,17 +169,20 @@ class PriorityQueue():
             self._sink(k)
         assert self._is_heap()
 
+    __init__.__doc__ = f"""{Collection.__init__.__doc__}
+    kind : str in {'min', 'max'}, optional, default='min'
+        How to order the priority queue: minimum item at the front, or maximum.
+    key : callable, optional
+        Transformation function used in item comparison, *see* `sorted`.
+    """
+
     @property
     def size(self):
         return len(self._items) - 1  # ignore index 0
 
-    @property
-    def is_empty(self):
-        return self.size == 0
-
     def peek(self):
         """Look at first item in queue without dequeue-ing."""
-        _empty_check(self)
+        self._empty_check()
         return self._items[1]  # self._items[0] is ALWAYS `None` in heap-land
 
     def enqueue(self, item):
@@ -261,7 +194,7 @@ class PriorityQueue():
 
     def dequeue(self):
         """Remove and return item from the top of the heap."""
-        _empty_check(self)
+        self._empty_check()
         self._swap(self.size, 1)     # swap root with bottom node
         the_min = self._items.pop()  # remove the root
         self._sink(1)                # sink the new root to reorder
@@ -324,15 +257,6 @@ class PriorityQueue():
         if (right <= self.size and self._comp(k, right)): return False
         return self._is_heap(left) and self._is_heap(right)
 
-    def __len__(self):
-        return self.size
-
-    def __eq__(self, other):
-        return _equals(self, other)
-
-    def __repr__(self):
-        return '<{}: {}>'.format(self.__class__.__name__, self.__str__())
-
     def __str__(self):
         return str(list(self._items[1:]))
 
@@ -348,28 +272,12 @@ class PriorityQueue():
             return self._pq_copy.dequeue()
 
 
-class IndexPQ(MutableMapping):
-    """Priority queue as a native python dictionary. 'Pythonic' version of
+class IndexPQ(Collection, MutableMapping):
+    __doc__ = f"""Priority queue as a native python dictionary. 'Pythonic' version of
     IndexPriorityQueue.
 
     A custom key function can be supplied to customize the sort order.
-
-    Parameters
-    ----------
-    items : map or iterable of objects, optional
-        List or Dictionary of (key, value) pairs to add to the queue.
-    kind : str in {'min', 'max'}, optional, default='min'
-        How to order the priority queue: minimum item at the front, or maximum.
-    key : callable, optional
-        Transformation function used in item comparison, *see* `sorted`.
-
-    Attributes
-    ----------
-    size : int
-        Number of items in queue.
-    is_empty : bool
-        True if `size == 0`
-
+    {Collection.__doc__}
     Notes
     -----
     IndexPQ is implemented as a max/min-heap, using array representation. To
@@ -392,6 +300,7 @@ class IndexPQ(MutableMapping):
     #     ** pq[qp[i]] == qp[pq[i]] == i
     #   items : a dictionary of given values, with pq values as the keys.
     # TODO
+    #   * replace `dict` with `list` and proper resizing code.
     #   * move this to its own package/file, implement additional tests for
     #     initialization, timing tests to show log N behavior.
     #   * create pq of objects with attributes and test the key function
@@ -399,6 +308,16 @@ class IndexPQ(MutableMapping):
     #   * write setter functions for self.kind and self.key to reorganize the
     #     heap if they are changed.
     def __init__(self, items=None, kind='min', key=None):
+        """
+        Parameters
+        ----------
+        items : map or iterable of objects, optional
+            List or Dictionary of (key, value) pairs to add to the queue.
+        kind : str in {'min', 'max'}, optional, default='min'
+            How to order the priority queue: minimum item at the front, or maximum.
+        key : callable, optional
+            Transformation function used in item comparison, *see* `sorted`.
+        """
         self.kind = kind
         self._op = _operator.gt if self.kind == 'min' else _operator.lt
         self.key = key or (lambda x: x)  # identity if not given
@@ -427,7 +346,7 @@ class IndexPQ(MutableMapping):
         key, value : tuple
             The key associated with the extremum item, and the item itself.
         """
-        _empty_check(self)
+        self._empty_check()
         idx = self._pq[1]
         return idx, self._items[idx]
 
@@ -454,7 +373,7 @@ class IndexPQ(MutableMapping):
         key, value : tuple
             The key associated with the extremum item, and the item itself.
         """
-        _empty_check(self)
+        self._empty_check()
         self._swap(self.size, 1)       # swap root with bottom node
         idx = self._pq.pop()
         item = self._items.pop(idx)
@@ -549,15 +468,6 @@ class IndexPQ(MutableMapping):
     # -------------------------------------------------------------------------
     #        Python object methods
     # -------------------------------------------------------------------------
-    def __len__(self):
-        return self.size
-
-    def __eq__(self, other):
-        return _equals(self, other)
-
-    def __repr__(self):
-        return '<{}: {}>'.format(self.__class__.__name__, self.__str__())
-
     def __str__(self):
         # show list of (key, value) pairs in heap-order
         return str(dict([(x, self._items[x]) for x in self._pq[1:]]))
