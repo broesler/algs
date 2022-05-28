@@ -11,6 +11,7 @@ Description: Implementations of the Union-Find algorithms in §1.5.
 
 import re
 import numpy as np
+import matplotlib.pyplot as plt
 import matplotlib.transforms as mtransforms
 
 from abc import ABC, abstractmethod
@@ -55,7 +56,7 @@ class UF(ABC):
         Number of sites.
     E : int
         Number of edges.
-    edges : list of (int, int), optional
+    edges : list of (int, int)
         If `store=True`, keeps list of `(p, q)` tuples of edges made.
     """
 
@@ -79,8 +80,7 @@ class UF(ABC):
         self.id = list(range(N))
         self._cost = 0   # cost of last operation
         self._total = 0  # total cost of all operations
-        if store:
-            self.edges = list()
+        self.edges = []
         items = items or []
         try:
             for p, q in items:
@@ -373,6 +373,70 @@ class HeightWeightedQuickUnionUF(WeightedQuickUnionUF):
         self._total += cost
 
 
+# Exercise 1.5.20
+class DynamicWeightedQuickUnionUF(WeightedQuickUnionUF):
+    __doc__ = f"""Implements a weighted quick-union algorithm with dynamic
+               sizing of the sites.
+
+               Performance is guaranteed logarithmic.
+               {UF.__doc__}."""
+
+    _MIN_SITES = 5
+
+    def __init__(self, *args, **kwargs):
+        N = self._MIN_SITES
+        self.sz = N*[1]  # track tree sizes
+        super().__init__(N, *args, **kwargs)
+
+    def find(self, p):
+        if p >= self.N:
+            self._new_site(p)
+        return super().find(p)
+
+    def _new_site(self, p):
+        """Add new sites to accomodate up to an index of `p`."""
+        # Resize the `id` and `sz` arrays to add new site(s)
+        _N = p+1
+        # Resize id array
+        _id = _N*[None]
+        _id[:self.N] = self.id            # copy existing
+        _id[self.N:] = range(self.N, _N)
+        # Resize sz array
+        _sz = _N*[1]
+        _sz[:self.N] = self.sz
+        # Copy to self
+        self.id = _id
+        self.sz = _sz
+        self.count += _N - self.N
+        self.N = _N
+
+    def union(self, p, q):
+        # Compare the roots of each node's tree component
+        cost = 0
+        i = self.find(p); cost += self._cost
+        j = self.find(q); cost += self._cost
+
+        # Nothing to do if they're already connected
+        if i == j:
+            self._cost = cost
+            self._total += cost
+            return
+
+        # Make the smaller root point to the larger one
+        if self.sz[i] < self.sz[j]:
+            self.id[i] = j
+            self.sz[j] += self.sz[i]
+        else:
+            self.id[j] = i
+            self.sz[i] += self.sz[j]
+        cost += 2
+
+        # Update counts
+        self.count -= 1
+        self._cost = cost
+        self._total += cost
+
+
 # Exercise 1.5.17
 class ErdosRenyi():
     """Creates a random connected graph.
@@ -506,9 +570,10 @@ def plot_grid(N, g, label_nodes=False, fig=None, ax=None, **kwargs):
     if label_nodes:
         # Label the nodes
         trans_offset = mtransforms.offset_copy(ax.transData, fig=fig,
-                                                x=-5, y=5, units='points')
+                                               x=-5, y=5, units='points')
         for i, (xn, yn) in enumerate(zip(x, y)):
-            ax.text(xn, yn, f"{i}", ha='right', va='bottom', transform=trans_offset)
+            ax.text(xn, yn, f"{i}", ha='right', va='bottom',
+                    transform=trans_offset)
 
     ax.set_aspect('equal')
     ax.invert_yaxis()  # top-down as drawn by hand
@@ -545,7 +610,10 @@ if __name__ == "__main__":
     assert qu.compare(wq)
     assert wq.compare(wf)
 
-    qup = QuickUnionUF(N, items, compress_paths=True)
+    qup = QuickUnionUF(N, items, compress_paths=True, store=True)
+    assert qup.compare(qu)
+    df = DynamicWeightedQuickUnionUF(items, compress_paths=False, store=True)
+    assert df.compare(wf)
 
 # =============================================================================
 # =============================================================================
