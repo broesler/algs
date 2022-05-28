@@ -77,10 +77,10 @@ class UF(ABC):
         self.N = N
         self.count = N
         self.E = 0
-        self.id = list(range(N))
+        self.edges = []
+        self._id = list(range(N))
         self._cost = 0   # cost of last operation
         self._total = 0  # total cost of all operations
-        self.edges = []
         items = items or []
         try:
             for p, q in items:
@@ -171,7 +171,7 @@ class QuickFindUF(UF):
         # The internal array `id` represents the name of the component to which
         # the node is connected, so `find` is just a quick lookup.
         self._cost = 1
-        return self.id[p]
+        return self._id[p]
 
     def union(self, p, q):
         # Put p and q into the same component
@@ -187,8 +187,8 @@ class QuickFindUF(UF):
 
         # Rename p's component to q's name
         for i in range(self.N):
-            if self.id[i] == pid:
-                self.id[i] = qid
+            if self._id[i] == pid:
+                self._id[i] = qid
                 cost += 1
         cost += self.N
 
@@ -207,7 +207,7 @@ class WeightedQuickFindUF(QuickFindUF):
                {UF.__doc__}."""
 
     def __init__(self, N, *args, **kwargs):
-        self.sz = N*[1]  # track tree sizes
+        self._size = N*[1]  # track tree sizes
         super().__init__(N, *args, **kwargs)
 
     def union(self, p, q):
@@ -223,19 +223,19 @@ class WeightedQuickFindUF(QuickFindUF):
             return
 
         # Rename the smaller component to the larger
-        if self.sz[pid] < self.sz[qid]:
+        if self._size[pid] < self._size[qid]:
             for i in range(self.N):
-                if self.id[i] == pid:
-                    self.id[i] = qid
+                if self._id[i] == pid:
+                    self._id[i] = qid
                     cost += 1
-            self.sz[qid] += self.sz[pid]
+            self._size[qid] += self._size[pid]
             cost += self.N + 1
         else:
             for i in range(self.N):
-                if self.id[i] == qid:
-                    self.id[i] = pid
+                if self._id[i] == qid:
+                    self._id[i] = pid
                     cost += 1
-            self.sz[pid] += self.sz[qid]
+            self._size[pid] += self._size[qid]
             cost += self.N + 1
 
         # Update counts
@@ -260,14 +260,14 @@ class QuickUnionUF(UF):
         self._cost = 0
         # Follow links up to the root
         r = p
-        while r != self.id[r]:
-            r = self.id[r]
+        while r != self._id[r]:
+            r = self._id[r]
             self._cost += 1
         # Exercise 1.5.12
         if self._COMPRESS_PATHS:
             while p != r:
-                x = self.id[p]  # pointer to next node up
-                self.id[p] = r  # change the parent of the leaf to the root
+                x = self._id[p]  # pointer to next node up
+                self._id[p] = r  # change the parent of the leaf to the root
                 p = x           # move the pointer up
                 self._cost += 1
         return r
@@ -284,7 +284,7 @@ class QuickUnionUF(UF):
             return
 
         # Add p to q's tree
-        self.id[p_root] = q_root
+        self._id[p_root] = q_root
         cost += 1
 
         # Update counts
@@ -302,7 +302,7 @@ class WeightedQuickUnionUF(QuickUnionUF):
                {UF.__doc__}."""
 
     def __init__(self, N, *args, **kwargs):
-        self.sz = N*[1]  # track tree sizes
+        self._size = N*[1]  # track tree sizes
         super().__init__(N, *args, **kwargs)
 
     def union(self, p, q):
@@ -318,12 +318,12 @@ class WeightedQuickUnionUF(QuickUnionUF):
             return
 
         # Make the smaller root point to the larger one
-        if self.sz[i] < self.sz[j]:
-            self.id[i] = j
-            self.sz[j] += self.sz[i]
+        if self._size[i] < self._size[j]:
+            self._id[i] = j
+            self._size[j] += self._size[i]
         else:
-            self.id[j] = i
-            self.sz[i] += self.sz[j]
+            self._id[j] = i
+            self._size[i] += self._size[j]
         cost += 2
 
         # Update counts
@@ -357,13 +357,13 @@ class HeightWeightedQuickUnionUF(WeightedQuickUnionUF):
 
         # Make the shorter root point to the taller one
         if self.height[i] < self.height[j]:
-            self.id[i] = j
+            self._id[i] = j
             cost += 1
         elif self.height[i] > self.height[j]:
-            self.id[j] = i
+            self._id[j] = i
             cost += 1
         else:
-            self.id[j] = i
+            self._id[j] = i
             self.height[i] += 1
             cost += 2
 
@@ -385,7 +385,7 @@ class DynamicWeightedQuickUnionUF(WeightedQuickUnionUF):
 
     def __init__(self, *args, **kwargs):
         N = self._MIN_SITES
-        self.sz = N*[1]  # track tree sizes
+        self._size = N*[1]  # track tree sizes
         super().__init__(N, *args, **kwargs)
 
     def find(self, p):
@@ -397,8 +397,8 @@ class DynamicWeightedQuickUnionUF(WeightedQuickUnionUF):
         """Add new sites to accomodate up to an index of `p`."""
         # Resize the `id` and `sz` arrays to add new site(s)
         new_N = p+1
-        self.id += list(range(self.N, new_N))
-        self.sz += (new_N - self.N)*[1]
+        self._id += list(range(self.N, new_N))
+        self._size += (new_N - self.N)*[1]
         self.count += new_N - self.N
         self.N = new_N
 
@@ -415,12 +415,12 @@ class DynamicWeightedQuickUnionUF(WeightedQuickUnionUF):
             return
 
         # Make the smaller root point to the larger one
-        if self.sz[i] < self.sz[j]:
-            self.id[i] = j
-            self.sz[j] += self.sz[i]
+        if self._size[i] < self._size[j]:
+            self._id[i] = j
+            self._size[j] += self._size[i]
         else:
-            self.id[j] = i
-            self.sz[i] += self.sz[j]
+            self._id[j] = i
+            self._size[i] += self._size[j]
         cost += 2
 
         # Update counts
