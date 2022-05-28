@@ -396,19 +396,11 @@ class DynamicWeightedQuickUnionUF(WeightedQuickUnionUF):
     def _new_site(self, p):
         """Add new sites to accomodate up to an index of `p`."""
         # Resize the `id` and `sz` arrays to add new site(s)
-        _N = p+1
-        # Resize id array
-        _id = _N*[None]
-        _id[:self.N] = self.id            # copy existing
-        _id[self.N:] = range(self.N, _N)
-        # Resize sz array
-        _sz = _N*[1]
-        _sz[:self.N] = self.sz
-        # Copy to self
-        self.id = _id
-        self.sz = _sz
-        self.count += _N - self.N
-        self.N = _N
+        new_N = p+1
+        self.id += list(range(self.N, new_N))
+        self.sz += (new_N - self.N)*[1]
+        self.count += new_N - self.N
+        self.N = new_N
 
     def union(self, p, q):
         # Compare the roots of each node's tree component
