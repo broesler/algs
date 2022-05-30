@@ -63,7 +63,7 @@ for i, (UF, title) in enumerate(zip(ufs, titles)):
 
     # Plot the data
     ax = fig.add_subplot(axd[title])
-    cost_plot(oc, ax=ax, y_max=y_maxes[title])
+    cost_plot(oc, ax=ax, title=title, y_max=y_maxes[title])
 
     # Turn off labels for all but first axes
     if i > 0:

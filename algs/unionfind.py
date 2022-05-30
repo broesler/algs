@@ -446,21 +446,48 @@ class ErdosRenyi():
         The provided `UF` class with completed connections.
     E : int
         The number of edges in the graph.
+    ops : list
+        List of number of operations performed.
+    cost : list
+        A cumulative list of the number of array accesses per `connected`,
+        `union`, and `find` operation in `uf`.
+    tots : list
+        A list of the cumulative average number of array accesses per operation
+        in `uf`.
     """
     rng = np.random.default_rng()
 
-    def __init__(self, N, UF=WeightedQuickUnionUF, store=False, **kwargs):
+    def __init__(self, N, UF=WeightedQuickUnionUF, store=False, costs=False,
+                 **kwargs):
         self.N = N
         self.uf = UF(N, store=store, **kwargs)
         self.E = 0
+        self.ops = [0]
+        self.cost = list()
+        self.totals = list()
         # Generate random pairs of sites until all are connected
         while self.uf.count > 1:
             p, q = self.rng.integers(self.N, size=2)
-            if not self.uf.connected(p, q):
+            if self.uf.connected(p, q):
+                self.cost.append(self.uf._cost)
+                self.totals.append(self.uf._total)
+            else:
                 self.uf.union(p, q)
+                self.cost.append(self.uf._cost)
+                self.totals.append(self.uf._total)
                 if store:
                     self.made_connections.append((p, q))
             self.E += 1
+        self.ops = 1 + np.arange(self.E)
+
+    @property
+    def tots(self):
+        return self.totals / self.ops
+
+    @property
+    def M(self):
+        return self.E
+
 
 
 # Exercise 1.5.18

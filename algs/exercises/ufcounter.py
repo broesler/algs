@@ -57,6 +57,7 @@ def cost_plot(oc, ax=None, title='', y_max=0):
     ax.set_ylabel('number of array references', color='C3', labelpad=-10)
     ax.set_xticks((0, oc.M))
 
+    ax.grid(False)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
 
