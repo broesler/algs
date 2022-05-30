@@ -157,6 +157,35 @@ class Queue(Collection):
         return self._items.popleft()
 
 
+# Exercise 1.3.32
+class Steque(Collection):
+    __doc__ = f"""Implements a stack-ended queue data structure.
+              {Collection.__doc__}"""
+
+    def __init__(self, items=None):
+        super().__init__(items)
+        # _items[-1] is the "back of the line", onto which items are added.
+        self._items = deque(self._items)
+
+    def peek(self):
+        """Look at first item in queue without popping."""
+        self._empty_check()
+        return self._items[0]
+
+    def enqueue(self, item):
+        """Add item to the end of the stequeue."""
+        self._items.append(item)
+
+    def pop(self):
+        """Remove and return item from the front of the steque."""
+        self._empty_check()
+        return self._items.popleft()
+
+    def push(self, item):
+        """Push item onto the front of the steque."""
+        self._items.appendleft(item)
+
+
 # Exercise 1.3.35
 class RandomQueue(Queue):
     __doc__ = f"""Iterable queue object, but in random order.
