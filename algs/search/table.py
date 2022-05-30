@@ -178,7 +178,7 @@ class SymbolTable(ABC):
 
     def _make_iterator(self, rtype):
         """Return an iterator over all of the items in the table."""
-        pass
+        return NotImplemented
 
 
 class OrderedSymbolTable(SymbolTable):
@@ -270,14 +270,7 @@ class OrderedSymbolTable(SymbolTable):
 
     def _make_range_iterator(self, rtype):
         """Return an iterator over all of the items in the table."""
-        pass
-
-
-# TODO remove usage in tree.py and balanced_tree.py
-def _empty_check(self):
-    """DEPRECTATED."""
-    if self.is_empty:
-        raise KeyError(f"{self.__class__.__name__} is empty!")
+        return NotImplemented
 
 
 # -----------------------------------------------------------------------------
@@ -597,11 +590,11 @@ class BinarySearchST(OrderedSymbolTable):
     #         Ordered Methods
     # -------------------------------------------------------------------------
     def min(self):
-        _empty_check(self)
+        self._empty_check()
         return self._items[0].key
 
     def max(self):
-        _empty_check(self)
+        self._empty_check()
         return self._items[-1].key
 
     def floor(self, k):
@@ -643,14 +636,14 @@ class BinarySearchST(OrderedSymbolTable):
             raise IndexError(r)
 
     def delete_min(self):
-        _empty_check(self)
+        self._empty_check()
         if self._CACHE_FLAG and self._cache is self._items[0]:
             self._cache = None
         del self._items[0]
         # self._assert_integrity()
 
     def delete_max(self):
-        _empty_check(self)
+        self._empty_check()
         if self._CACHE_FLAG and self._cache is self._items[-1]:
             self._cache = None
         del self._items[-1]

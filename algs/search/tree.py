@@ -66,7 +66,7 @@ class BST(OrderedSymbolTable):
         except KeyError:
             raise ValueError(f"Invalid delete_method '{delete_method}'!")
 
-    __init__.__doc__ = (OrderedSymbolTable.__init__.__doc__ + 
+    __init__.__doc__ = (OrderedSymbolTable.__init__.__doc__ +
         """delete_method : str in {'Hibbard', 'random'}
             Select method to use for deletion:
                 * 'Hibbard' will replace the requested node with its successor.
