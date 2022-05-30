@@ -12,7 +12,7 @@ Amortized cost plots of the union-find datatypes.
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-from opscounter import cost_plot, OpsCounter
+from ufcounter import cost_plot, UFCounter
 
 from algs.unionfind import (QuickUnionUF, WeightedQuickUnionUF,
                             HeightWeightedQuickUnionUF)
@@ -47,9 +47,9 @@ titles = y_maxes.keys()
 
 for i, (UF, title) in enumerate(zip(ufs, titles)):
     if 'path compression' in title:
-        oc = OpsCounter.fromfile(file, UF, compress_paths=True, verbose=verbose)
+        oc = UFCounter.fromfile(file, UF, compress_paths=True, verbose=verbose)
     else:
-        oc = OpsCounter.fromfile(file, UF, verbose=verbose)
+        oc = UFCounter.fromfile(file, UF, verbose=verbose)
 
     ax = fig.add_subplot(axd[title])
     cost_plot(oc, title=title, ax=ax, y_max=y_maxes[title])

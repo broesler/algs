@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # =============================================================================
-#     File: opscounter.py
+#     File: ufcounter.py
 #  Created: 2022-05-26 15:56
 #   Author: Bernie Roesler
 #
@@ -21,7 +21,7 @@ def cost_plot(oc, ax=None, title='', y_max=0):
 
     Parameters
     ----------
-    oc : :obj:OpsCounter
+    oc : :obj:ufcounter
         Container class with arrays of operation costs.
     ax : Axes, optional
         If None, `ax = plt.gca()`.
@@ -63,7 +63,7 @@ def cost_plot(oc, ax=None, title='', y_max=0):
     return ax
 
 
-class OpsCounter():
+class UFCounter():
     """Class to count the number of operations in a union-find data type.
 
     Parameters
