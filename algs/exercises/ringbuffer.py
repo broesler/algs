@@ -70,19 +70,19 @@ class RingBuffer(Collection):
         """Return the least recent item added without dequeuing."""
         return self._items[self._first]
 
-    # When full, self._first == self._last, so raise a flag when we 
+    # When full, self._first == self._last, so raise a flag the first time
     def __iter__(self):
         self._p = self._first
-        self._stop = False
+        self._STOP = False
         return self
 
     def __next__(self):
         v = self._items[self._p]
-        if self._p == self._last and self._stop:
+        if self._p == self._last and self._STOP:
             raise StopIteration
         else:
-            self._stop = True
-            self._p = (self._p + 1) % self.N
+            self._STOP = True
+            self._p = (self._p + 1) % self.M
             return v
 
 
@@ -93,11 +93,11 @@ if __name__ == '__main__':
     assert q._last == 5
     print(q)
 
-    # # Iterate through partial queue
-    # out = list()
-    # for x in q:
-    #     out.append(x)
-    # print(out)
+    # Iterate through partial queue
+    out = list()
+    for x in q:
+        out.append(x)
+    print(out)
 
     # Fill and overwrite the queue by 1
     for c in 'World!':
