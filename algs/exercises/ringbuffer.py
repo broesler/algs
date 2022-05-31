@@ -11,6 +11,7 @@ Exercise 1.3.39 Implement a ring buffer of fixed size N.
 
 from algs.basics import Collection, Queue
 
+
 # Exercise 1.3.39
 class RingBuffer(Collection):
     """Implements a ring buffer of fixed size. If the buffer is full and an
@@ -18,21 +19,21 @@ class RingBuffer(Collection):
 
     Parameters
     ----------
-    N : int
+    M : int
         The number of slots in the buffer.
 
     Attributes
     -------
-    N : int
+    M : int
         The total number of slots in the buffer.
     size : int
         The number of items currently stored in the buffer.
     """
 
-    def __init__(self, N, items=None):
-        self.N = N
-        self.M = 0
-        self._items = N*[None]
+    def __init__(self, M, items=None):
+        self.M = M
+        self.N = 0
+        self._items = M*[None]
         self._first = 0  # pointers to the first and last elements
         self._last = 0
         self._p = 0      # pointer for iteration
@@ -42,27 +43,27 @@ class RingBuffer(Collection):
 
     @property
     def size(self):
-        return self.M
+        return self.N
 
     @property
     def is_full(self):
-        return self.N == self.M
+        return self.M == self.N
 
     def enqueue(self, k):
         """Add an item to the buffer."""
         if self.is_full:
-            self._first = (self._first + 1) % self.N
+            self._first = (self._first + 1) % self.M
         self._items[self._last] = k
-        self._last = (self._last + 1) % self.N  # circular, feeling the flow
-        self.M = min(self.N, self.M + 1)        # allow for overwrites
+        self._last = (self._last + 1) % self.M  # circular, feeling the flow
+        self.N = min(self.M, self.N + 1)        # allow for overwrites
 
     def dequeue(self):
         """Remove the oldest item from the buffer."""
         self._empty_check()
         v = self._items[self._first]
         self._items[self._first] = None
-        self._first = (self._first + 1) % self.N
-        self.M -= 1
+        self._first = (self._first + 1) % self.M
+        self.N -= 1
         return v
 
     def peek(self):
@@ -74,7 +75,7 @@ class RingBuffer(Collection):
         i = self._first
         while True:
             q.enqueue(self._items[i])
-            i = (i + 1) % self.N
+            i = (i + 1) % self.M
             if i == self._last:
                 break
         yield from q
@@ -97,7 +98,7 @@ class RingBuffer(Collection):
 
 if __name__ == '__main__':
     q = RingBuffer(10, list('Hello'))
-    assert q.M == 5
+    assert q.N == 5
     assert q._first == 0
     assert q._last == 5
     print(q)
