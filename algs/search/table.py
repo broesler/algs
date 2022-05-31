@@ -14,7 +14,8 @@ from abc import ABC, abstractmethod
 from algs.basics import Queue
 from algs.sort import mergesort
 
-__all__ = ['SequentialSearchST', 'BinarySearchST', 'ArrayST']
+__all__ = ['SymbolTable', 'OrderedSymbolTable', 
+           'SequentialSearchST', 'BinarySearchST', 'ArrayST']
 
 
 # -----------------------------------------------------------------------------

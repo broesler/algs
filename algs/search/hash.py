@@ -13,7 +13,7 @@ import numpy as np
 
 from algs.search.table import SymbolTable, SequentialSearchST
 
-__all__ = ['SeparateChainingHashST', 'SeparateChainingLiteHashST',
+__all__ = ['HashTable', 'SeparateChainingHashST', 'SeparateChainingLiteHashST',
            'LinearProbingHashST', 'LazyLinearProbingHashST',
            'DoubleProbingHashST', 'DoubleHashingHashST', 'CuckooHashST']
 
