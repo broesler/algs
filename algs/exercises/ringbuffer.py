@@ -91,27 +91,18 @@ if __name__ == '__main__':
     assert q.N == 5
     assert q._first == 0
     assert q._last == 5
-    print(q)
-
-    # Iterate through partial queue
-    out = list()
-    for x in q:
-        out.append(x)
-    print(out)
+    print(q._items)
+    print(q)  # iterate through partial queue
 
     # Fill and overwrite the queue by 1
     for c in 'World!':
         q.enqueue(c)
     assert q.is_full
-    print(q)
-
-    # Iterate through full queue
-    out = list()
-    for x in q:
-        out.append(x)
-    print(out)
+    print(q._items)
+    print(q)  # iterate through full queue
 
     assert q.dequeue() == 'e'
+    print(q._items)
     print(q)
     assert q._first == 2
     assert q._last == 1

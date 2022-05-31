@@ -61,6 +61,7 @@ class Collection(ABC):
         return self.size
 
     def __eq__(self, other):
+        # Assume order matters, so check that the items lists are identical.
         if isinstance(other, self.__class__):
             return self._items == other._items
         else:
@@ -70,7 +71,7 @@ class Collection(ABC):
         return '<{}: {}>'.format(self.__class__.__name__, self.__str__())
 
     def __str__(self):
-        return str(list(self._items))
+        return str(list(self))  # use iteration to print the object
 
     def __iter__(self):
         yield from self._items
@@ -85,6 +86,7 @@ class Bag(Collection):
         self._items.append(item)
 
     def __eq__(self, other):
+        # When comparing Bags, order does not matter, so sort the items first.
         if isinstance(other, self.__class__):
             return sorted(self._items) == sorted(other._items)
         else:
