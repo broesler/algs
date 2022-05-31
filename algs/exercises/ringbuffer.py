@@ -70,30 +70,20 @@ class RingBuffer(Collection):
         """Return the least recent item added without dequeuing."""
         return self._items[self._first]
 
+    # When full, self._first == self._last, so raise a flag when we 
     def __iter__(self):
-        q = Queue()
-        i = self._first
-        while True:
-            q.enqueue(self._items[i])
-            i = (i + 1) % self.M
-            if i == self._last:
-                break
-        yield from q
+        self._p = self._first
+        self._stop = False
+        return self
 
-    # TODO how to replicate this loop without needing the extra storage??
-    # next() breaks too early because we can't both return the value and stop
-    # the iteration. Issues is that first == last when self.is_full.
-    # def __iter__(self):
-    #     self._p = self._first
-    #     return self
-
-    # def __next__(self):
-    #     v = self._items[self._p]
-    #     if self._p == self._last:
-    #         raise StopIteration
-    #     else:
-    #         self._p = (self._p + 1) % self.N
-    #         return v
+    def __next__(self):
+        v = self._items[self._p]
+        if self._p == self._last and self._stop:
+            raise StopIteration
+        else:
+            self._stop = True
+            self._p = (self._p + 1) % self.N
+            return v
 
 
 if __name__ == '__main__':
@@ -102,11 +92,20 @@ if __name__ == '__main__':
     assert q._first == 0
     assert q._last == 5
     print(q)
+
+    # # Iterate through partial queue
+    # out = list()
+    # for x in q:
+    #     out.append(x)
+    # print(out)
+
+    # Fill and overwrite the queue by 1
     for c in 'World!':
         q.enqueue(c)
     assert q.is_full
     print(q)
 
+    # Iterate through full queue
     out = list()
     for x in q:
         out.append(x)
@@ -114,6 +113,8 @@ if __name__ == '__main__':
 
     assert q.dequeue() == 'e'
     print(q)
+    assert q._first == 2
+    assert q._last == 1
 
 # =============================================================================
 # =============================================================================
