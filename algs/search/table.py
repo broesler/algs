@@ -76,6 +76,7 @@ class SymbolTable(ABC):
             st[k] = value
         return st
 
+    # TODO implement version with lo and hi arguments in OrderedSymbolTable
     @property
     @abstractmethod
     def size(self):
@@ -148,7 +149,7 @@ class SymbolTable(ABC):
     #         Iterator functions
     # -------------------------------------------------------------------------
     def __iter__(self):
-        """Return an iterator of all of the keys in the table.
+        """Return an iterator over all of the keys in the table.
 
         Yields
         ------
