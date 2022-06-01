@@ -15,7 +15,7 @@ from algs.basics import RandomQueue
 from algs.search.table import SymbolTable
 from algs.search.hash import LinearProbingHashST
 from algs.search.tree import BST
-from algs.search.balanced_tree import RedBlackBST, KeyChanged
+from algs.search.balanced_tree import RedBlackBST
 
 
 # -----------------------------------------------------------------------------
@@ -371,11 +371,17 @@ class MultiValRedBlackBST(RedBlackBST):
 
 # TODO test_multiset
 if __name__ == '__main__':
+    from algs.exercises.draw_tree import TreeArtist
+
     # Exercise 3.5.8
     EXPECT_STR = 'SEARCHEXAMPLE'
     items = list((c, i) for i, c in enumerate(EXPECT_STR))
     st = MultiValHashST(items)
-    assert st['A'] in [2, 8]
+    st['X'] = [1, 2, 3]
+    st['Y'] = [1, 2, 3]
+    st['Y'] = 4
+    st['A'] = 'hello'
+    assert st['A'] in [2, 8, 'hello']
     assert st['E'] in [1, 6, 12]
     print('---MultiValHashST---')
     print(st)
@@ -384,7 +390,6 @@ if __name__ == '__main__':
     print(st)
 
     # Exercise 3.5.9
-    from algs.exercises.draw_tree import TreeArtist
     keys = list('SEARCHEXAMPLE')
     items = list((c, i) for i, c in enumerate(keys))
     t = BST(items)
@@ -404,7 +409,6 @@ if __name__ == '__main__':
     assert 'E' not in st
 
     # Exercise 3.5.10
-    from algs.exercises.draw_tree import TreeArtist
     keys = list('SEARCHEXAMPLE')
     items = list((c, i) for i, c in enumerate(keys))
     t = RedBlackBST(items)
