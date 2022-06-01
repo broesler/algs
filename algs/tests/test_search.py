@@ -296,9 +296,13 @@ class TestOrderedOps:
     def test_inorder(self, st, data_set, expect_set):
         # In-order traversal + range search
         assert st.keys() == sorted(expect_set)
+        assert st.size() == len(expect_set)
         assert st.keys(lo='P') == list('PRSX')
+        assert st.size(lo='P') == 4
         assert st.keys('F', 'P') == list('HLMP')
+        assert st.size('F', 'P') == 4
         assert st.keys(hi='P') == list('ACEHLMP')
+        assert st.size(hi='P') == 7
         assert st.values() == [v for k, v in sorted(data_set)]
         assert (st.values('F', 'P') ==
                 [v for k, v in sorted(data_set)[3:7]])
