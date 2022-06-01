@@ -340,50 +340,13 @@ class MultiValBST(BST):
             self.val = RandomQueue()  # store all values in a queue
             self.val.enqueue(value)
 
-    def __getitem__(self, k):
-        # Ex 3.2.28 cache latest
-        if self._CACHE_FLAG and self._cache and k == self._cache.key:
-            return self._cache.val.sample()
-        else:
-            x = self._get(k, self._root)
-            if self._CACHE_FLAG:
-                self._cache = x
-            return x.val.sample()  # return *any* value
+    @staticmethod
+    def _return_func(x):
+        return x.val.sample()  # return *any* value
 
-    def _set(self, k, v, x=None):
-        """Add a new node to subtree at `x`, associating `k` with `v`.
-        If `k` is in subtree rooted at `x`, change its value to `v`.
-
-        Parameters
-        ----------
-        k : key
-            key for which to search
-        v : value
-            object to be associated with key `k`
-        x : _Node, optional
-            root of the subtree at which to begin search
-        """
-        # subtree is empty, create a new node
-        if x is None:
-            h = self._Node(k, v)
-            if self._CACHE_FLAG:
-                self._cache = h
-            return h
-
-        # create a child, or update the value
-        self._cost += 1
-        if k < x.key:
-            x.left = self._set(k, v, x.left)
-        elif k > x.key:
-            x.right = self._set(k, v, x.right)
-        else:  # k == x.key
-            x.val.enqueue(v)
-            # Add duplicate keys to the left of the first
-            if self._CACHE_FLAG:
-                self._cache = x
-
-        self._update_node(x)
-        return x
+    @staticmethod
+    def _set_func(x, v):
+        x.val.enqueue(v)
 
 
 # Exercise 3.8.10
@@ -397,48 +360,13 @@ class MultiValRedBlackBST(RedBlackBST):
             self.val = RandomQueue()  # store all values in a queue
             self.val.enqueue(value)
 
-    def __getitem__(self, k):
-        # Ex 3.2.28 cache latest
-        if self._CACHE_FLAG and self._cache and k == self._cache.key:
-            return self._cache.val.sample()
-        else:
-            x = self._get(k, self._root)
-            if self._CACHE_FLAG:
-                self._cache = x
-            return x.val.sample()  # return *any* value
+    @staticmethod
+    def _return_func(x):
+        return x.val.sample()  # return *any* value
 
-    def _set(self, k, v, h=None):
-        # subtree is empty, create a new node with a red link to parent
-        if h is None:
-            x = self._Node(k, v, color=self._RED)
-            if self._CACHE_FLAG:
-                self._cache = x
-            return x
-
-        # create a child, or update the value
-        self._cost += 1
-        if k < h.key:
-            h.left = self._set(k, v, h.left)
-        elif k > h.key:
-            h.right = self._set(k, v, h.right)
-        else:  # k == h.key
-            h.val.enqueue(v)  # NOTE only change from original
-            if self._CACHE_FLAG:
-                self._cache = h
-            raise KeyChanged  # no need for rotations
-
-        # Balance the tree (red links left-leaning)
-        if self._is_red(h.right) and not self._is_red(h.left):
-            h = self._rotate_left(h)
-        if self._is_red(h.left) and self._is_red(h.left.left):
-            h = self._rotate_right(h)
-        # Split a 4-node into 3 2-nodes
-        if self._is_red(h.right) and self._is_red(h.left):
-            self._flip_colors(h)
-
-        # Update node attributes
-        self._update_node(h)
-        return h
+    @staticmethod
+    def _set_func(x, v):
+        x.val.enqueue(v)
 
 
 # TODO test_multiset
@@ -472,6 +400,8 @@ if __name__ == '__main__':
     assert st['A'] in [2, 8, 'hello']
     assert st['E'] in [1, 6, 12]
     print(st)
+    del st['E']
+    assert 'E' not in st
 
     # Exercise 3.5.10
     from algs.exercises.draw_tree import TreeArtist
@@ -490,6 +420,8 @@ if __name__ == '__main__':
     assert st['A'] in [2, 8, 'hello']
     assert st['E'] in [1, 6, 12]
     print(st)
+    del st['E']
+    assert 'E' not in st
 
 # =============================================================================
 # =============================================================================

@@ -88,14 +88,7 @@ class BST(OrderedSymbolTable):
         return self._internal_path_length(self._root)
 
     def __getitem__(self, k):
-        # Ex 3.2.28 cache latest
-        if self._CACHE_FLAG and self._cache and k == self._cache.key:
-            return self._cache.val
-        else:
-            x = self._get(k, self._root)
-            if self._CACHE_FLAG:
-                self._cache = x
-            return x.val
+        return self._return_func(self._get_node(k))
 
     def __setitem__(self, k, v):
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
@@ -232,6 +225,23 @@ class BST(OrderedSymbolTable):
         """Return the size of the subtree rooted at Node `x`."""
         return 0 if x is None else x.N
 
+    def _get_node(self, k):
+        """Return the node associated with the given `k`."""
+        # Ex 3.2.28 cache latest
+        if self._CACHE_FLAG and self._cache and k == self._cache.key:
+            return self._cache
+        else:
+            x = self._get(k, self._root)
+            if self._CACHE_FLAG:
+                self._cache = x
+            return x
+
+    # Allow subclasses to specify what to return by overriding this method.
+    @staticmethod
+    def _return_func(x):
+        """Determine what to return when calling `__getitem__`."""
+        return x.val
+
     def _get(self, k, x=None):
         """Return the node associated with the given `k`.
 
@@ -285,12 +295,18 @@ class BST(OrderedSymbolTable):
         elif k > x.key:
             x.right = self._set(k, v, x.right)
         else:  # k == x.key
-            x.val = v  # update the value
+            self._set_func(x, v)  # update the value
             if self._CACHE_FLAG:
                 self._cache = x
 
         self._update_node(x)
         return x
+
+    # Allow subclasses to chage how the value is set by overriding this method.
+    @staticmethod
+    def _set_func(x, v):
+        """Set the value of node `x` to `v`."""
+        x.val = v
 
     # Idea: replace `random.random()` with `self._poss_arrow` and flip it on
     # each deletion.
@@ -482,16 +498,6 @@ class BST(OrderedSymbolTable):
         x.height = 1 + max(self._height(x.left), self._height(x.right))
         x.ipl = (self._internal_path_length(x.left) + self._size(x.left)
                  + self._internal_path_length(x.right) + self._size(x.right))
-
-    def _get_node(self, k):
-        """Return the node associated with the given `k`."""
-        if self._CACHE_FLAG and self._cache and k == self._cache.key:
-            return self._cache
-        else:
-            x = self._get(k, self._root)
-            if self._CACHE_FLAG:
-                self._cache = x
-            return x
 
     # -------------------------------------------------------------------------
     #         Iterator functions (Tree traversals)

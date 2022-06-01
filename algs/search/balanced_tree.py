@@ -197,7 +197,7 @@ class RedBlackBST(BST):
         elif k > h.key:
             h.right = self._set(k, v, h.right)
         else:  # k == h.key
-            h.val = v  # update the value
+            self._set_func(h, v)  # update the value
             if self._CACHE_FLAG:
                 self._cache = h
             raise KeyChanged  # no need for rotations
