@@ -10,10 +10,11 @@ Implements Set and HashSet APIs using symbol tables. See §3.5.
 # =============================================================================
 
 from abc import ABC, abstractmethod
-from algs import RedBlackBST, LinearProbingHashST
+from algs.search.hash import LinearProbingHashST
+from algs.search.balanced_tree import RedBlackBST
 
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 #         Define Abstract Base Classes
 # -----------------------------------------------------------------------------
 class UnorderedSet(ABC):
@@ -74,11 +75,15 @@ class UnorderedSet(ABC):
     def contains(self, k):
         return self.__contains__(k)
 
-    # ------------------------------------------------------------------------- 
+    # -------------------------------------------------------------------------
     #         Internal methods
     # -------------------------------------------------------------------------
     def __len__(self):
         return self.size
+
+    def __eq__(self, other):
+        """Return True if each set contains the same keys."""
+        return sorted(self) == sorted(other)
 
     def __str__(self):
         return '{' + ', '.join([repr(k) for k in self]) + '}'
@@ -149,8 +154,27 @@ class OrderedSet(UnorderedSet):
         """Delete the maximum key in the set."""
         pass
 
+    @abstractmethod
+    def keys(self, lo=None, hi=None):
+        """Return an in-order list of the keys between the keys `lo` and `hi`,
+        inclusive.
 
-# ----------------------------------------------------------------------------- 
+        Parameters
+        ----------
+        lo : key
+            Minimum key over which to search, inclusive.
+        hi : key
+            Maximum key over which to search, inclusive.
+
+        Returns
+        -------
+        q : list
+            list of the keys between `lo` and `hi`, inclusive.
+        """
+        pass
+
+
+# -----------------------------------------------------------------------------
 #         Concrete Classes
 # -----------------------------------------------------------------------------
 # Exercise 3.5.1
@@ -161,25 +185,24 @@ class HashSet(UnorderedSet):
                """
 
     def __init__(self, keys=None):
-        self.st = LinearProbingHashST()
+        self._st = LinearProbingHashST()
         super().__init__(keys)
 
     @property
     def size(self):
-        return self.st.size
+        return self._st.size
 
     def add(self, k):
-        self.st.__setitem__(k, v=None)
+        self._st.__setitem__(k, v=None)
 
     def __delitem__(self, k):
-        self.st.__delitem__(k)
+        self._st.__delitem__(k)
 
     def __contains__(self, k):
-        return k in self.st
+        return k in self._st
 
     def __iter__(self):
-        yield from self.st.keys()
-
+        yield from self._st.keys()
 
 class Set(OrderedSet):
     __doc__ = f"""Implements an ordered set using a wrapper on a red-black BST.
@@ -187,68 +210,54 @@ class Set(OrderedSet):
                """
 
     def __init__(self, keys=None):
-        self.st = RedBlackBST()
+        self._st = RedBlackBST()
         super().__init__(keys)
 
     @property
     def size(self):
-        return self.st.size
+        return self._st.size
 
     def add(self, k):
-        self.st.__setitem__(k, v=None)
+        self._st.__setitem__(k, v=None)
 
     def __delitem__(self, k):
-        self.st.__delitem__(k)
+        self._st.__delitem__(k)
 
     def __contains__(self, k):
-        return k in self.st
+        return k in self._st
 
     def __iter__(self):
-        yield from self.st.keys()
+        yield from self._st.keys()
 
-    # Ordered methods
+    def keys(self, lo=None, hi=None):
+        return self._st.keys(lo, hi)
+
+    # -------------------------------------------------------------------------
+    #         Ordered methods
+    # -------------------------------------------------------------------------
     def min(self):
-        return self.st.min()
+        return self._st.min()
 
     def max(self):
-        return self.st.max()
+        return self._st.max()
 
     def floor(self, k):
-        return self.st.floor(k)
+        return self._st.floor(k)
 
     def ceil(self, k):
-        return self.st.ceil(k)
+        return self._st.ceil(k)
 
     def rank(self, k):
-        return self.st.rank(k)
+        return self._st.rank(k)
 
     def select(self, r):
-        return self.st.select(r)
+        return self._st.select(r)
 
     def delete_min(self):
-        return self.st.delete_min()
+        return self._st.delete_min()
 
     def delete_max(self):
-        return self.st.delete_max()
-
-
-# TODO move to tests/test_search.py
-if __name__ == "__main__":
-    keys = list('abcde')
-    a = HashSet(keys)
-    assert sorted(a) == keys
-    a.add('x')
-    assert sorted(a) == list('abcdex')
-    a.delete('d')
-    assert sorted(a) == list('abcex')
-
-    t = Set(keys)
-    assert sorted(t) == keys
-    t.add('x')
-    assert sorted(t) == list('abcdex')
-    t.delete('d')
-    assert sorted(t) == list('abcex')
-    assert t.min() == 'a'
+        return self._st.delete_max()
 
 
 # =============================================================================
