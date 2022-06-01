@@ -104,6 +104,7 @@ class SymbolTable(ABC):
             return False
 
     def __eq__(self, other):
+        """Return True if each table contains the same key-value pairs."""
         return sorted(self.items()) == sorted(other.items())
 
     def __str__(self):
