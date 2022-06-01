@@ -14,7 +14,7 @@ from abc import ABC, abstractmethod
 from algs.basics import Queue
 from algs.sort import mergesort
 
-__all__ = ['SymbolTable', 'OrderedSymbolTable', 
+__all__ = ['SymbolTable', 'OrderedSymbolTable',
            'SequentialSearchST', 'BinarySearchST', 'ArrayST']
 
 
@@ -108,11 +108,13 @@ class SymbolTable(ABC):
         return sorted(self.items()) == sorted(other.items())
 
     def __str__(self):
+        def kv_list(a):
+            return ', '.join(f"{repr(k)}: {repr(v)}" for k, v in a)
+        a = self.items()
         if len(self) < 30:
-            return str(self.items())
+            return '{' + kv_list(a) + '}'
         else:
-            a = self.items()
-            return str(a[:10]) + ' ... ' + str(a[-10:])
+            return '{' + kv_list(a[:5]) + ' ... ' + kv_list(a[-5:]) + '}'
 
     def __repr__(self):
         return f"<{self.__class__.__name__}: {self.__str__()}>"

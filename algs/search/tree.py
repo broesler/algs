@@ -115,9 +115,6 @@ class BST(OrderedSymbolTable):
         ..note:: Implements eager Hibbard deletion.
         """
 
-    def __str__(self):
-        return str(dict(self.items()))
-
     # -------------------------------------------------------------------------
     #         Other Public Methods
     # -------------------------------------------------------------------------
