@@ -289,49 +289,52 @@ class MultiKeyHashST(LinearProbingHashST):
         i = self._hash(k)
         self._cost = 1
         while self._keys[i] is not None:
-            # No check for self._keys[i] == k, since we allow multiple keys
-            i = (i + 1) % self.M
-            self._cost += 1
+            if k == self._keys[i]:
+                self._vals[i].append(v)
+                return
+            else:
+                i = (i + 1) % self.M
+                self._cost += 1
         else:
             self._keys[i] = k
-            self._vals[i] = v
+            self._vals[i] = list()  # keep a list of values for each key
+            if isinstance(v, list):
+                self._vals[i].extend(v)
+            else:
+                self._vals[i].append(v)
             self.N += 1
 
-    def __delitem__(self, k):
-        if k not in self:
-            raise KeyError(k)
+    def __getitem__(self, k):
         i = self._hash(k)
-        _cost = 1
-        # Set slot of `k` to None
-        while k != self._keys[i]:
-            i = (i + 1) % self.M
-            _cost += 1
-        self._keys[i] = None
-        self._vals[i] = None
-        i = (i + 1) % self.M
-        # Rehash all keys in the cluster to the right of the deleted key,
-        # except multiple instances of that key.
+        self._cost = 1
         while self._keys[i] is not None:
-            key_to_redo = self._keys[i]
-            val_to_redo = self._vals[i]
-            self._keys[i] = None
-            self._vals[i] = None
-            self.N -= 1
-            if k != key_to_redo:
-                self.__setitem__(key_to_redo, val_to_redo)
-                _cost += self._cost  # self._cost updated in __setitem__
-            i = (i + 1) % self.M
-        self.N -= 1
-        self._cost = _cost
-        # Check for a resize if table is small enough
-        if self._RESIZE_FLAG and (self.N > 0 and self.N <= self.M // 8):
-            self._resize(self.M // 2)
-            self._lgM -= 1
+            if k == self._keys[i]:
+                return self._vals[i][0]  # use another table?
+            else:
+                i = (i + 1) % self.M
+                self._cost += 1
+        else:
+            raise KeyError(k)
 
 
 # Exercise 3.8.9
 class MultiBST(BST):
     """Implements a binary search tree, but allows multiple keys."""
+
+    class _Node(BST._Node):
+        def __init__(self, key, value=None):
+            super().__init__(key, value)
+            self.val = [value]
+
+    def __getitem__(self, k):
+        # Ex 3.2.28 cache latest
+        if self._CACHE_FLAG and self._cache and k == self._cache.key:
+            return self._cache.val[0]
+        else:
+            x = self._get(k, self._root)
+            if self._CACHE_FLAG:
+                self._cache = x
+            return x.val[0]
 
     def _set(self, k, v, x=None):
         """Add a new node to subtree at `x`, associating `k` with `v`.
@@ -360,6 +363,10 @@ class MultiBST(BST):
         elif k > x.key:
             x.right = self._set(k, v, x.right)
         else:  # k == x.key
+            if isinstance(v, list):
+                x.val.extend(v)
+            else:
+                x.val.append(v)
             # Add duplicate keys to the left of the first
             if self._CACHE_FLAG:
                 self._cache = x
