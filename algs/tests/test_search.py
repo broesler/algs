@@ -56,15 +56,14 @@ UNORDERED_STS = set([SequentialSearchST, ArrayST,
                      CuckooHashST])
 
 ORDERED_STS = set([BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr,
-                   ArrayBST])
+                   ArrayBST, RedBlackBST, TopDown234, TopDown234_nr,
+                   BottomUp234, TopDown234bothways, Unbalanced23, AVLTree])
 
-BALANCED_TREES = set([RedBlackBST, TopDown234, TopDown234_nr, BottomUp234,
-                      TopDown234bothways, Unbalanced23, AVLTree])
-
-ALL_STS = UNORDERED_STS | ORDERED_STS | BALANCED_TREES
+ALL_STS = UNORDERED_STS | ORDERED_STS
 
 NO_DELETE = set([ArrayBST,
                  Unbalanced23,
+                 TopDown234bothways,
                  ])
 
 NO_CACHE = set([ArrayBST,
@@ -175,7 +174,7 @@ class TestUnorderedOps:
                 t = ST(data, cache=cache)
                 t[k]    # get item to ensure cache is used
                 del t[k]
-                # assert len(t) == len(expect_set)-1
+                assert len(t) == len(expect_set)-1
                 assert k not in t
                 assert sorted(t.keys()) == sorted(expect_set - set(k))
                 err_test(t, '__getitem__', k, err_type=KeyError)
@@ -306,6 +305,10 @@ class TestOrderedOps:
         assert st.items() == sorted(data_set)
         assert st.items('F', 'P') == sorted(data_set)[3:7]
 
+
+@pytest.mark.parametrize('ST', ORDERED_STS - NO_DELETE)
+@pytest.mark.parametrize('cache', [False, True])
+class TestOrderedDelete:
     def test_delete_min(self, st, expect_set):
         # Test deletion and reinsertion
         k, v = st.min(), st[st.min()]
