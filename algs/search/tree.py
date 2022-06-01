@@ -18,15 +18,14 @@ __all__ = ['BST', 'BST_nr', 'ThreadedST', 'ThreadedST_nr', 'ArrayBST']
 
 
 class BST(OrderedSymbolTable):
-    __doc__ = (
-    f"""Implements a binary search tree data structure.
-    {OrderedSymbolTable._attribs_doc}
-    height : int
-        The height of the binary tree == maximum path length ~ 2.99 log2 N
-    internal_path_length : int
-        The sum of the depths of all nodes in the tree ~ 1.39 log2 N - 1.85
-    {OrderedSymbolTable._other_doc}
-    """)
+    __doc__ = f"""Implements a binary search tree data structure.
+        {OrderedSymbolTable._attribs_doc}
+        height : int
+            The height of the binary tree == maximum path length ~ 2.99 log2 N
+        internal_path_length : int
+            The sum of the depths of all nodes in the tree ~ 1.39 log2 N - 1.85
+        {OrderedSymbolTable._other_doc}
+        """
 
     # Deletion method value is constant with the class
     _THRESH = dict({'Hibbard': 1, 'Hibbard_p': 0, 'random': 0.5})
@@ -66,13 +65,13 @@ class BST(OrderedSymbolTable):
         except KeyError:
             raise ValueError(f"Invalid delete_method '{delete_method}'!")
 
-    __init__.__doc__ = (OrderedSymbolTable.__init__.__doc__ +
-        """delete_method : str in {'Hibbard', 'random'}
+    __init__.__doc__ = f"""{OrderedSymbolTable.__init__.__doc__}
+        delete_method : str in {'Hibbard', 'random'}
             Select method to use for deletion:
                 * 'Hibbard' will replace the requested node with its successor.
                 * 'random' will replace the requested node with a random choice
                 between its predecessor and its successor.
-        """)
+        """
 
     @property
     def size(self):
@@ -481,8 +480,8 @@ class BST(OrderedSymbolTable):
         """Update the parameters of the node based on its subtree."""
         x.N = 1 + self._size(x.left) + self._size(x.right)
         x.height = 1 + max(self._height(x.left), self._height(x.right))
-        x.ipl = self._internal_path_length(x.left) + self._size(x.left) \
-                + self._internal_path_length(x.right) + self._size(x.right)
+        x.ipl = (self._internal_path_length(x.left) + self._size(x.left)
+                 + self._internal_path_length(x.right) + self._size(x.right))
 
     def _get_node(self, k):
         """Return the node associated with the given `k`."""
@@ -522,9 +521,9 @@ class BST(OrderedSymbolTable):
     def items(self, lo=None, hi=None):
         return self.in_order(lo, hi, op=lambda x: (x.key, x.val))
 
-    keys.__doc__   = _docstring.format(rtype='keys', oplang='')
+    keys.__doc__   = _docstring.format(rtype='keys',   oplang='')
     values.__doc__ = _docstring.format(rtype='values', oplang='')
-    items.__doc__  = _docstring.format(rtype='items', oplang='')
+    items.__doc__  = _docstring.format(rtype='items',  oplang='')
 
     def in_order(self, lo=None, hi=None, op=None):
         if self._root is None:
@@ -1711,9 +1710,11 @@ class ArrayBST(SymbolTable):
 
 
 if __name__ == '__main__':
+    from algs.exercises.draw_tree import TreeArtist
     keys = list('SEARCHEXAMPLE')
     items = list((c, i) for i, c in enumerate(keys))
     st = BST(items)
+    TreeArtist(st).draw()
 
 # =============================================================================
 # =============================================================================

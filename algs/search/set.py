@@ -10,7 +10,10 @@ Implements Set and HashSet APIs using symbol tables. See §3.5.
 # =============================================================================
 
 from abc import ABC, abstractmethod
+
+from algs.search.table import SymbolTable
 from algs.search.hash import LinearProbingHashST
+from algs.search.tree import BST
 from algs.search.balanced_tree import RedBlackBST
 
 
@@ -262,6 +265,137 @@ class Set(OrderedSet):
 
     def delete_max(self):
         return self._st.delete_max()
+
+
+# Exercise 3.5.8
+class MultiKeyHashST(LinearProbingHashST):
+    __doc__ = f"""Implements a hash table using arrays with linear probing, but
+               allows multiple keys.
+
+               .. note::
+                   `ST.get` will return any value associated with a key `k`.
+                   `ST.delete` will delete all keys equal to `k`.
+               {SymbolTable.__doc__}"""
+
+    def __setitem__(self, k, v):
+        if not self._RESIZE_FLAG and self.N == self.M:
+            raise RuntimeError(("Trying to insert into a full table! "
+                                "Set `resize=True`."))
+
+        if self._RESIZE_FLAG and self.N >= self.M // 2:
+            self._resize(2*self.M)
+            self._lgM += 1
+
+        i = self._hash(k)
+        self._cost = 1
+        while self._keys[i] is not None:
+            # No check for self._keys[i] == k, since we allow multiple keys
+            i = (i + 1) % self.M
+            self._cost += 1
+        else:
+            self._keys[i] = k
+            self._vals[i] = v
+            self.N += 1
+
+    def __delitem__(self, k):
+        if k not in self:
+            raise KeyError(k)
+        i = self._hash(k)
+        _cost = 1
+        # Set slot of `k` to None
+        while k != self._keys[i]:
+            i = (i + 1) % self.M
+            _cost += 1
+        self._keys[i] = None
+        self._vals[i] = None
+        i = (i + 1) % self.M
+        # Rehash all keys in the cluster to the right of the deleted key,
+        # except multiple instances of that key.
+        while self._keys[i] is not None:
+            key_to_redo = self._keys[i]
+            val_to_redo = self._vals[i]
+            self._keys[i] = None
+            self._vals[i] = None
+            self.N -= 1
+            if k != key_to_redo:
+                self.__setitem__(key_to_redo, val_to_redo)
+                _cost += self._cost  # self._cost updated in __setitem__
+            i = (i + 1) % self.M
+        self.N -= 1
+        self._cost = _cost
+        # Check for a resize if table is small enough
+        if self._RESIZE_FLAG and (self.N > 0 and self.N <= self.M // 8):
+            self._resize(self.M // 2)
+            self._lgM -= 1
+
+
+# Exercise 3.8.9
+class MultiBST(BST):
+    """Implements a binary search tree, but allows multiple keys."""
+
+    def _set(self, k, v, x=None):
+        """Add a new node to subtree at `x`, associating `k` with `v`.
+        If `k` is in subtree rooted at `x`, change its value to `v`.
+
+        Parameters
+        ----------
+        k : key
+            key for which to search
+        v : value
+            object to be associated with key `k`
+        x : _Node, optional
+            root of the subtree at which to begin search
+        """
+        # subtree is empty, create a new node
+        if x is None:
+            h = self._Node(k, v)
+            if self._CACHE_FLAG:
+                self._cache = h
+            return h
+
+        # create a child, or update the value
+        self._cost += 1
+        if k < x.key:
+            x.left = self._set(k, v, x.left)
+        elif k > x.key:
+            x.right = self._set(k, v, x.right)
+        else:  # k == x.key
+            # Add duplicate keys to the left of the first
+            if self._CACHE_FLAG:
+                self._cache = x
+
+        self._update_node(x)
+        return x
+
+
+# TODO test_multiset
+if __name__ == '__main__':
+    # Exercise 3.5.8
+    EXPECT_STR = 'SEARCHEXAMPLE'
+    items = list((c, i) for i, c in enumerate(EXPECT_STR))
+    st = MultiKeyHashST(items)
+    assert st['A'] in [2, 8]
+    assert st['E'] in [1, 6, 12]
+    print('---MultiKeyHashST---')
+    print(st)
+    del st['E']
+    assert 'E' not in st
+    print(st)
+
+    # Exercise 3.5.9
+    from algs.exercises.draw_tree import TreeArtist
+    keys = list('SEARCHEXAMPLE')
+    items = list((c, i) for i, c in enumerate(keys))
+    t = BST(items)
+    TreeArtist(t).draw(label_vals=True)
+
+    print('---MultiBST---')
+    st = MultiBST(items)
+    TreeArtist(st).draw(fignum=2, label_vals=True)
+    assert st['A'] in [2, 8]
+    assert st['E'] in [1, 6, 12]
+    print(st)
+
 
 # =============================================================================
 # =============================================================================

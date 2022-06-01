@@ -1125,68 +1125,6 @@ class CuckooHashST(HashTable):
                 if k is not None]
 
 
-# Exercise 3.5.8
-class MultiKeyHashST(LinearProbingHashST):
-    __doc__ = f"""Implements a hash table using arrays with linear probing, but
-               allows multiple keys.
-
-               .. note::
-                   `ST.get` will return any value associated with a key `k`.
-                   `ST.delete` will delete all keys equal to `k`.
-               {SymbolTable.__doc__}"""
-
-    def __setitem__(self, k, v):
-        if not self._RESIZE_FLAG and self.N == self.M:
-            raise RuntimeError(("Trying to insert into a full table! "
-                                "Set `resize=True`."))
-
-        if self._RESIZE_FLAG and self.N >= self.M // 2:
-            self._resize(2*self.M)
-            self._lgM += 1
-
-        i = self._hash(k)
-        self._cost = 1
-        while self._keys[i] is not None:
-            # No check for self._keys[i] == k, since we allow multiple keys
-            i = (i + 1) % self.M
-            self._cost += 1
-        else:
-            self._keys[i] = k
-            self._vals[i] = v
-            self.N += 1
-
-    def __delitem__(self, k):
-        if k not in self:
-            raise KeyError(k)
-        i = self._hash(k)
-        _cost = 1
-        # Set slot of `k` to None
-        while k != self._keys[i]:
-            i = (i + 1) % self.M
-            _cost += 1
-        self._keys[i] = None
-        self._vals[i] = None
-        i = (i + 1) % self.M
-        # Rehash all keys in the cluster to the right of the deleted key,
-        # except multiple instances of that key.
-        while self._keys[i] is not None:
-            key_to_redo = self._keys[i]
-            val_to_redo = self._vals[i]
-            self._keys[i] = None
-            self._vals[i] = None
-            self.N -= 1
-            if k != key_to_redo:
-                self.__setitem__(key_to_redo, val_to_redo)
-                _cost += self._cost  # self._cost updated in __setitem__
-            i = (i + 1) % self.M
-        self.N -= 1
-        self._cost = _cost
-        # Check for a resize if table is small enough
-        if self._RESIZE_FLAG and (self.N > 0 and self.N <= self.M // 8):
-            self._resize(self.M // 2)
-            self._lgM -= 1
-
-
 # -----------------------------------------------------------------------------
 #         Run tests
 # -----------------------------------------------------------------------------
@@ -1301,20 +1239,6 @@ if __name__ == '__main__':
     items = [(c, i) for i, c in enumerate(keys)]
     expect_set = set(keys)
     stg = CuckooHashST(items)
-
-    # TODO test_multiset
-    # Exercise 3.5.8
-    EXPECT_STR = 'SEARCHEXAMPLE'
-    items = list((c, i) for i, c in enumerate(EXPECT_STR))
-    st = MultiKeyHashST(items)
-    assert st['A'] in [2, 8]
-    assert st['E'] in [1, 6, 12]
-    print('---MultiKeyHashST---')
-    print(st)
-    del st['E']
-    assert 'E' not in st
-    print(st)
-
 
 # =============================================================================
 # =============================================================================
