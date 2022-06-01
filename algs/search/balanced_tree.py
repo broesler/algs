@@ -405,6 +405,7 @@ class RedBlackBST(BST):
 class Unbalanced23(RedBlackBST):
     """Implements a 2-3 tree using the red-black representation, but without
     a balance requirement."""
+
     def _set(self, k, v, h=None, parent_is_3node=False):
         """Add a new node to subtree at `h`, associating `k` with `v`.
         If `k` is in subtree rooted at `h`, change its value to `v`.
@@ -455,6 +456,7 @@ class Unbalanced23(RedBlackBST):
 # Ex 3.3.25 Top-down 2-3-4 Trees
 class TopDown234(RedBlackBST):
     """Implements a top-down 2-3-4 tree using the red-black representation."""
+
     def _set(self, k, v, h=None):
         """Add a new node to subtree at `h`, associating `k` with `v`.
         If `k` is in subtree rooted at `h`, change its value to `v`.
@@ -508,6 +510,7 @@ class TopDown234(RedBlackBST):
 class TopDown234_nr(RedBlackBST):
     """Implements a top-down 2-3-4 tree using the red-black representation, but
     sets elements with a single top-down pass."""
+
     def _set(self, k, v, h=None):
         """Add a new node to subtree at `h`, associating `k` with `v`.
         If `k` is in subtree rooted at `h`, change its value to `v`.
@@ -641,8 +644,10 @@ class TopDown234_nr(RedBlackBST):
 
 
 # Ex 3.3.27 Top-down 2-3-4 Trees, with right-leaning links allowed
+# TODO implement `_delete`
 class TopDown234bothways(RedBlackBST):
     """Implements a top-down 2-3-4 tree using the red-black representation."""
+
     def _set(self, k, v, h=None):
         """Add a new node to subtree at `h`, associating `k` with `v`.
         If `k` is in subtree rooted at `h`, change its value to `v`.
@@ -701,6 +706,7 @@ class TopDown234bothways(RedBlackBST):
 # Ex 3.3.28 Bottom-up 2-3-4 Tree
 class BottomUp234(RedBlackBST):
     """Implements a bottom-up 2-3-4 tree using the red-black representation."""
+
     def _set(self, k, v, h=None):
         """Add a new node to subtree at `h`, associating `k` with `v`.
         If `k` is in subtree rooted at `h`, change its value to `v`.
@@ -928,16 +934,17 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     from algs.exercises.draw_tree import TreeArtist
 
+    EXPECT_STR = 'SEARCHEXAMPLE'
     # EXPECT_STR = 'SEARCHXMPLJ'
     # EXPECT_STR = 'EASYQUESTION'
-    # keys = list(EXPECT_STR)
-    keys = [3, 7, 4, 9, 10, 0, 5, 6, 8, 2, 1, -8, -3, -5]
+    keys = list(EXPECT_STR)
+    # keys = [3, 7, 4, 9, 10, 0, 5, 6, 8, 2, 1, -8, -3, -5]
 
     # st = RedBlackBST.fromkeys(keys)
     # st = Unbalanced23.fromkeys(keys)
-    # st = TopDown234.fromkeys(keys)
+    st = TopDown234.fromkeys(keys)
     # FIXME differs from recursive for 'SEARCHXMPL'. Root should be 4-node
-    st = TopDown234_nr.fromkeys(keys)  
+    # st = TopDown234_nr.fromkeys(keys)  
     # st = TopDown234bothways.fromkeys(keys)
     # st = BottomUp234.fromkeys(keys)
     # st = AVLTree.fromkeys(keys)
@@ -946,6 +953,9 @@ if __name__ == '__main__':
     assert st.isBST()
     assert st.is_balanced()
     # assert st.is_height_balanced()  # only AVL tree
+
+    del st['R']
+    TreeArtist(st).draw(fignum=2)
 
     # # Compare two trees
     # tst = TopDown234.fromkeys(keys)
