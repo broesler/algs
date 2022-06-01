@@ -11,6 +11,7 @@ Implements Set and HashSet APIs using symbol tables. See §3.5.
 
 from abc import ABC, abstractmethod
 
+from algs.basics import Queue, RandomQueue
 from algs.search.table import SymbolTable
 from algs.search.hash import LinearProbingHashST
 from algs.search.tree import BST
@@ -324,7 +325,8 @@ class MultiBST(BST):
     class _Node(BST._Node):
         def __init__(self, key, value=None):
             super().__init__(key, value)
-            self.val = [value]
+            self.val = RandomQueue()  # store all values in a queue
+            self.val.enqueue(value)
 
     def __getitem__(self, k):
         # Ex 3.2.28 cache latest
@@ -334,7 +336,7 @@ class MultiBST(BST):
             x = self._get(k, self._root)
             if self._CACHE_FLAG:
                 self._cache = x
-            return x.val[0]
+            return x.val.sample()
 
     def _set(self, k, v, x=None):
         """Add a new node to subtree at `x`, associating `k` with `v`.
@@ -363,10 +365,7 @@ class MultiBST(BST):
         elif k > x.key:
             x.right = self._set(k, v, x.right)
         else:  # k == x.key
-            if isinstance(v, list):
-                x.val.extend(v)
-            else:
-                x.val.append(v)
+            x.val.enqueue(v)
             # Add duplicate keys to the left of the first
             if self._CACHE_FLAG:
                 self._cache = x
@@ -398,8 +397,12 @@ if __name__ == '__main__':
 
     print('---MultiBST---')
     st = MultiBST(items)
+    st['X'] = [1, 2, 3]
+    st['Y'] = [1, 2, 3]
+    st['Y'] = 4
+    st['A'] = 'hello'
     TreeArtist(st).draw(fignum=2, label_vals=True)
-    assert st['A'] in [2, 8]
+    assert st['A'] in [2, 8, 'hello']
     assert st['E'] in [1, 6, 12]
     print(st)
 
