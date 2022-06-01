@@ -124,7 +124,7 @@ class TestUnorderedOps:
                      err_type=ValueError)
 
         def test_empty_table(self, empty_st):
-            assert empty_st.size == 0
+            assert empty_st.size() == 0
             assert empty_st.is_empty
             assert empty_st.keys() == []
             assert empty_st.values() == []
@@ -159,7 +159,7 @@ class TestUnorderedOps:
                 else:
                     assert st[k] == v
             assert len(st) == len(expect_set)
-            assert len(st) == st.size
+            assert len(st) == st.size()
             # st.keys() not guaranteed in order, so these tests are weak
             assert sorted(st.keys()) == sorted(expect_set)
             assert sorted(st.values()) == sorted([v for k, v in data_set])
@@ -193,7 +193,7 @@ class TestUnorderedOps:
                 del st[k]
                 N_expect -= 1
                 test_keys -= set(k)
-                assert st.size == N_expect
+                assert st.size() == N_expect
                 assert sorted(st.keys()) == sorted(test_keys)
             err_test(st, '__delitem__', 'Z', err_type=KeyError)
             assert st.is_empty
@@ -225,7 +225,7 @@ class TestSelfOrg:
     def test_selforg_nocache(self, data):
         """Test self-organizing search (Exercise 3.1.22)"""
         st = ArrayST(data, selforg=True, cache=False)
-        rand_keys = rng.choice(st.keys(), size=st.size)
+        rand_keys = rng.choice(st.keys(), size=st.size())
         for k in rand_keys:
             st[k]                       # search for the key
             assert st.keys()[0] == k
@@ -235,7 +235,7 @@ class TestSelfOrg:
     def test_selforg_cache(self, data):
         """Test self-organizing search AND caching."""
         st = ArrayST(data, selforg=True, cache=True)
-        rand_keys = rng.choice(st.keys(), size=st.size)
+        rand_keys = rng.choice(st.keys(), size=st.size())
         for k in rand_keys:
             st[k]                       # search for the key
             assert st.keys()[0] == k
@@ -287,7 +287,7 @@ class TestOrderedOps:
         err_test(st, 'select', 99, err_type=IndexError)  # too large
 
         # Ex 3.2.33
-        for i in range(st.size):
+        for i in range(st.size()):
             assert st.rank(st.select(i)) == i
 
         for k in st.keys():

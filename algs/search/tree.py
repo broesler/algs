@@ -77,7 +77,7 @@ class BST(OrderedSymbolTable):
         )
 
     @property
-    def size(self):
+    def _N(self):
         return self._size(self._root)
 
     @property
@@ -174,7 +174,7 @@ class BST(OrderedSymbolTable):
             input string 'AXCSERH' as an example.
         """
         self._empty_check()
-        return self._center_of_mass(self._root) / (self.size - 1)
+        return self._center_of_mass(self._root) / (self.size() - 1)
 
     # Exercise 3.2.37
     def level_order(self, x=None, op=None):
@@ -1469,7 +1469,6 @@ class ArrayBST(SymbolTable):
         self._rights = list()  # indices of right-links
         super().__init__(items, cache)
 
-    @property
     def size(self):
         return len(self._keys)
 
@@ -1545,7 +1544,7 @@ class ArrayBST(SymbolTable):
         self._vals.append(v)
         self._lefts.append(None)
         self._rights.append(None)
-        return self.size - 1  # index of the new node
+        return self.size() - 1  # index of the new node
 
 
 if __name__ == '__main__':

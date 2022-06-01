@@ -185,7 +185,6 @@ class HashTable(SymbolTable):
             `M`.
         """)
 
-    @property
     def size(self):
         return self.N
 
@@ -233,7 +232,7 @@ class SeparateChainingHashST(HashTable):
         """)
 
     def _validate_size(self):
-        assert self.size == sum(self._list_lengths())
+        assert self.size() == sum(self._list_lengths())
 
     def _list_lengths(self):
         return [t.size for t in self._st]
@@ -954,7 +953,7 @@ class CuckooHashST(HashTable):
         return self._ta.vals + self._tb.vals
 
     def _validate_size(self):
-        assert self.size == (self._ta.N + self._tb.N)
+        assert self.size() == (self._ta.N + self._tb.N)
 
     def _resize(self, M):
         """Resize the internal tables."""

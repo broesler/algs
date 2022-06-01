@@ -76,8 +76,6 @@ class SymbolTable(ABC):
             st[k] = value
         return st
 
-    # TODO implement version with lo and hi arguments in OrderedSymbolTable
-    @property
     @abstractmethod
     def size(self):
         """Number of elements in the table."""
@@ -85,7 +83,7 @@ class SymbolTable(ABC):
 
     @property
     def is_empty(self):
-        return self.size == 0
+        return self.size() == 0
 
     def _empty_check(self):
         """General assertion that table is not empty."""
@@ -93,7 +91,7 @@ class SymbolTable(ABC):
             raise KeyError(f"{self.__class__.__name__} is empty!")
 
     def __len__(self):
-        return self.size
+        return self.size()
 
     def __contains__(self, k):
         """Return True if `k` is present in the table, False otherwise."""
@@ -193,6 +191,31 @@ class SymbolTable(ABC):
 
 class OrderedSymbolTable(SymbolTable):
     # An abstract base class implementing an ordered symbol table.
+
+    @property
+    @abstractmethod
+    def _N(self):
+        """Number of elements in the table."""
+        pass
+
+    def size(self, lo=None, hi=None):
+        """Number of items in the table between keys `lo` and `hi`,
+        inclusive."""
+        if lo is None and hi is None:
+            return self._N
+
+        if lo is None:
+            lo = self.min()
+        if hi is None:
+            hi = self.max()
+
+        if lo > hi:
+            return 0
+        elif hi in self:
+            return 1 + self.rank(hi) - self.rank(lo)
+        else:
+            return self.rank(hi) - self.rank(lo)
+
     @abstractmethod
     def min(self):
         """Return the minimum key in the table."""
@@ -315,7 +338,6 @@ class SequentialSearchST(SymbolTable):
         self._first = None
         super().__init__(items, cache)
 
-    @property
     def size(self):
         return self._size
 
@@ -342,7 +364,7 @@ class SequentialSearchST(SymbolTable):
                 i += 1
                 x = x.next
         else:
-            self._cost = self.size   # tested all the keys!
+            self._cost = self.size()   # tested all the keys!
             item = self._Item(k, v, self._first)  # add new key to beginning
             self._first = item
             self._size += 1
@@ -367,7 +389,7 @@ class SequentialSearchST(SymbolTable):
                 i += 1
                 x = x.next
         else:
-            self._cost = self.size  # tested all the keys!
+            self._cost = self.size()  # tested all the keys!
             raise KeyError(k)
 
     # Exercise 3.1.5
@@ -401,7 +423,7 @@ class SequentialSearchST(SymbolTable):
                 i += 1
                 x = x.next
         else:
-            self._cost = self.size
+            self._cost = self.size()
             raise KeyError(k)
 
     # -------------------------------------------------------------------------
@@ -439,9 +461,7 @@ class ArrayST(SymbolTable):
             search times for commonly-searched keys.
         """)
 
-    @property
     def size(self):
-        """Overrides `SymbolTable.size`."""
         return len(self._items)
 
     # -------------------------------------------------------------------------
@@ -464,11 +484,11 @@ class ArrayST(SymbolTable):
                 if self._SELF_ORG_FLAG and i > 0:
                     # Move search hit to front of the list: O(n)
                     # Cost of pop (n - (i+1)) + cost of insert(0) (n - 1)
-                    self._cost += 2*self.size - i - 2
+                    self._cost += 2*self.size() - i - 2
                     self._items.insert(0, self._items.pop(i))
                 return
         else:
-            self._cost = self.size          # tested all the keys!
+            self._cost = self.size()          # tested all the keys!
             self._items.append(_Item(k, v))  # add new key to end of list: O(1)
             if self._CACHE_FLAG:
                 self._cache = self._items[-1]  # update the cache
@@ -486,11 +506,11 @@ class ArrayST(SymbolTable):
                     self._cache = self._items[i]
                 if self._SELF_ORG_FLAG and i > 0:
                     # Move search hit to front of the list: O(n)
-                    self._cost += 2*self.size - i - 2
+                    self._cost += 2*self.size() - i - 2
                     self._items.insert(0, self._items.pop(i))
                 return item.val
         else:
-            self._cost = self.size  # tested all the keys!
+            self._cost = self.size()  # tested all the keys!
             raise KeyError(k)
 
     # Exercise 3.1.5
@@ -505,7 +525,7 @@ class ArrayST(SymbolTable):
                 del self._items[i]
                 return
         else:
-            self._cost = self.size
+            self._cost = self.size()
             raise KeyError(k)
 
     # -------------------------------------------------------------------------
@@ -538,7 +558,7 @@ class BinarySearchST(OrderedSymbolTable):
         self._assert_integrity()
 
     @property
-    def size(self):
+    def _N(self):
         return len(self._items)
 
     # -------------------------------------------------------------------------
@@ -558,12 +578,12 @@ class BinarySearchST(OrderedSymbolTable):
         # Perform binary search O(log2 N)
         i = self.rank(k)
         # if key is in the table, update the value
-        if i < self.size and self._items[i].key == k:
+        if i < self.size() and self._items[i].key == k:
             self._cost += 1
             self._items[i].val = v
         else:
             # create new Item in the table
-            self._cost += self.size - i  # Θ(n-i) to move list elements
+            self._cost += self.size() - i  # Θ(n-i) to move list elements
             self._items.insert(i, _Item(k, v))
 
         if self._CACHE_FLAG:
@@ -576,7 +596,7 @@ class BinarySearchST(OrderedSymbolTable):
             return self._cache.val
 
         i = self.rank(k)
-        if i < self.size and self._items[i].key == k:
+        if i < self.size() and self._items[i].key == k:
             if self._CACHE_FLAG:
                 self._cache = self._items[i]  # cache its location
             return self._items[i].val
@@ -585,7 +605,7 @@ class BinarySearchST(OrderedSymbolTable):
 
     def __delitem__(self, k):
         i = self.rank(k)
-        if i < self.size and self._items[i].key == k:
+        if i < self.size() and self._items[i].key == k:
             # Clear cache of item if necessary
             if self._CACHE_FLAG and self._cache and k == self._cache.key:
                 self._cache = None
@@ -609,7 +629,7 @@ class BinarySearchST(OrderedSymbolTable):
 
     def floor(self, k):
         i = self.rank(k)
-        if i < self.size and self._items[i].key == k:
+        if i < self.size() and self._items[i].key == k:
             return self._items[i].key
         elif i > 0:
             return self._items[i-1].key
@@ -618,7 +638,7 @@ class BinarySearchST(OrderedSymbolTable):
 
     def ceil(self, k):
         i = self.rank(k)
-        if i < self.size:
+        if i < self.size():
             return self._items[i].key
         else:
             return None
@@ -627,7 +647,7 @@ class BinarySearchST(OrderedSymbolTable):
         # Non-recursive binary search algorithm
         self._cost = 0
         lo = 0
-        hi = self.size - 1
+        hi = self.size() - 1
         while lo <= hi:
             mid = (hi + lo) // 2
             self._cost += 2  # count 1 compare + 1 access here for simplicity
@@ -640,7 +660,7 @@ class BinarySearchST(OrderedSymbolTable):
         return lo
 
     def select(self, r):
-        if 0 <= r < self.size:
+        if 0 <= r < self.size():
             return self._items[r].key
         else:
             raise IndexError(r)
@@ -672,11 +692,11 @@ class BinarySearchST(OrderedSymbolTable):
                 lv = self.rank(lo)
 
             if hi is None:
-                hv = self.size
+                hv = self.size()
             else:
                 hv = self.rank(hi)
                 # `hi` is included in range
-                if hv < self.size and self._items[hv].key == hi:
+                if hv < self.size() and self._items[hv].key == hi:
                     hv += 1
 
             q = Queue()
@@ -695,13 +715,13 @@ class BinarySearchST(OrderedSymbolTable):
         assert self._is_sorted() and self._rank_check()
 
     def _rank_check(self):
-        for i in range(self.size):
+        for i in range(self.size()):
             if i != self.rank(self.select(i)):
                 return False
         return True
 
     def _is_sorted(self):
-        for i in range(1, self.size):
+        for i in range(1, self.size()):
             if self._items[i-1].key > self._items[i].key:
                 return False
         return True
