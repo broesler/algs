@@ -11,11 +11,11 @@ Implements Set and HashSet APIs using symbol tables. See §3.5.
 
 from abc import ABC, abstractmethod
 
-from algs.basics import Queue, RandomQueue
+from algs.basics import RandomQueue
 from algs.search.table import SymbolTable
 from algs.search.hash import LinearProbingHashST
 from algs.search.tree import BST
-from algs.search.balanced_tree import RedBlackBST
+from algs.search.balanced_tree import RedBlackBST, KeyChanged
 
 
 # -----------------------------------------------------------------------------
@@ -269,9 +269,9 @@ class Set(OrderedSet):
 
 
 # Exercise 3.5.8
-class MultiHashST(LinearProbingHashST):
+class MultiValHashST(LinearProbingHashST):
     __doc__ = f"""Implements a hash table using arrays with linear probing, but
-               allows multiple keys.
+               allows multiple values to be associated with each key.
 
                .. note::
                    `ST.get` will return any value associated with a key `k`.
@@ -321,7 +321,7 @@ class MultiHashST(LinearProbingHashST):
         self._cost = 1
         while self._keys[i] is not None:
             if k == self._keys[i]:
-                return self._vals[i].sample()  # use another table?
+                return self._vals[i].sample()  # return *any* value
             else:
                 i = (i + 1) % self.M
                 self._cost += 1
@@ -330,8 +330,9 @@ class MultiHashST(LinearProbingHashST):
 
 
 # Exercise 3.8.9
-class MultiBST(BST):
-    """Implements a binary search tree, but allows multiple keys."""
+class MultiValBST(BST):
+    """Implements a binary search tree, but allows multiple values to be
+    associated with each key."""
 
     class _Node(BST._Node):
         def __init__(self, key, value=None):
@@ -342,12 +343,12 @@ class MultiBST(BST):
     def __getitem__(self, k):
         # Ex 3.2.28 cache latest
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
-            return self._cache.val[0]
+            return self._cache.val.sample()
         else:
             x = self._get(k, self._root)
             if self._CACHE_FLAG:
                 self._cache = x
-            return x.val.sample()
+            return x.val.sample()  # return *any* value
 
     def _set(self, k, v, x=None):
         """Add a new node to subtree at `x`, associating `k` with `v`.
@@ -385,15 +386,70 @@ class MultiBST(BST):
         return x
 
 
+# Exercise 3.8.10
+class MultiValRedBlackBST(RedBlackBST):
+    """Implements a balanced binary search tree, but allows multiple values to
+    be associated with each key."""
+
+    class _Node(RedBlackBST._Node):
+        def __init__(self, key, value, *args, **kwargs):
+            super().__init__(key, value, *args, **kwargs)
+            self.val = RandomQueue()  # store all values in a queue
+            self.val.enqueue(value)
+
+    def __getitem__(self, k):
+        # Ex 3.2.28 cache latest
+        if self._CACHE_FLAG and self._cache and k == self._cache.key:
+            return self._cache.val.sample()
+        else:
+            x = self._get(k, self._root)
+            if self._CACHE_FLAG:
+                self._cache = x
+            return x.val.sample()  # return *any* value
+
+    def _set(self, k, v, h=None):
+        # subtree is empty, create a new node with a red link to parent
+        if h is None:
+            x = self._Node(k, v, color=self._RED)
+            if self._CACHE_FLAG:
+                self._cache = x
+            return x
+
+        # create a child, or update the value
+        self._cost += 1
+        if k < h.key:
+            h.left = self._set(k, v, h.left)
+        elif k > h.key:
+            h.right = self._set(k, v, h.right)
+        else:  # k == h.key
+            h.val.enqueue(v)  # NOTE only change from original
+            if self._CACHE_FLAG:
+                self._cache = h
+            raise KeyChanged  # no need for rotations
+
+        # Balance the tree (red links left-leaning)
+        if self._is_red(h.right) and not self._is_red(h.left):
+            h = self._rotate_left(h)
+        if self._is_red(h.left) and self._is_red(h.left.left):
+            h = self._rotate_right(h)
+        # Split a 4-node into 3 2-nodes
+        if self._is_red(h.right) and self._is_red(h.left):
+            self._flip_colors(h)
+
+        # Update node attributes
+        self._update_node(h)
+        return h
+
+
 # TODO test_multiset
 if __name__ == '__main__':
     # Exercise 3.5.8
     EXPECT_STR = 'SEARCHEXAMPLE'
     items = list((c, i) for i, c in enumerate(EXPECT_STR))
-    st = MultiHashST(items)
+    st = MultiValHashST(items)
     assert st['A'] in [2, 8]
     assert st['E'] in [1, 6, 12]
-    print('---MultiKeyHashST---')
+    print('---MultiValHashST---')
     print(st)
     del st['E']
     assert 'E' not in st
@@ -404,10 +460,10 @@ if __name__ == '__main__':
     keys = list('SEARCHEXAMPLE')
     items = list((c, i) for i, c in enumerate(keys))
     t = BST(items)
-    TreeArtist(t).draw(label_vals=True)
+    TreeArtist(t).draw(fignum=1, label_vals=True)
 
-    print('---MultiBST---')
-    st = MultiBST(items)
+    print('---MultiValBST---')
+    st = MultiValBST(items)
     st['X'] = [1, 2, 3]
     st['Y'] = [1, 2, 3]
     st['Y'] = 4
@@ -417,6 +473,23 @@ if __name__ == '__main__':
     assert st['E'] in [1, 6, 12]
     print(st)
 
+    # Exercise 3.5.10
+    from algs.exercises.draw_tree import TreeArtist
+    keys = list('SEARCHEXAMPLE')
+    items = list((c, i) for i, c in enumerate(keys))
+    t = RedBlackBST(items)
+    TreeArtist(t).draw(fignum=3, label_vals=True)
+
+    print('---MultiValRedBlackBST---')
+    st = MultiValRedBlackBST(items)
+    st['X'] = [1, 2, 3]
+    st['Y'] = [1, 2, 3]
+    st['Y'] = 4
+    st['A'] = 'hello'
+    TreeArtist(st).draw(fignum=4, label_vals=True)
+    assert st['A'] in [2, 8, 'hello']
+    assert st['E'] in [1, 6, 12]
+    print(st)
 
 # =============================================================================
 # =============================================================================
