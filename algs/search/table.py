@@ -69,7 +69,7 @@ class SymbolTable(ABC):
     # Additional constructor
     @classmethod
     def fromkeys(cls, keys=None, value=None, **kwargs):
-        """Create a new BST with keys from iterable and values set to value."""
+        """Create a new table with all `keys` set to `value`."""
         keys = [] if keys is None else keys
         st = cls(**kwargs)
         for k in keys:
@@ -108,8 +108,13 @@ class SymbolTable(ABC):
         return sorted(self.items()) == sorted(other.items())
 
     def __str__(self):
+        """Return the string representation of the symbol table."""
+        # Define a helper function
         def kv_list(a):
+            """Return a comma-separated list of key-value pairs."""
             return ', '.join(f"{repr(k)}: {repr(v)}" for k, v in a)
+
+        # Shorten the list if there are a large number of keys
         a = self.items()
         if len(self) < 30:
             return '{' + kv_list(a) + '}'
@@ -177,9 +182,9 @@ class SymbolTable(ABC):
     def items(self):
         return self._make_iterator(rtype='items')(self)
 
-    keys.__doc__   = _docstring.format(rtype='keys')
+    keys.__doc__ = _docstring.format(rtype='keys')
     values.__doc__ = _docstring.format(rtype='values')
-    items.__doc__  = _docstring.format(rtype='items')
+    items.__doc__ = _docstring.format(rtype='items')
 
     def _make_iterator(self, rtype):
         """Return an iterator over all of the items in the table."""
@@ -269,9 +274,9 @@ class OrderedSymbolTable(SymbolTable):
         func = self._make_range_iterator(rtype='items')
         return func(self, lo, hi)
 
-    keys.__doc__   = _docstring.format(rtype='keys')
+    keys.__doc__ = _docstring.format(rtype='keys')
     values.__doc__ = _docstring.format(rtype='values')
-    items.__doc__  = _docstring.format(rtype='items')
+    items.__doc__ = _docstring.format(rtype='items')
 
     def _make_range_iterator(self, rtype):
         """Return an iterator over all of the items in the table."""

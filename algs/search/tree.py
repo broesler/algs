@@ -65,13 +65,14 @@ class BST(OrderedSymbolTable):
         except KeyError:
             raise ValueError(f"Invalid delete_method '{delete_method}'!")
 
-    __init__.__doc__ = f"""{OrderedSymbolTable.__init__.__doc__}
-        delete_method : str in {'Hibbard', 'random'}
+    __init__.__doc__ = (OrderedSymbolTable.__init__.__doc__ +
+        """delete_method : str in {'Hibbard', 'random'}
             Select method to use for deletion:
                 * 'Hibbard' will replace the requested node with its successor.
                 * 'random' will replace the requested node with a random choice
                 between its predecessor and its successor.
         """
+        )
 
     @property
     def size(self):
@@ -355,14 +356,18 @@ class BST(OrderedSymbolTable):
         return x
 
     def _min(self, x=None):
-        """Return the minimum key in the subtree rooted at `x`."""
+        """Return node with the minimum key in the subtree rooted at `x`."""
         return x if x.left is None else self._min(x.left)
 
     def _max(self, x=None):
+        """Return node with the maximum key in the subtree rooted at `x`."""
         return x if x.right is None else self._max(x.right)
 
     def _floor(self, k, x=None):
-        """Return the Node with key that is the floor of `k`."""
+        """Return the Node corresponding to the largest key less than or equal
+        to `k` in the subtree rooted at `x`, or None if `k` is less than the
+        smallest key in the table.
+        """
         if x is None:
             return
         if k == x.key:
@@ -373,7 +378,10 @@ class BST(OrderedSymbolTable):
         return t if t else x
 
     def _ceil(self, k, x=None):
-        """Return the Node with key that is the ceiling of `k`."""
+        """Return the Node corresponding to the smallest key greater than or
+        equal to `k` in the subtree rooted at `x`, or None if `k` is greater
+        than the largest key in the table.
+        """
         # Note: _ceil is just _floor, interchange < <-> >, left <-> right
         if x is None:
             return
@@ -385,7 +393,8 @@ class BST(OrderedSymbolTable):
         return t if t else x
 
     def _rank(self, k, x=None):
-        """Return the rank of key `k` in the subtree rooted at `x`.
+        """Return the number of keys in the subtree rooted at `x` that are
+        strictly less than `k`.
 
         .. note:: `rank` is the inverse of `select`.
         """
@@ -527,9 +536,9 @@ class BST(OrderedSymbolTable):
     def items(self, lo=None, hi=None):
         return self.in_order(lo, hi, op=lambda x: (x.key, x.val))
 
-    keys.__doc__   = _docstring.format(rtype='keys',   oplang='')
+    keys.__doc__ = _docstring.format(rtype='keys',     oplang='')
     values.__doc__ = _docstring.format(rtype='values', oplang='')
-    items.__doc__  = _docstring.format(rtype='items',  oplang='')
+    items.__doc__ = _docstring.format(rtype='items',   oplang='')
 
     def in_order(self, lo=None, hi=None, op=None):
         if self._root is None:
@@ -739,18 +748,6 @@ class ThreadedST(BST):
     #         Private API
     # -------------------------------------------------------------------------
     def _set(self, k, v, x=None):
-        """Add a new node to subtree at `x`, associating `k` with `v`.
-        If `k` is in subtree rooted at `x`, change its value to `v`.
-
-        Parameters
-        ----------
-        k : key
-            key for which to search
-        v : value
-            object to be associated with key `k`
-        x : _Node, optional
-            root of the subtree at which to begin search
-        """
         # subtree is empty, create a new node
         if x is None:
             h = self._Node(k, v)
@@ -836,14 +833,6 @@ class ThreadedST(BST):
         return x
 
     def _delete_min(self, x=None):
-        """Delete the smallest key from the subtree rooted at `x`.
-
-        Returns
-        -------
-        r : _Node
-            The root of the subtree. Will not be equal to `x` if `x` is the
-            minimum key in the subtree.
-        """
         if x.left is None:
             # Update threads
             if x.next:
@@ -856,14 +845,6 @@ class ThreadedST(BST):
         return x
 
     def _delete_max(self, x=None):
-        """Delete the largest key from the subtree rooted at `x`.
-
-        Returns
-        -------
-        r : _Node
-            The root of the subtree. Will not be equal to `x` if `x` is the
-            minimum key in the subtree.
-        """
         if x.right is None:
             # Update threads
             if x.next:
@@ -1002,14 +983,6 @@ class BST_nr(BST):
     #         Implement get, set, delete non-recursively
     # -------------------------------------------------------------------------
     def _get(self, k, x):
-        """Return the Node associated with the given key `k` in the subtree
-        rooted at `x`.
-
-        Raises
-        ------
-        KeyError
-            If `k` is not in the table.
-        """
         while x:
             if k == x.key:
                 if self._CACHE_FLAG:
@@ -1138,22 +1111,16 @@ class BST_nr(BST):
     #         Other Private Methods
     # -------------------------------------------------------------------------
     def _min(self, x):
-        """Return node with the minimum key in the subtree rooted at `x`."""
         while x.left:
             x = x.left
         return x
 
     def _max(self, x):
-        """Return node with the maximum key in the subtree rooted at `x`."""
         while x.right:
             x = x.right
         return x
 
     def _floor(self, k, x):
-        """Return the Node corresponding to the largest key less than or equal
-        to `k` in the subtree rooted at `x`, or None if `k` is less than the
-        smallest key in the table.
-        """
         p = None  # pointer to the floor Node
         while x:
             if k == x.key:
@@ -1167,10 +1134,6 @@ class BST_nr(BST):
         return p
 
     def _ceil(self, k, x):
-        """Return the Node corresponding to the smallest key greater than or
-        equal to `k` in the subtree rooted at `x`, or None if `k` is greater
-        than the largest key in the table.
-        """
         p = None  # pointer to the floor Node
         while x:
             if k == x.key:
@@ -1184,10 +1147,6 @@ class BST_nr(BST):
         return p
 
     def _rank(self, k, x):
-        """Return the number of keys less than `k` in the subtree rooted at `x`.
-
-        .. note:: `rank` is the inverse of `select`.
-        """
         r = 0
         while x:
             if k == x.key:
@@ -1201,16 +1160,6 @@ class BST_nr(BST):
         return r
 
     def _select(self, r, x):
-        """Return the Node corresponding to the key of rank `r` in the subtree
-        rooted at `x`.
-
-        .. note:: `select` is the inverse of `rank`.
-
-        Raises
-        ------
-        IndexError
-            If there are fewer than `r`+1 keys in the table.
-        """
         rank = r  # track desired rank
         while x:
             t = self._size(x.left)
@@ -1225,14 +1174,6 @@ class BST_nr(BST):
             raise IndexError(r)
 
     def _delete_min(self, x=None):
-        """Delete the smallest key from the subtree rooted at `x`.
-
-        Returns
-        -------
-        r : _Node
-            The root of the subtree. Will not be equal to `x` if `x` is the
-            minimum key in the subtree.
-        """
         if x is None:
             x = self._root
         if x.left is None:  # the min is the root
@@ -1249,14 +1190,6 @@ class BST_nr(BST):
             return r
 
     def _delete_max(self, x=None):
-        """Delete the smallest key from the subtree rooted at `x`.
-
-        Returns
-        -------
-        r : _Node
-            The root of the subtree. Will not be equal to `x` if `x` is the
-            minimum key in the subtree.
-        """
         if x is None:
             x = self._root
         if x.right is None:  # the max is the root
@@ -1277,7 +1210,6 @@ class BST_nr(BST):
     # -------------------------------------------------------------------------
     # Exercise 3.2.36
     def _iterate_range(self, lo, hi, op=None, **kwargs):
-        """Add items to a Queue, in key-order from `lo` to `hi`."""
         q = Queue()    # the output queue
         s = Stack()    # visited nodes so we can pop back up the tree
         x = self._root
@@ -1300,7 +1232,6 @@ class BST_nr(BST):
 
     # Overwrite BST._iterate_all recursive function
     def _iterate_all(self, op=None, **kwargs):
-        """Add items to a Queue, in key-order over all keys."""
         q = Queue()    # the output queue
         s = Stack()    # visited nodes so we can pop back up the tree
         x = self._root
@@ -1347,12 +1278,6 @@ class ThreadedST_nr(BST_nr):
     #         Private API
     # -------------------------------------------------------------------------
     def _set(self, k, v, x):
-        """Add a new node to subtree at `x`, associating `k` with `v`.
-        If `k` is in subtree rooted at `x`, change its value to `v`.
-
-        ..note:: in the non-recursive implementation, `x` will always be
-            `self._root`, as called from the BST parent class.
-        """
         s = Stack()  # track all nodes on path for updates
         p = self._root
         while x:
@@ -1400,17 +1325,6 @@ class ThreadedST_nr(BST_nr):
         return self._root
 
     def _delete(self, k, t):
-        """Delete the node associated with `k`.
-
-        ..note:: Implements eager Hibbard deletion.
-        ..note:: in the non-recursive implementation, `t` will always be
-            `self._root`, as called from the BST parent class.
-
-        Raises
-        ------
-        KeyError
-            If `k` is not in the table.
-        """
         s = Stack()  # stack of visited nodes to update counts
 
         # find node to delete
@@ -1483,14 +1397,6 @@ class ThreadedST_nr(BST_nr):
         return self._root
 
     def _delete_min(self, x=None):
-        """Delete the smallest key from the subtree rooted at `x`.
-
-        Returns
-        -------
-        r : _Node
-            The root of the subtree. Will not be equal to `x` if `x` is the
-            minimum key in the subtree.
-        """
         if x is None:
             x = self._root
         if x.left is None:  # the min is the root
@@ -1512,14 +1418,6 @@ class ThreadedST_nr(BST_nr):
         return r
 
     def _delete_max(self, x=None):
-        """Delete the largest key from the subtree rooted at `x`.
-
-        Returns
-        -------
-        r : _Node
-            The root of the subtree. Will not be equal to `x` if `x` is the
-            minimum key in the subtree.
-        """
         if x is None:
             x = self._root
         if x.right is None:  # the max is the root
@@ -1620,6 +1518,7 @@ class ThreadedST_nr(BST_nr):
 
 
 # Ex 3.2.41 array representation
+# TODO implement full OrderedSymbolTable API.
 class ArrayBST(SymbolTable):
     __doc__ = f"""Implements a binary search tree using parallel arrays.
                {SymbolTable.__doc__}
@@ -1638,7 +1537,6 @@ class ArrayBST(SymbolTable):
         return len(self._keys)
 
     def __getitem__(self, k):
-        """Return the value associated with the given key `k`."""
         if self.is_empty:
             raise KeyError(k)
 
@@ -1656,7 +1554,6 @@ class ArrayBST(SymbolTable):
             raise KeyError(k)
 
     def __setitem__(self, k, v):
-        """Insert a new value `v` associated with key `k`."""
         self._root = self._set(k, v)
 
     def _set(self, k, v):
@@ -1690,8 +1587,7 @@ class ArrayBST(SymbolTable):
         return self._root
 
     def __delitem__(self, k):
-        """Delete the item associated with `k`."""
-        pass
+        raise NotImplementedError
 
     # NOTE no guarantees on order of keys in output yet
     def keys(self):
