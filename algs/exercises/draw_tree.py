@@ -677,6 +677,7 @@ class TreeArtist():
                   ax=None,
                   null_links=True,
                   label_keys=True,
+                  label_vals=False,
                   threads=True,
                   **kwargs):
         """Plot a single node and its children."""
@@ -704,7 +705,11 @@ class TreeArtist():
                 )
         ax.add_patch(circ)
         if label_keys:
-            ax.annotate(h.node.key, xy=(h.x, h.y), color=fontcolor, ha='center', va='center')
+            ax.annotate(h.node.key, xy=(h.x, h.y), color=fontcolor,
+                        ha='center', va='center')
+        if label_vals:
+            ax.annotate(h.node.val, xy=(h.x+0.35, h.y), color=RED, fontsize=9,
+                        ha='left', va='center')
 
         # Plot links to children
         for t, is_left in zip([h.left, h.right], [True, False]):
@@ -777,6 +782,7 @@ if __name__ == '__main__':
     # -------------------------------------------------------------------------
     #         Plots
     # -------------------------------------------------------------------------
+    # TODO make nice single-figure layout
     layouts = dict({'knuth': 'Knuth (1971)',
                     'wetherell_naive': 'Wetherell and Shannon (1979) (naïve)',
                     'wetherell_3': 'Wetherell and Shannon (1979) (Alg 3)',
