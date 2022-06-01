@@ -5,15 +5,20 @@
 #   Author: Bernie Roesler
 #
 """
-  Description: Tests specific to balanced trees.
+Tests specific to balanced trees.
 """
 # =============================================================================
 
 import pytest
 
 from algs.search.balanced_tree import RedBlackBST
+# from algs.search.balanced_tree import (RedBlackBST, TopDown234, TopDown234_nr,
+#                                        BottomUp234, TopDown234bothways,
+#                                        Unbalanced23, AVLTree)
 from algs.tests.test_search import data
 
+# BALANCED_TREES = set([RedBlackBST, TopDown234, TopDown234_nr, BottomUp234,
+#                       TopDown234bothways, Unbalanced23, AVLTree])
 
 @pytest.fixture(params=[RedBlackBST])
 def t(data, request):
