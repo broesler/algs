@@ -11,6 +11,7 @@
 
 import random
 
+from algs.search.table import OrderedSymbolTable
 from algs.basics import Stack
 from algs.search.tree import BST
 
@@ -22,27 +23,15 @@ class KeyChanged(Exception):
     pass
 
 
+# TODO update docs to take advantage of ABCs -> update ABC docs to use an
+# f-string instead of using one in every class definition
 class RedBlackBST(BST):
-    """Implements a red-black binary search tree.
+    __doc__ = f"""Implements a red-black binary search tree.
 
-    ..note:: A red-black tree is a 1-1 map to a 2-3 tree.
+        .. note:: A red-black tree is a 1-1 map to a 2-3 tree.
+        {BST._attribs_doc}
+        """
 
-    Parameters
-    ----------
-    items : mapping, dict-like
-        Iterable of (key, value) tuples to be put onto the tree.
-
-    Attributes
-    ----------
-    size : int
-        Number of items on the tree.
-    height : int
-        The height of the binary tree == maximum path length ~ 2.99 log2 N
-    internal_path_length : int
-        The sum of the depths of all nodes in the tree ~ 1.39 log2 N - 1.85
-    is_empty : bool
-        True if `size == 0`.
-    """
     # Define internal boolean constants for color of edge
     _RED = True
     _BLACK = False
@@ -97,8 +86,6 @@ class RedBlackBST(BST):
 
     # Redefine put() operations to account for node colors
     def __setitem__(self, k, v):
-        """Add a new node to subtree at `x`, associating `k` with `v`.
-        If `k` is in subtree rooted at `x`, change its value to `v`."""
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
             self._cache.val = v
             return
@@ -112,13 +99,6 @@ class RedBlackBST(BST):
                 pass
 
     def __delitem__(self, k):
-        """Delete the node associated with `k`.
-
-        Raises
-        ------
-        KeyError
-            If `k` is not in the table.
-        """
         if not self.__contains__(k):
             raise KeyError(k)
         # If root is a 2-node, make it a 3-node
@@ -130,13 +110,6 @@ class RedBlackBST(BST):
             self._cache = None
 
     def delete_min(self):
-        """Delete the smallest key.
-
-        Raises
-        ------
-        KeyError
-            If the table is empty.
-        """
         self._empty_check()
         # If root is a 2-node, make it a 3-node
         if (not self._is_red(self._root.left) and
@@ -149,13 +122,6 @@ class RedBlackBST(BST):
             self._cache = None
 
     def delete_max(self):
-        """Delete the smallest key.
-
-        Raises
-        ------
-        KeyError
-            If the table is empty.
-        """
         self._empty_check()
         # If root is a 2-node, make it a 3-node
         if (not self._is_red(self._root.right) and
@@ -403,26 +369,12 @@ class RedBlackBST(BST):
 
 # Ex 3.3.23: 2-3 tree *without* balance restriction
 class Unbalanced23(RedBlackBST):
-    """Implements a 2-3 tree using the red-black representation, but without
-    a balance requirement."""
+    __doc__ = f"""Implements a 2-3 tree using the red-black representation, but
+        without a balance requirement.
+        {BST._attribs_doc}
+        """
 
     def _set(self, k, v, h=None, parent_is_3node=False):
-        """Add a new node to subtree at `h`, associating `k` with `v`.
-        If `k` is in subtree rooted at `h`, change its value to `v`.
-
-        ..note:: `h` will always be `self._root` from the parent class.
-
-        Parameters
-        ----------
-        k : key
-            key for which to search
-        v : value
-            object to be associated with key `k`
-        h : _Node, optional
-            root of the subtree at which to begin search
-        parent_is_3node : bool, optional
-            True if the parent of the current node is a 3-node
-        """
         # subtree is empty, create a new node with a red link to parent
         if h is None:
             if parent_is_3node:
@@ -452,10 +404,18 @@ class Unbalanced23(RedBlackBST):
         self._update_node(h)
         return h
 
+    _set.__doc__ = (RedBlackBST._set.__doc__ +
+        """parent_is_3node : bool, optional
+            True if the parent of the current node is a 3-node
+        """)
+
 
 # Ex 3.3.25 Top-down 2-3-4 Trees
 class TopDown234(RedBlackBST):
-    """Implements a top-down 2-3-4 tree using the red-black representation."""
+    __doc__ = f"""Implements a top-down 2-3-4 tree using the red-black
+        representation.
+        {BST._attribs_doc}
+        """
 
     def _set(self, k, v, h=None):
         """Add a new node to subtree at `h`, associating `k` with `v`.
@@ -508,8 +468,10 @@ class TopDown234(RedBlackBST):
 
 # Ex 3.3.26 Top-down 2-3-4 Trees, non-recursively
 class TopDown234_nr(RedBlackBST):
-    """Implements a top-down 2-3-4 tree using the red-black representation, but
-    sets elements with a single top-down pass."""
+    __doc__ = f"""Implements a top-down 2-3-4 tree using the red-black
+        representation, but sets elements with a single top-down pass.
+        {BST._attribs_doc}
+        """
 
     def _set(self, k, v, h=None):
         """Add a new node to subtree at `h`, associating `k` with `v`.
@@ -646,23 +608,12 @@ class TopDown234_nr(RedBlackBST):
 # Ex 3.3.27 Top-down 2-3-4 Trees, with right-leaning links allowed
 # TODO implement `_delete`
 class TopDown234bothways(RedBlackBST):
-    """Implements a top-down 2-3-4 tree using the red-black representation."""
-
-    def _set(self, k, v, h=None):
-        """Add a new node to subtree at `h`, associating `k` with `v`.
-        If `k` is in subtree rooted at `h`, change its value to `v`.
-
-        ..note:: `h` will always be `self._root` from the parent class.
-
-        Parameters
-        ----------
-        k : key
-            key for which to search
-        v : value
-            object to be associated with key `k`
-        h : _Node, optional
-            root of the subtree at which to begin search
+    __doc__ = f"""Implements a top-down 2-3-4 tree using the red-black
+        representation, but allows right-leaning links.
+        {BST._attribs_doc}
         """
+    def _set(self, k, v, h=None):
+        # Note: `h` will always be `self._root` from the parent class.
         # subtree is empty, create a new node with a red link to parent
         if h is None:
             x = self._Node(k, v, color=self._RED)
@@ -705,23 +656,13 @@ class TopDown234bothways(RedBlackBST):
 
 # Ex 3.3.28 Bottom-up 2-3-4 Tree
 class BottomUp234(RedBlackBST):
-    """Implements a bottom-up 2-3-4 tree using the red-black representation."""
+    __doc__ = f"""Implements a bottom-up 2-3-4 tree using the red-black
+        representation.
+        {BST._attribs_doc}
+        """
 
     def _set(self, k, v, h=None):
-        """Add a new node to subtree at `h`, associating `k` with `v`.
-        If `k` is in subtree rooted at `h`, change its value to `v`.
-
-        ..note:: `h` will always be `self._root` from the parent class.
-
-        Parameters
-        ----------
-        k : key
-            key for which to search
-        v : value
-            object to be associated with key `k`
-        h : _Node, optional
-            root of the subtree at which to begin search
-        """
+        # Note: `h` will always be `self._root` from the parent class.
         if h is None:
             x = self._Node(k, v, color=self._RED)
             if self._CACHE_FLAG:
@@ -768,21 +709,11 @@ class BottomUp234(RedBlackBST):
 
 
 class AVLTree(BST):
-    """Implements an AVL height-balanced tree, without colors."""
+    __doc__ = f"""Implements an AVL height-balanced tree, without colors.
+        {BST._attribs_doc}
+        """
 
     def _set(self, k, v, h=None):
-        """Add a new node to subtree at `h`, associating `k` with `v`.
-        If `k` is in subtree rooted at `h`, change its value to `v`.
-
-        Parameters
-        ----------
-        k : key
-            key for which to search
-        v : value
-            object to be associated with key `k`
-        h : _Node, optional
-            root of the subtree at which to begin search
-        """
         # subtree is empty, create a new node with a red link to parent
         if h is None:
             x = self._Node(k, v)
@@ -858,24 +789,14 @@ class AVLTree(BST):
 # Web Exercise: implement a Randomized Binary Search Tree
 # TODO implement all methods for use in tests
 class RandomizedBST(BST):
-    """Implements a radomized BST per Martinez and Roura [0].
+    __doc__ = f"""Implements a radomized BST per Martinez and Roura [0].
 
     .. [0]:: Martínez, Conrado and Roura, Salvador (1997). "Randomized binary
     search trees". *Journal of the ACM*, 45 (2): 288–323.
+    {BST._attribs_doc}
     """
-    def _set(self, k, v, t=None):
-        """Add a new node to subtree at `t`, associating `k` with `v`.
-        If `k` is in subtree rooted at `t`, change its value to `v`.
 
-        Parameters
-        ----------
-        k : key
-            key for which to search
-        v : value
-            object to be associated with key `k`
-        t : _Node, optional
-            root of the subtree at which to begin search
-        """
+    def _set(self, k, v, t=None):
         # subtree is empty, create a new node with a red link to parent
         if t is None:
             new = self._Node(k, v)

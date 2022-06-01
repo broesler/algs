@@ -18,7 +18,8 @@ __all__ = ['BST', 'BST_nr', 'ThreadedST', 'ThreadedST_nr', 'ArrayBST']
 
 
 class BST(OrderedSymbolTable):
-    __doc__ = f"""Implements a binary search tree data structure.
+    _descrip = "Implements a binary search tree data structure."
+    _attribs_doc = f"""
         {OrderedSymbolTable._attribs_doc}
         height : int
             The height of the binary tree == maximum path length ~ 2.99 log2 N
@@ -26,6 +27,7 @@ class BST(OrderedSymbolTable):
             The sum of the depths of all nodes in the tree ~ 1.39 log2 N - 1.85
         {OrderedSymbolTable._other_doc}
         """
+    __doc__ = _descrip + _attribs_doc
 
     # Deletion method value is constant with the class
     _THRESH = dict({'Hibbard': 1, 'Hibbard_p': 0, 'random': 0.5})
@@ -190,34 +192,6 @@ class BST(OrderedSymbolTable):
             q.enqueue(x.left)
             q.enqueue(x.right)
         return list(out)
-
-    # Methods to make symbol tables behave like python dict()
-    def pop(self, k, *args):
-        """Delete the node associated with `k`, and return its value. If the
-        key is not in the table, return the given default value.
-
-        ..note:: Implements eager Hibbard deletion.
-
-        Raises
-        ------
-        KeyError
-            If `k` is not in the table, and default is not given.
-        """
-        try:
-            self._empty_check()
-            v = self.__getitem__(k)
-            self._root = self._delete(k, self._root)
-            if self._CACHE_FLAG and self._cache and k == self._cache.key:
-                self._cache = None
-            return v
-        except (IndexError, KeyError) as e:
-            if len(args) == 0:
-                raise e
-            elif len(args) == 1:
-                return args[0]
-            else:  # len(args) > 0
-                raise TypeError('pop expected at most 2 arguments, '
-                                f"got {len(args)+1}")
 
     # -------------------------------------------------------------------------
     #         Private API
@@ -702,23 +676,11 @@ class BST(OrderedSymbolTable):
 
 # Exercise 3.2.34 extended API
 class ThreadedST(BST):
-    """Implements an extended binary search tree data structure, where the
-    nodes contain pointers to their successor and predecessor.
+    __doc__ = f"""Implements an extended binary search tree data structure,
+        where the nodes contain pointers to their successor and predecessor.
+        {BST._attribs_doc}
+        """
 
-    Parameters
-    ----------
-    items : mapping, dict-like
-        Iterable of (key, value) tuples to be put onto the tree.
-
-    Attributes
-    ----------
-    size : int
-        Number of items on the tree.
-    height : int
-        The height of the binary tree == maximum path length ~ log2 N
-    is_empty : bool
-        True if `size == 0`.
-    """
     # Add predecessor and successor nodes
     class _Node(BST._Node):
         def __init__(self, *args, **kwargs):
@@ -958,27 +920,14 @@ class ThreadedST(BST):
 
 
 class BST_nr(BST):
-    """Implements a binary search tree data structure, non-recursively.
+    __doc__ = f"""Implements a binary search tree data structure,
+        non-recursively.
 
-    ..note:: `BST_nr` subclasses `BST`, but only overrides the internal methods
-    for `_set`, `_get`, `_delete`, etc.
+        ..note:: `BST_nr` subclasses `BST`, but only overrides the internal
+        methods for `_set`, `_get`, `_delete`, etc.
+        {BST._attribs_doc}
+        """
 
-    Parameters
-    ----------
-    items : mapping, dict-like
-        Iterable of (key, value) tuples to be put onto the tree.
-
-    Attributes
-    ----------
-    size : int
-        Number of items on the tree.
-    height : int
-        The height of the binary tree == maximum path length ~ log2 N
-    internal_path_length : int
-        The sum of the depths of all nodes in the tree ~ 1.39 log2 N - 1.85
-    is_empty : bool
-        True if `size == 0`.
-    """
     # -------------------------------------------------------------------------
     #         Implement get, set, delete non-recursively
     # -------------------------------------------------------------------------
@@ -1250,23 +1199,11 @@ class BST_nr(BST):
 
 # Exercise 3.2.34 extended API
 class ThreadedST_nr(BST_nr):
-    """Implements an extended binary search tree data structure, where the
-    nodes contain pointers to their successor and predecessor.
+    __doc__ = f"""Implements an extended binary search tree data structure,
+        where the nodes contain pointers to their successor and predecessor.
+        {BST._attribs_doc}
+        """
 
-    Parameters
-    ----------
-    items : mapping, dict-like
-        Iterable of (key, value) tuples to be put onto the tree.
-
-    Attributes
-    ----------
-    size : int
-        Number of items on the tree.
-    height : int
-        The height of the binary tree == maximum path length ~ log2 N
-    is_empty : bool
-        True if `size == 0`.
-    """
     # Re-use classes/methods from ThreadedST, but do *not* sub-class so we
     # retain non-recursive methods from BST_nr.
     _Node = ThreadedST._Node
