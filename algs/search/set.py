@@ -269,7 +269,7 @@ class Set(OrderedSet):
 
 
 # Exercise 3.5.8
-class MultiKeyHashST(LinearProbingHashST):
+class MultiHashST(LinearProbingHashST):
     __doc__ = f"""Implements a hash table using arrays with linear probing, but
                allows multiple keys.
 
@@ -277,6 +277,19 @@ class MultiKeyHashST(LinearProbingHashST):
                    `ST.get` will return any value associated with a key `k`.
                    `ST.delete` will delete all keys equal to `k`.
                {SymbolTable.__doc__}"""
+
+    def _resize(self, M):
+        """Resize the internal keys and values arrays."""
+        # Create a new table and hash the existing keys into it
+        t = self.__class__(M=M, resize=True)
+        for k, v in zip(self._keys, self._vals):
+            if k is not None:
+                for x in v:  # iterate over the queue
+                    t[k] = x
+        # Use those new arrays in *self*
+        self._keys = t._keys
+        self._vals = t._vals
+        self.M = t.M
 
     def __setitem__(self, k, v):
         if not self._RESIZE_FLAG and self.N == self.M:
@@ -291,18 +304,16 @@ class MultiKeyHashST(LinearProbingHashST):
         self._cost = 1
         while self._keys[i] is not None:
             if k == self._keys[i]:
-                self._vals[i].append(v)
+                self._vals[i].enqueue(v)
                 return
             else:
                 i = (i + 1) % self.M
                 self._cost += 1
         else:
+            # Put a new key in the table
             self._keys[i] = k
-            self._vals[i] = list()  # keep a list of values for each key
-            if isinstance(v, list):
-                self._vals[i].extend(v)
-            else:
-                self._vals[i].append(v)
+            self._vals[i] = RandomQueue()  # keep a list of values for each key
+            self._vals[i].enqueue(v)
             self.N += 1
 
     def __getitem__(self, k):
@@ -310,7 +321,7 @@ class MultiKeyHashST(LinearProbingHashST):
         self._cost = 1
         while self._keys[i] is not None:
             if k == self._keys[i]:
-                return self._vals[i][0]  # use another table?
+                return self._vals[i].sample()  # use another table?
             else:
                 i = (i + 1) % self.M
                 self._cost += 1
@@ -379,7 +390,7 @@ if __name__ == '__main__':
     # Exercise 3.5.8
     EXPECT_STR = 'SEARCHEXAMPLE'
     items = list((c, i) for i, c in enumerate(EXPECT_STR))
-    st = MultiKeyHashST(items)
+    st = MultiHashST(items)
     assert st['A'] in [2, 8]
     assert st['E'] in [1, 6, 12]
     print('---MultiKeyHashST---')
