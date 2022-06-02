@@ -45,8 +45,6 @@ class UnorderedSet(ABC):
         for k in keys:
             self.add(k)
 
-    # TODO implement 2 argument version with lo and hi keys.
-    @property
     @abstractmethod
     def size(self):
         """Number of elements in the table."""
@@ -54,17 +52,16 @@ class UnorderedSet(ABC):
 
     @property
     def is_empty(self):
-        return self.size == 0
+        return self.size() == 0
 
     @abstractmethod
     def add(k):
-
-        """Add a key to the set."""
+        """Add a key `k` to the set."""
         pass
 
     @abstractmethod
     def __delitem__(self, k):
-        """Remove key from the set."""
+        """Remove key `k` from the set."""
         pass
 
     @abstractmethod
@@ -74,16 +71,18 @@ class UnorderedSet(ABC):
 
     # Aliased methods to match with Algorithms book API (see p 489)
     def delete(self, k):
+        """Remove key `k` from the set."""
         return self.__delitem__(k)
 
     def contains(self, k):
+        """Return True if `k` is present in the set, False otherwise."""
         return self.__contains__(k)
 
     # -------------------------------------------------------------------------
     #         Internal methods
     # -------------------------------------------------------------------------
     def __len__(self):
-        return self.size
+        return self.size()
 
     def __eq__(self, other):
         """Return True if each set contains the same keys."""
@@ -110,6 +109,30 @@ class UnorderedSet(ABC):
 # OrderedSymbolTable
 class OrderedSet(UnorderedSet):
     # An abstract base class implementing an ordered set.
+    @property
+    @abstractmethod
+    def _N(self):
+        """Number of elements in the table."""
+        pass
+
+    def size(self, lo=None, hi=None):
+        """Number of items in the table between keys `lo` and `hi`,
+        inclusive."""
+        if lo is None and hi is None:
+            return self._N
+
+        if lo is None:
+            lo = self.min()
+        if hi is None:
+            hi = self.max()
+
+        if lo > hi:
+            return 0
+        elif hi in self:
+            return 1 + self.rank(hi) - self.rank(lo)
+        else:
+            return self.rank(hi) - self.rank(lo)
+
     @abstractmethod
     def min(self):
         """Return the minimum key in the set."""
@@ -194,9 +217,8 @@ class HashSet(UnorderedSet):
         self._st = LinearProbingHashST()
         super().__init__(keys)
 
-    @property
     def size(self):
-        return self._st.size
+        return self._st.size()
 
     def add(self, k):
         self._st.__setitem__(k, v=None)
@@ -222,8 +244,8 @@ class Set(OrderedSet):
         super().__init__(keys)
 
     @property
-    def size(self):
-        return self._st.size
+    def _N(self):
+        return self._st._N
 
     def add(self, k):
         self._st.__setitem__(k, v=None)

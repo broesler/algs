@@ -76,7 +76,7 @@ def test_comparisons(data):
 @pytest.mark.parametrize('SET', ALL_SETS)
 class TestUnorderedOps:
     def test_empty_set(self, empty_set):
-        assert empty_set.size == 0
+        assert empty_set.size() == 0
         assert empty_set.is_empty
         assert len(empty_set) == 0
 
@@ -93,7 +93,7 @@ class TestUnorderedOps:
         for k in data:
             assert k in st
         assert len(st) == len(expect_set)
-        assert len(st) == st.size
+        assert len(st) == st.size()
         assert st == expect_set
         assert 'B' not in st
 
@@ -108,7 +108,7 @@ class TestUnorderedOps:
             del st[k]
             N_expect -= 1
             test_keys -= set(k)
-            assert st.size == N_expect
+            assert st.size() == N_expect
             assert sorted(st) == sorted(test_keys)
         err_test(st, '__delitem__', 'Z', err_type=KeyError)
         assert st.is_empty
@@ -150,7 +150,7 @@ class TestOrderedOps:
         err_test(st, 'select', 99, err_type=IndexError)  # too large
 
         # Ex 3.2.33
-        for i in range(st.size):
+        for i in range(st.size()):
             assert st.rank(st.select(i)) == i
 
         for k in st:
