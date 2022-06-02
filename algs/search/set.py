@@ -17,8 +17,10 @@ from algs.search.hash import LinearProbingHashST
 from algs.search.tree import BST
 from algs.search.balanced_tree import RedBlackBST
 
-__all__ = ['UnorderedSet', 'OrderedSet', 'MultiValHashST',
-           'MultiValRedBlackBST', 'MultiKeyHashST', 'MultiKeyRedBlackBST',
+__all__ = ['UnorderedSet', 'OrderedSet',
+           'MultiValHashST', 'MultiValBST', 'MultiValRedBlackBST',
+           'MultiKeyHashST', 'MultiKeyBST', 'MultiKeyRedBlackBST',
+           'MultiKeyST', 'MultiValST',
            'invert']
 
 
@@ -450,11 +452,16 @@ class MultiKeyRedBlackBST(RedBlackBST):
 
 def invert(st):
     """Given a multi-valued symbol table, return the inverted index."""
-    ts = MultiValHashST()
+    ts = type(st)()
     for k, vals in st.items():
         for v in vals:
             ts[v] = k
     return ts
+
+
+# Aliases
+MultiValST = MultiValRedBlackBST
+MultiKeyST = MultiKeyRedBlackBST
 
 
 # TODO test_multiset
