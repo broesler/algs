@@ -159,8 +159,11 @@ class TestOrderedOps:
     def test_range(self, st, expect_set):
         assert st == sorted(expect_set)
         assert st.keys(lo='P') == list('PRSX')
+        assert st.size(lo='P') == 4
         assert st.keys('F', 'P') == list('HLMP')
+        assert st.size('F', 'P') == 4
         assert st.keys(hi='P') == list('ACEHLMP')
+        assert st.size(hi='P') == 7
 
     def test_delete_min(self, st, expect_set):
         # Test deletion and reinsertion

@@ -135,6 +135,9 @@ class SymbolTable(ABC):
     def delete(self, k):
         return self.__delitem__(k)
 
+    def contains(self, k):
+        return self.__contains__(k)
+
     @abstractmethod
     def __setitem__(self, k, v):
         """Insert a new value `v` associated with key `k`.

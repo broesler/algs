@@ -130,6 +130,9 @@ class TestUnorderedOps:
             assert empty_st.values() == []
             assert empty_st.items() == []
 
+        def test_empty_raises(self, empty_st):
+            err_test(empty_st, '__getitem__', 'A', err_type=KeyError)
+
         def test_add_single(self, empty_st):
             # Test insert/get single node
             st = empty_st
@@ -139,7 +142,7 @@ class TestUnorderedOps:
         def test_alias(self, empty_st):
             st = empty_st
             st.put('A', 0)
-            assert 'A' in st
+            assert st.contains('A')
             assert st.get('A') == 0
 
         def test_contains(self, st, expect_set):
@@ -183,7 +186,7 @@ class TestUnorderedOps:
             st = empty_st
             st.put('A', 0)
             st.delete('A')
-            assert 'A' not in st
+            assert not st.contains('A')
             assert st.is_empty
 
         def test_delete_all(self, st, data, expect_set):
@@ -259,7 +262,6 @@ class TestOrderedOps:
         assert empty_st.rank('A') == 0
 
     def test_empty_raises(self, empty_st):
-        err_test(empty_st, '__getitem__', 'A', err_type=KeyError)
         err_test(empty_st, 'min', err_type=KeyError)
         err_test(empty_st, 'max', err_type=KeyError)
         err_test(empty_st, 'delete_min', err_type=KeyError)
@@ -322,7 +324,6 @@ class TestOrderedDelete:
         for i, c in enumerate(sorted(expect_set - set(k))):
             assert st.select(i) == c
             assert st.rank(c) == i
-        st[k] = v  # replace value
 
     def test_delete_max(self, st, expect_set):
         k, v = st.max(), st[st.max()]
@@ -332,7 +333,6 @@ class TestOrderedDelete:
         for i, c in enumerate(sorted(expect_set - set(k))):
             assert st.select(i) == c
             assert st.rank(c) == i
-        st[k] = v  # replace value
 
 
 def test_comparisons(data):
