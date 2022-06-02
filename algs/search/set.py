@@ -11,11 +11,15 @@ Implements Set and HashSet APIs using symbol tables. See §3.5.
 
 from abc import ABC, abstractmethod
 
-from algs.basics import Queue
+from algs.basics import Bag
 from algs.search.table import SymbolTable, OrderedMethods
 from algs.search.hash import LinearProbingHashST
 from algs.search.tree import BST
 from algs.search.balanced_tree import RedBlackBST
+
+__all__ = ['UnorderedSet', 'OrderedSet', 'MultiValHashST',
+           'MultiValRedBlackBST', 'MultiKeyHashST', 'MultiKeyRedBlackBST',
+           'invert']
 
 
 # -----------------------------------------------------------------------------
@@ -214,7 +218,6 @@ class Set(OrderedSet):
         return self._st.delete_max()
 
 
-# Exercise 3.5.8
 class MultiValHashST(LinearProbingHashST):
     __doc__ = f"""Implements a hash table using arrays with linear probing, but
                allows multiple values to be associated with each key.
@@ -230,7 +233,7 @@ class MultiValHashST(LinearProbingHashST):
         t = self.__class__(M=M, resize=True)
         for k, v in zip(self._keys, self._vals):
             if k is not None:
-                for x in v:  # iterate over the queue
+                for x in v:  # iterate over multiple values
                     t[k] = x
         # Use those new arrays in *self*
         self._keys = t._keys
@@ -250,7 +253,7 @@ class MultiValHashST(LinearProbingHashST):
         self._cost = 1
         while self._keys[i] is not None:
             if k == self._keys[i]:
-                self._vals[i].enqueue(v)
+                self._vals[i].add(v)
                 return
             else:
                 i = (i + 1) % self.M
@@ -258,24 +261,11 @@ class MultiValHashST(LinearProbingHashST):
         else:
             # Put a new key in the table
             self._keys[i] = k
-            self._vals[i] = Queue()  # keep a list of values for each key
-            self._vals[i].enqueue(v)
+            self._vals[i] = Bag()  # keep a list of values for each key
+            self._vals[i].add(v)
             self.N += 1
 
-    def __getitem__(self, k):
-        i = self._hash(k)
-        self._cost = 1
-        while self._keys[i] is not None:
-            if k == self._keys[i]:
-                return self._vals[i].peek()  # return *any* value
-            else:
-                i = (i + 1) % self.M
-                self._cost += 1
-        else:
-            raise KeyError(k)
 
-
-# Exercise 3.5.9
 class MultiValBST(BST):
     """Implements a binary search tree, but allows multiple values to be
     associated with each key."""
@@ -283,19 +273,14 @@ class MultiValBST(BST):
     class _Node(BST._Node):
         def __init__(self, key, value=None):
             super().__init__(key, value)
-            self.val = Queue()  # store all values in a queue
-            self.val.enqueue(value)
-
-    @staticmethod
-    def _return_func(x):
-        return x.val.peek()  # return *any* value
+            self.val = Bag()  # store all values in a queue
+            self.val.add(value)
 
     @staticmethod
     def _set_func(x, v):
-        x.val.enqueue(v)
+        x.val.add(v)
 
 
-# Exercise 3.5.10
 class MultiValRedBlackBST(RedBlackBST):
     """Implements a balanced binary search tree, but allows multiple values to
     be associated with each key."""
@@ -303,16 +288,12 @@ class MultiValRedBlackBST(RedBlackBST):
     class _Node(RedBlackBST._Node):
         def __init__(self, key, value, *args, **kwargs):
             super().__init__(key, value, *args, **kwargs)
-            self.val = Queue()  # store all values in a queue
-            self.val.enqueue(value)
-
-    @staticmethod
-    def _return_func(x):
-        return x.val.peek()  # return *any* value
+            self.val = Bag()  # store all values in a queue
+            self.val.add(value)
 
     @staticmethod
     def _set_func(x, v):
-        x.val.enqueue(v)
+        x.val.add(v)
 
 
 # Exercise 3.5.8
@@ -467,6 +448,15 @@ class MultiKeyRedBlackBST(RedBlackBST):
         return h
 
 
+def invert(st):
+    """Given a multi-valued symbol table, return the inverted index."""
+    ts = MultiValHashST()
+    for k, vals in st.items():
+        for v in vals:
+            ts[v] = k
+    return ts
+
+
 # TODO test_multiset
 if __name__ == '__main__':
     from algs.exercises.draw_tree import TreeArtist
@@ -474,21 +464,19 @@ if __name__ == '__main__':
     keys = list('SEARCHEXAMPLE')
     items = list((c, i) for i, c in enumerate(keys))
 
-    # Exercise 3.5.8
     print('---MultiValHashST---')
     st = MultiValHashST(items)
     st['X'] = [1, 2, 3]
     st['Y'] = [4, 5, 6]
     st['Y'] = 4
     st['A'] = 'hello'
-    assert st['A'] in [2, 8, 'hello']
-    assert st['E'] in [1, 6, 12]
+    assert list(st['A']) == [2, 8, 'hello']
+    assert list(st['E']) == [1, 6, 12]
     print(st)
     del st['E']
     assert 'E' not in st
     print(st)
 
-    # Exercise 3.5.9
     t = BST(items)
     # TreeArtist(t).draw(fignum=1, label_vals=True)
 
@@ -499,13 +487,12 @@ if __name__ == '__main__':
     st['Y'] = 4
     st['A'] = 'hello'
     # TreeArtist(st).draw(fignum=2, label_vals=True)
-    assert st['A'] in [2, 8, 'hello']
-    assert st['E'] in [1, 6, 12]
+    assert list(st['A']) == [2, 8, 'hello']
+    assert list(st['E']) == [1, 6, 12]
     print(st)
     del st['E']
     assert 'E' not in st
 
-    # Exercise 3.5.10
     t = RedBlackBST(items)
     # TreeArtist(t).draw(fignum=3, label_vals=True)
 
@@ -516,8 +503,8 @@ if __name__ == '__main__':
     st['Y'] = 4
     st['A'] = 'hello'
     # TreeArtist(st).draw(fignum=4, label_vals=True)
-    assert st['A'] in [2, 8, 'hello']
-    assert st['E'] in [1, 6, 12]
+    assert list(st['A']) == [2, 8, 'hello']
+    assert list(st['E']) == [1, 6, 12]
     print(st)
     del st['E']
     assert 'E' not in st

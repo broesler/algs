@@ -301,14 +301,12 @@ class SeparateChainingHashST(HashTable):
         return iterator
 
     def __str__(self):
-        """Overrides `SymbolTable`."""
         out = ''
         for i, t in enumerate(self._st):
             out += f"[{i}]: {repr(t)}\n"
         return out
 
     def __repr__(self):
-        """Overrides `SymbolTable`."""
         return f"<{self.__class__.__name__}:\n{self.__str__()}>"
 
     # -------------------------------------------------------------------------
@@ -480,7 +478,6 @@ class SeparateChainingLiteHashST(HashTable):
         return iterator
 
     def __str__(self):
-        """Overrides `SymbolTable`."""
         out = ''
         for i, t in enumerate(self._st):
             x = t
@@ -494,7 +491,6 @@ class SeparateChainingLiteHashST(HashTable):
         return out
 
     def __repr__(self):
-        """Overrides `SymbolTable`."""
         return f"<{self.__class__.__name__}:\n{self.__str__()}>"
 
 

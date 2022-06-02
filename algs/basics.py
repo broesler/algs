@@ -62,16 +62,21 @@ class Collection(ABC):
 
     def __eq__(self, other):
         # Assume order matters, so check that the items lists are identical.
-        if isinstance(other, self.__class__):
-            return self._items == other._items
-        else:
-            return NotImplemented
+        return self._items == other._items
 
     def __repr__(self):
         return '<{}: {}>'.format(self.__class__.__name__, self.__str__())
 
     def __str__(self):
-        return str(list(self))  # use iteration to print the object
+        def a_list(a):
+            return ', '.join(repr(k) for k in a)
+
+        a = list(self)  # use iteration to print the object
+        if len(self) < 30:
+            return str(a)
+        else:
+            # shorten for printing
+            return '[' + a_list(a[:3]) + ' ... ' + a_list(a[-3:]) + ']'
 
     def __iter__(self):
         yield from self._items
@@ -87,10 +92,7 @@ class Bag(Collection):
 
     def __eq__(self, other):
         # When comparing Bags, order does not matter, so sort the items first.
-        if isinstance(other, self.__class__):
-            return sorted(self._items) == sorted(other._items)
-        else:
-            return NotImplemented
+        return sorted(self._items) == sorted(other._items)
 
 
 # Exercise 1.3.4

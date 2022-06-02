@@ -11,7 +11,8 @@ A symbol table dicionary client for reading CSV files.
 
 from pathlib import Path
 
-from algs import Queue, HashST, MultiValHashST
+from algs.basics import Bag
+from algs.search import HashST, MultiValHashST, invert
 
 # TODO add `header=True` to parse header line
 
@@ -37,7 +38,10 @@ class LookupCSV():
         multival : bool, optional
             If True, store every value associated with the keys.
         """
-        self.st = HashST()
+        if multival:
+            self.st = MultiValHashST()
+        else:
+            self.st = HashST()
         if header is None:
             header = 0
         # Build the dictionary from the file
@@ -45,12 +49,7 @@ class LookupCSV():
             for line in fp.readlines()[header:]:
                 items = line.strip().split(delim)
                 k, v = items[key_col], items[val_col]
-                if multival:
-                    if k not in self.st:
-                        self.st[k] = Queue()
-                    self.st[k].enqueue(v)
-                else:
-                    self.st[k] = v
+                self.st[k] = v
 
     def query(self, k):
         """Return the value associated with `k`."""
@@ -82,10 +81,10 @@ class LookupIndex():
                 items = line.strip().split(delim)
                 k = items[0]
                 for v in items[1:]:
-                    if k not in self.st: self.st[k] = Queue()
-                    if v not in self.ts: self.ts[v] = Queue()
-                    self.st[k].enqueue(v)
-                    self.ts[v].enqueue(k)
+                    if k not in self.st: self.st[k] = Bag()
+                    if v not in self.ts: self.ts[v] = Bag()
+                    self.st[k].add(v)
+                    self.ts[v].add(k)
 
     def query(self, k):
         """Return the value associated with `k`."""
@@ -128,6 +127,9 @@ if __name__ == "__main__":
     st = LookupIndex(filename, delim='/')
     st.print_query('Bacon, Kevin')
     st.print_query('Top Gun (1986)')
+
+    assert st.st == invert(st.ts)
+    assert st.ts == invert(st.st)
 
 # =============================================================================
 # =============================================================================
