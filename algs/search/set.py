@@ -315,13 +315,116 @@ class MultiValRedBlackBST(RedBlackBST):
         x.val.enqueue(v)
 
 
+# Exercise 3.5.8
+class MultiKeyHashST(LinearProbingHashST):
+    __doc__ = f"""Implements a hash table using arrays with linear probing, but
+               allows multiple keys.
+
+               .. note::
+                   `ST.get` will return *any* value associated with a key `k`.
+                   `ST.delete` will delete *all* keys equal to `k`.
+               {SymbolTable.__doc__}"""
+
+    def __setitem__(self, k, v):
+        """Associate value `v` with key `k`. Multiple identical keys are
+        allowed."""
+        if not self._RESIZE_FLAG and self.N == self.M:
+            raise RuntimeError(("Trying to insert into a full table! "
+                                "Set `resize=True`."))
+
+        if self._RESIZE_FLAG and self.N >= self.M // 2:
+            self._resize(2*self.M)
+            self._lgM += 1
+
+        i = self._hash(k)
+        self._cost = 1
+        while self._keys[i] is not None:
+            # No check for self._keys[i] == k, since we allow multiple keys
+            i = (i + 1) % self.M
+            self._cost += 1
+        else:
+            self._keys[i] = k
+            self._vals[i] = v
+            self.N += 1
+
+    def __delitem__(self, k):
+        """Delete all instances of `k` from the table."""
+        if k not in self:
+            raise KeyError(k)
+
+        # Set slot of first instance of `k` to None
+        i = self._hash(k)
+        _cost = 1
+        while k != self._keys[i]:
+            i = (i + 1) % self.M
+            _cost += 1
+        self._keys[i] = None
+        self._vals[i] = None
+
+        # Rehash all keys in the cluster to the right of the deleted key
+        i = (i + 1) % self.M
+        while self._keys[i] is not None:
+            key_to_redo = self._keys[i]
+            val_to_redo = self._vals[i]
+            self._keys[i] = None
+            self._vals[i] = None
+            self.N -= 1
+            # Do not re-hash multiple instances of the key to be deleted
+            if k != key_to_redo:
+                self.__setitem__(key_to_redo, val_to_redo)
+                _cost += self._cost
+            i = (i + 1) % self.M
+
+        # Update counters
+        self.N -= 1
+        self._cost = _cost
+        # Check for a resize if table is small enough
+        if self._RESIZE_FLAG and (self.N > 0 and self.N <= self.M // 8):
+            self._resize(self.M // 2)
+            self._lgM -= 1
+
+
+# Exercise 3.8.9
+class MultiKeyBST(BST):
+    __doc__ = f"""Implements a binary search tree, but allows multiple keys.
+        {BST._attribs_doc}
+        """
+
+    def __delitem__(self, k):
+        """Delete all instances of `k` from the table."""
+        while k in self:
+            self._root = self._delete(k, self._root)
+            if self._CACHE_FLAG and self._cache and k == self._cache.key:
+                self._cache = None
+
+    def _set(self, k, v, x=None):
+        # subtree is empty, create a new node
+        if x is None:
+            h = self._Node(k, v)
+            if self._CACHE_FLAG:
+                self._cache = h
+            return h
+
+        # create a child, or update the value
+        self._cost += 1
+        if k < x.key:
+            x.left = self._set(k, v, x.left)
+        else:  # k > x.key or k == x.key
+            # Always go right for duplicate keys
+            x.right = self._set(k, v, x.right)
+
+        self._update_node(x)
+        return x
+
+
 # TODO test_multiset
 if __name__ == '__main__':
     from algs.exercises.draw_tree import TreeArtist
 
+    keys = list('SEARCHEXAMPLE')
+    items = list((c, i) for i, c in enumerate(keys))
+
     # Exercise 3.5.8
-    EXPECT_STR = 'SEARCHEXAMPLE'
-    items = list((c, i) for i, c in enumerate(EXPECT_STR))
     st = MultiValHashST(items)
     st['X'] = [1, 2, 3]
     st['Y'] = [1, 2, 3]
@@ -336,10 +439,8 @@ if __name__ == '__main__':
     print(st)
 
     # Exercise 3.5.9
-    keys = list('SEARCHEXAMPLE')
-    items = list((c, i) for i, c in enumerate(keys))
     t = BST(items)
-    TreeArtist(t).draw(fignum=1, label_vals=True)
+    # TreeArtist(t).draw(fignum=1, label_vals=True)
 
     print('---MultiValBST---')
     st = MultiValBST(items)
@@ -347,7 +448,7 @@ if __name__ == '__main__':
     st['Y'] = [1, 2, 3]
     st['Y'] = 4
     st['A'] = 'hello'
-    TreeArtist(st).draw(fignum=2, label_vals=True)
+    # TreeArtist(st).draw(fignum=2, label_vals=True)
     assert st['A'] in [2, 8, 'hello']
     assert st['E'] in [1, 6, 12]
     print(st)
@@ -355,10 +456,8 @@ if __name__ == '__main__':
     assert 'E' not in st
 
     # Exercise 3.5.10
-    keys = list('SEARCHEXAMPLE')
-    items = list((c, i) for i, c in enumerate(keys))
     t = RedBlackBST(items)
-    TreeArtist(t).draw(fignum=3, label_vals=True)
+    # TreeArtist(t).draw(fignum=3, label_vals=True)
 
     print('---MultiValRedBlackBST---')
     st = MultiValRedBlackBST(items)
@@ -366,12 +465,27 @@ if __name__ == '__main__':
     st['Y'] = [1, 2, 3]
     st['Y'] = 4
     st['A'] = 'hello'
-    TreeArtist(st).draw(fignum=4, label_vals=True)
+    # TreeArtist(st).draw(fignum=4, label_vals=True)
     assert st['A'] in [2, 8, 'hello']
     assert st['E'] in [1, 6, 12]
     print(st)
     del st['E']
     assert 'E' not in st
+
+    # Exercise 3.5.9 -- multiple keys
+    print('---MultiKeyBST---')
+    st = MultiKeyBST(items)
+    st['X'] = [1, 2, 3]
+    st['Y'] = [1, 2, 3]
+    st['Y'] = 4
+    st['A'] = 'hello'
+    TreeArtist(st).draw(fignum=5, label_vals=True)
+    assert st['A'] in [2, 8, 'hello']
+    assert st['E'] in [1, 6, 12]
+    print(st)
+    del st['E']
+    assert 'E' not in st
+    TreeArtist(st).draw(fignum=6, label_vals=True)
 
 # =============================================================================
 # =============================================================================
