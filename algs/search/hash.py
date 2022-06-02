@@ -13,9 +13,10 @@ import numpy as np
 
 from algs.search.table import SymbolTable, SequentialSearchST
 
-__all__ = ['HashTable', 'SeparateChainingHashST', 'SeparateChainingLiteHashST',
-           'LinearProbingHashST', 'LazyLinearProbingHashST',
-           'DoubleProbingHashST', 'DoubleHashingHashST', 'CuckooHashST']
+__all__ = ['HashTable', 'HashST', 'SeparateChainingHashST',
+           'SeparateChainingLiteHashST', 'LinearProbingHashST',
+           'LazyLinearProbingHashST', 'DoubleProbingHashST',
+           'DoubleHashingHashST', 'CuckooHashST']
 
 # Table of primes less than the nearest power of 2
 # Mersenne primes like 31 are nice because 31 = 2**5 - 1 == (1 << 5) - 1.
@@ -1123,6 +1124,9 @@ class CuckooHashST(HashTable):
         return [(k, v) for (k, v) in zip(self._keys, self._vals)
                 if k is not None]
 
+
+# Alias for convenience
+HashST = LinearProbingHashST
 
 # -----------------------------------------------------------------------------
 #         Run tests
