@@ -189,9 +189,9 @@ class SymbolTable(ABC):
         return NotImplemented
 
 
-class OrderedSymbolTable(SymbolTable):
-    # An abstract base class implementing an ordered symbol table.
-
+class OrderedMethods(ABC):
+    # An abstract base class containing the ordered methods. Note that this
+    # class may not be subclasses without providing an __init__ method.
     @property
     @abstractmethod
     def _N(self):
@@ -265,6 +265,10 @@ class OrderedSymbolTable(SymbolTable):
     def delete_max(self):
         """Delete the maximum key in the table."""
         pass
+
+
+class OrderedSymbolTable(OrderedMethods, SymbolTable):
+    # Combine the unordered class with the ordered methods + iterators
 
     # -------------------------------------------------------------------------
     #         Ordered Iteration
@@ -726,6 +730,11 @@ class BinarySearchST(OrderedSymbolTable):
                 return False
         return True
 
+
+if __name__ == "__main__":
+    keys = 'SEARCHEXAMPLE'
+    items = list((c, i) for i, c in enumerate(keys))
+    st = BinarySearchST(items)
 
 # =============================================================================
 # =============================================================================

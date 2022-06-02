@@ -12,7 +12,7 @@ Implements Set and HashSet APIs using symbol tables. See §3.5.
 from abc import ABC, abstractmethod
 
 from algs.basics import RandomQueue
-from algs.search.table import SymbolTable
+from algs.search.table import SymbolTable, OrderedMethods
 from algs.search.hash import LinearProbingHashST
 from algs.search.tree import BST
 from algs.search.balanced_tree import RedBlackBST
@@ -38,7 +38,7 @@ class UnorderedSet(ABC):
         """
         Parameters
         ----------
-        keys : list, optional
+        keys : iterable, optional
             Iterable of keys to be put into the set.
         """
         keys = keys or []
@@ -105,84 +105,8 @@ class UnorderedSet(ABC):
         pass
 
 
-# TODO move these to an ABC and subclass it twice for OrderedSet and
-# OrderedSymbolTable
-class OrderedSet(UnorderedSet):
+class OrderedSet(OrderedMethods, UnorderedSet):
     # An abstract base class implementing an ordered set.
-    @property
-    @abstractmethod
-    def _N(self):
-        """Number of elements in the table."""
-        pass
-
-    def size(self, lo=None, hi=None):
-        """Number of items in the table between keys `lo` and `hi`,
-        inclusive."""
-        if lo is None and hi is None:
-            return self._N
-
-        if lo is None:
-            lo = self.min()
-        if hi is None:
-            hi = self.max()
-
-        if lo > hi:
-            return 0
-        elif hi in self:
-            return 1 + self.rank(hi) - self.rank(lo)
-        else:
-            return self.rank(hi) - self.rank(lo)
-
-    @abstractmethod
-    def min(self):
-        """Return the minimum key in the set."""
-        pass
-
-    @abstractmethod
-    def max(self):
-        """Return the maximum key in the set."""
-        pass
-
-    @abstractmethod
-    def floor(self, k):
-        """Return the largest key less than or equal to `k`, or None if `k` is
-        less than the smallest key in the set.
-        """
-        pass
-
-    @abstractmethod
-    def ceil(self, k):
-        """Return the smallest key greater than or equal to `k`, or None if `k`
-        is greater than the largest key in the set.
-        """
-        pass
-
-    @abstractmethod
-    def rank(self, k):
-        """Return the number of keys strictly less than `k`."""
-        pass
-
-    @abstractmethod
-    def select(self, r):
-        """Return the key of rank `r`.
-
-        Raises
-        ------
-        IndexError
-            If there are fewer than `r`+1 keys in the set.
-        """
-        pass
-
-    @abstractmethod
-    def delete_min(self):
-        """Delete the minimum key in the set."""
-        pass
-
-    @abstractmethod
-    def delete_max(self):
-        """Delete the maximum key in the set."""
-        pass
-
     @abstractmethod
     def keys(self, lo=None, hi=None):
         """Return an in-order list of the keys between the keys `lo` and `hi`,
