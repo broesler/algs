@@ -555,6 +555,11 @@ if __name__ == '__main__':
     print(st)
     TreeArtist(st).draw(fignum=8, label_vals=True)
 
+    # Test invert
+    st = MultiValHashST(items)
+    ts = invert(st)
+    assert st == invert(ts)
+    assert ts == invert(st)
 
 # =============================================================================
 # =============================================================================
