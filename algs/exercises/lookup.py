@@ -13,11 +13,12 @@ from pathlib import Path
 
 from algs import Queue, HashST, MultiValHashST
 
+# TODO add `header=True` to parse header line
+
 
 class LookupCSV():
     """A symbol table dicionary client for reading CSV files."""
 
-    # TODO add `header=True` to read header line
     def __init__(self, filename, key_col=0, val_col=1, delim=',', header=None,
                  multival=False):
         """
@@ -57,6 +58,47 @@ class LookupCSV():
             return self.st[k]
 
 
+class LookupIndex():
+    """A symbol table indexing client for reading CSV files."""
+
+    def __init__(self, filename, delim=',', header=None):
+        """
+        Parameters
+        ----------
+        filename : str
+            The name of the delimited text file to read.
+        delim : str, optional
+            String on which to separate the input lines.
+        header : int, optional
+            Initial lines to skip when reading the file.
+        """
+        self.st = HashST()
+        self.ts = HashST()
+        if header is None:
+            header = 0
+        # Build the dictionary from the file
+        with open(Path(filename), 'r') as fp:
+            for line in fp.readlines()[header:]:
+                items = line.strip().split(delim)
+                k = items[0]
+                for v in items[1:]:
+                    if k not in self.st: self.st[k] = Queue()
+                    if v not in self.ts: self.ts[v] = Queue()
+                    self.st[k].enqueue(v)
+                    self.ts[v].enqueue(k)
+
+    def query(self, k):
+        """Return the value associated with `k`."""
+        if k in self.st:
+            return self.st[k]
+        if k in self.ts:
+            return self.ts[k]
+
+    def print_query(self, k):
+        v = self.query(k)
+        print(str(k) + '\n  ' + '\n  '.join(v))
+
+
 if __name__ == "__main__":
     filename = Path('../data/airports.csv')
     print(f"---{filename}---")
@@ -75,6 +117,17 @@ if __name__ == "__main__":
     st = LookupCSV(filename, key_col=3, val_col=0, multival=True)
     q = 'Serine'
     print(f"{q}: {st.query(q)}")
+
+    print(f"---{filename} - indexed ---")
+    st = LookupIndex(filename)
+    st.print_query('Serine')
+    st.print_query('TCC')
+
+    filename = Path('../data/movies-top-grossing.txt')
+    print(f"---{filename} - indexed ---")
+    st = LookupIndex(filename, delim='/')
+    st.print_query('Bacon, Kevin')
+    st.print_query('Top Gun (1986)')
 
 # =============================================================================
 # =============================================================================
