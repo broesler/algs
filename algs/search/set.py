@@ -285,6 +285,8 @@ class MultiHashSet(HashSet):
         yield from self._keys()
 
 
+# TODO MultiKeySet takes into account the extra keys for rank/select, etc.
+# but the counter version doesn't.
 class MultiSet(MultiHashSet, Set):
     __doc__ = f"""Implements an ordered set that allows multiple keys.
 
@@ -442,6 +444,9 @@ class MathSet(HashSet):
         self.xor(a)
         return self
 
+# TODO change "MathSet" usages to "self.__class__" for subclassing.
+class MathMultiSet(MultiHashSet, MathSet):
+    pass
 
 # -----------------------------------------------------------------------------
 #         Multi[Key|Value] Symbol Tables
@@ -703,6 +708,7 @@ if __name__ == '__main__':
     keys = list('SEARCHEXAMPLE')
     items = list((c, i) for i, c in enumerate(keys))
 
+    # Plot multi-key trees vs their unique-key counterparts
     t = BST(items)
     st = MultiKeyBST(items)
     # TreeArtist(t).draw(fignum=1, label_vals=True)
@@ -713,11 +719,25 @@ if __name__ == '__main__':
     # TreeArtist(t).draw(fignum=3, label_vals=True)
     # TreeArtist(st).draw(fignum=4, label_vals=True)
 
+    a = MultiKeyHashSet(keys)
+    print(a)
+    b = MultiKeySet(keys)
+    print(b)
+
     s = MultiHashSet(keys)
     print(s)
     st = MultiSet(keys)
     print(st)
 
+    assert a == b
+    assert a == s
+    assert a == st
+
+    import string
+    U = ascii.string_lowercase
+    A = MathMultiSet(U, 'aaabcdee')
+    B = MathMultiSet(U, 'ddefffg')
+    print(A | B)
 
 # =============================================================================
 # =============================================================================
