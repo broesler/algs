@@ -94,22 +94,22 @@ EXPECT_STR = 'SEARCHEXAMPLE'
 
 
 @pytest.fixture
-def expect_set():
+def expect_keys():
     return set(EXPECT_STR)
 
 
 @pytest.fixture
-def data():
+def items():
     return list((c, i) for i, c in enumerate(EXPECT_STR))
 
 
 @pytest.fixture
-def data_set(data):
-    data_set = data.copy()
-    data_set.remove(('E', 1))
-    data_set.remove(('A', 2))
-    data_set.remove(('E', 6))
-    return data_set
+def expect_items(items):
+    expect_items = items.copy()
+    expect_items.remove(('E', 1))
+    expect_items.remove(('A', 2))
+    expect_items.remove(('E', 6))
+    return expect_items
 
 
 @pytest.fixture
@@ -118,8 +118,8 @@ def empty_st(ST, cache):
 
 
 @pytest.fixture
-def st(ST, cache, data):
-    return ST(data, cache=cache)
+def st(ST, cache, items):
+    return ST(items, cache=cache)
 
 
 # TODO separate testing of keys from testing of values/items, then MultiVal*
@@ -159,25 +159,25 @@ class TestUnorderedOps:
             st.put('A', 0)
             assert st.contains('A')
 
-        def test_contains(self, st, expect_set):
-            for k in expect_set:
+        def test_contains(self, st, expect_keys):
+            for k in expect_keys:
                 assert k in st
             assert 'B' not in st
 
-        def test_put(self, st, expect_set):
-            for k in expect_set:
+        def test_put(self, st, expect_keys):
+            for k in expect_keys:
                 assert k in st
 
-        def test_iteration(self, st, expect_set):
+        def test_iteration(self, st, expect_keys):
             for k in st:
-                assert k in expect_set
+                assert k in expect_keys
 
         def test_keyerror(self, st):
             err_test(st, '__getitem__', 'Z', err_type=KeyError)
 
-        def test_keys(self, st, expect_set):
+        def test_keys(self, st, expect_keys):
             # st.keys() not guaranteed in order, so these tests are weak
-            assert sorted(st.keys()) == sorted(expect_set)
+            assert sorted(st.keys()) == sorted(expect_keys)
 
     @pytest.mark.parametrize('ST', SINGLEVAL_STS)
     class TestGet:
@@ -186,30 +186,30 @@ class TestUnorderedOps:
             st.put('A', 0)
             assert st.get('A') == 0
 
-        def test_get(self, st, data, expect_set):
-            for k, v in data:
+        def test_get(self, st, items, expect_keys):
+            for k, v in items:
                 if k == 'E' or k == 'A':
-                    assert st[k] == max([val for key, val in data if key == k])
+                    assert st[k] == max([val for key, val in items if key == k])
                 else:
                     assert st[k] == v
-            assert len(st) == len(expect_set)
+            assert len(st) == len(expect_keys)
             assert len(st) == st.size()
 
-        def test_vals_items(self, st, data_set):
-            assert sorted(st.values()) == sorted([v for k, v in data_set])
-            assert sorted(st.items()) == sorted(data_set)
+        def test_vals_items(self, st, expect_items):
+            assert sorted(st.values()) == sorted([v for k, v in expect_items])
+            assert sorted(st.items()) == sorted(expect_items)
 
     @pytest.mark.parametrize('ST', ALL_STS - NO_DELETE)
     class TestDelete:
-        def test_delete_one(self, ST, data, cache, expect_set):
+        def test_delete_one(self, ST, items, cache, expect_keys):
             # Delete arbitrary key, starting with same table
-            for k in expect_set:
-                t = ST(data, cache=cache)
+            for k in expect_keys:
+                t = ST(items, cache=cache)
                 t[k]    # get item to ensure cache is used
                 del t[k]
-                assert len(t) == len(expect_set)-1
+                assert len(t) == len(expect_keys)-1
                 assert k not in t
-                assert sorted(t.keys()) == sorted(expect_set - set(k))
+                assert sorted(t.keys()) == sorted(expect_keys - set(k))
                 err_test(t, '__getitem__', k, err_type=KeyError)
 
         def test_alias(self, empty_st):
@@ -219,9 +219,9 @@ class TestUnorderedOps:
             assert not st.contains('A')
             assert st.is_empty
 
-        def test_delete_all(self, st, data, expect_set):
-            test_keys = expect_set.copy()
-            N_expect = len(expect_set)
+        def test_delete_all(self, st, expect_keys):
+            test_keys = expect_keys.copy()
+            N_expect = len(expect_keys)
             for k in st.keys():
                 del st[k]
                 N_expect -= 1
@@ -236,20 +236,20 @@ class TestUnorderedOps:
 class TestCaching:
     @pytest.mark.parametrize('ST', SINGLEVAL_STS - NO_CACHE)
     class TestPutGet:
-        def test_cache_new(self, empty_st, data):
+        def test_cache_new(self, empty_st, items):
             st = empty_st
-            for k, v in data:
+            for k, v in items:
                 st[k] = v
                 assert st._cache.key == k
                 assert st._cache.val == v
 
-        def test_put_cache_existing(self, st, data):
+        def test_put_cache_existing(self, st, items):
             for k in st:
                 st[k] = 56
                 assert st._cache.key == k
                 assert st._cache.val == 56
 
-        def test_get_cache_existing(self, st, data):
+        def test_get_cache_existing(self, st, items):
             for k in st:
                 v = st[k]
                 assert st._cache.key == k
@@ -266,9 +266,9 @@ class TestCaching:
 
 # Tests specific to a single data type
 class TestSelfOrg:
-    def test_selforg_nocache(self, data):
+    def test_selforg_nocache(self, items):
         """Test self-organizing search (Exercise 3.1.22)"""
-        st = ArrayST(data, selforg=True, cache=False)
+        st = ArrayST(items, selforg=True, cache=False)
         rand_keys = rng.choice(st.keys(), size=st.size())
         for k in rand_keys:
             st[k]                       # search for the key
@@ -276,9 +276,9 @@ class TestSelfOrg:
             st[k]                       # search again
             assert st._cost == 1
 
-    def test_selforg_cache(self, data):
+    def test_selforg_cache(self, items):
         """Test self-organizing search AND caching."""
-        st = ArrayST(data, selforg=True, cache=True)
+        st = ArrayST(items, selforg=True, cache=True)
         rand_keys = rng.choice(st.keys(), size=st.size())
         for k in rand_keys:
             st[k]                       # search for the key
@@ -289,8 +289,8 @@ class TestSelfOrg:
 
 
 # ---------- Test Ordered Operations ----------
-def test_binary_integrity(data):
-    st = BinarySearchST(data)
+def test_binary_integrity(items):
+    st = BinarySearchST(items)
     st._assert_integrity()
 
 
@@ -322,10 +322,10 @@ class TestOrderedOps:
             assert st.floor(chr(ord('A') - 1)) is None  # char < st.min()
             assert st.ceil('Z') is None                 # char > st.max()
 
-        def test_rankselect(self, st, expect_set):
+        def test_rankselect(self, st, expect_keys):
             # Select and Rank tests
             err_test(st, 'select', -1, err_type=IndexError)  # too small
-            for i, c in enumerate(sorted(expect_set)):
+            for i, c in enumerate(sorted(expect_keys)):
                 assert st.select(i) == c
                 assert st.rank(c) == i
             err_test(st, 'select', 99, err_type=IndexError)  # too large
@@ -335,10 +335,10 @@ class TestOrderedOps:
             for k in st.keys():
                 assert st.select(st.rank(k)) == k
 
-        def test_inorder(self, st, expect_set):
+        def test_inorder(self, st, expect_keys):
             # In-order traversal + range search
-            assert st.keys() == sorted(expect_set)
-            assert st.size() == len(expect_set)
+            assert st.keys() == sorted(expect_keys)
+            assert st.size() == len(expect_keys)
             assert st.keys(lo='P') == list('PRSX')
             assert st.size(lo='P') == 4
             assert st.keys('F', 'P') == list('HLMP')
@@ -348,44 +348,44 @@ class TestOrderedOps:
 
     @pytest.mark.parametrize('ST', ((ORDERED_STS & SINGLEVAL_STS)
                                     - set([ArrayBST])))
-    def test_vals_items(self, st, data_set):
-        assert st.values() == [v for k, v in sorted(data_set)]
+    def test_vals_items(self, st, expect_items):
+        assert st.values() == [v for k, v in sorted(expect_items)]
         assert (st.values('F', 'P') ==
-                [v for k, v in sorted(data_set)[3:7]])
-        assert st.items() == sorted(data_set)
-        assert st.items('F', 'P') == sorted(data_set)[3:7]
+                [v for k, v in sorted(expect_items)[3:7]])
+        assert st.items() == sorted(expect_items)
+        assert st.items('F', 'P') == sorted(expect_items)[3:7]
 
     @pytest.mark.parametrize('ST', ORDERED_STS - NO_DELETE)
     class TestOrderedDelete:
-        def test_delete_min(self, st, expect_set):
+        def test_delete_min(self, st, expect_keys):
             k = st.min()
             assert k == 'A'
             st.delete_min()  # remove 'A'
             assert st.min() == 'C'
             # Test updated ranks
-            for i, c in enumerate(sorted(expect_set - set(k))):
+            for i, c in enumerate(sorted(expect_keys - set(k))):
                 assert st.select(i) == c
                 assert st.rank(c) == i
 
-        def test_delete_max(self, st, expect_set):
+        def test_delete_max(self, st, expect_keys):
             k = st.max()
             assert k == 'X'
             st.delete_max()  # remove 'X'
             assert st.max() == 'S'
             # Test updated ranks
-            for i, c in enumerate(sorted(expect_set - set(k))):
+            for i, c in enumerate(sorted(expect_keys - set(k))):
                 assert st.select(i) == c
                 assert st.rank(c) == i
 
 
 # TODO every pair-wise comparison?
-def test_comparisons(data):
-    assert SequentialSearchST(data) == BinarySearchST(data)
-    assert BinarySearchST(data) == SequentialSearchST(data)
-    assert BinarySearchST(data) == BST(data)
-    assert BST(data) == BinarySearchST(data)
-    assert BST(data) == BST_nr(data)
-    assert BST_nr(data) == BST(data)
+def test_comparisons(items):
+    assert SequentialSearchST(items) == BinarySearchST(items)
+    assert BinarySearchST(items) == SequentialSearchST(items)
+    assert BinarySearchST(items) == BST(items)
+    assert BST(items) == BinarySearchST(items)
+    assert BST(items) == BST_nr(items)
+    assert BST_nr(items) == BST(items)
 
 
 # -----------------------------------------------------------------------------
@@ -409,8 +409,8 @@ def expect_multi():
 @pytest.mark.parametrize('ST', MULTIVAL_STS)
 @pytest.mark.parametrize('cache', [False, True])
 class TestMultiVals:
-    def test_size(self, st, expect_set):
-        assert st.size() == len(expect_set)  # includes only unique keys
+    def test_size(self, st, expect_keys):
+        assert st.size() == len(expect_keys)  # includes only unique keys
 
     def test_get(self, st, expect_multi):
         for k, v in expect_multi:
@@ -461,9 +461,9 @@ class TestMultiKeys:
         st['A'] = 'hello'
         assert st['A'] in [2, 8, 'hello']
 
-    def test_delete(self, st, expect_set):
-        # Use expect_set to avoid duplicate deletions
-        for k in expect_set:
+    def test_delete(self, st, expect_keys):
+        # Use expect_keys to avoid duplicate deletions
+        for k in expect_keys:
             del st[k]
             assert k not in st
         assert st.is_empty

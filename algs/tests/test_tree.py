@@ -12,7 +12,7 @@ Tests specific to BST data types, not including balanced trees.
 import pytest
 
 from algs.search.tree import BST, BST_nr, ThreadedST, ThreadedST_nr
-from algs.tests.test_search import data, st, expect_set
+from algs.tests.test_search import items, st, expect_set
 
 TREES = set([BST, BST_nr, ThreadedST, ThreadedST_nr])
 
@@ -84,16 +84,16 @@ class TestBST:
         assert st._root.left.key == 'E'
         assert st._root.right is None
 
-    def test_hibbard_delete(self, ST, data):
-        st = ST(data, delete_method='Hibbard')
+    def test_hibbard_delete(self, ST, items):
+        st = ST(items, delete_method='Hibbard')
         assert st._root.key == 'S'
         del st['S']
         assert st._root.key == 'X'
         assert st._root.left.key == 'E'
         assert st._root.right is None
 
-    def test_predecessor_delete(self, ST, data):
-        st = ST(data, delete_method='Hibbard_p')
+    def test_predecessor_delete(self, ST, items):
+        st = ST(items, delete_method='Hibbard_p')
         assert st._root.key == 'S'
         del st['S']
         assert st._root.key == 'R'
@@ -134,10 +134,10 @@ class TestThreadedSTs:
         self.run_threads(st, sorted(expect_set - set(k)))
         st[k] = v
 
-    def test_delete(self, ST, data, expect_set):
+    def test_delete(self, ST, items, expect_set):
         # Delete arbitrary key, starting with same tree
         for k in expect_set:
-            st = ST(data)
+            st = ST(items)
             del st[k]
             self.run_threads(st, sorted(expect_set - set(k)))
 

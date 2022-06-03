@@ -15,14 +15,14 @@ from algs.search.balanced_tree import RedBlackBST
 # from algs.search.balanced_tree import (RedBlackBST, TopDown234, TopDown234_nr,
 #                                        BottomUp234, TopDown234bothways,
 #                                        Unbalanced23, AVLTree)
-from algs.tests.test_search import data
+from algs.tests.test_search import items
 
 # BALANCED_TREES = set([RedBlackBST, TopDown234, TopDown234_nr, BottomUp234,
 #                       TopDown234bothways, Unbalanced23, AVLTree])
 
 @pytest.fixture(params=[RedBlackBST])
-def t(data, request):
-    return request.param(data)
+def t(items, request):
+    return request.param(items)
 
 class Test23Rotations:
     # NOTE keys must be in special order, expected outputs are in *level* order
