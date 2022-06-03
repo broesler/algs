@@ -220,7 +220,33 @@ class Set(OrderedSet):
         return self._st.delete_max()
 
 
-# TODO add __gt__, __lt__ for "is superset of" or "is subset of"
+# Exercise 3.5.18
+class MultiHashSet(HashSet):
+    __doc__ = f"""Implements an unordered set that allows multiple keys.
+               {UnorderedSet.__doc__}
+               """
+
+    def __init__(self, keys=None):
+        self._st = MultiKeyHashST()
+        keys = keys or []
+        for k in keys:
+            self.add(k)
+
+
+# Exercise 3.5.18
+class MultiSet(Set):
+    __doc__ = f"""Implements an ordered set that allows multiple keys.
+               {OrderedSet.__doc__}
+               """
+
+    def __init__(self, keys=None):
+        self._st = MultiKeyRedBlackBST()
+        keys = keys or []
+        for k in keys:
+            self.add(k)
+
+
+
 # Exercise 3.5.17
 class MathSet(HashSet):
     __doc__ = f"""Implements a mathematical set with unique keys.
@@ -365,7 +391,7 @@ class MathSet(HashSet):
 
 
 # -----------------------------------------------------------------------------
-#         Multiple Keys/Values
+#         Multi[Key|Value] Symbol Tables
 # -----------------------------------------------------------------------------
 class MultiValHashST(LinearProbingHashST):
     __doc__ = f"""Implements a hash table using arrays with linear probing, but
@@ -619,62 +645,21 @@ MultiKeyST = MultiKeyRedBlackBST
 # -----------------------------------------------------------------------------
 # TODO move to test_multiset
 if __name__ == '__main__':
-    # from algs.exercises.draw_tree import TreeArtist
+    from algs.exercises.draw_tree import TreeArtist
 
     keys = list('SEARCHEXAMPLE')
     items = list((c, i) for i, c in enumerate(keys))
 
     t = BST(items)
-    # TreeArtist(t).draw(fignum=2, label_vals=True)
+    st = MultiKeyBST(items)
+    TreeArtist(t).draw(fignum=1, label_vals=True)
+    TreeArtist(st).draw(fignum=2, label_vals=True)
 
     t = RedBlackBST(items)
-    # TreeArtist(t).draw(fignum=3, label_vals=True)
-
-    # Exercise 3.5.8
-    # print('---MultiKeyHashST---')
-    st = MultiKeyHashST(items)
-    st['X'] = [1, 2, 3]
-    st['Y'] = [4, 5, 6]
-    st['Y'] = 4
-    st['A'] = 'hello'
-    assert st['A'] in [2, 8, 'hello']
-    assert st['E'] in [1, 6, 12]
-    # print(st)
-    del st['E']
-    assert 'E' not in st
-    # print(st)
-
-    # Exercise 3.5.9 -- multiple keys
-    # print('---MultiKeyBST---')
-    st = MultiKeyBST(items)
-    st['X'] = [1, 2, 3]
-    st['Y'] = [4, 5, 6]
-    st['Y'] = 4
-    st['A'] = 'hello'
-    # TreeArtist(st).draw(fignum=5, label_vals=True)
-    assert st['A'] in [2, 8, 'hello']
-    assert st['E'] in [1, 6, 12]
-    # print(st)
-    del st['E']
-    assert 'E' not in st
-    # print(st)
-    # TreeArtist(st).draw(fignum=6, label_vals=True)
-
-    # Exercise 3.5.9 -- multiple keys
-    # print('---MultiKeyRedBlackBST---')
     st = MultiKeyRedBlackBST(items)
-    st['X'] = [1, 2, 3]
-    st['Y'] = [4, 5, 6]
-    st['Y'] = 4
-    st['A'] = 'hello'
-    # TreeArtist(st).draw(fignum=7, label_vals=True)
-    assert st['A'] in [2, 8, 'hello']
-    assert st['E'] in [1, 6, 12]
-    # print(st)
-    del st['E']
-    assert 'E' not in st
-    # print(st)
-    # TreeArtist(st).draw(fignum=8, label_vals=True)
+    TreeArtist(t).draw(fignum=3, label_vals=True)
+    TreeArtist(st).draw(fignum=4, label_vals=True)
+
 
 # =============================================================================
 # =============================================================================
