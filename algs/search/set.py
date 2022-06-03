@@ -263,6 +263,7 @@ class MultiHashSet(HashSet):
         {UnorderedSet.__doc__}
         """
 
+    # TODO keep an instance variable for O(1) lookup
     @property
     def _N(self):
         return sum(self._st.values())
@@ -285,8 +286,8 @@ class MultiHashSet(HashSet):
         yield from self._keys()
 
 
-# TODO MultiKeySet takes into account the extra keys for rank/select, etc.
-# but the counter version doesn't.
+# TODO MultiKeySet automatically takes into account the extra keys for ordered
+# methods like rank/select and size, but this counter version doesn't.
 class MultiSet(MultiHashSet, Set):
     __doc__ = f"""Implements an ordered set that allows multiple keys.
 
@@ -298,7 +299,6 @@ class MultiSet(MultiHashSet, Set):
         """
     # No need to even implement anything!! MultiHashSet does the work, and Set
     # just adds on the ordered methods based on the keys.
-    # TODO test the ordered methods vs multiplicity?
     pass
 
 
@@ -312,7 +312,10 @@ class MathSet(HashSet):
 
         {HashSet.__doc__}
         U : HashSet
-            The "universe" set of all possible keys allowed in this set.
+            The "universe" set of all possible keys allowed in this set. If
+            a union or XOR operation is performed between this set and another
+            set containing keys outside of the universe, only keys allowed
+            within this universe will be added.
         """
 
     def __init__(self, U, keys=None):
