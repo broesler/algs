@@ -1469,7 +1469,8 @@ class ArrayBST(SymbolTable):
         self._rights = list()  # indices of right-links
         super().__init__(items, cache)
 
-    def size(self):
+    @property
+    def _N(self):
         return len(self._keys)
 
     def __getitem__(self, k):

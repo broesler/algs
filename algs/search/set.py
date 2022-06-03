@@ -51,10 +51,15 @@ class UnorderedSet(ABC):
         for k in keys:
             self.add(k)
 
+    @property
     @abstractmethod
-    def size(self):
+    def _N(self):
         """Number of elements in the table."""
         pass
+
+    def size(self):
+        """Number of elements in the table."""
+        return self._N
 
     @property
     def is_empty(self):
@@ -147,8 +152,9 @@ class HashSet(UnorderedSet):
         self._st = LinearProbingHashST()
         super().__init__(keys)
 
-    def size(self):
-        return self._st.size()
+    @property
+    def _N(self):
+        return self._st._N
 
     def add(self, k):
         self._st.__setitem__(k, v=None)

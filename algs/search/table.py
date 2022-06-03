@@ -76,10 +76,15 @@ class SymbolTable(ABC):
             st[k] = value
         return st
 
+    @property
     @abstractmethod
-    def size(self):
+    def _N(self):
         """Number of elements in the table."""
         pass
+
+    def size(self):
+        """Number of elements in the table."""
+        return self._N
 
     @property
     def is_empty(self):
@@ -195,11 +200,6 @@ class SymbolTable(ABC):
 class OrderedMethods(ABC):
     # An abstract base class containing the ordered methods. Note that this
     # class may not be subclasses without providing an __init__ method.
-    @property
-    @abstractmethod
-    def _N(self):
-        """Number of elements in the table."""
-        pass
 
     def size(self, lo=None, hi=None):
         """Number of items in the table between keys `lo` and `hi`,
@@ -345,7 +345,8 @@ class SequentialSearchST(SymbolTable):
         self._first = None
         super().__init__(items, cache)
 
-    def size(self):
+    @property
+    def _N(self):
         return self._size
 
     # -------------------------------------------------------------------------
@@ -468,7 +469,8 @@ class ArrayST(SymbolTable):
             search times for commonly-searched keys.
         """)
 
-    def size(self):
+    @property
+    def _N(self):
         return len(self._items)
 
     # -------------------------------------------------------------------------

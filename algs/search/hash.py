@@ -186,7 +186,8 @@ class HashTable(SymbolTable):
             `M`.
         """)
 
-    def size(self):
+    @property
+    def _N(self):
         return self.N
 
     @property
