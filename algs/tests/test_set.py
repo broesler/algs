@@ -13,8 +13,11 @@ import pytest
 import string
 
 from algs.tests.test_search import err_test
-from algs.search.set import invert, Set, HashSet, MathSet
+from algs.search.set import Set, HashSet, MathSet
 
+# TODO
+#   * implement Set and HashSet using built-in `set`?
+#   * deprecate `delete` -> `remove`.
 
 # Determine which classes to test
 UNORDERED_SETS = set([HashSet])
@@ -37,23 +40,23 @@ def keys():
 
 
 @pytest.fixture
-def U():
+def U_keys():
     """The universe of all possible keys."""
     return string.ascii_uppercase
 
 
 @pytest.fixture
-def empty_set(SET, U):
+def empty_set(SET, U_keys):
     if SET in MATH_SETS:
-        return SET(U)
+        return SET(U_keys)
     else:
         return SET()
 
 
 @pytest.fixture
-def st(SET, U, keys):
+def st(SET, U_keys, keys):
     if SET in MATH_SETS:
-        return SET(U, keys)
+        return SET(U_keys, keys)
     else:
         return SET(keys)
 
@@ -97,7 +100,7 @@ class TestUnorderedOps:
     def test_delete(self, st, keys, expect_set):
         test_keys = expect_set.copy()
         N_expect = len(expect_set)
-        for k in st:
+        for k in list(st):
             del st[k]
             N_expect -= 1
             test_keys -= set(k)
@@ -140,11 +143,9 @@ class TestOrderedOps:
             assert st.select(i) == c
             assert st.rank(c) == i
         err_test(st, 'select', 99, err_type=IndexError)  # too large
-
         # Ex 3.2.33
         for i in range(st.size()):
             assert st.rank(st.select(i)) == i
-
         for k in st:
             assert st.select(st.rank(k)) == k
 
@@ -181,65 +182,81 @@ class TestOrderedOps:
 #         Mathematical sets
 # -----------------------------------------------------------------------------
 @pytest.fixture
-def A_keys():
-    return 'ABCDE'
+def A(SET, U_keys):
+    return SET(U_keys, 'ABCDE')
 
 
 @pytest.fixture
-def A(SET, U, A_keys):
-    return SET(U, A_keys)
+def B(SET, U_keys):
+    return SET(U_keys, 'DEF')
 
 
 @pytest.fixture
-def B(SET, U):
-    return SET(U, 'DEF')
-
-@pytest.fixture
-def C(SET, U):
-    return SET(U, 'ABC')
-
-
-@pytest.fixture
-def D(SET, U):
-    return SET(U, 'ABCDEFGH')
-
-
-@pytest.fixture
-def U_set(SET, U):
-    return SET(U, U)
+def U(SET, U_keys):
+    return SET(U_keys, U_keys)
 
 
 @pytest.mark.parametrize('SET', MATH_SETS)
 class TestMathSet:
-    def test_empty_set(self, empty_set, A, U_set):
-        assert empty_set.complement() == U_set
+    def test_empty_set(self, empty_set, A, U):
+        assert empty_set.complement() == U
         assert A | empty_set == A
         assert A & empty_set == empty_set
         assert A - empty_set == A
         assert A ^ empty_set == A
 
-    def test_complement(self, A, U, A_keys):
-        assert A.complement() == MathSet(U, 'FGHIJKLMNOPQRSTUVWXYZ')
+    def test_complement(self, SET, A, U_keys):
+        assert A.complement() == SET(U_keys, 'FGHIJKLMNOPQRSTUVWXYZ')
 
-    def test_universe(self, A, U_set):
-        assert U_set.is_superset(A)
-        assert A.is_subset(U_set)
+    def test_universe(self, A, U):
+        assert U.is_superset(A)
+        assert A.is_subset(U)
 
-    def test_ops(self, A, B, U):
-        assert A | B == MathSet(U, 'ABCDEF')
-        assert A & B == MathSet(U, 'DE')
-        assert A - B == MathSet(U, 'ABC')
-        assert A ^ B == MathSet(U, 'ABCF')
+    def test_ops(self, SET, A, B, U_keys):
+        assert A.union(B) == SET(U_keys, 'ABCDEF')
+        assert A.intersection(B) == SET(U_keys, 'DE')
+        assert A.difference(B) == SET(U_keys, 'ABC')
+        assert A.xor(B) == SET(U_keys, 'ABCF')
 
-    def test_subsuper(self, A, B, C, D):
+    def test_shorthand(self, SET, A, B, U):
+        assert A | B == SET(U, 'ABCDEF')
+        assert A & B == SET(U, 'DE')
+        assert A - B == SET(U, 'ABC')
+        assert A ^ B == SET(U, 'ABCF')
+
+    def test_ior(self, SET, A, B, U):
+        A |= B
+        assert A == SET(U, 'ABCDEF')
+
+    def test_iand(self, SET, A, B, U):
+        A &= B 
+        assert A == SET(U, 'DE')
+
+    def test_isub(self, SET, A, B, U):
+        A -= B
+        assert A == SET(U, 'ABC')
+
+    def test_ixor(self, SET, A, B, U):
+        A ^= B
+        assert A== SET(U, 'ABCF')
+
+    def test_subsuper(self, A, B, U):
+        assert U.is_superset(A)
+        assert A.is_subset(U)
         assert not A.is_superset(B)
         assert not A.is_subset(B)
-        assert A.is_superset(C)
-        assert C.is_subset(A)
-        assert A.is_subset(D)
-        assert B.is_subset(D)
-        assert C.is_subset(D)
-        assert D.is_superset(A)
+
+    def test_compare(self, A, U):
+        # Identity operations
+        assert A == A
+        assert A >= A
+        assert A <= A
+        # Comparison with universe
+        assert U > A
+        assert A < U
+        assert U >= A
+        assert A <= U
+        assert A != U
 
 # =============================================================================
 # =============================================================================
