@@ -221,6 +221,7 @@ class Set(OrderedSet):
 
 
 # TODO add __gt__, __lt__ for "is superset of" or "is subset of"
+# Exercise 3.5.17
 class MathSet(HashSet):
     __doc__ = f"""Implements a mathematical set with unique keys.
 
@@ -291,6 +292,26 @@ class MathSet(HashSet):
             else:
                 self.add(x)
 
+    def is_superset(self, a):
+        """Return True if this set is a superset of `a`."""
+        if len(self) < len(a):
+            return False
+        for x in a:
+            if x not in self:
+                return False
+        else:
+            return True
+
+    def is_subset(self, a):
+        """Return True if this set is a subset of `a`."""
+        if len(self) > len(a):
+            return False
+        for x in self:
+            if x not in a:
+                return False
+        else:
+            return True
+
     # -------------------------------------------------------------------------
     #         Logical operators
     # -------------------------------------------------------------------------
@@ -313,6 +334,12 @@ class MathSet(HashSet):
         x = MathSet(self.U, keys=list(self))
         x.xor(a)
         return x
+
+    def __gt__(self, a):
+        return self.is_superset(a)
+
+    def __lt__(self, a):
+        return self.is_subset(a)
 
     # In-place operators:
     #   A = A | B

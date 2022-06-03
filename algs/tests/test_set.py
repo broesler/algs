@@ -92,6 +92,7 @@ class TestUnorderedOps:
     def test_iteration(self, st, expect_set):
         for k in st:
             assert k in expect_set
+        assert sorted(st) == sorted(expect_set)
 
     def test_delete(self, st, keys, expect_set):
         test_keys = expect_set.copy()
@@ -185,18 +186,22 @@ def A_keys():
 
 
 @pytest.fixture
-def B_keys():
-    return 'DEF'
-
-
-@pytest.fixture
 def A(SET, U, A_keys):
     return SET(U, A_keys)
 
 
 @pytest.fixture
-def B(SET, U, B_keys):
-    return SET(U, B_keys)
+def B(SET, U):
+    return SET(U, 'DEF')
+
+@pytest.fixture
+def C(SET, U):
+    return SET(U, 'ABC')
+
+
+@pytest.fixture
+def D(SET, U):
+    return SET(U, 'ABCDEFGH')
 
 
 @pytest.fixture
@@ -216,11 +221,25 @@ class TestMathSet:
     def test_complement(self, A, U, A_keys):
         assert A.complement() == MathSet(U, 'FGHIJKLMNOPQRSTUVWXYZ')
 
+    def test_universe(self, A, U_set):
+        assert U_set.is_superset(A)
+        assert A.is_subset(U_set)
+
     def test_ops(self, A, B, U):
         assert A | B == MathSet(U, 'ABCDEF')
         assert A & B == MathSet(U, 'DE')
         assert A - B == MathSet(U, 'ABC')
         assert A ^ B == MathSet(U, 'ABCF')
+
+    def test_subsuper(self, A, B, C, D):
+        assert not A.is_superset(B)
+        assert not A.is_subset(B)
+        assert A.is_superset(C)
+        assert C.is_subset(A)
+        assert A.is_subset(D)
+        assert B.is_subset(D)
+        assert C.is_subset(D)
+        assert D.is_superset(A)
 
 # =============================================================================
 # =============================================================================
