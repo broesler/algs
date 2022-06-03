@@ -222,7 +222,7 @@ class TestUnorderedOps:
         def test_delete_all(self, st, data, expect_set):
             test_keys = expect_set.copy()
             N_expect = len(expect_set)
-            for k in st:
+            for k in st.keys():
                 del st[k]
                 N_expect -= 1
                 test_keys -= set(k)
@@ -257,7 +257,7 @@ class TestCaching:
 
     @pytest.mark.parametrize('ST', SINGLEVAL_STS - NO_CACHE - NO_DELETE)
     def test_delete_cache(self, st):
-        for k in st:
+        for k in st.keys():
             st[k]       # __getitem__ to set the cache
             del st[k]
             assert st._cache is None
@@ -426,8 +426,8 @@ class TestMultiVals:
         st['A'] = 'hello'
         assert st['A'] == Bag([2, 8, 'hello'])
 
-    def test_delete(self, st, expect_set):
-        for k in expect_set:
+    def test_delete(self, st):
+        for k in st.keys():
             del st[k]
             assert k not in st
         assert st.is_empty
@@ -462,6 +462,7 @@ class TestMultiKeys:
         assert st['A'] in [2, 8, 'hello']
 
     def test_delete(self, st, expect_set):
+        # Use expect_set to avoid duplicate deletions
         for k in expect_set:
             del st[k]
             assert k not in st
