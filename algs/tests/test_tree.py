@@ -12,7 +12,7 @@ Tests specific to BST data types, not including balanced trees.
 import pytest
 
 from algs.search.tree import BST, BST_nr, ThreadedST, ThreadedST_nr
-from algs.tests.test_search import items, st, expect_set
+from algs.tests.test_search import items, st, expect_keys
 
 TREES = set([BST, BST_nr, ThreadedST, ThreadedST_nr])
 
@@ -75,11 +75,11 @@ class TestBST:
         assert st.internal_path_length == 25
 
     # Test BST internal structure
-    def test_delete_root(self, st, expect_set):
+    def test_delete_root(self, st, expect_keys):
         # delete the root (default deletion)
         assert st._root.key == 'S'
         del st['S']
-        assert len(st) == len(expect_set) - 1
+        assert len(st) == len(expect_keys) - 1
         assert st._root.key == 'X'
         assert st._root.left.key == 'E'
         assert st._root.right is None
@@ -107,39 +107,39 @@ class TestBST:
 @pytest.mark.parametrize('ST', [ThreadedST, ThreadedST_nr])
 class TestThreadedSTs:
     @staticmethod
-    def run_threads(st, expect_set):
+    def run_threads(st, expect_keys):
         """Test that the next/prev attributes are set properly."""
-        keys = sorted(expect_set)
+        keys = sorted(expect_keys)
         for i, k in enumerate(keys[:-1]):
             assert st.next(k) == keys[i+1]
         assert st.next(keys[-1]) is None
 
-        keys = sorted(expect_set, reverse=True)
+        keys = sorted(expect_keys, reverse=True)
         for i, k in enumerate(keys[:-1]):
             assert st.prev(k) == keys[i+1]
         assert st.prev(keys[-1]) is None
 
-    def test_threads(self, st, expect_set):
-        self.run_threads(st, expect_set)
+    def test_threads(self, st, expect_keys):
+        self.run_threads(st, expect_keys)
 
-    def test_delete_min(self, st, expect_set):
+    def test_delete_min(self, st, expect_keys):
         k, v = st.min(), st[st.min()]
         st.delete_min()  # remove 'A'
-        self.run_threads(st, sorted(expect_set - set(k)))
+        self.run_threads(st, sorted(expect_keys - set(k)))
         st[k] = v
 
-    def test_delete_max(self, st, expect_set):
+    def test_delete_max(self, st, expect_keys):
         k, v = st.max(), st[st.max()]
         st.delete_max()  # remove 'X'
-        self.run_threads(st, sorted(expect_set - set(k)))
+        self.run_threads(st, sorted(expect_keys - set(k)))
         st[k] = v
 
-    def test_delete(self, ST, items, expect_set):
+    def test_delete(self, ST, items, expect_keys):
         # Delete arbitrary key, starting with same tree
-        for k in expect_set:
+        for k in expect_keys:
             st = ST(items)
             del st[k]
-            self.run_threads(st, sorted(expect_set - set(k)))
+            self.run_threads(st, sorted(expect_keys - set(k)))
 
 # =============================================================================
 # =============================================================================
