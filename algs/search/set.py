@@ -463,7 +463,7 @@ class MathSet(HashSet):
         return self
 
 
-class MathMultiSet(MultiHashSet, MathSet):
+class MultiKeyMathSet(MultiHashSet, MathSet):
     __doc__ = f"""Implements a mathematical multiset.
 
         {HashSet.__doc__}
@@ -491,6 +491,186 @@ class MathMultiSet(MultiHashSet, MathSet):
 
     # TODO define sum()
 
+
+class MathMultiSet(MultiHashSet, MathSet):
+    __doc__ = f"""Implements a mathematical multiset.
+
+        .. note:: This implementation keeps the multiplicity of keys as the
+        values in the underlying symbol table, so set operations are performed
+        according to those values.
+        See <https://en.wikipedia.org/wiki/Multiset>.
+
+        {HashSet.__doc__}
+        U : HashSet
+            The "universe" set of all possible keys allowed in this set. If
+            a union or XOR operation is performed between this set and another
+            set containing keys outside of the universe, only keys allowed
+            within this universe will be added.
+        """
+    def complement(self):
+        """Return a set of the universe of keys except those in this set."""
+        c = self.__class__(self.U, keys=self.U)  # entire set
+        for k in self._st:
+            del c._st[k]  # remove all instances
+        return c
+
+    def union(self, a):
+        """Return a set of elements either in this set or in `a`."""
+        c = self.__class__(self.U, list(self))
+        for k in a._st:
+            if k in self:
+                c._st[k] = max(self._st[k], a._st[k])
+            elif k in self.U:
+                c._st[k] = a._st[k]
+        return c
+
+    def intersection(self, a):
+        """Return a set of elements both in this set and in `a`."""
+        c = self.__class__(self.U, list(self))
+        for k in self._st:
+            if k in a:
+                c._st[k] = min(self._st[k], a._st[k])
+            else:
+                del c._st[k]
+        return c
+
+    def difference(self, a):
+        """Return a set of elements that are in this set but not in `a`."""
+        c = self.__class__(self.U, list(self))
+        loop, test = (self, a) if self.size() < a.size() else (a, self)
+        for k in loop._st:
+            if k in test:
+                c._st[k] -= a._st[k]
+                if c._st[k] <= 0:
+                    del c._st[k]
+        return c
+
+    def sum(self, a):
+        """Return a set of elements either in this set or in `a`."""
+        c = self.__class__(self.U, list(self))
+        for k in a._st:
+            if k in self:
+                c._st[k] = self._st[k] + a._st[k]
+            elif k in self.U:
+                c._st[k] = a._st[k]
+        return c
+
+    def xor(self, a):
+        """Return a set of elements that are only in this set or in `a`."""
+        c = self.__class__(self.U, list(self))
+        for k in a._st:
+            if k in self:
+                c._st[k] -= a._st[k]
+                if c._st[k] <= 0:
+                    del c._st[k]
+            elif k in self.U:
+                c._st[k] = a._st[k]
+        return c
+
+    def is_superset(self, a):
+        """Return True if this set is a superset of `a`."""
+        if self.size() < a.size():
+            return False
+        for k in a._st:
+            if k not in self or self._st[k] < a._st[k]:
+                return False
+        else:
+            return True
+
+    def is_subset(self, a):
+        """Return True if this set is a subset of `a`."""
+        if self.size() > a.size():
+            return False
+        for k in self._st:
+            if k not in a or self._st[k] > a._st[k]:
+                return False
+        else:
+            return True
+
+    def is_disjoint(self, a):
+        """Return True if none of the elements in `a` are in this set."""
+        for k in a._st:
+            if k in self:
+                return False
+        else:
+            return True
+
+    # -------------------------------------------------------------------------
+    #         Logical operators
+    # -------------------------------------------------------------------------
+    def __or__(self, a):
+        return self.union(a)
+
+    def __and__(self, a):
+        return self.intersection(a)
+
+    def __sub__(self, a):
+        return self.difference(a)
+
+    def __add__(self, a):
+        return self.sum(a)
+
+    def __xor__(self, a):
+        return self.xor(a)
+
+    def __gt__(self, a):
+        return self.is_superset(a)
+
+    __ge__ = __gt__
+
+    def __lt__(self, a):
+        return self.is_subset(a)
+
+    __le__ = __lt__
+
+    # In-place operators:
+    #   A = A | B
+    #   A |= B
+    #   A.__ior__(B)
+    # are all equivalent.
+
+    def __ior__(self, a):
+        for k in a._st:
+            if k in self:
+                self._st[k] = max(self._st[k], a._st[k])
+            elif k in self.U:
+                self._st[k] = a._st[k]
+        return self
+
+    def __iand__(self, a):
+        for k in self._st:
+            if k in a:
+                self._st[k] = min(self._st[k], a._st[k])
+            else:
+                del self._st[k]
+        return self
+
+    def __isub__(self, a):
+        loop, test = (self, a) if self.size() < a.size() else (a, self)
+        for k in list(loop._st):
+            if k in test:
+                self._st[k] -= a._st[k]
+                if self._st[k] <= 0:
+                    del self._st[k]
+        return self
+
+    def __iadd__(self, a):
+        for k in a._st:
+            if k in self:
+                self._st[k] = self._st[k] + a._st[k]
+            elif k in self.U:
+                self._st[k] = a._st[k]
+        return self
+
+    def __ixor__(self, a):
+        for k in a._st:
+            if k in self:
+                self._st[k] -= a._st[k]
+                if self._st[k] <= 0:
+                    del self._st[k]
+            elif k in self.U:
+                self._st[k] = a._st[k]
+        return self
 
 
 # -----------------------------------------------------------------------------
@@ -746,7 +926,6 @@ MultiKeyST = MultiKeyRedBlackBST
 # -----------------------------------------------------------------------------
 #       Tests
 # -----------------------------------------------------------------------------
-# TODO move to test_multiset
 if __name__ == '__main__':
     # from algs.exercises.draw_tree import TreeArtist
 
@@ -764,25 +943,42 @@ if __name__ == '__main__':
     # TreeArtist(t).draw(fignum=3, label_vals=True)
     # TreeArtist(st).draw(fignum=4, label_vals=True)
 
+    # TODO move to test_set
     a = MultiKeyHashSet(keys)
-    print(a)
-    b = MultiKeySet(keys)
-    print(b)
+    am = MultiHashSet(keys)
+    # print(a)
+    # print(am)
 
-    s = MultiHashSet(keys)
-    print(s)
-    st = MultiSet(keys)
-    print(st)
+    b = MultiKeySet(keys)
+    bm = MultiSet(keys)
+    # print(b)
+    # print(bm)
 
     assert a == b
-    assert a == s
-    assert a == st
+    assert a == am
+    assert a == bm
 
     import string
-    U = ascii.string_lowercase
-    A = MathMultiSet(U, 'aaabcdee')
-    B = MathMultiSet(U, 'ddefffg')
+    U = string.ascii_lowercase
+
+    # Minimal code, but `delete` only removes one at a time, and the results
+    # are inconsistent with typical definitions of a mathematical multiset.
+    A = MultiKeyMathSet(U, 'aabb')
+    B = MultiKeyMathSet(U, 'bbbc')
+    print('--- multi-key ---')
     print(A | B)
+    print(A & B)
+    print(A - B)
+    print(A ^ B)
+
+    A = MathMultiSet(U, 'aab')
+    B = MathMultiSet(U, 'bbc')
+    print('--- multiplicity ---')
+    print(A | B)
+    print(A & B)
+    print(A - B)
+    print(A ^ B)
+    print(A + B)  # new op for multiset!
 
 # =============================================================================
 # =============================================================================
