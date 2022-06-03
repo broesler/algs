@@ -87,7 +87,7 @@ class RedBlackBST(BST):
     # Redefine put() operations to account for node colors
     def __setitem__(self, k, v):
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
-            self._cache.val = v
+            self._set_func(self._cache, v)
             return
         else:
             self._cost = 0  # Ex 3.3.43

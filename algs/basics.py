@@ -17,7 +17,7 @@ from collections import deque
 from collections.abc import MutableMapping
 from copy import deepcopy
 
-__all__ = ['Bag', 'Stack', 'Queue', 'PriorityQueue', 'IndexPQ',
+__all__ = ['Collection', 'Bag', 'Stack', 'Queue', 'PriorityQueue', 'IndexPQ',
            'RandomBag', 'RandomQueue']
 
 
@@ -62,6 +62,8 @@ class Collection(ABC):
 
     def __eq__(self, other):
         # Assume order matters, so check that the items lists are identical.
+        if not isinstance(other, Collection):
+            raise NotImplemented
         return self._items == other._items
 
     def __repr__(self):
@@ -90,9 +92,13 @@ class Bag(Collection):
         """Add item to the bag."""
         self._items.append(item)
 
-    def __eq__(self, other):
-        # When comparing Bags, order does not matter, so sort the items first.
-        return sorted(self._items) == sorted(other._items)
+    # TODO how to test equality when items cannot be sorted?
+    # i.e. a string and an int in the same Bag.
+    # def __eq__(self, other):
+    #     # When comparing Bags, order does not matter, so sort the items first.
+    #     if not isinstance(other, Bag):
+    #         raise NotImplemented
+    #     return sorted(self._items) == sorted(other._items)
 
 
 # Exercise 1.3.4

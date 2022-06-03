@@ -410,7 +410,7 @@ class MultiValRedBlackBST(RedBlackBST):
     class _Node(RedBlackBST._Node):
         def __init__(self, key, value, *args, **kwargs):
             super().__init__(key, value, *args, **kwargs)
-            self.val = Bag()  # store all values in a queue
+            self.val = Bag()  # store all values in an iterable
             self.val.add(value)
 
     @staticmethod
@@ -597,50 +597,11 @@ if __name__ == '__main__':
     keys = list('SEARCHEXAMPLE')
     items = list((c, i) for i, c in enumerate(keys))
 
-    # print('---MultiValHashST---')
-    st = MultiValHashST(items)
-    st['X'] = [1, 2, 3]
-    st['Y'] = [4, 5, 6]
-    st['Y'] = 4
-    st['A'] = 'hello'
-    assert list(st['A']) == [2, 8, 'hello']
-    assert list(st['E']) == [1, 6, 12]
-    # print(st)
-    del st['E']
-    assert 'E' not in st
-    # print(st)
-
     t = BST(items)
-    # TreeArtist(t).draw(fignum=1, label_vals=True)
-
-    # print('---MultiValBST---')
-    st = MultiValBST(items)
-    st['X'] = [1, 2, 3]
-    st['Y'] = [4, 5, 6]
-    st['Y'] = 4
-    st['A'] = 'hello'
-    # TreeArtist(st).draw(fignum=2, label_vals=True)
-    assert list(st['A']) == [2, 8, 'hello']
-    assert list(st['E']) == [1, 6, 12]
-    # print(st)
-    del st['E']
-    assert 'E' not in st
+    # TreeArtist(t).draw(fignum=2, label_vals=True)
 
     t = RedBlackBST(items)
     # TreeArtist(t).draw(fignum=3, label_vals=True)
-
-    # print('---MultiValRedBlackBST---')
-    st = MultiValRedBlackBST(items)
-    st['X'] = [1, 2, 3]
-    st['Y'] = [4, 5, 6]
-    st['Y'] = 4
-    st['A'] = 'hello'
-    # TreeArtist(st).draw(fignum=4, label_vals=True)
-    assert list(st['A']) == [2, 8, 'hello']
-    assert list(st['E']) == [1, 6, 12]
-    # print(st)
-    del st['E']
-    assert 'E' not in st
 
     # Exercise 3.5.8
     # print('---MultiKeyHashST---')
@@ -687,23 +648,6 @@ if __name__ == '__main__':
     assert 'E' not in st
     # print(st)
     # TreeArtist(st).draw(fignum=8, label_vals=True)
-
-    # Test invert
-    st = MultiValHashST(items)
-    ts = invert(st)
-    assert st == invert(ts)
-    assert ts == invert(st)
-
-    # # Test MathSet
-    # import string
-    # U = string.ascii_uppercase
-    # A = MathSet(U, 'ABCDE')
-    # B = MathSet(U, 'DEFG')
-    # assert A.complement() == MathSet(U, set(U) - set('ABCDE'))
-    # assert A | B == MathSet(U, 'ABCDEFG')
-    # assert A & B == MathSet(U, 'DE')
-    # assert A - B == MathSet(U, 'ABC')
-    # assert A ^ B == MathSet(U, 'ABCFG')
 
 # =============================================================================
 # =============================================================================

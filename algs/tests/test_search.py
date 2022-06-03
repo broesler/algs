@@ -12,6 +12,7 @@
 import numpy as np
 import pytest
 
+from algs.basics import Bag
 from algs.search import (SequentialSearchST, BinarySearchST, ArrayST, BST,
                          BST_nr, ThreadedST, ThreadedST_nr, ArrayBST,
                          RedBlackBST, TopDown234, TopDown234_nr,
@@ -20,7 +21,8 @@ from algs.search import (SequentialSearchST, BinarySearchST, ArrayST, BST,
                          SeparateChainingHashST, SeparateChainingLiteHashST,
                          LinearProbingHashST, LazyLinearProbingHashST,
                          DoubleProbingHashST, DoubleHashingHashST,
-                         CuckooHashST, MultiValST, MultiValHashST)
+                         CuckooHashST,
+                         MultiValBST, MultiValRedBlackBST, MultiValHashST)
 
 rng = np.random.default_rng(seed=565656)
 
@@ -58,9 +60,9 @@ UNORDERED_STS = set([SequentialSearchST, ArrayST,
 ORDERED_STS = set([BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr,
                    ArrayBST, RedBlackBST, TopDown234, TopDown234_nr,
                    BottomUp234, TopDown234bothways, Unbalanced23, AVLTree,
-                   MultiValST])
+                   MultiValBST, MultiValRedBlackBST])
 
-MULTIVAL_STS = set([MultiValHashST, MultiValST])
+MULTIVAL_STS = set([MultiValHashST, MultiValBST, MultiValRedBlackBST])
 
 ALL_STS = UNORDERED_STS | ORDERED_STS
 
@@ -341,8 +343,8 @@ class TestOrderedOps:
             assert st.keys(hi='P') == list('ACEHLMP')
             assert st.size(hi='P') == 7
 
-    @pytest.mark.parametrize('ST', (ORDERED_STS & SINGLEVAL_STS)
-                                   - set([ArrayBST]))
+    @pytest.mark.parametrize('ST', ((ORDERED_STS & SINGLEVAL_STS)
+                                    - set([ArrayBST])))
     def test_vals_items(self, st, data_set):
         assert st.values() == [v for k, v in sorted(data_set)]
         assert (st.values('F', 'P') ==
@@ -382,6 +384,46 @@ def test_comparisons(data):
     assert BST(data) == BST_nr(data)
     assert BST_nr(data) == BST(data)
 
+
+# -----------------------------------------------------------------------------
+#         Test MultiVal*STs
+# -----------------------------------------------------------------------------
+@pytest.fixture
+def expect_multi():
+    return [('A', Bag([2, 8])),
+            ('C', Bag([4])),
+            ('E', Bag([1, 6, 12])),
+            ('H', Bag([5])),
+            ('L', Bag([11])),
+            ('M', Bag([9])),
+            ('P', Bag([10])),
+            ('R', Bag([3])),
+            ('S', Bag([0])),
+            ('X', Bag([7]))
+            ]
+
+
+@pytest.mark.parametrize('ST', MULTIVAL_STS)
+@pytest.mark.parametrize('cache', [False, True])
+class TestMultiVals:
+    def test_get(self, st, expect_multi):
+        for k, v in expect_multi:
+            assert st[k] == v
+
+    def test_put_iterable(self, st):
+        st['X'] = [1, 2, 3]
+        assert st['X'] == Bag([7, [1, 2, 3]])
+        st['Y'] = [4, 5, 6]
+        assert st['Y'] == Bag([[4, 5, 6]])
+        st['Y'] = 7
+        assert st['Y'] == Bag([[4, 5, 6], 7])
+        st['A'] = 'hello'
+        assert st['A'] == Bag([2, 8, 'hello'])
+
+    def test_delete(self, st):
+        for k in st:
+            del st[k]
+            assert k not in st
 
 # =============================================================================
 # =============================================================================
