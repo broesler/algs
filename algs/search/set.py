@@ -335,59 +335,71 @@ class MathSet(HashSet):
 
     def complement(self):
         """Return a set of the universe of keys except those in this set."""
-        out = MathSet(self.U, keys=self.U)  # entire set
-        for x in self:
-            out.delete(x)
-        return out
+        c = self.__class__(self.U, keys=self.U)  # entire set
+        for k in self:
+            c.delete(k)
+        return c
 
     def union(self, a):
-        """Add any elements from `a` that are not already in this set."""
-        self._universe_check(a)
-        for x in a:
+        """Return a set of elements either in this set or in `a`."""
+        c = self.__class__(self.U, list(self))
+        for k in a:
             if k in self.U:
-                self.add(x)
+                c.add(k)
+        return c
 
     def intersection(self, a):
-        """Remove any elements from this set that are not in `a`."""
-        self._universe_check(a)
-        for x in self:
-            if x not in a:
-                self.delete(x)
+        """Return a set of elements both in this set and in `a`."""
+        c = self.__class__(self.U, list(self))
+        for k in self:
+            if k not in a:
+                c.delete(k)
+        return c
 
     def difference(self, a):
-        """Remove all elements from this set that are also in `a`."""
-        self._universe_check(a)
+        """Return a set of elements that are in this set but not in `a`."""
+        c = self.__class__(self.U, list(self))
         # Only iterate over the shorter of the two sets
-        loop, test = (self, a) if len(self) < len(a) else (a, self)
-        for x in loop:
-            if x in test:
-                self.delete(x)
+        loop, test = (self, a) if self.size() < a.size() else (a, self)
+        for k in loop:
+            if k in test:
+                c.delete(k)
+        return c
 
     def xor(self, a):
-        """Add elements from `a`, excluding elements contained in both sets."""
-        self._universe_check(a)
-        for x in a:
-            if x in self:
-                self.delete(x)
+        """Return a set of elements that are only in this set or in `a`."""
+        c = self.__class__(self.U, list(self))
+        for k in a:
+            if k in self:
+                c.delete(k)
             elif k in self.U:
-                self.add(x)
+                c.add(k)
+        return c
 
     def is_superset(self, a):
         """Return True if this set is a superset of `a`."""
-        if len(self) < len(a):
+        if self.size() < a.size():
             return False
-        for x in a:
-            if x not in self:
+        for k in a:
+            if k not in self:
                 return False
         else:
             return True
 
     def is_subset(self, a):
         """Return True if this set is a subset of `a`."""
-        if len(self) > len(a):
+        if self.size() > a.size():
             return False
-        for x in self:
-            if x not in a:
+        for k in self:
+            if k not in a:
+                return False
+        else:
+            return True
+
+    def is_disjoint(self, a):
+        """Return True if none of the elements in `a` are in this set."""
+        for k in a:
+            if k in self:
                 return False
         else:
             return True
@@ -396,30 +408,26 @@ class MathSet(HashSet):
     #         Logical operators
     # -------------------------------------------------------------------------
     def __or__(self, a):
-        x = MathSet(self.U, keys=list(self))
-        x.union(a)
-        return x
+        return self.union(a)
 
     def __and__(self, a):
-        x = MathSet(self.U, keys=list(self))
-        x.intersection(a)
-        return x
+        return self.intersection(a)
 
     def __sub__(self, a):
-        x = MathSet(self.U, keys=list(self))
-        x.difference(a)
-        return x
+        return self.difference(a)
 
     def __xor__(self, a):
-        x = MathSet(self.U, keys=list(self))
-        x.xor(a)
-        return x
+        return self.xor(a)
 
     def __gt__(self, a):
         return self.is_superset(a)
 
+    __ge__ = __gt__
+
     def __lt__(self, a):
         return self.is_subset(a)
+
+    __le__ = __lt__
 
     # In-place operators:
     #   A = A | B
@@ -428,19 +436,30 @@ class MathSet(HashSet):
     # are all equivalent.
 
     def __ior__(self, a):
-        self.union(a)
+        for k in a:
+            if k in self.U:
+                self.add(k)
         return self
 
     def __iand__(self, a):
-        self.intersection(a)
+        for k in list(self):
+            if k not in a:
+                self.delete(k)
         return self
 
     def __isub__(self, a):
-        self.difference(a)
+        loop, test = (self, a) if self.size() < a.size() else (a, self)
+        for k in list(loop):
+            if k in test:
+                self.delete(k)
         return self
 
     def __ixor__(self, a):
-        self.xor(a)
+        for k in a:
+            if k in self:
+                self.delete(k)
+            elif k in self.U:
+                self.add(k)
         return self
 
 # TODO change "MathSet" usages to "self.__class__" for subclassing.
