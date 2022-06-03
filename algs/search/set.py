@@ -462,9 +462,36 @@ class MathSet(HashSet):
                 self.add(k)
         return self
 
-# TODO change "MathSet" usages to "self.__class__" for subclassing.
+
 class MathMultiSet(MultiHashSet, MathSet):
-    pass
+    __doc__ = f"""Implements a mathematical multiset.
+
+        {HashSet.__doc__}
+        U : HashSet
+            The "universe" set of all possible keys allowed in this set. If
+            a union or XOR operation is performed between this set and another
+            set containing keys outside of the universe, only keys allowed
+            within this universe will be added.
+        """
+
+    # NOTE this solution changes the API from a multi(key|val) symbol table
+    # that removes *all* instances of a key by deletion, *and* breaks the
+    # equivalency of `delete` == `__delitem__`.
+    # `del s[k]` still deletes *all* instances.
+    def delete(self, k):
+        """Remove a single instance of `k` from the set."""
+        try:
+            v = self._st[k]
+            if v <= 1:
+                del self._st[k]
+            else:
+                self._st[k] = v - 1
+        except KeyError:
+            pass
+
+    # TODO define sum()
+
+
 
 # -----------------------------------------------------------------------------
 #         Multi[Key|Value] Symbol Tables
