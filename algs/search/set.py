@@ -227,7 +227,7 @@ class Set(OrderedSet):
 
 
 # Exercise 3.5.18
-class MultiHashSet(HashSet):
+class MultiKeyHashSet(HashSet):
     __doc__ = f"""Implements an unordered set that allows multiple keys.
                {UnorderedSet.__doc__}
                """
@@ -240,7 +240,7 @@ class MultiHashSet(HashSet):
 
 
 # Exercise 3.5.18
-class MultiSet(Set):
+class MultiKeySet(Set):
     __doc__ = f"""Implements an ordered set that allows multiple keys.
                {OrderedSet.__doc__}
                """
@@ -251,6 +251,53 @@ class MultiSet(Set):
         for k in keys:
             self.add(k)
 
+
+# Exercise 3.5.18
+class MultiHashSet(HashSet):
+    __doc__ = f"""Implements an unordered set that allows multiple keys.
+
+        .. note:: This implementation keeps the multiplicity of keys as the
+        values, instead of storing multiple keys. Iteration replicates the keys
+        according to their multiplicity.
+
+        {UnorderedSet.__doc__}
+        """
+
+    @property
+    def _N(self):
+        return sum(self._st.values())
+
+    def add(self, k):
+        """Increase the multiplicity of key `k` in the multiset."""
+        try:
+            self._st[k] += 1
+        except KeyError:
+            self._st[k] = 1
+
+    def _keys(self):
+        """Return a list of keys repeated according to their multiplicity."""
+        b = list()
+        for k, v in self._st.items():
+            b.extend(v*[k])
+        return b
+
+    def __iter__(self):
+        yield from self._keys()
+
+
+class MultiSet(MultiHashSet, Set):
+    __doc__ = f"""Implements an ordered set that allows multiple keys.
+
+        .. note:: This implementation keeps the multiplicity of keys as the
+        values, instead of storing multiple keys. Iteration replicates the keys
+        according to their multiplicity.
+
+        {OrderedSet.__doc__}
+        """
+    # No need to even implement anything!! MultiHashSet does the work, and Set
+    # just adds on the ordered methods based on the keys.
+    # TODO test the ordered methods vs multiplicity?
+    pass
 
 
 # Exercise 3.5.17
@@ -651,20 +698,25 @@ MultiKeyST = MultiKeyRedBlackBST
 # -----------------------------------------------------------------------------
 # TODO move to test_multiset
 if __name__ == '__main__':
-    from algs.exercises.draw_tree import TreeArtist
+    # from algs.exercises.draw_tree import TreeArtist
 
     keys = list('SEARCHEXAMPLE')
     items = list((c, i) for i, c in enumerate(keys))
 
     t = BST(items)
     st = MultiKeyBST(items)
-    TreeArtist(t).draw(fignum=1, label_vals=True)
-    TreeArtist(st).draw(fignum=2, label_vals=True)
+    # TreeArtist(t).draw(fignum=1, label_vals=True)
+    # TreeArtist(st).draw(fignum=2, label_vals=True)
 
     t = RedBlackBST(items)
     st = MultiKeyRedBlackBST(items)
-    TreeArtist(t).draw(fignum=3, label_vals=True)
-    TreeArtist(st).draw(fignum=4, label_vals=True)
+    # TreeArtist(t).draw(fignum=3, label_vals=True)
+    # TreeArtist(st).draw(fignum=4, label_vals=True)
+
+    s = MultiHashSet(keys)
+    print(s)
+    st = MultiSet(keys)
+    print(st)
 
 
 # =============================================================================
