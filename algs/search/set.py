@@ -157,10 +157,10 @@ class HashSet(UnorderedSet):
         return self._st._N
 
     def add(self, k):
-        self._st.__setitem__(k, v=None)
+        self._st[k] = None
 
     def __delitem__(self, k):
-        self._st.__delitem__(k)
+        del self._st[k]
 
     def __contains__(self, k):
         return k in self._st
@@ -184,10 +184,10 @@ class Set(OrderedSet):
         return self._st._N
 
     def add(self, k):
-        self._st.__setitem__(k, v=None)
+        self._st[k] = None
 
     def __delitem__(self, k):
-        self._st.__delitem__(k)
+        del self._st[k]
 
     def __contains__(self, k):
         return k in self._st
