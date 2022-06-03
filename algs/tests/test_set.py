@@ -13,8 +13,7 @@ import pytest
 import string
 
 from algs.tests.test_search import err_test
-from algs.search.set import (invert, Set, HashSet, MathSet,
-                             MultiKeyHashST, MultiKeyBST, MultiKeyRedBlackBST)
+from algs.search.set import invert, Set, HashSet, MathSet
 
 
 # Determine which classes to test
@@ -22,8 +21,6 @@ UNORDERED_SETS = set([HashSet])
 ORDERED_SETS = set([Set])
 MATH_SETS = set([MathSet])
 ALL_SETS = UNORDERED_SETS | ORDERED_SETS | MATH_SETS
-
-MULTIKEY_STS = set([MultiKeyHashST, MultiKeyBST, MultiKeyRedBlackBST])
 
 # Define fixtures common to each test
 EXPECT_STR = 'SEARCHEXAMPLE'
@@ -224,20 +221,6 @@ class TestMathSet:
         assert A & B == MathSet(U, 'DE')
         assert A - B == MathSet(U, 'ABC')
         assert A ^ B == MathSet(U, 'ABCF')
-
-
-# -----------------------------------------------------------------------------
-#         Multi-keyed Symbol Tables
-# -----------------------------------------------------------------------------
-@pytest.fixture
-def items():
-    return list((c, i) for i, c in enumerate(EXPECT_STR))
-
-
-def test_invert():
-    st = MultiKeyHashST(items)
-    assert st == invert(invert(st))
-
 
 # =============================================================================
 # =============================================================================

@@ -436,7 +436,7 @@ class TestMultiVals:
 # -----------------------------------------------------------------------------
 @pytest.mark.parametrize('ST', MULTIKEY_STS)
 @pytest.mark.parametrize('cache', [False, True])
-class TestMultiVals:
+class TestMultiKeys:
     def test_size(self, st):
         assert st.size() == len(EXPECT_STR)  # includes ALL keys
 
@@ -461,6 +461,9 @@ class TestMultiVals:
             del st[k]
             assert k not in st
         assert st.is_empty
+
+    def test_invert(st):
+        assert st == invert(invert(st))
 
 # =============================================================================
 # =============================================================================
