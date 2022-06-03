@@ -13,7 +13,8 @@ import pytest
 import string
 
 from algs.tests.test_search import err_test
-from algs.search.set import Set, HashSet, MathSet, MultiKeyST, MultiKeyHashST
+from algs.search.set import (invert, Set, HashSet, MathSet,
+                             MultiKeyHashST, MultiKeyBST, MultiKeyRedBlackBST)
 
 
 # Determine which classes to test
@@ -22,7 +23,7 @@ ORDERED_SETS = set([Set])
 MATH_SETS = set([MathSet])
 ALL_SETS = UNORDERED_SETS | ORDERED_SETS | MATH_SETS
 
-MULTIVAL_STS = set([MultiKeyST, MultiKeyHashST])
+MULTIKEY_STS = set([MultiKeyHashST, MultiKeyBST, MultiKeyRedBlackBST])
 
 # Define fixtures common to each test
 EXPECT_STR = 'SEARCHEXAMPLE'
@@ -34,7 +35,7 @@ def expect_set():
 
 
 @pytest.fixture
-def data():
+def keys():
     return list(EXPECT_STR)
 
 
@@ -53,18 +54,18 @@ def empty_set(SET, U):
 
 
 @pytest.fixture
-def st(SET, U, data):
+def st(SET, U, keys):
     if SET in MATH_SETS:
-        return SET(U, data)
+        return SET(U, keys)
     else:
-        return SET(data)
+        return SET(keys)
 
 
 # -----------------------------------------------------------------------------
 #         Run Tests
 # -----------------------------------------------------------------------------
-def test_comparisons(data):
-    assert Set(data) == HashSet(data)
+def test_comparisons(keys):
+    assert Set(keys) == HashSet(keys)
 
 
 @pytest.mark.parametrize('SET', ALL_SETS)
@@ -83,8 +84,8 @@ class TestUnorderedOps:
         t.add('A')
         assert 'A' in t
 
-    def test_contains(self, st, data, expect_set):
-        for k in data:
+    def test_contains(self, st, keys, expect_set):
+        for k in keys:
             assert k in st
         assert len(st) == len(expect_set)
         assert len(st) == st.size()
@@ -95,7 +96,7 @@ class TestUnorderedOps:
         for k in st:
             assert k in expect_set
 
-    def test_delete(self, st, data, expect_set):
+    def test_delete(self, st, keys, expect_set):
         test_keys = expect_set.copy()
         N_expect = len(expect_set)
         for k in st:
@@ -178,7 +179,7 @@ class TestOrderedOps:
             assert st.rank(c) == i
 
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 #         Mathematical sets
 # -----------------------------------------------------------------------------
 @pytest.fixture
@@ -225,21 +226,17 @@ class TestMathSet:
         assert A ^ B == MathSet(U, 'ABCF')
 
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 #         Multi-keyed Symbol Tables
 # -----------------------------------------------------------------------------
-# EXPECT_STR = 'SEARCHEXAMPLE'
-
-# @pytest.fixture
-# def data():
-#     return list((c, i) for i, c in enumerate(EXPECT_STR))
+@pytest.fixture
+def items():
+    return list((c, i) for i, c in enumerate(EXPECT_STR))
 
 
-# def test_invert()
-#     st = MultiKeyHashST(items)
-#     ts = invert(st)
-#     assert st == invert(ts)
-#     assert ts == invert(st)
+def test_invert():
+    st = MultiKeyHashST(items)
+    assert st == invert(invert(st))
 
 
 # =============================================================================
