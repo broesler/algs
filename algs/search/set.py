@@ -220,6 +220,126 @@ class Set(OrderedSet):
         return self._st.delete_max()
 
 
+# TODO add __gt__, __lt__ for "is superset of" or "is subset of"
+class MathSet(HashSet):
+    __doc__ = f"""Implements a mathematical set with unique keys.
+
+        .. note:: The named operations in a `MathSet` differ from a Python
+        `set` in that they operate in-place and return `None`, instead of
+        returning a new set.
+
+        {HashSet.__doc__}
+        U : HashSet
+            The "universe" set of all possible keys allowed in this set.
+        """
+
+    def __init__(self, U, keys=None):
+        """
+        Parameters
+        ----------
+        U : iterable
+            An iterable of the entire universe of allowed keys.
+        """
+        self.U = HashSet(U)
+        super().__init__(keys)
+
+    def _universe_check(self, a):
+        """Check if another set is in the same universe as this one."""
+        if self.U != a.U:
+            raise ValueError('Sets are from different universes!')
+
+    def add(self, k):
+        if k not in self.U:
+            raise ValueError(f"Key {k} is not in universe!")
+        super().add(k)
+
+    def complement(self):
+        """Return a set of the universe of keys except those in this set."""
+        out = MathSet(self.U, keys=self.U)  # entire set
+        for x in self:
+            out.delete(x)
+        return out
+
+    def union(self, a):
+        """Add any elements from `a` that are not already in this set."""
+        self._universe_check(a)
+        for x in a:
+            self.add(x)
+
+    def intersection(self, a):
+        """Remove any elements from this set that are not in `a`."""
+        self._universe_check(a)
+        for x in self:
+            if x not in a:
+                self.delete(x)
+
+    def difference(self, a):
+        """Remove all elements from this set that are also in `a`."""
+        self._universe_check(a)
+        # Only iterate over the shorter of the two sets
+        loop, test = (self, a) if len(self) < len(a) else (a, self)
+        for x in loop:
+            if x in test:
+                self.delete(x)
+
+    def xor(self, a):
+        """Add elements from `a`, excluding elements contained in both sets."""
+        self._universe_check(a)
+        for x in a:
+            if x in self:
+                self.delete(x)
+            else:
+                self.add(x)
+
+    # -------------------------------------------------------------------------
+    #         Logical operators
+    # -------------------------------------------------------------------------
+    def __or__(self, a):
+        x = MathSet(self.U, keys=list(self))
+        x.union(a)
+        return x
+
+    def __and__(self, a):
+        x = MathSet(self.U, keys=list(self))
+        x.intersection(a)
+        return x
+
+    def __sub__(self, a):
+        x = MathSet(self.U, keys=list(self))
+        x.difference(a)
+        return x
+
+    def __xor__(self, a):
+        x = MathSet(self.U, keys=list(self))
+        x.xor(a)
+        return x
+
+    # In-place operators:
+    #   A = A | B
+    #   A |= B
+    #   A.__ior__(B)
+    # are all equivalent.
+
+    def __ior__(self, a):
+        self.union(a)
+        return self
+
+    def __iand__(self, a):
+        self.intersection(a)
+        return self
+
+    def __isub__(self, a):
+        self.difference(a)
+        return self
+
+    def __ixor__(self, a):
+        self.xor(a)
+        return self
+
+
+# -----------------------------------------------------------------------------
+#         Multiple Keys/Values
+# -----------------------------------------------------------------------------
 class MultiValHashST(LinearProbingHashST):
     __doc__ = f"""Implements a hash table using arrays with linear probing, but
                allows multiple values to be associated with each key.
@@ -450,6 +570,9 @@ class MultiKeyRedBlackBST(RedBlackBST):
         return h
 
 
+# -----------------------------------------------------------------------------
+#         Functions
+# -----------------------------------------------------------------------------
 def invert(st):
     """Given a multi-valued symbol table, return the inverted index."""
     ts = type(st)()
@@ -464,14 +587,17 @@ MultiValST = MultiValRedBlackBST
 MultiKeyST = MultiKeyRedBlackBST
 
 
-# TODO test_multiset
+# -----------------------------------------------------------------------------
+#       Tests
+# -----------------------------------------------------------------------------
+# TODO move to test_multiset
 if __name__ == '__main__':
-    from algs.exercises.draw_tree import TreeArtist
+    # from algs.exercises.draw_tree import TreeArtist
 
     keys = list('SEARCHEXAMPLE')
     items = list((c, i) for i, c in enumerate(keys))
 
-    print('---MultiValHashST---')
+    # print('---MultiValHashST---')
     st = MultiValHashST(items)
     st['X'] = [1, 2, 3]
     st['Y'] = [4, 5, 6]
@@ -479,15 +605,15 @@ if __name__ == '__main__':
     st['A'] = 'hello'
     assert list(st['A']) == [2, 8, 'hello']
     assert list(st['E']) == [1, 6, 12]
-    print(st)
+    # print(st)
     del st['E']
     assert 'E' not in st
-    print(st)
+    # print(st)
 
     t = BST(items)
     # TreeArtist(t).draw(fignum=1, label_vals=True)
 
-    print('---MultiValBST---')
+    # print('---MultiValBST---')
     st = MultiValBST(items)
     st['X'] = [1, 2, 3]
     st['Y'] = [4, 5, 6]
@@ -496,14 +622,14 @@ if __name__ == '__main__':
     # TreeArtist(st).draw(fignum=2, label_vals=True)
     assert list(st['A']) == [2, 8, 'hello']
     assert list(st['E']) == [1, 6, 12]
-    print(st)
+    # print(st)
     del st['E']
     assert 'E' not in st
 
     t = RedBlackBST(items)
     # TreeArtist(t).draw(fignum=3, label_vals=True)
 
-    print('---MultiValRedBlackBST---')
+    # print('---MultiValRedBlackBST---')
     st = MultiValRedBlackBST(items)
     st['X'] = [1, 2, 3]
     st['Y'] = [4, 5, 6]
@@ -512,12 +638,12 @@ if __name__ == '__main__':
     # TreeArtist(st).draw(fignum=4, label_vals=True)
     assert list(st['A']) == [2, 8, 'hello']
     assert list(st['E']) == [1, 6, 12]
-    print(st)
+    # print(st)
     del st['E']
     assert 'E' not in st
 
     # Exercise 3.5.8
-    print('---MultiKeyHashST---')
+    # print('---MultiKeyHashST---')
     st = MultiKeyHashST(items)
     st['X'] = [1, 2, 3]
     st['Y'] = [4, 5, 6]
@@ -525,13 +651,13 @@ if __name__ == '__main__':
     st['A'] = 'hello'
     assert st['A'] in [2, 8, 'hello']
     assert st['E'] in [1, 6, 12]
-    print(st)
+    # print(st)
     del st['E']
     assert 'E' not in st
-    print(st)
+    # print(st)
 
     # Exercise 3.5.9 -- multiple keys
-    print('---MultiKeyBST---')
+    # print('---MultiKeyBST---')
     st = MultiKeyBST(items)
     st['X'] = [1, 2, 3]
     st['Y'] = [4, 5, 6]
@@ -540,33 +666,44 @@ if __name__ == '__main__':
     # TreeArtist(st).draw(fignum=5, label_vals=True)
     assert st['A'] in [2, 8, 'hello']
     assert st['E'] in [1, 6, 12]
-    print(st)
+    # print(st)
     del st['E']
     assert 'E' not in st
-    print(st)
+    # print(st)
     # TreeArtist(st).draw(fignum=6, label_vals=True)
 
     # Exercise 3.5.9 -- multiple keys
-    print('---MultiKeyRedBlackBST---')
+    # print('---MultiKeyRedBlackBST---')
     st = MultiKeyRedBlackBST(items)
     st['X'] = [1, 2, 3]
     st['Y'] = [4, 5, 6]
     st['Y'] = 4
     st['A'] = 'hello'
-    TreeArtist(st).draw(fignum=7, label_vals=True)
+    # TreeArtist(st).draw(fignum=7, label_vals=True)
     assert st['A'] in [2, 8, 'hello']
     assert st['E'] in [1, 6, 12]
-    print(st)
+    # print(st)
     del st['E']
     assert 'E' not in st
-    print(st)
-    TreeArtist(st).draw(fignum=8, label_vals=True)
+    # print(st)
+    # TreeArtist(st).draw(fignum=8, label_vals=True)
 
     # Test invert
     st = MultiValHashST(items)
     ts = invert(st)
     assert st == invert(ts)
     assert ts == invert(st)
+
+    # # Test MathSet
+    # import string
+    # U = string.ascii_uppercase
+    # A = MathSet(U, 'ABCDE')
+    # B = MathSet(U, 'DEFG')
+    # assert A.complement() == MathSet(U, set(U) - set('ABCDE'))
+    # assert A | B == MathSet(U, 'ABCDEFG')
+    # assert A & B == MathSet(U, 'DE')
+    # assert A - B == MathSet(U, 'ABC')
+    # assert A ^ B == MathSet(U, 'ABCFG')
 
 # =============================================================================
 # =============================================================================

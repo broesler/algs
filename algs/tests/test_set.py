@@ -10,37 +10,19 @@ Unit tests for Sets. Similar to tests for `algs.search` without values.
 # =============================================================================
 
 import pytest
+import string
 
-from algs.search.set import Set, HashSet
-
-
-def err_test(container, op, *args, err_type=IndexError):
-    """Test for raising a given error type.
-
-    Parameters
-    ----------
-    container : list-like container data type instance
-        A class instance to be tested.
-    op : str
-        attribute name of method to test
-    *args : list
-        arguments to `op`.
-    err_type : Exception, optional
-        error type that object is expected to raise
-
-    Raises
-    ------
-    Exception
-        If error raised is not of type `err_type`.
-    """
-    with pytest.raises(err_type):
-        getattr(container, op)(*args)  # call the method
+from algs.tests.test_search import err_test
+from algs.search.set import Set, HashSet, MathSet, MultiKeyST, MultiKeyHashST
 
 
 # Determine which classes to test
 UNORDERED_SETS = set([HashSet])
 ORDERED_SETS = set([Set])
-ALL_SETS = UNORDERED_SETS | ORDERED_SETS
+MATH_SETS = set([MathSet])
+ALL_SETS = UNORDERED_SETS | ORDERED_SETS | MATH_SETS
+
+MULTIVAL_STS = set([MultiKeyST, MultiKeyHashST])
 
 # Define fixtures common to each test
 EXPECT_STR = 'SEARCHEXAMPLE'
@@ -57,13 +39,25 @@ def data():
 
 
 @pytest.fixture
-def empty_set(SET):
-    return SET()
+def U():
+    """The universe of all possible keys."""
+    return string.ascii_uppercase
 
 
 @pytest.fixture
-def st(SET, data):
-    return SET(data)
+def empty_set(SET, U):
+    if SET in MATH_SETS:
+        return SET(U)
+    else:
+        return SET()
+
+
+@pytest.fixture
+def st(SET, U, data):
+    if SET in MATH_SETS:
+        return SET(U, data)
+    else:
+        return SET(data)
 
 
 # -----------------------------------------------------------------------------
@@ -114,7 +108,6 @@ class TestUnorderedOps:
         assert st.is_empty
 
 
-# ---------- Test Ordered Operations ----------
 @pytest.mark.parametrize('SET', ORDERED_SETS)
 class TestOrderedOps:
     def test_empty_set(self, empty_set):
@@ -183,6 +176,70 @@ class TestOrderedOps:
         for i, c in enumerate(sorted(expect_set - set(k))):
             assert st.select(i) == c
             assert st.rank(c) == i
+
+
+# ----------------------------------------------------------------------------- 
+#         Mathematical sets
+# -----------------------------------------------------------------------------
+@pytest.fixture
+def A_keys():
+    return 'ABCDE'
+
+
+@pytest.fixture
+def B_keys():
+    return 'DEF'
+
+
+@pytest.fixture
+def A(SET, U, A_keys):
+    return SET(U, A_keys)
+
+
+@pytest.fixture
+def B(SET, U, B_keys):
+    return SET(U, B_keys)
+
+
+@pytest.fixture
+def U_set(SET, U):
+    return SET(U, U)
+
+
+@pytest.mark.parametrize('SET', MATH_SETS)
+class TestMathSet:
+    def test_empty_set(self, empty_set, A, U_set):
+        assert empty_set.complement() == U_set
+        assert A | empty_set == A
+        assert A & empty_set == empty_set
+        assert A - empty_set == A
+        assert A ^ empty_set == A
+
+    def test_complement(self, A, U, A_keys):
+        assert A.complement() == MathSet(U, 'FGHIJKLMNOPQRSTUVWXYZ')
+
+    def test_ops(self, A, B, U):
+        assert A | B == MathSet(U, 'ABCDEF')
+        assert A & B == MathSet(U, 'DE')
+        assert A - B == MathSet(U, 'ABC')
+        assert A ^ B == MathSet(U, 'ABCF')
+
+
+# ----------------------------------------------------------------------------- 
+#         Multi-keyed Symbol Tables
+# -----------------------------------------------------------------------------
+# EXPECT_STR = 'SEARCHEXAMPLE'
+
+# @pytest.fixture
+# def data():
+#     return list((c, i) for i, c in enumerate(EXPECT_STR))
+
+
+# def test_invert()
+#     st = MultiKeyHashST(items)
+#     ts = invert(st)
+#     assert st == invert(ts)
+#     assert ts == invert(st)
 
 
 # =============================================================================
