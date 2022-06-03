@@ -24,6 +24,7 @@ from algs.search import (SequentialSearchST, BinarySearchST, ArrayST, BST,
                          CuckooHashST,
                          MultiValBST, MultiValRedBlackBST, MultiValHashST,
                          MultiKeyBST, MultiKeyRedBlackBST, MultiKeyHashST)
+from algs.search.set import invert
 
 rng = np.random.default_rng(seed=565656)
 
@@ -431,7 +432,11 @@ class TestMultiVals:
             assert k not in st
         assert st.is_empty
 
-# ----------------------------------------------------------------------------- 
+    def test_invert(self, st):
+        assert st == invert(invert(st))
+
+
+# -----------------------------------------------------------------------------
 #         Test MultiKeySTs
 # -----------------------------------------------------------------------------
 @pytest.mark.parametrize('ST', MULTIKEY_STS)
@@ -461,9 +466,6 @@ class TestMultiKeys:
             del st[k]
             assert k not in st
         assert st.is_empty
-
-    def test_invert(st):
-        assert st == invert(invert(st))
 
 # =============================================================================
 # =============================================================================
