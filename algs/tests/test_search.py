@@ -22,7 +22,8 @@ from algs.search import (SequentialSearchST, BinarySearchST, ArrayST, BST,
                          LinearProbingHashST, LazyLinearProbingHashST,
                          DoubleProbingHashST, DoubleHashingHashST,
                          CuckooHashST,
-                         MultiValBST, MultiValRedBlackBST, MultiValHashST)
+                         MultiValBST, MultiValRedBlackBST, MultiValHashST,
+                         MultiKeyBST, MultiKeyRedBlackBST, MultiKeyHashST)
 
 rng = np.random.default_rng(seed=565656)
 
@@ -63,6 +64,7 @@ ORDERED_STS = set([BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr,
                    MultiValBST, MultiValRedBlackBST])
 
 MULTIVAL_STS = set([MultiValHashST, MultiValBST, MultiValRedBlackBST])
+MULTIKEY_STS = set([MultiKeyHashST, MultiKeyBST, MultiKeyRedBlackBST])
 
 ALL_STS = UNORDERED_STS | ORDERED_STS
 
@@ -386,7 +388,7 @@ def test_comparisons(data):
 
 
 # -----------------------------------------------------------------------------
-#         Test MultiVal*STs
+#         Test MultiValSTs
 # -----------------------------------------------------------------------------
 @pytest.fixture
 def expect_multi():
@@ -406,6 +408,9 @@ def expect_multi():
 @pytest.mark.parametrize('ST', MULTIVAL_STS)
 @pytest.mark.parametrize('cache', [False, True])
 class TestMultiVals:
+    def test_size(self, st, expect_set):
+        assert st.size() == len(expect_set)  # includes only unique keys
+
     def test_get(self, st, expect_multi):
         for k, v in expect_multi:
             assert st[k] == v
@@ -420,10 +425,42 @@ class TestMultiVals:
         st['A'] = 'hello'
         assert st['A'] == Bag([2, 8, 'hello'])
 
-    def test_delete(self, st):
-        for k in st:
+    def test_delete(self, st, expect_set):
+        for k in expect_set:
             del st[k]
             assert k not in st
+        assert st.is_empty
+
+# ----------------------------------------------------------------------------- 
+#         Test MultiKeySTs
+# -----------------------------------------------------------------------------
+@pytest.mark.parametrize('ST', MULTIKEY_STS)
+@pytest.mark.parametrize('cache', [False, True])
+class TestMultiVals:
+    def test_size(self, st):
+        assert st.size() == len(EXPECT_STR)  # includes ALL keys
+
+    def test_get(self, st, expect_multi):
+        """Only return one value. Should be in the expected Bag."""
+        for k, v in expect_multi:
+            assert st[k] in v
+
+    def test_put_iterable(self, st):
+        """Only return one value. Should be in the expected Bag."""
+        st['X'] = [1, 2, 3]
+        assert st['X'] in [7, [1, 2, 3]]
+        st['Y'] = [4, 5, 6]
+        assert st['Y'] in [[4, 5, 6]]
+        st['Y'] = 7
+        assert st['Y'] in [[4, 5, 6], 7]
+        st['A'] = 'hello'
+        assert st['A'] in [2, 8, 'hello']
+
+    def test_delete(self, st, expect_set):
+        for k in expect_set:
+            del st[k]
+            assert k not in st
+        assert st.is_empty
 
 # =============================================================================
 # =============================================================================
