@@ -328,11 +328,6 @@ class MathSet(HashSet):
         self.U = HashSet(U)
         super().__init__(keys)
 
-    def _universe_check(self, a):
-        """Check if another set is in the same universe as this one."""
-        if self.U != a.U:
-            raise ValueError('Sets are from different universes!')
-
     def add(self, k):
         if k not in self.U:
             raise ValueError(f"Key {k} is not in universe!")
@@ -349,7 +344,8 @@ class MathSet(HashSet):
         """Add any elements from `a` that are not already in this set."""
         self._universe_check(a)
         for x in a:
-            self.add(x)
+            if k in self.U:
+                self.add(x)
 
     def intersection(self, a):
         """Remove any elements from this set that are not in `a`."""
@@ -373,7 +369,7 @@ class MathSet(HashSet):
         for x in a:
             if x in self:
                 self.delete(x)
-            else:
+            elif k in self.U:
                 self.add(x)
 
     def is_superset(self, a):
