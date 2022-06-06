@@ -12,7 +12,7 @@ Unit tests for Sets. Similar to tests for `algs.search` without values.
 import pytest
 import string
 
-from algs.tests.test_search import err_test
+from algs.tests.test_search import err_test, expect_ranks
 from algs.search.set import (Set, HashSet,
                              MultiHashSet, MultiSet,
                              MultiKeyHashSet, MultiKeySet,
@@ -42,14 +42,6 @@ def expect_set(SET):
         return list(EXPECT_STR)
     else:
         return set(EXPECT_STR)
-
-
-@pytest.fixture
-def expect_ranks(SET):
-    if 'Multi' in SET.__name__:
-        return [0, 0, 2, 3, 3, 3, 6, 7, 8, 9, 10, 11, 12]
-    else:
-        return range(len(EXPECT_STR))
 
 
 @pytest.fixture

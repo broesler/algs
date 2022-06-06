@@ -65,7 +65,9 @@ ORDERED_STS = set([BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr,
                    MultiValBST, MultiValRedBlackBST])
 
 MULTIVAL_STS = set([MultiValHashST, MultiValBST, MultiValRedBlackBST])
-MULTIKEY_STS = set([MultiKeyHashST, MultiKeyBST, MultiKeyRedBlackBST])
+
+MULTIKEY_STS = set([MultiKeyHashST])
+ORDERED_MULTIKEY_STS = set([MultiKeyBST, MultiKeyRedBlackBST])
 
 ALL_STS = UNORDERED_STS | ORDERED_STS
 
@@ -439,8 +441,15 @@ class TestMultiVals:
 # -----------------------------------------------------------------------------
 #         Test MultiKeySTs
 # -----------------------------------------------------------------------------
-# TODO test ORDERED multi-key STs (see also test_set for multisets)
-@pytest.mark.parametrize('ST', MULTIKEY_STS)
+@pytest.fixture
+def expect_ranks(ST):
+    if 'Multi' in ST.__name__:
+        return [0, 0, 2, 3, 3, 3, 6, 7, 8, 9, 10, 11, 12]
+    else:
+        return range(len(EXPECT_STR))
+
+
+@pytest.mark.parametrize('ST', MULTIKEY_STS | ORDERED_MULTIKEY_STS)
 @pytest.mark.parametrize('cache', [False, True])
 class TestMultiKeys:
     def test_size(self, st):
@@ -468,6 +477,28 @@ class TestMultiKeys:
             del st[k]
             assert k not in st
         assert st.is_empty
+
+
+@pytest.mark.parametrize('ST', ORDERED_MULTIKEY_STS)
+@pytest.mark.parametrize('cache', [False, True])
+class TestMultiKeys:
+    def test_rank(self, st, expect_ranks):
+        for i, c in zip(expect_ranks, sorted(EXPECT_STR)):
+            assert st.rank(c) == i
+
+    def test_select(self, st):
+        for i, c in enumerate(sorted(EXPECT_STR)):
+            assert st.select(i) == c
+
+    def test_delete_min(self, st, expect_keys):
+        assert st.min() == 'A'
+        st.delete_min()  # remove 'A'
+        assert st.min() == 'C'
+
+    def test_delete_max(self, st, expect_keys):
+        assert st.max() == 'X'
+        st.delete_max()  # remove 'X'
+        assert st.max() == 'S'
 
 # =============================================================================
 # =============================================================================
