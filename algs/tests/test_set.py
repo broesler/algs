@@ -45,6 +45,14 @@ def expect_set(SET):
 
 
 @pytest.fixture
+def expect_ranks(SET):
+    if 'Multi' in SET.__name__:
+        return [0, 0, 2, 3, 3, 3, 6, 7, 8, 9, 10, 11, 12]
+    else:
+        return range(len(EXPECT_STR))
+
+
+@pytest.fixture
 def keys():
     return list(EXPECT_STR)
 
@@ -154,21 +162,19 @@ class TestOrderedOps:
         assert st.floor(chr(ord('A') - 1)) is None  # char < st.min()
         assert st.ceil('Z') is None                 # char > st.max()
 
-    # TODO fix *tests* for multi (and possibly MultiKeySet)
-    # Rank is highest for multiple 'A' and lowest for multiple 'E'??
-    # Select should work for all values
-    def test_rankselect(self, st, expect_set):
-        # Select and Rank tests
+    def test_select_raises(self, st):
         err_test(st, 'select', -1, err_type=IndexError)  # too small
-        for i, c in enumerate(sorted(expect_set)):
-            assert st.select(i) == c
-            assert st.rank(c) == i
         err_test(st, 'select', 99, err_type=IndexError)  # too large
-        # Ex 3.2.33
-        for i in range(st.size()):
-            assert st.rank(st.select(i)) == i
-        for k in st:
-            assert st.select(st.rank(k)) == k
+
+    def test_delete_min(self, st, expect_set):
+        assert st.min() == 'A'
+        st.delete_min()  # remove 'A'
+        assert st.min() == 'C'
+
+    def test_delete_max(self, st, expect_set):
+        assert st.max() == 'X'
+        st.delete_max()  # remove 'X'
+        assert st.max() == 'S'
 
     def test_range(self, st, expect_set):
         assert st == sorted(expect_set)
@@ -176,32 +182,31 @@ class TestOrderedOps:
         assert st.size(lo='P') == 4
         assert st.keys('F', 'P') == list('HLMP')
         assert st.size('F', 'P') == 4
-        # TODO update for multi
-        assert st.keys(hi='P') == list('ACEHLMP')
-        assert st.size(hi='P') == 7
+        if 'Multi' in st.__class__.__name__:
+            assert st.keys(hi='P') == list('AACEEEHLMP')
+            assert st.size(hi='P') == 10
+        else:
+            assert st.keys(hi='P') == list('ACEHLMP')
+            assert st.size(hi='P') == 7
 
-    def test_delete_min(self, st, expect_set):
-        # Test deletion and reinsertion
-        k = st.min()
-        st.delete_min()  # remove 'A'
-        assert st.min() == 'C'
-        # Test updated ranks
-        while k in expect_set:
-            expect_set.remove(k)
-        for i, c in enumerate(sorted(expect_set)):
-            assert st.select(i) == c
+    # TODO fix *tests* for multi (and possibly MultiKeySet)
+    # Rank for each key should be minimum index.
+    # Select should return same key for multiple indices.
+    def test_rank(self, st, expect_ranks, expect_set):
+        for i, c in zip(expect_ranks, sorted(expect_set)):
             assert st.rank(c) == i
 
-    def test_delete_max(self, st, expect_set):
-        k = st.max()
-        st.delete_max()  # remove 'X'
-        assert st.max() == 'S'
-        # Test updated ranks
-        while k in expect_set:
-            expect_set.remove(k)
+    def test_select(self, st, expect_set):
         for i, c in enumerate(sorted(expect_set)):
             assert st.select(i) == c
-            assert st.rank(c) == i
+
+    def test_rankselect(self, st, expect_ranks, expect_set):
+        # Ex 3.2.33
+        for k in st:
+            assert st.select(st.rank(k)) == k
+        # TODO fails for multi since rank is lowest value for given key.
+        for i, c in zip(expect_ranks, sorted(expect_set)):
+            assert st.rank(st.select(i)) == i
 
 
 # -----------------------------------------------------------------------------

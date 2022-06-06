@@ -439,6 +439,7 @@ class TestMultiVals:
 # -----------------------------------------------------------------------------
 #         Test MultiKeySTs
 # -----------------------------------------------------------------------------
+# TODO test ORDERED multi-key STs (see also test_set for multisets)
 @pytest.mark.parametrize('ST', MULTIKEY_STS)
 @pytest.mark.parametrize('cache', [False, True])
 class TestMultiKeys:
