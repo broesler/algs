@@ -879,21 +879,6 @@ class MultiKeyBST(BST):
         return x
 
     def _delete(self, k, x=None):
-        """Delete the node associated with `k` by choosing the predecessor or
-            successor at random.
-
-        Parameters
-        ----------
-        k : key
-            key for which to search
-        x : _Node, optional
-            root of the subtree at which to begin search
-
-        Raises
-        ------
-        KeyError
-            If `k` is not in the table.
-        """
         if x is None:
             raise KeyError(k)
 
@@ -925,6 +910,24 @@ class MultiKeyBST(BST):
                     x = self._max(t.left)
                     x.left = self._delete_max(t.left)
                     x.right = r
+        self._update_node(x)
+        return x
+
+    def _delete_min(self, x=None):
+        if x.left is None:
+            # All duplicates are to the right, so find the nonner
+            r = x.right
+            while r and r.key == x.key:
+                r = r.right
+            return r
+        x.left = self._delete_min(x.left)
+        self._update_node(x)
+        return x
+
+    def _delete_max(self, x=None):
+        if x.right is None or x.right.key == x.key:
+            return x.left
+        x.right = self._delete_max(x.right)
         self._update_node(x)
         return x
 
@@ -1050,22 +1053,29 @@ if __name__ == '__main__':
     items = list((c, i) for i, c in enumerate(keys))
 
     # Plot multi-key trees vs their unique-key counterparts
-    # t = BST(items)
-    # st = MultiKeyBST(items)
-    # TreeArtist(t).draw(fignum=1, label_vals=True)
-    # TreeArtist(st).draw(fignum=2, label_vals=True)
+    t = BST(items)
+    tm = MultiKeyBST(items)
+    tm['X'] = 13
+    tm['X'] = 14
+    tm['V'] = 69
+    TreeArtist(t).draw(fignum=1, label_vals=True)
+    TreeArtist(tm).draw(fignum=2, label_vals=True)
+    tm.delete_max()
+    TreeArtist(tm).draw(fignum=3, label_vals=True)
 
     # t = RedBlackBST(items)
-    # st = MultiKeyRedBlackBST(items)
+    # tm = MultiKeyRedBlackBST(items)
     # TreeArtist(t).draw(fignum=3, label_vals=True)
-    # TreeArtist(st).draw(fignum=4, label_vals=True)
+    # TreeArtist(tm).draw(fignum=4, label_vals=True)
+    # del tm['E']
+    # TreeArtist(tm).draw(fignum=5, label_vals=True)
 
-    b = MultiKeySet(keys)
-    bm = MultiSet(keys)
-    # print(b)
-    # print(bm)
-    TreeArtist(b._st).draw(fignum=1, label_vals=True)
-    TreeArtist(bm._st).draw(fignum=2, label_vals=True)
+    # b = MultiKeySet(keys)
+    # bm = MultiSet(keys)
+    # # print(b)
+    # # print(bm)
+    # TreeArtist(b._st).draw(fignum=1, label_vals=True)
+    # TreeArtist(bm._st).draw(fignum=2, label_vals=True)
 
     # Minimal code, but `delete` only removes one at a time, and the results
     # are inconsistent with typical definitions of a mathematical multiset.
