@@ -300,8 +300,6 @@ class MultiSet(MultiHashSet, Set):
         """
     # No need to even implement anything?! MultiHashSet does the work, and Set
     # just adds on the ordered methods based on the keys.
-    # TODO this counter version doesn't take into account the extra keys for
-    # ordered methods like rank/select and size.
 
     def rank(self, k):
         """Return the number of keys strictly less than `k`, including multiple
@@ -891,6 +889,8 @@ class MultiKeyRedBlackBST(RedBlackBST):
         multiple keys.
         {BST._attribs_doc}
         """
+    # NOTE only changes in deletion are a while loop to check if the key is
+    # still in the table O(m(k)*lg N) where m(k) is the multiplicity of k.
 
     def __delitem__(self, k):
         """Delete all instances of `k` from the table."""
@@ -947,9 +947,15 @@ class MultiKeyRedBlackBST(RedBlackBST):
         self._cost += 1
         if k < h.key:
             h.left = self._set(k, v, h.left)
-        else:  # k > h.key or k == h.key
-            # Always go right for duplicate keys
+        elif k > h.key:
             h.right = self._set(k, v, h.right)
+        else:
+            # keys are equal, place new key immediately to the left
+            x = self._Node(k, v, color=self._RED)
+            if self._CACHE_FLAG:
+                self._cache = x
+            x.left = h.left
+            h.left = x
 
         # Balance the tree (red links left-leaning)
         if self._is_red(h.right) and not self._is_red(h.left):
