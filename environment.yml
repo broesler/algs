@@ -4,3 +4,5 @@ dependencies:
   - pip
   - pip:
     - -r requirements.txt
+variables:
+    PYTHONHASHSEED: 0
