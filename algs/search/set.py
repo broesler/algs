@@ -970,10 +970,10 @@ class MultiKeyRedBlackBST(RedBlackBST):
         k = self.min()
         while k in self:
             self._root = self._delete_min(self._root)
-        if not self.is_empty:
-            self._root.color = self._BLACK
-        if self._CACHE_FLAG:
-            self._cache = None
+            if not self.is_empty:
+                self._root.color = self._BLACK
+            if self._CACHE_FLAG:
+                self._cache = None
 
     def delete_max(self):
         """Delete all instances of the minimum key from the table."""
@@ -985,10 +985,10 @@ class MultiKeyRedBlackBST(RedBlackBST):
         k = self.max()
         while k in self:
             self._root = self._delete_max(self._root)
-        if not self.is_empty:
-            self._root.color = self._BLACK
-        if self._CACHE_FLAG:
-            self._cache = None
+            if not self.is_empty:
+                self._root.color = self._BLACK
+            if self._CACHE_FLAG:
+                self._cache = None
 
     def _set(self, k, v, h=None):
         # subtree is empty, create a new node with a red link to parent
@@ -1002,18 +1002,8 @@ class MultiKeyRedBlackBST(RedBlackBST):
         self._cost += 1
         if k < h.key:
             h.left = self._set(k, v, h.left)
-        elif k > h.key:
+        else:  # k > h.key or k == h.key
             h.right = self._set(k, v, h.right)
-        else:
-            # NOTE this method breaks the Red-Black model by not inserting
-            # nodes as leaves.
-            # keys are equal, place new key immediately to the right
-            x = self._Node(k, v, color=self._RED)
-            if self._CACHE_FLAG:
-                self._cache = x
-            x.right = h.right
-            self._update_node(x)
-            h.right = x
 
         # Balance the tree (red links left-leaning)
         if self._is_red(h.right) and not self._is_red(h.left):
@@ -1027,6 +1017,19 @@ class MultiKeyRedBlackBST(RedBlackBST):
         # Update node attributes
         self._update_node(h)
         return h
+
+    def _rank(self, k, x=None):
+        if x is None:
+            return 0
+        if k < x.key:
+            return self._rank(k, x.left)
+        elif k > x.key:
+            return 1 + self._size(x.left) + self._rank(k, x.right)
+        else:
+            ell = x.left
+            while ell and ell.key == x.key:
+                ell = ell.left
+            return self._size(ell)
 
 
 # -----------------------------------------------------------------------------
@@ -1070,6 +1073,16 @@ if __name__ == '__main__':
     tm = MultiKeyRedBlackBST(items)
     TreeArtist(t).draw(fignum=3, label_vals=True)
     TreeArtist(tm).draw(fignum=4, label_vals=True)
+    # tm['A'] = 1
+    # tm['B'] = 1
+    # tm['A'] = 1
+    # tm['B'] = 1
+    # tm['A'] = 1
+    # tm['B'] = 1
+    # tm['A'] = 1
+    tm['X'] = 69
+    tm['X'] = 69
+    tm['X'] = 69
     # del tm['E']
     TreeArtist(tm).draw(fignum=5, label_vals=True)
 

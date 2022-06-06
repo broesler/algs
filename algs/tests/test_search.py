@@ -67,7 +67,7 @@ ORDERED_STS = set([BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr,
 MULTIVAL_STS = set([MultiValHashST, MultiValBST, MultiValRedBlackBST])
 
 MULTIKEY_STS = set([MultiKeyHashST])
-ORDERED_MULTIKEY_STS = set([MultiKeyBST])  #, MultiKeyRedBlackBST])
+ORDERED_MULTIKEY_STS = set([MultiKeyBST, MultiKeyRedBlackBST])
 
 ALL_STS = UNORDERED_STS | ORDERED_STS
 
