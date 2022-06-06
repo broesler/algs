@@ -13,16 +13,23 @@ import pytest
 import string
 
 from algs.tests.test_search import err_test
-from algs.search.set import Set, HashSet, MathSet
+from algs.search.set import (Set, HashSet,
+                             MultiHashSet, MultiSet,
+                             MultiKeyHashSet, MultiKeySet,
+                             MathSet, MathMultiSet)
 
 # TODO
 #   * implement Set and HashSet using built-in `set`?
 #   * deprecate `delete` -> `remove`.
 
 # Determine which classes to test
-UNORDERED_SETS = set([HashSet])
-ORDERED_SETS = set([Set])
-MATH_SETS = set([MathSet])
+UNORDERED_SETS = set([HashSet, MultiHashSet, MultiKeyHashSet])
+ORDERED_SETS = set([Set, MultiSet, MultiKeySet])
+MATH_SETS = set([MathSet, MathMultiSet])
+
+MULTISETS = set([MultiHashSet, MultiSet, MultiKeyHashSet, MultiKeySet])
+MATH_MULTISETS = set([MathMultiSet])
+
 ALL_SETS = UNORDERED_SETS | ORDERED_SETS | MATH_SETS
 
 # Define fixtures common to each test
@@ -30,8 +37,11 @@ EXPECT_STR = 'SEARCHEXAMPLE'
 
 
 @pytest.fixture
-def expect_set():
-    return set(EXPECT_STR)
+def expect_set(SET):
+    if 'Multi' in SET.__name__:
+        return list(EXPECT_STR)
+    else:
+        return set(EXPECT_STR)
 
 
 @pytest.fixture
@@ -78,6 +88,7 @@ class TestUnorderedOps:
     def test_empty_raises(self, empty_set):
         err_test(empty_set, '__setitem__', 'A', 1,  err_type=AttributeError)
         err_test(empty_set, '__getitem__', 'A', err_type=AttributeError)
+        err_test(empty_set, '__delitem__', 'Z', err_type=KeyError)
 
     def test_add_single(self, empty_set):
         t = empty_set
@@ -87,26 +98,33 @@ class TestUnorderedOps:
     def test_contains(self, st, keys, expect_set):
         for k in keys:
             assert k in st
+        assert 'B' not in st
+
+    def test_size(self, st, expect_set):
         assert len(st) == len(expect_set)
         assert len(st) == st.size()
+
+    def test_equality(self, st, expect_set):
         assert st == expect_set
-        assert 'B' not in st
 
     def test_iteration(self, st, expect_set):
         for k in st:
             assert k in expect_set
         assert sorted(st) == sorted(expect_set)
 
-    def test_delete(self, st, keys, expect_set):
+    def test_delete_all(self, st, keys, expect_set):
         test_keys = expect_set.copy()
         N_expect = len(expect_set)
-        for k in list(st):
+        for k in set(expect_set):  # multi removes all
             del st[k]
-            N_expect -= 1
-            test_keys -= set(k)
+            assert k not in st
+            i = 0
+            while k in test_keys:
+                test_keys.remove(k)
+                i += 1  # count multiplicity for multisets
+            N_expect -= i
             assert st.size() == N_expect
             assert sorted(st) == sorted(test_keys)
-        err_test(st, '__delitem__', 'Z', err_type=KeyError)
         assert st.is_empty
 
 
@@ -136,6 +154,9 @@ class TestOrderedOps:
         assert st.floor(chr(ord('A') - 1)) is None  # char < st.min()
         assert st.ceil('Z') is None                 # char > st.max()
 
+    # TODO fix *tests* for multi (and possibly MultiKeySet)
+    # Rank is highest for multiple 'A' and lowest for multiple 'E'??
+    # Select should work for all values
     def test_rankselect(self, st, expect_set):
         # Select and Rank tests
         err_test(st, 'select', -1, err_type=IndexError)  # too small
@@ -155,6 +176,7 @@ class TestOrderedOps:
         assert st.size(lo='P') == 4
         assert st.keys('F', 'P') == list('HLMP')
         assert st.size('F', 'P') == 4
+        # TODO update for multi
         assert st.keys(hi='P') == list('ACEHLMP')
         assert st.size(hi='P') == 7
 
@@ -164,7 +186,9 @@ class TestOrderedOps:
         st.delete_min()  # remove 'A'
         assert st.min() == 'C'
         # Test updated ranks
-        for i, c in enumerate(sorted(expect_set - set(k))):
+        while k in expect_set:
+            expect_set.remove(k)
+        for i, c in enumerate(sorted(expect_set)):
             assert st.select(i) == c
             assert st.rank(c) == i
 
@@ -173,7 +197,9 @@ class TestOrderedOps:
         st.delete_max()  # remove 'X'
         assert st.max() == 'S'
         # Test updated ranks
-        for i, c in enumerate(sorted(expect_set - set(k))):
+        while k in expect_set:
+            expect_set.remove(k)
+        for i, c in enumerate(sorted(expect_set)):
             assert st.select(i) == c
             assert st.rank(c) == i
 
@@ -182,18 +208,18 @@ class TestOrderedOps:
 #         Mathematical sets
 # -----------------------------------------------------------------------------
 @pytest.fixture
-def A(SET, U_keys):
-    return SET(U_keys, 'ABCDE')
-
-
-@pytest.fixture
-def B(SET, U_keys):
-    return SET(U_keys, 'DEF')
-
-
-@pytest.fixture
 def U(SET, U_keys):
     return SET(U_keys, U_keys)
+
+
+@pytest.fixture
+def A(SET, U):
+    return SET(U, 'ABCDE')
+
+
+@pytest.fixture
+def B(SET, U):
+    return SET(U, 'DEF')
 
 
 @pytest.mark.parametrize('SET', MATH_SETS)
@@ -205,18 +231,18 @@ class TestMathSet:
         assert A - empty_set == A
         assert A ^ empty_set == A
 
-    def test_complement(self, SET, A, U_keys):
-        assert A.complement() == SET(U_keys, 'FGHIJKLMNOPQRSTUVWXYZ')
+    def test_complement(self, SET, A, U):
+        assert A.complement() == SET(U, 'FGHIJKLMNOPQRSTUVWXYZ')
 
     def test_universe(self, A, U):
         assert U.is_superset(A)
         assert A.is_subset(U)
 
-    def test_ops(self, SET, A, B, U_keys):
-        assert A.union(B) == SET(U_keys, 'ABCDEF')
-        assert A.intersection(B) == SET(U_keys, 'DE')
-        assert A.difference(B) == SET(U_keys, 'ABC')
-        assert A.xor(B) == SET(U_keys, 'ABCF')
+    def test_ops(self, SET, A, B, U):
+        assert A.union(B) == SET(U, 'ABCDEF')
+        assert A.intersection(B) == SET(U, 'DE')
+        assert A.difference(B) == SET(U, 'ABC')
+        assert A.xor(B) == SET(U, 'ABCF')
 
     def test_shorthand(self, SET, A, B, U):
         assert A | B == SET(U, 'ABCDEF')
@@ -229,7 +255,7 @@ class TestMathSet:
         assert A == SET(U, 'ABCDEF')
 
     def test_iand(self, SET, A, B, U):
-        A &= B 
+        A &= B
         assert A == SET(U, 'DE')
 
     def test_isub(self, SET, A, B, U):
@@ -238,7 +264,7 @@ class TestMathSet:
 
     def test_ixor(self, SET, A, B, U):
         A ^= B
-        assert A== SET(U, 'ABCF')
+        assert A == SET(U, 'ABCF')
 
     def test_subsuper(self, A, B, U):
         assert U.is_superset(A)
@@ -257,6 +283,80 @@ class TestMathSet:
         assert U >= A
         assert A <= U
         assert A != U
+
+
+# -----------------------------------------------------------------------------
+#         Multisets
+# -----------------------------------------------------------------------------
+@pytest.fixture
+def Am(SET, U):
+    return SET(U, 'AAB')
+
+
+@pytest.fixture
+def Bm(SET, U):
+    return SET(U, 'BBC')
+
+
+@pytest.fixture
+def Cm(SET, U):
+    return SET(U, 'AAABBCC')
+
+
+@pytest.mark.parametrize('SET', MATH_MULTISETS)
+class TestMultiSets:
+    def test_ops(self, SET, Am, Bm, U):
+        assert Am.union(Bm) == SET(U, 'AABBC')
+        assert Am.intersection(Bm) == SET(U, 'B')
+        assert Am.difference(Bm) == SET(U, 'AA')
+        assert Am.xor(Bm) == SET(U, 'AABC')
+        assert Am.sum(Bm) == SET(U, 'AABBBC')
+
+    def test_shorthand(self, SET, Am, Bm, U):
+        assert Am | Bm == SET(U, 'AABBC')
+        assert Am & Bm == SET(U, 'B')
+        assert Am - Bm == SET(U, 'AA')
+        assert Am ^ Bm == SET(U, 'AABC')
+        assert Am + Bm == SET(U, 'AABBBC')
+
+    def test_ior(self, SET, Am, Bm, U):
+        Am |= Bm
+        assert Am == SET(U, 'AABBC')
+
+    def test_iand(self, SET, Am, Bm, U):
+        Am &= Bm
+        assert Am == SET(U, 'B')
+
+    def test_isub(self, SET, Am, Bm, U):
+        Am -= Bm
+        assert Am == SET(U, 'AA')
+
+    def test_ixor(self, SET, Am, Bm, U):
+        Am ^= Bm
+        assert Am == SET(U, 'AABC')
+
+    def test_iadd(self, SET, Am, Bm, U):
+        Am += Bm
+        assert Am == SET(U, 'AABBBC')
+
+    def test_subsuper(self, SET, Am, Bm, Cm, U):
+        assert Cm.is_superset(Am)
+        assert Am.is_subset(Cm)
+        assert not Am.is_subset(SET(U, 'ABC'))
+        assert not Am.is_superset(SET(U, 'AAA'))
+
+    def test_compare(self, Am, Cm):
+        # Identity operations
+        assert Am == Am
+        assert Am >= Am
+        assert Am <= Am
+        # Comparison with superset
+        assert Cm > Am
+        assert Am < Cm
+        assert Cm >= Am
+        assert Am <= Cm
+        assert Am != Cm
+
 
 # =============================================================================
 # =============================================================================

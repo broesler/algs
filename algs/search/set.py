@@ -18,6 +18,9 @@ from algs.search.tree import BST
 from algs.search.balanced_tree import RedBlackBST
 
 __all__ = ['UnorderedSet', 'OrderedSet',
+           'MultiSet', 'MultiHashSet',
+           'MultiKeySet', 'MultiKeyHashSet',
+           'MathSet', 'MathMultiSet',
            'MultiValHashST', 'MultiValBST', 'MultiValRedBlackBST',
            'MultiKeyHashST', 'MultiKeyBST', 'MultiKeyRedBlackBST',
            'MultiKeyST', 'MultiValST',
@@ -297,7 +300,7 @@ class MultiSet(MultiHashSet, Set):
 
         {OrderedSet.__doc__}
         """
-    # No need to even implement anything!! MultiHashSet does the work, and Set
+    # No need to even implement anything?! MultiHashSet does the work, and Set
     # just adds on the ordered methods based on the keys.
     pass
 
@@ -466,6 +469,12 @@ class MathSet(HashSet):
 class MultiKeyMathSet(MultiHashSet, MathSet):
     __doc__ = f"""Implements a mathematical multiset.
 
+        .. warning:: DO NOT USE!
+        This class does perform all operations without error on sets with
+        multiple keys, but is inconsistent with the definition of a true
+        mathematical multiset based on a multiplicity function. 
+        Use `MathMultiSet` instead.
+
         {HashSet.__doc__}
         U : HashSet
             The "universe" set of all possible keys allowed in this set. If
@@ -560,7 +569,7 @@ class MathMultiSet(MultiHashSet, MathSet):
         c = self.__class__(self.U, list(self))
         for k in a._st:
             if k in self:
-                c._st[k] -= a._st[k]
+                c._st[k] = abs(c._st[k] - a._st[k])
                 if c._st[k] <= 0:
                     del c._st[k]
             elif k in self.U:
@@ -665,7 +674,7 @@ class MathMultiSet(MultiHashSet, MathSet):
     def __ixor__(self, a):
         for k in a._st:
             if k in self:
-                self._st[k] -= a._st[k]
+                self._st[k] = abs(self._st[k] - a._st[k])
                 if self._st[k] <= 0:
                     del self._st[k]
             elif k in self.U:
@@ -927,58 +936,40 @@ MultiKeyST = MultiKeyRedBlackBST
 #       Tests
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
-    # from algs.exercises.draw_tree import TreeArtist
+    from algs.exercises.draw_tree import TreeArtist
 
     keys = list('SEARCHEXAMPLE')
     items = list((c, i) for i, c in enumerate(keys))
 
     # Plot multi-key trees vs their unique-key counterparts
-    t = BST(items)
-    st = MultiKeyBST(items)
+    # t = BST(items)
+    # st = MultiKeyBST(items)
     # TreeArtist(t).draw(fignum=1, label_vals=True)
     # TreeArtist(st).draw(fignum=2, label_vals=True)
 
-    t = RedBlackBST(items)
-    st = MultiKeyRedBlackBST(items)
+    # t = RedBlackBST(items)
+    # st = MultiKeyRedBlackBST(items)
     # TreeArtist(t).draw(fignum=3, label_vals=True)
     # TreeArtist(st).draw(fignum=4, label_vals=True)
-
-    # TODO move to test_set
-    a = MultiKeyHashSet(keys)
-    am = MultiHashSet(keys)
-    # print(a)
-    # print(am)
 
     b = MultiKeySet(keys)
     bm = MultiSet(keys)
     # print(b)
     # print(bm)
-
-    assert a == b
-    assert a == am
-    assert a == bm
-
-    import string
-    U = string.ascii_lowercase
+    TreeArtist(b._st).draw(fignum=1, label_vals=True)
+    TreeArtist(bm._st).draw(fignum=2, label_vals=True)
 
     # Minimal code, but `delete` only removes one at a time, and the results
     # are inconsistent with typical definitions of a mathematical multiset.
-    A = MultiKeyMathSet(U, 'aabb')
-    B = MultiKeyMathSet(U, 'bbbc')
-    print('--- multi-key ---')
-    print(A | B)
-    print(A & B)
-    print(A - B)
-    print(A ^ B)
-
-    A = MathMultiSet(U, 'aab')
-    B = MathMultiSet(U, 'bbc')
-    print('--- multiplicity ---')
-    print(A | B)
-    print(A & B)
-    print(A - B)
-    print(A ^ B)
-    print(A + B)  # new op for multiset!
+    # import string
+    # U = string.ascii_lowercase
+    # A = MultiKeyMathSet(U, 'aabb')
+    # B = MultiKeyMathSet(U, 'bbbc')
+    # print('--- multi-key ---')
+    # print(A | B)
+    # print(A & B)
+    # print(A - B)
+    # print(A ^ B)
 
 # =============================================================================
 # =============================================================================
