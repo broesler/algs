@@ -9,6 +9,8 @@ Implements Set and HashSet APIs using symbol tables. See §3.5.
 """
 # =============================================================================
 
+import random
+
 from abc import ABC, abstractmethod
 
 from algs.basics import Bag
@@ -850,13 +852,6 @@ class MultiKeyBST(BST):
         {BST._attribs_doc}
         """
 
-    def __delitem__(self, k):
-        """Delete all instances of `k` from the table."""
-        while k in self:
-            self._root = self._delete(k, self._root)
-            if self._CACHE_FLAG and self._cache and k == self._cache.key:
-                self._cache = None
-
     def _set(self, k, v, x=None):
         # subtree is empty, create a new node
         if x is None:
@@ -869,10 +864,67 @@ class MultiKeyBST(BST):
         self._cost += 1
         if k < x.key:
             x.left = self._set(k, v, x.left)
-        else:  # k > x.key or k == x.key
-            # Always go right for duplicate keys
+        elif k > x.key: 
             x.right = self._set(k, v, x.right)
+        else:  # k == x.key
+            # Always insert duplicate keys immediately to the right
+            h = self._Node(k, v)
+            if self._CACHE_FLAG:
+                self._cache = h
+            h.right = x.right
+            x.right = h
+            self._update_node(h)
 
+        self._update_node(x)
+        return x
+
+    def _delete(self, k, x=None):
+        """Delete the node associated with `k` by choosing the predecessor or
+            successor at random.
+
+        Parameters
+        ----------
+        k : key
+            key for which to search
+        x : _Node, optional
+            root of the subtree at which to begin search
+
+        Raises
+        ------
+        KeyError
+            If `k` is not in the table.
+        """
+        if x is None:
+            raise KeyError(k)
+
+        if k < x.key:
+            x.left = self._delete(k, x.left)
+        elif k > x.key:
+            x.right = self._delete(k, x.right)
+        else:  # k == x.key
+            # All duplicate keys are to the right, so "x.right" needs to be
+            # a pointer to the first non-duplicate
+            r = x.right
+            while r and k == r.key:
+                r = r.right
+            # Delete the node by returning a pointer to its successor
+            if x.left is None:
+                return r
+            elif x.right is None:
+                return x.left
+            else:
+                # save pointer to Node to be deleted
+                t = x
+                if random.random() < self._RAND_THRESH:
+                    # Get the successor to the node to be deleted
+                    x = self._min(r)
+                    x.right = self._delete_min(r)
+                    x.left = t.left
+                else:
+                    # Get the predecessor to the node to be deleted
+                    x = self._max(t.left)
+                    x.left = self._delete_max(t.left)
+                    x.right = r
         self._update_node(x)
         return x
 
