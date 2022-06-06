@@ -1005,12 +1005,15 @@ class MultiKeyRedBlackBST(RedBlackBST):
         elif k > h.key:
             h.right = self._set(k, v, h.right)
         else:
-            # keys are equal, place new key immediately to the left
+            # NOTE this method breaks the Red-Black model by not inserting
+            # nodes as leaves.
+            # keys are equal, place new key immediately to the right
             x = self._Node(k, v, color=self._RED)
             if self._CACHE_FLAG:
                 self._cache = x
-            x.left = h.left
-            h.left = x
+            x.right = h.right
+            self._update_node(x)
+            h.right = x
 
         # Balance the tree (red links left-leaning)
         if self._is_red(h.right) and not self._is_red(h.left):
@@ -1053,22 +1056,22 @@ if __name__ == '__main__':
     items = list((c, i) for i, c in enumerate(keys))
 
     # Plot multi-key trees vs their unique-key counterparts
-    t = BST(items)
-    tm = MultiKeyBST(items)
-    tm['X'] = 13
-    tm['X'] = 14
-    tm['V'] = 69
-    TreeArtist(t).draw(fignum=1, label_vals=True)
-    TreeArtist(tm).draw(fignum=2, label_vals=True)
-    tm.delete_max()
-    TreeArtist(tm).draw(fignum=3, label_vals=True)
+    # t = BST(items)
+    # tm = MultiKeyBST(items)
+    # tm['X'] = 13
+    # tm['X'] = 14
+    # tm['V'] = 69
+    # TreeArtist(t).draw(fignum=1, label_vals=True)
+    # TreeArtist(tm).draw(fignum=2, label_vals=True)
+    # tm.delete_max()
+    # TreeArtist(tm).draw(fignum=3, label_vals=True)
 
-    # t = RedBlackBST(items)
-    # tm = MultiKeyRedBlackBST(items)
-    # TreeArtist(t).draw(fignum=3, label_vals=True)
-    # TreeArtist(tm).draw(fignum=4, label_vals=True)
+    t = RedBlackBST(items)
+    tm = MultiKeyRedBlackBST(items)
+    TreeArtist(t).draw(fignum=3, label_vals=True)
+    TreeArtist(tm).draw(fignum=4, label_vals=True)
     # del tm['E']
-    # TreeArtist(tm).draw(fignum=5, label_vals=True)
+    TreeArtist(tm).draw(fignum=5, label_vals=True)
 
     # b = MultiKeySet(keys)
     # bm = MultiSet(keys)
