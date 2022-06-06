@@ -933,12 +933,6 @@ class MultiKeyBST(BST):
 
 
 # Exercise 3.5.10
-# FIXME rank/select are broken in MultiKeyRedBlackBST.
-# It may be easier to just update the way we add multiple keys in the
-# underlying (MultiKey)RedBlackBST. Instead of always searching left (or right)
-# when we have an equal key, we could add the equal key to the left (or right)
-# of the existing equal key, such that they are all adjacent(?) under the
-# original. Rank/select may work themselves out in MultiKeySets.
 class MultiKeyRedBlackBST(RedBlackBST):
     __doc__ = f"""Implements a red-black binary search tree, but allows
         multiple keys.
