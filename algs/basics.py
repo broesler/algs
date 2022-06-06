@@ -63,7 +63,7 @@ class Collection(ABC):
     def __eq__(self, other):
         # Assume order matters, so check that the items lists are identical.
         if not isinstance(other, self.__class__):
-            raise NotImplemented
+            return NotImplemented
         return self._items == other._items
 
     def __repr__(self):
