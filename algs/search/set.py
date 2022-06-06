@@ -877,6 +877,36 @@ class MultiKeyRedBlackBST(RedBlackBST):
             if self._CACHE_FLAG and self._cache and k == self._cache.key:
                 self._cache = None
 
+    def delete_min(self):
+        """Delete all instances of the minimum key from the table."""
+        self._empty_check()
+        # If root is a 2-node, make it a 3-node
+        if (not self._is_red(self._root.left) and
+              not self._is_red(self._root.right)):
+            self._root.color = self._RED
+        k = self.min()
+        while k in self:
+            self._root = self._delete_min(self._root)
+        if not self.is_empty:
+            self._root.color = self._BLACK
+        if self._CACHE_FLAG:
+            self._cache = None
+
+    def delete_max(self):
+        """Delete all instances of the minimum key from the table."""
+        self._empty_check()
+        # If root is a 2-node, make it a 3-node
+        if (not self._is_red(self._root.right) and
+              not self._is_red(self._root.left)):
+            self._root.color = self._RED
+        k = self.max()
+        while k in self:
+            self._root = self._delete_max(self._root)
+        if not self.is_empty:
+            self._root.color = self._BLACK
+        if self._CACHE_FLAG:
+            self._cache = None
+
     def _set(self, k, v, h=None):
         # subtree is empty, create a new node with a red link to parent
         if h is None:
