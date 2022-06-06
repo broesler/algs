@@ -514,12 +514,6 @@ class MathMultiSet(MultiHashSet, MathSet):
             set containing keys outside of the universe, only keys allowed
             within this universe will be added.
         """
-    def complement(self):
-        """Return a set of the universe of keys except those in this set."""
-        c = self.__class__(self.U, keys=self.U)  # entire set
-        for k in self._st:
-            del c._st[k]  # remove all instances
-        return c
 
     def union(self, a):
         """Return a set of elements either in this set or in `a`."""
