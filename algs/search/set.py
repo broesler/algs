@@ -175,7 +175,7 @@ class HashSet(UnorderedSet):
 # Exercise 3.5.1
 class Set(OrderedSet):
     __doc__ = f"""Implements an ordered set using a wrapper on a red-black BST.
-               {OrderedSet.__doc__}
+               {UnorderedSet.__doc__}
                """
 
     def __init__(self, keys=None):
@@ -245,7 +245,7 @@ class MultiKeyHashSet(HashSet):
 # Exercise 3.5.18
 class MultiKeySet(Set):
     __doc__ = f"""Implements an ordered set that allows multiple keys.
-               {OrderedSet.__doc__}
+               {UnorderedSet.__doc__}
                """
 
     def __init__(self, keys=None):
@@ -298,7 +298,7 @@ class MultiSet(MultiHashSet, Set):
         values, instead of storing multiple keys. Iteration replicates the keys
         according to their multiplicity.
 
-        {OrderedSet.__doc__}
+        {UnorderedSet.__doc__}
         """
     # No need to even implement anything?! MultiHashSet does the work, and Set
     # just adds on the ordered methods based on the keys.
@@ -472,7 +472,7 @@ class MultiKeyMathSet(MultiHashSet, MathSet):
         .. warning:: DO NOT USE!
         This class does perform all operations without error on sets with
         multiple keys, but is inconsistent with the definition of a true
-        mathematical multiset based on a multiplicity function. 
+        mathematical multiset based on a multiplicity function.
         Use `MathMultiSet` instead.
 
         {HashSet.__doc__}
@@ -497,8 +497,6 @@ class MultiKeyMathSet(MultiHashSet, MathSet):
                 self._st[k] = v - 1
         except KeyError:
             pass
-
-    # TODO define sum()
 
 
 class MathMultiSet(MultiHashSet, MathSet):
