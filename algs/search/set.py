@@ -278,7 +278,7 @@ class MultiHashSet(HashSet):
         except KeyError:
             self._st[k] = 1
 
-    def _keys(self):
+    def keys(self):
         """Return a list of keys repeated according to their multiplicity."""
         b = list()
         for k, v in self._st.items():
@@ -286,11 +286,9 @@ class MultiHashSet(HashSet):
         return b
 
     def __iter__(self):
-        yield from self._keys()
+        yield from self.keys()
 
 
-# TODO MultiKeySet automatically takes into account the extra keys for ordered
-# methods like rank/select and size, but this counter version doesn't.
 class MultiSet(MultiHashSet, Set):
     __doc__ = f"""Implements an ordered set that allows multiple keys.
 
@@ -302,7 +300,31 @@ class MultiSet(MultiHashSet, Set):
         """
     # No need to even implement anything?! MultiHashSet does the work, and Set
     # just adds on the ordered methods based on the keys.
-    pass
+    # TODO this counter version doesn't take into account the extra keys for
+    # ordered methods like rank/select and size.
+
+    def rank(self, k):
+        """Return the number of keys strictly less than `k`, including multiple
+        equal keys."""
+        r = self._st.rank(k)
+        # Add the multiplicities of keys less than `k` in the set.
+        v = 0
+        for i in range(r):
+            v += self._st[self._st.select(i)]
+        return v
+
+    def select(self, r):
+        if r < 0 or self.size() < r+1:
+            raise IndexError(r)
+        return self.keys()[r]
+
+    def keys(self, lo=None, hi=None):
+        """Return a list of keys between `lo` and `hi` repeated according to
+           their multiplicity."""
+        b = list()
+        for k, v in self._st.items(lo, hi):
+            b.extend(v*[k])
+        return b
 
 
 # Exercise 3.5.17
@@ -858,6 +880,12 @@ class MultiKeyBST(BST):
 
 
 # Exercise 3.5.10
+# FIXME rank/select are broken in MultiKeyRedBlackBST.
+# It may be easier to just update the way we add multiple keys in the
+# underlying (MultiKey)RedBlackBST. Instead of always searching left (or right)
+# when we have an equal key, we could add the equal key to the left (or right)
+# of the existing equal key, such that they are all adjacent(?) under the
+# original. Rank/select may work themselves out in MultiKeySets.
 class MultiKeyRedBlackBST(RedBlackBST):
     __doc__ = f"""Implements a red-black binary search tree, but allows
         multiple keys.
