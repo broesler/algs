@@ -91,7 +91,7 @@ class BST(OrderedSymbolTable):
         return self._internal_path_length(self._root)
 
     def __getitem__(self, k):
-        return self._return_func(self._get_node(k))
+        return self._get_node(k).val
 
     def __setitem__(self, k, v):
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
@@ -210,12 +210,6 @@ class BST(OrderedSymbolTable):
             if self._CACHE_FLAG:
                 self._cache = x
             return x
-
-    # Allow subclasses to specify what to return by overriding this method.
-    @staticmethod
-    def _return_func(x):
-        """Determine what to return when calling `__getitem__`."""
-        return x.val
 
     def _get(self, k, x=None):
         """Return the node associated with the given `k`.
