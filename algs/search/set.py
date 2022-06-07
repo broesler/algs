@@ -962,7 +962,7 @@ class MultiKeyBST(BST):
 
 
 # Exercise 3.5.10
-class MultiKeyRedBlackBST(RedBlackBST):
+class MultiKeyRedBlackBST(RedBlackBST, MultiKeyBST):
     __doc__ = f"""Implements a red-black binary search tree, but allows
         multiple keys.
         {BST._attribs_doc}
@@ -970,10 +970,8 @@ class MultiKeyRedBlackBST(RedBlackBST):
     # NOTE only changes in deletion are a while loop to check if the key is
     # still in the table O(m(k)*lg N) where m(k) is the multiplicity of k.
 
-    def size(self, lo=None, hi=None):
-        return len(self.keys(lo, hi))
-
     def __setitem__(self, k, v):
+        # Ignore caching on __setitem__
         self._cost = 0
         self._root = self._set(k, v, self._root)
         self._root.color = self._BLACK
@@ -1062,21 +1060,6 @@ class MultiKeyRedBlackBST(RedBlackBST):
             while ell and ell.key == x.key:
                 ell = ell.left
             return self._size(ell)
-
-    def _in_order_range(self, lo, hi, x=None, q=None, op=None):
-        """Recursively range search the BST for keys from `lo` to `hi`."""
-        if x is None:
-            return
-        if q is None:
-            q = Queue()
-        # Operate on nodes in key order, within range
-        if lo < x.key or (x.left and lo == x.left.key):
-            self._in_order_range(lo, hi, x.left, q, op)
-        if lo <= x.key <= hi:
-            q.enqueue(op(x) if op else x.key)
-        if hi > x.key or (x.right and hi == x.right.key):
-            self._in_order_range(lo, hi, x.right, q, op)
-        return list(q)
 
 
 # -----------------------------------------------------------------------------
