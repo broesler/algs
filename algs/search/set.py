@@ -895,7 +895,7 @@ class MultiKeyBST(BST):
             # Delete the node by returning a pointer to its successor
             if x.left is None:
                 return r
-            elif x.right is None:
+            elif r is None:
                 return x.left
             else:
                 # save pointer to Node to be deleted
