@@ -10,9 +10,10 @@ A symbol table dicionary client for reading CSV files.
 # =============================================================================
 
 from pathlib import Path
+from tqdm import tqdm
 
 from algs.basics import Bag
-from algs.search import HashST, MultiValHashST, invert
+from algs.search import ST, MultiST, HashST, MultiHashST, invert
 
 # TODO add `header=True` to parse header line
 
@@ -102,9 +103,7 @@ class LookupIndex():
 class FullLookupCSV():
     """A symbol table dicionary client for reading CSV files."""
 
-    # TODO What about duplicate values in a column? e.g. I want to know all
-    # dates on which the DJIA Volume was a given number, or within a range.
-    def __init__(self, filename, delim=',', header=None):
+    def __init__(self, filename, delim=',', header=0, verbose=False):
         """
         Parameters
         ----------
@@ -113,26 +112,40 @@ class FullLookupCSV():
         delim : str, optional
             String on which to separate the input lines.
         header : int, optional
-            Initial lines to skip when reading the file.
+            Line to use as column names.
         """
-        if header is None:
-            header = 0
+        self._col_names = None
+
         # Build the dictionary from the file
         with open(Path(filename), 'r') as fp:
-            # Build list of symbol tables
             lines = fp.readlines()
-            items = lines[header].strip().split(delim)
-            self.sts = len(items)*[None]
 
-            for line in lines[header:]:
-                items = line.strip().split(delim)
-                for i, k in enumerate(items):
-                    if self.sts[i] is None:
-                        self.sts[i] = HashST()
-                    # TODO use header for column names instead of numbers
-                    # Each value is itself a symbol table for the value-index
-                    # self.sts[i][k] = HashST([(j, v) for j, v in enumerate(items)])
-                    self.sts[i][k] = list(items)
+        # Build list of symbol tables
+        words = lines[header or 0].strip().split(delim)
+        if header is None:
+            self._col_names = range(len(words))
+            self.sts = len(words)*[None]
+        else:
+            self._col_names = words
+            self.sts = HashST.fromkeys(self._col_names)
+
+        # Scan the file line-by-line
+        iters = lines[header+1:]
+        if verbose:
+            iters = tqdm(iters)
+
+        for line in iters:
+            items = line.strip().split(delim)
+            for col, k in zip(self._col_names, items):
+                if self.sts[col] is None:
+                    self.sts[col] = MultiHashST()
+
+                # Each value is itself a symbol table for the value-index
+                for c, v in zip(self._col_names, items):
+                    if k not in self.sts[col]:
+                        self.sts[col][k] = MultiHashST()
+                    else:
+                        self.sts[col][k][c] = v
 
     def query(self, k, key_col, val_col=None):
         """Return the value associated with `k`.
@@ -141,9 +154,9 @@ class FullLookupCSV():
         ----------
         k : str
             The key for which to search.
-        key_col : int
+        key_col : int or str
             The 0-indexed column number to use for the keys.
-        val_col : int, optional
+        val_col : int or str, optional
             The 0-indexed column number to use for the values.
         """
         st = self.sts[key_col]
@@ -151,7 +164,7 @@ class FullLookupCSV():
             if val_col is None:
                 return st[k]
             else:
-                return st[k][val_col]
+                return st[k].get_all(val_col)
 
 
 if __name__ == "__main__":
@@ -162,6 +175,7 @@ if __name__ == "__main__":
     for q in qs:
         print(f"{q}: {st.query(q)}")
 
+    # Unique codons, multiple amino acids
     filename = Path('../data/amino.csv')
     print(f"---{filename}---")
     st = LookupCSV(filename, key_col=0, val_col=3)
@@ -178,6 +192,7 @@ if __name__ == "__main__":
     st.print_query('Serine')
     st.print_query('TCC')
 
+    # Unique movie titles, multiple actor names
     filename = Path('../data/movies-top-grossing.txt')
     print(f"---{filename} - indexed ---")
     st = LookupIndex(filename, delim='/')
@@ -187,6 +202,21 @@ if __name__ == "__main__":
     # assert st.st == invert(st.ts)
     # assert st.ts == invert(st.st)
 
+    # unique ranks and words with repeated frequencies and/or part of speech
+    filename = Path('../data/bnc-wordfreq.csv')
+    print(f"---{filename}---")
+    st = FullLookupCSV(filename, verbose=True)
+    q = 'about'
+    print(f"{q}: {st.query(q, key_col='WORD')}")
+    print(f"{q}: {st.query(q, key_col='WORD', val_col='RANK')}")
+    print(f"{q}: {st.query(q, key_col='WORD', val_col='FREQUENCY')}")
+    print(f"{q}: {st.query(q, key_col='WORD', val_col='PART OF SPEECH')}")
+    q = 'prep'
+    # print(f"{q}: {st.query(q, key_col='PART OF SPEECH')}")
+    # Return all words that are prepositions
+    print(f"{q}: {st.query(q, key_col='PART OF SPEECH', val_col='WORD')}")
+
+    # unique dates with floats
     filename = Path('../data/DJIA.csv')
     print(f"---{filename}---")
     st = FullLookupCSV(filename)
