@@ -47,10 +47,14 @@ def theory_avg_ipl(N):
 
 
 # Define constant inputs
-FORCE_UPDATE = True
+FORCE_UPDATE = False
+SAVE_FIGS = True
+TINY = True
 
-# PICKLE_FILE = Path('./pkl/hibbard_delete.pkl')
-PICKLE_FILE = Path('./pkl/hibbard_delete_tiny.pkl')
+if TINY:
+    PICKLE_FILE = Path('./pkl/hibbard_delete_tiny.pkl')
+else:
+    PICKLE_FILE = Path('./pkl/hibbard_delete.pkl')
 
 # Input variables
 N_TRIALS = 30  # run the entire experiment and ensemble average
@@ -136,6 +140,10 @@ sns.pointplot(ax=ax, data=df, x='N', y='mean_IPL', hue='dm')
 sns.pointplot(ax=ax, data=df, x='N', y='sqrtN', color='k')
 ax.set_ylabel('Average Path Length')
 
+if SAVE_FIGS:
+    figname = Path(f"./figures/hibbard_points{'_tiny' if TINY else ''}.pdf")
+    fig.savefig(figname)
+
 ENSEMBLE = True
 
 fig = plt.figure(2, clear=True)
@@ -173,6 +181,12 @@ ax.set(xlabel='Operations',
        ylabel='IPL vs. Theory')
 
 gs.tight_layout(fig)
+
+if SAVE_FIGS:
+    figname = Path(("./figures/hibbard"
+                    + f"{'_ensemble' if ENSEMBLE else ''}"
+                    + f"{'_tiny' if TINY else ''}.pdf"))
+    fig.savefig(figname)
 
 plt.show()
 
