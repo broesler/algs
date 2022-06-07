@@ -490,7 +490,9 @@ class BoolMathSet(MathSet, HashSet):
         keys : iterable, optional
             An iterable of the keys to add to the set.
         """
-        self._st = LinearProbingHashST.fromkeys(U, value=False)
+        self.U = U  # keep original iterable for new object creation
+        self._st = LinearProbingHashST.fromkeys(U, value=False,
+                                                M=len(U)+1, resize=False)
         self._st._vals = np.r_[self._st._vals].astype(bool)
         keys = keys or []
         for k in keys:
@@ -502,47 +504,53 @@ class BoolMathSet(MathSet, HashSet):
         self._st[k] = True
 
     def size(self):
-        return len(self._keys)
+        return len(self._keys())
+
+    def __contains__(self, k):
+        if k not in self._st:  # not in universe
+            return False
+        else:
+            return self._st[k]  # may or may not be in set
 
     def __delitem__(self, k):
-        if k in self._st and self._st is True:
+        if k in self._st and self._st[k]:
             self._st[k] = False
         else:
             raise KeyError(k)
 
     def _keys(self):
-        return [k for k, v in self._st.items() if v is True]
+        return [k for k, v in self._st.items() if v]
 
     def __iter__(self):
         yield from self._keys()
 
     def complement(self):
         """Return a set of the universe of keys except those in this set."""
-        c = self.__class__(self._st._keys)
+        c = self.__class__(self.U)
         c._st._vals = ~self._st._vals  # invert the set
         return c
 
     def union(self, a):
         """Return a set of elements either in this set or in `a`."""
-        c = self.__class__(self._st._keys)
+        c = self.__class__(self.U)
         c._st._vals = self._st._vals | a._st._vals
         return c
 
     def intersection(self, a):
         """Return a set of elements both in this set and in `a`."""
-        c = self.__class__(self._st._keys)
+        c = self.__class__(self.U)
         c._st._vals = self._st._vals & a._st._vals
         return c
 
     def difference(self, a):
         """Return a set of elements that are in this set but not in `a`."""
-        c = self.__class__(self._st._keys)
+        c = self.__class__(self.U)
         c._st._vals = self._st._vals & ~a._st._vals
         return c
 
     def xor(self, a):
         """Return a set of elements that are only in this set or in `a`."""
-        c = self.__class__(self._st._keys)
+        c = self.__class__(self.U)
         c._st._vals = self._st._vals ^ a._st._vals
         return c
 
@@ -560,13 +568,7 @@ class BoolMathSet(MathSet, HashSet):
 
     def is_disjoint(self, a):
         """Return True if none of the elements in `a` are in this set."""
-        # return all((self._st._vals & a._st._vals) is False)
-        return self._is_null(self.intersection(a))
-
-    @staticmethod
-    def _is_null(x):
-        """Return True if the given set is the null set."""
-        return all(x._st._vals is False)
+        return self.intersection(a).is_empty
 
     # In-place operators:
     #   A = A | B
@@ -575,19 +577,19 @@ class BoolMathSet(MathSet, HashSet):
     # are all equivalent.
 
     def __ior__(self, a):
-        self._st.vals |= a._st.vals
+        self._st._vals |= a._st._vals
         return self
 
     def __iand__(self, a):
-        self._st.vals &= a._st.vals
+        self._st._vals &= a._st._vals
         return self
 
     def __isub__(self, a):
-        self._st.vals &= ~a._st.vals
+        self._st._vals &= ~a._st._vals
         return self
 
     def __ixor__(self, a):
-        self._st.vals ^= a._st.vals
+        self._st._vals ^= a._st._vals
         return self
 
 
@@ -867,7 +869,7 @@ MultiST = MultiValRedBlackBST  # use "multi-key" to be consistent with book
 #       Tests
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
-    from algs.exercises.draw_tree import TreeArtist
+    # from algs.exercises.draw_tree import TreeArtist
 
     keys = list('SEARCHEXAMPLE')
     items = list((c, i) for i, c in enumerate(keys))
@@ -889,14 +891,27 @@ if __name__ == '__main__':
     # TreeArtist(tm).draw(fignum=5, label_vals=True)
 
     import string
-    U = string.ascii_lowercase
+    U = string.ascii_lowercase[:12]
+
+    print('---MathSet---')
+    A = MathSet(U, keys='abcde')
+    B = MathSet(U, keys='defgh')
+    print(A)
+    print(A.complement())  # == 'fghij'
+    print(A | B)  # == 'abcdefgh'
+    print(A & B)  # == 'de'
+    print(A - B)  # == 'abc'
+    print(A ^ B)  # == 'abcfgh'
+
+    print('---BoolMathSet---')
     A = BoolMathSet(U, keys='abcde')
     B = BoolMathSet(U, keys='defgh')
     print(A)
-    print(A | B)
-    print(A & B)
-    print(A - B)
-    print(A ^ B)
+    print(A.complement())  # == 'fghij'
+    print(A | B)  # == 'abcdefgh'
+    print(A & B)  # == 'de'
+    print(A - B)  # == 'abc'
+    print(A ^ B)  # == 'abcfgh'
 
 # =============================================================================
 # =============================================================================
