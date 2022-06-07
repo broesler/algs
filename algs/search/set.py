@@ -21,11 +21,9 @@ from algs.search.balanced_tree import RedBlackBST
 
 __all__ = ['UnorderedSet', 'OrderedSet',
            'MultiSet', 'MultiHashSet',
-           'MultiKeySet', 'MultiKeyHashSet',
            'MathSet', 'MathMultiSet',
            'MultiValHashST', 'MultiValBST', 'MultiValRedBlackBST',
-           'MultiKeyHashST', 'MultiKeyBST', 'MultiKeyRedBlackBST',
-           'MultiKeyST', 'MultiValST',
+           'MultiST',
            'invert']
 
 
@@ -232,32 +230,6 @@ class Set(OrderedSet):
 
     def delete_max(self):
         return self._st.delete_max()
-
-
-# Exercise 3.5.18
-class MultiKeyHashSet(HashSet):
-    __doc__ = f"""Implements an unordered set that allows multiple keys.
-               {UnorderedSet.__doc__}
-               """
-
-    def __init__(self, keys=None):
-        self._st = MultiKeyHashST()
-        keys = keys or []
-        for k in keys:
-            self.add(k)
-
-
-# Exercise 3.5.18
-class MultiKeySet(Set):
-    __doc__ = f"""Implements an ordered set that allows multiple keys.
-               {UnorderedSet.__doc__}
-               """
-
-    def __init__(self, keys=None):
-        self._st = MultiKeyRedBlackBST()
-        keys = keys or []
-        for k in keys:
-            self.add(k)
 
 
 # Exercise 3.5.18
@@ -492,39 +464,6 @@ class MathSet(HashSet):
             elif k in self.U:
                 self.add(k)
         return self
-
-
-class MultiKeyMathSet(MultiHashSet, MathSet):
-    __doc__ = f"""Implements a mathematical multiset.
-
-        .. warning:: DO NOT USE!
-        This class does perform all operations without error on sets with
-        multiple keys, but is inconsistent with the definition of a true
-        mathematical multiset based on a multiplicity function.
-        Use `MathMultiSet` instead.
-
-        {HashSet.__doc__}
-        U : HashSet
-            The "universe" set of all possible keys allowed in this set. If
-            a union or XOR operation is performed between this set and another
-            set containing keys outside of the universe, only keys allowed
-            within this universe will be added.
-        """
-
-    # NOTE this solution changes the API from a multi(key|val) symbol table
-    # that removes *all* instances of a key by deletion, *and* breaks the
-    # equivalency of `delete` == `__delitem__`.
-    # `del s[k]` still deletes *all* instances.
-    def delete(self, k):
-        """Remove a single instance of `k` from the set."""
-        try:
-            v = self._st[k]
-            if v <= 1:
-                del self._st[k]
-            else:
-                self._st[k] = v - 1
-        except KeyError:
-            pass
 
 
 class MathMultiSet(MultiHashSet, MathSet):
@@ -783,302 +722,6 @@ class MultiValRedBlackBST(RedBlackBST):
         x.val.add(v)
 
 
-# Exercise 3.5.8
-class MultiKeyHashST(LinearProbingHashST):
-    __doc__ = f"""Implements a hash table using arrays with linear probing, but
-               allows multiple keys.
-
-               .. note::
-                   `ST.get` will return *any* value associated with a key `k`.
-                   `ST.delete` will delete *all* keys equal to `k`.
-               {SymbolTable.__doc__}"""
-
-    def __setitem__(self, k, v):
-        """Associate value `v` with key `k`. Multiple identical keys are
-        allowed."""
-        if not self._RESIZE_FLAG and self.N == self.M:
-            raise RuntimeError(("Trying to insert into a full table! "
-                                "Set `resize=True`."))
-
-        if self._RESIZE_FLAG and self.N >= self.M // 2:
-            self._resize(2*self.M)
-            self._lgM += 1
-
-        i = self._hash(k)
-        self._cost = 1
-        while self._keys[i] is not None:
-            # No check for self._keys[i] == k, since we allow multiple keys
-            i = (i + 1) % self.M
-            self._cost += 1
-        else:
-            self._keys[i] = k
-            self._vals[i] = v
-            self.N += 1
-
-    def __delitem__(self, k):
-        """Delete all instances of `k` from the table."""
-        if k not in self:
-            raise KeyError(k)
-
-        # Set slot of first instance of `k` to None
-        i = self._hash(k)
-        _cost = 1
-        while k != self._keys[i]:
-            i = (i + 1) % self.M
-            _cost += 1
-        self._keys[i] = None
-        self._vals[i] = None
-
-        # Rehash all keys in the cluster to the right of the deleted key
-        i = (i + 1) % self.M
-        while self._keys[i] is not None:
-            key_to_redo = self._keys[i]
-            val_to_redo = self._vals[i]
-            self._keys[i] = None
-            self._vals[i] = None
-            self.N -= 1
-            # Do not re-hash multiple instances of the key to be deleted
-            if k != key_to_redo:
-                self.__setitem__(key_to_redo, val_to_redo)
-                _cost += self._cost
-            i = (i + 1) % self.M
-
-        # Update counters
-        self.N -= 1
-        self._cost = _cost
-        # Check for a resize if table is small enough
-        if self._RESIZE_FLAG and (self.N > 0 and self.N <= self.M // 8):
-            self._resize(self.M // 2)
-            self._lgM -= 1
-
-
-# Exercise 3.5.9
-class MultiKeyBST(BST):
-    __doc__ = f"""Implements a binary search tree, but allows multiple keys.
-        {BST._attribs_doc}
-        """
-
-    def size(self, lo=None, hi=None):
-        return len(self.keys(lo, hi))  # lazy way but it works
-
-    def __setitem__(self, k, v):
-        # Ignore caching on __setitem__
-        self._cost = 0
-        self._root = self._set(k, v, self._root)
-
-    def _set(self, k, v, x=None):
-        # subtree is empty, create a new node
-        if x is None:
-            h = self._Node(k, v)
-            if self._CACHE_FLAG:
-                self._cache = h
-            return h
-
-        # create a child, or update the value
-        self._cost += 1
-        if k < x.key:
-            x.left = self._set(k, v, x.left)
-        elif k > x.key:
-            x.right = self._set(k, v, x.right)
-        else:  # k == x.key
-            # Always insert duplicate keys immediately to the right
-            h = self._Node(k, v)
-            if self._CACHE_FLAG:
-                self._cache = h
-            h.right = x.right
-            x.right = h
-            self._update_node(h)
-
-        self._update_node(x)
-        return x
-
-    def _delete(self, k, x=None):
-        if x is None:
-            raise KeyError(k)
-
-        if k < x.key:
-            x.left = self._delete(k, x.left)
-        elif k > x.key:
-            x.right = self._delete(k, x.right)
-        else:  # k == x.key
-            # All duplicate keys are to the right, so "x.right" needs to be
-            # a pointer to the first non-duplicate
-            r = x.right
-            while r and k == r.key:
-                r = r.right
-            # Delete the node by returning a pointer to its successor
-            if x.left is None:
-                return r
-            elif r is None:
-                return x.left
-            else:
-                # save pointer to Node to be deleted
-                t = x
-                if random.random() < self._RAND_THRESH:
-                    # Get the successor to the node to be deleted
-                    x = self._min(r)
-                    x.right = self._delete_min(r)
-                    x.left = t.left
-                else:
-                    # Get the predecessor to the node to be deleted
-                    x = self._max(t.left)
-                    x.left = self._delete_max(t.left)
-                    x.right = r
-        self._update_node(x)
-        return x
-
-    def _delete_min(self, x=None):
-        if x.left is None:
-            # All duplicates are to the right, so find the nonner
-            r = x.right
-            while r and r.key == x.key:
-                r = r.right
-            return r
-        x.left = self._delete_min(x.left)
-        self._update_node(x)
-        return x
-
-    def _delete_max(self, x=None):
-        if x.right is None or x.right.key == x.key:
-            return x.left
-        x.right = self._delete_max(x.right)
-        self._update_node(x)
-        return x
-
-    def _in_order_range(self, lo, hi, x=None, q=None, op=None):
-        """Recursively range search the BST for keys from `lo` to `hi`."""
-        if x is None:
-            return
-        if q is None:
-            q = Queue()
-        # Operate on nodes in key order, within range
-        if lo < x.key or (x.left and lo == x.left.key):
-            self._in_order_range(lo, hi, x.left, q, op)
-        if lo <= x.key <= hi:
-            q.enqueue(op(x) if op else x.key)
-        if hi > x.key or (x.right and hi == x.right.key):
-            self._in_order_range(lo, hi, x.right, q, op)
-        return list(q)
-
-
-# Exercise 3.5.10
-class MultiKeyRedBlackBST(RedBlackBST):
-    __doc__ = f"""Implements a red-black binary search tree, but allows
-        multiple keys.
-        {BST._attribs_doc}
-        """
-    # NOTE only changes in deletion are a while loop to check if the key is
-    # still in the table O(m(k)*lg N) where m(k) is the multiplicity of k.
-
-    def size(self, lo=None, hi=None):
-        return len(self.keys(lo, hi))
-
-    def __setitem__(self, k, v):
-        self._cost = 0
-        self._root = self._set(k, v, self._root)
-        self._root.color = self._BLACK
-        self._update_node(self._root)
-
-    def __delitem__(self, k):
-        """Delete all instances of `k` from the table."""
-        if not self.__contains__(k):
-            raise KeyError(k)
-        while k in self:
-            # If root is a 2-node, make it a 3-node
-            if (not self._is_red(self._root.left) and
-                    not self._is_red(self._root.right)):
-                self._root.color = self._RED
-            self._root = self._delete(k, self._root)
-            if self._CACHE_FLAG and self._cache and k == self._cache.key:
-                self._cache = None
-
-    def delete_min(self):
-        """Delete all instances of the minimum key from the table."""
-        self._empty_check()
-        # If root is a 2-node, make it a 3-node
-        if (not self._is_red(self._root.left) and
-                not self._is_red(self._root.right)):
-            self._root.color = self._RED
-        k = self.min()
-        while k in self:
-            self._root = self._delete_min(self._root)
-            if not self.is_empty:
-                self._root.color = self._BLACK
-            if self._CACHE_FLAG:
-                self._cache = None
-
-    def delete_max(self):
-        """Delete all instances of the minimum key from the table."""
-        self._empty_check()
-        # If root is a 2-node, make it a 3-node
-        if (not self._is_red(self._root.right) and
-                not self._is_red(self._root.left)):
-            self._root.color = self._RED
-        k = self.max()
-        while k in self:
-            self._root = self._delete_max(self._root)
-            if not self.is_empty:
-                self._root.color = self._BLACK
-            if self._CACHE_FLAG:
-                self._cache = None
-
-    def _set(self, k, v, h=None):
-        # subtree is empty, create a new node with a red link to parent
-        if h is None:
-            x = self._Node(k, v, color=self._RED)
-            if self._CACHE_FLAG:
-                self._cache = x
-            return x
-
-        # create a child, or update the value
-        self._cost += 1
-        if k < h.key:
-            h.left = self._set(k, v, h.left)
-        else:  # k > h.key or k == h.key
-            h.right = self._set(k, v, h.right)
-
-        # Balance the tree (red links left-leaning)
-        if self._is_red(h.right) and not self._is_red(h.left):
-            h = self._rotate_left(h)
-        if self._is_red(h.left) and self._is_red(h.left.left):
-            h = self._rotate_right(h)
-        # Split a 4-node into 3 2-nodes
-        if self._is_red(h.right) and self._is_red(h.left):
-            self._flip_colors(h)
-
-        # Update node attributes
-        self._update_node(h)
-        return h
-
-    def _rank(self, k, x=None):
-        if x is None:
-            return 0
-        if k < x.key:
-            return self._rank(k, x.left)
-        elif k > x.key:
-            return 1 + self._size(x.left) + self._rank(k, x.right)
-        else:
-            ell = x.left
-            while ell and ell.key == x.key:
-                ell = ell.left
-            return self._size(ell)
-
-    def _in_order_range(self, lo, hi, x=None, q=None, op=None):
-        """Recursively range search the BST for keys from `lo` to `hi`."""
-        if x is None:
-            return
-        if q is None:
-            q = Queue()
-        # Operate on nodes in key order, within range
-        if lo < x.key or (x.left and lo == x.left.key):
-            self._in_order_range(lo, hi, x.left, q, op)
-        if lo <= x.key <= hi:
-            q.enqueue(op(x) if op else x.key)
-        if hi > x.key or (x.right and hi == x.right.key):
-            self._in_order_range(lo, hi, x.right, q, op)
-        return list(q)
-
-
 # -----------------------------------------------------------------------------
 #         Functions
 # -----------------------------------------------------------------------------
@@ -1092,8 +735,7 @@ def invert(st):
 
 
 # Aliases
-MultiValST = MultiValRedBlackBST
-MultiKeyST = MultiKeyRedBlackBST
+MultiST = MultiValRedBlackBST  # use "multi-key" to be consistent with book
 
 
 # -----------------------------------------------------------------------------
@@ -1107,42 +749,19 @@ if __name__ == '__main__':
 
     # Plot multi-key trees vs their unique-key counterparts
     t = BST(items, cache=True)
-    tm = MultiKeyBST(items, cache=True)
+    tm = MultiValBST(items, cache=True)
     tm['X'] = 56
     tm['X'] = 69
     TreeArtist(t).draw(fignum=1, label_vals=True)
     TreeArtist(tm).draw(fignum=2, label_vals=True)
-    assert tm.keys(lo='P') == list('PRSXXX')
-    assert tm.size(lo='P') == 6
 
     t = RedBlackBST(items, cache=True)
-    tm = MultiKeyRedBlackBST(items, cache=True)
+    tm = MultiValRedBlackBST(items, cache=True)
     TreeArtist(t).draw(fignum=3, label_vals=True)
     TreeArtist(tm).draw(fignum=4, label_vals=True)
     tm['X'] = 56
     tm['X'] = 69
-    assert tm.keys(lo='P') == list('PRSXXX')
-    assert tm.size(lo='P') == 6
     TreeArtist(tm).draw(fignum=5, label_vals=True)
-
-    # b = MultiKeySet(keys)
-    # bm = MultiSet(keys)
-    # # print(b)
-    # # print(bm)
-    # TreeArtist(b._st).draw(fignum=1, label_vals=True)
-    # TreeArtist(bm._st).draw(fignum=2, label_vals=True)
-
-    # Minimal code, but `delete` only removes one at a time, and the results
-    # are inconsistent with typical definitions of a mathematical multiset.
-    # import string
-    # U = string.ascii_lowercase
-    # A = MultiKeyMathSet(U, 'aabb')
-    # B = MultiKeyMathSet(U, 'bbbc')
-    # print('--- multi-key ---')
-    # print(A | B)
-    # print(A & B)
-    # print(A - B)
-    # print(A ^ B)
 
 # =============================================================================
 # =============================================================================

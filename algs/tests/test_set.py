@@ -15,7 +15,6 @@ import string
 from algs.tests.test_search import err_test
 from algs.search.set import (Set, HashSet,
                              MultiHashSet, MultiSet,
-                             MultiKeyHashSet, MultiKeySet,
                              MathSet, MathMultiSet)
 
 # TODO
@@ -23,11 +22,11 @@ from algs.search.set import (Set, HashSet,
 #   * deprecate `delete` -> `remove`.
 
 # Determine which classes to test
-UNORDERED_SETS = set([HashSet, MultiHashSet, MultiKeyHashSet])
-ORDERED_SETS = set([Set, MultiSet, MultiKeySet])
+UNORDERED_SETS = set([HashSet, MultiHashSet])
+ORDERED_SETS = set([Set, MultiSet])
 MATH_SETS = set([MathSet, MathMultiSet])
 
-MULTISETS = set([MultiHashSet, MultiSet, MultiKeyHashSet, MultiKeySet])
+MULTISETS = set([MultiHashSet, MultiSet])
 MATH_MULTISETS = set([MathMultiSet])
 
 ALL_SETS = UNORDERED_SETS | ORDERED_SETS | MATH_SETS

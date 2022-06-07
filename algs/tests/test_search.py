@@ -22,8 +22,7 @@ from algs.search import (SequentialSearchST, BinarySearchST, ArrayST, BST,
                          LinearProbingHashST, LazyLinearProbingHashST,
                          DoubleProbingHashST, DoubleHashingHashST,
                          CuckooHashST,
-                         MultiValBST, MultiValRedBlackBST, MultiValHashST,
-                         MultiKeyBST, MultiKeyRedBlackBST, MultiKeyHashST)
+                         MultiValBST, MultiValRedBlackBST, MultiValHashST)
 from algs.search.set import invert
 
 rng = np.random.default_rng(seed=565656)
@@ -57,23 +56,18 @@ UNORDERED_STS = set([SequentialSearchST, ArrayST,
                      SeparateChainingHashST, SeparateChainingLiteHashST,
                      LinearProbingHashST, LazyLinearProbingHashST,
                      DoubleProbingHashST, DoubleHashingHashST,
-                     CuckooHashST, MultiValHashST, MultiKeyHashST])
+                     CuckooHashST, MultiValHashST])
 
 ORDERED_STS = set([BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr,
                    ArrayBST, RedBlackBST, TopDown234, TopDown234_nr,
                    BottomUp234, TopDown234bothways, Unbalanced23, AVLTree,
-                   MultiValBST, MultiValRedBlackBST,
-                   MultiKeyBST, MultiKeyRedBlackBST])
+                   MultiValBST, MultiValRedBlackBST ])
 
 MULTIVAL_STS = set([MultiValHashST, MultiValBST, MultiValRedBlackBST])
 
-UNORDERED_MULTIKEY_STS = set([MultiKeyHashST])
-ORDERED_MULTIKEY_STS = set([MultiKeyBST, MultiKeyRedBlackBST])
-MULTIKEY_STS = UNORDERED_MULTIKEY_STS | ORDERED_MULTIKEY_STS
-
 ALL_STS = UNORDERED_STS | ORDERED_STS
 
-SINGLEVAL_STS = ALL_STS - MULTIVAL_STS - MULTIKEY_STS
+SINGLEVAL_STS = ALL_STS - MULTIVAL_STS
 
 NO_DELETE = set([ArrayBST,
                  Unbalanced23,
@@ -99,18 +93,12 @@ EXPECT_STR = 'SEARCHEXAMPLE'
 
 @pytest.fixture
 def expect_keys(ST):
-    if 'MultiKey' in ST.__name__:
-        return list(EXPECT_STR)
-    else:
-        return set(EXPECT_STR)
+    return set(EXPECT_STR)
 
 
 @pytest.fixture
 def expect_ranks(ST, expect_keys):
-    if 'MultiKey' in ST.__name__:
-        return [0, 0, 2, 3, 3, 3, 6, 7, 8, 9, 10, 11, 12]
-    else:
-        return range(len(expect_keys))
+    return range(len(expect_keys))
 
 
 @pytest.fixture
@@ -214,7 +202,7 @@ class TestUnorderedOps:
             assert sorted(st.values()) == sorted([v for k, v in expect_items])
             assert sorted(st.items()) == sorted(expect_items)
 
-    @pytest.mark.parametrize('ST', ALL_STS - MULTIKEY_STS - NO_DELETE)
+    @pytest.mark.parametrize('ST', ALL_STS - NO_DELETE)
     class TestDelete:
         def test_delete_one(self, ST, items, cache, expect_keys):
             # Delete arbitrary key, starting with same table
@@ -345,18 +333,8 @@ class TestOrderedOps:
             assert st.size(lo='P') == 4
             assert st.keys('F', 'P') == list('HLMP')
             assert st.size('F', 'P') == 4
-            if 'MultiKey' in st.__class__.__name__:
-                # test multiple lo keys
-                assert st.keys(hi='P') == list('AACEEEHLMP')
-                assert st.size(hi='P') == 10
-                # test multiple high keys
-                st['X'] = 56
-                st['X'] = 69
-                assert st.keys(lo='P') == list('PRSXXX')
-                assert st.size(lo='P') == 6
-            else:
-                assert st.keys(hi='P') == list('ACEHLMP')
-                assert st.size(hi='P') == 7
+            assert st.keys(hi='P') == list('ACEHLMP')
+            assert st.size(hi='P') == 7
 
         def test_select_raises(self, st):
             err_test(st, 'select', -1, err_type=IndexError)  # too small
@@ -388,7 +366,7 @@ class TestOrderedOps:
         assert st.items() == sorted(expect_items)
         assert st.items('F', 'P') == sorted(expect_items)[3:7]
 
-    @pytest.mark.parametrize('ST', ORDERED_STS - MULTIKEY_STS - NO_DELETE)
+    @pytest.mark.parametrize('ST', ORDERED_STS - NO_DELETE)
     class TestOrderedDelete:
         def test_delete_min(self, st, expect_keys):
             k = st.min()
@@ -468,60 +446,6 @@ class TestMultiVals:
     def test_invert(self, st):
         assert st == invert(invert(st))
 
-
-# -----------------------------------------------------------------------------
-#         Test MultiKeySTs
-# -----------------------------------------------------------------------------
-@pytest.mark.parametrize('ST', MULTIKEY_STS)
-@pytest.mark.parametrize('cache', [False, True])
-class TestMultiKeys:
-    def test_size(self, st):
-        assert st.size() == len(EXPECT_STR)  # includes ALL keys
-
-    def test_get(self, st, expect_multi):
-        """Only return one value. Should be in the expected Bag."""
-        for k, v in expect_multi:
-            assert st[k] in v
-
-    def test_put_iterable(self, st):
-        """Only return one value. Should be in the expected Bag."""
-        st['X'] = [1, 2, 3]
-        assert st['X'] in [7, [1, 2, 3]]
-        st['Y'] = [4, 5, 6]
-        assert st['Y'] in [[4, 5, 6]]
-        st['Y'] = 7
-        assert st['Y'] in [[4, 5, 6], 7]
-        st['A'] = 'hello'
-        assert st['A'] in [2, 8, 'hello']
-
-    def test_delete(self, st, expect_keys):
-        """Delete should remove *all* instances of duplicates."""
-        for k in set(expect_keys):
-            del st[k]
-            assert k not in st
-        assert st.is_empty
-
-
-@pytest.mark.parametrize('ST', ORDERED_MULTIKEY_STS)
-@pytest.mark.parametrize('cache', [False, True])
-class TestOrderedMultiKeys:
-    def test_rank(self, st, expect_ranks):
-        for i, c in zip(expect_ranks, sorted(EXPECT_STR)):
-            assert st.rank(c) == i
-
-    def test_select(self, st):
-        for i, c in enumerate(sorted(EXPECT_STR)):
-            assert st.select(i) == c
-
-    def test_delete_min(self, st):
-        assert st.min() == 'A'
-        st.delete_min()  # remove 'A'
-        assert st.min() == 'C'
-
-    def test_delete_max(self, st):
-        assert st.max() == 'X'
-        st.delete_max()  # remove 'X'
-        assert st.max() == 'S'
 
 # =============================================================================
 # =============================================================================
