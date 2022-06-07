@@ -22,7 +22,7 @@ class LookupCSV():
     """A symbol table dicionary client for reading CSV files."""
 
     def __init__(self, filename, key_col=0, val_col=1, delim=',', header=None,
-                 multival=False):
+                 multival=False, verbose=True):
         """
         Parameters
         ----------
@@ -40,22 +40,29 @@ class LookupCSV():
             If True, store every value associated with the keys.
         """
         if multival:
-            self.st = MultiValHashST()
+            self.st = MultiST()
         else:
-            self.st = HashST()
+            self.st = ST()
         if header is None:
             header = 0
         # Build the dictionary from the file
         with open(Path(filename), 'r') as fp:
-            for line in fp.readlines()[header:]:
-                items = line.strip().split(delim)
-                k, v = items[key_col], items[val_col]
-                self.st[k] = v
+            iters = fp.readlines()[header:]
+        if verbose:
+            iters = tqdm(iters)
+        for line in iters:
+            items = line.strip().split(delim)
+            k, v = items[key_col], items[val_col]
+            self.st[k] = v
 
     def query(self, k):
         """Return the value associated with `k`."""
         if k in self.st:
             return self.st[k]
+
+    def query_range(self, lo, hi=None):
+        """Return all of the values between `lo` and `hi`."""
+        return self.st.values(lo, hi)
 
 
 class LookupIndex():
@@ -219,11 +226,10 @@ if __name__ == "__main__":
     # unique dates with floats
     filename = Path('../data/DJIA.csv')
     print(f"---{filename}---")
-    st = FullLookupCSV(filename)
-    q = '29-Oct-29'
-    print(f"{q}: {st.query(q, key_col=0)}")
-    print(f"{q}: {st.query(q, key_col=0, val_col=3)}")
-
+    st = LookupCSV(filename, key_col=0, val_col=3, verbose=True)
+    lo = '29-Oct-29'
+    hi = '11-Nov-29'
+    print(f"{lo, hi}: {st.query_range(lo, hi)}")
 
 # =============================================================================
 # =============================================================================
