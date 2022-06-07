@@ -98,6 +98,62 @@ class LookupIndex():
         print(str(k) + '\n  ' + '\n  '.join(v))
 
 
+# Exercise 3.5.22
+class FullLookupCSV():
+    """A symbol table dicionary client for reading CSV files."""
+
+    # TODO What about duplicate values in a column? e.g. I want to know all
+    # dates on which the DJIA Volume was a given number, or within a range.
+    def __init__(self, filename, delim=',', header=None):
+        """
+        Parameters
+        ----------
+        filename : str
+            The name of the delimited text file to read.
+        delim : str, optional
+            String on which to separate the input lines.
+        header : int, optional
+            Initial lines to skip when reading the file.
+        """
+        if header is None:
+            header = 0
+        # Build the dictionary from the file
+        with open(Path(filename), 'r') as fp:
+            # Build list of symbol tables
+            lines = fp.readlines()
+            items = lines[header].strip().split(delim)
+            self.sts = len(items)*[None]
+
+            for line in lines[header:]:
+                items = line.strip().split(delim)
+                for i, k in enumerate(items):
+                    if self.sts[i] is None:
+                        self.sts[i] = HashST()
+                    # TODO use header for column names instead of numbers
+                    # Each value is itself a symbol table for the value-index
+                    # self.sts[i][k] = HashST([(j, v) for j, v in enumerate(items)])
+                    self.sts[i][k] = list(items)
+
+    def query(self, k, key_col, val_col=None):
+        """Return the value associated with `k`.
+
+        Parameters
+        ----------
+        k : str
+            The key for which to search.
+        key_col : int
+            The 0-indexed column number to use for the keys.
+        val_col : int, optional
+            The 0-indexed column number to use for the values.
+        """
+        st = self.sts[key_col]
+        if k in st:
+            if val_col is None:
+                return st[k]
+            else:
+                return st[k][val_col]
+
+
 if __name__ == "__main__":
     filename = Path('../data/airports.csv')
     print(f"---{filename}---")
@@ -128,8 +184,16 @@ if __name__ == "__main__":
     st.print_query('Bacon, Kevin')
     st.print_query('Top Gun (1986)')
 
-    assert st.st == invert(st.ts)
-    assert st.ts == invert(st.st)
+    # assert st.st == invert(st.ts)
+    # assert st.ts == invert(st.st)
+
+    filename = Path('../data/DJIA.csv')
+    print(f"---{filename}---")
+    st = FullLookupCSV(filename)
+    q = '29-Oct-29'
+    print(f"{q}: {st.query(q, key_col=0)}")
+    print(f"{q}: {st.query(q, key_col=0, val_col=3)}")
+
 
 # =============================================================================
 # =============================================================================
