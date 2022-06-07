@@ -45,16 +45,16 @@ def expect_set(SET):
 
 
 @pytest.fixture
+def keys():
+    return list(EXPECT_STR)
+
+
+@pytest.fixture
 def expect_ranks(SET):
     if 'Multi' in SET.__name__:
         return [0, 0, 2, 3, 3, 3, 6, 7, 8, 9, 10, 11, 12]
     else:
         return range(len(EXPECT_STR))
-
-
-@pytest.fixture
-def keys():
-    return list(EXPECT_STR)
 
 
 @pytest.fixture
@@ -176,20 +176,26 @@ class TestOrderedOps:
         st.delete_max()  # remove 'X'
         assert st.max() == 'S'
 
-    def test_range(self, st, expect_set):
+    def test_range_search(self, st, expect_set):
         assert st == sorted(expect_set)
+        assert st.size() == len(expect_set)
         assert st.keys(lo='P') == list('PRSX')
         assert st.size(lo='P') == 4
         assert st.keys('F', 'P') == list('HLMP')
         assert st.size('F', 'P') == 4
         if 'Multi' in st.__class__.__name__:
+            # multiple lo keys
             assert st.keys(hi='P') == list('AACEEEHLMP')
             assert st.size(hi='P') == 10
+            # test multiple high keys
+            st.add('X')
+            st.add('X')
+            assert st.keys(lo='P') == list('PRSXXX')
+            assert st.size(lo='P') == 6
         else:
             assert st.keys(hi='P') == list('ACEHLMP')
             assert st.size(hi='P') == 7
 
-    # TODO fix *tests* for multi (and possibly MultiKeySet)
     # Rank for each key should be minimum index.
     # Select should return same key for multiple indices.
     def test_rank(self, st, expect_ranks, expect_set):
@@ -204,7 +210,6 @@ class TestOrderedOps:
         # Ex 3.2.33
         for k in st:
             assert st.select(st.rank(k)) == k
-        # TODO fails for multi since rank is lowest value for given key.
         for i, c in zip(expect_ranks, sorted(expect_set)):
             assert st.rank(st.select(i)) == i
 
