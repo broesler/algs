@@ -13,7 +13,7 @@ import numpy as np
 
 from abc import ABC, abstractmethod
 
-from algs.basics import Bag
+from algs.basics import Queue
 from algs.search.table import SymbolTable, OrderedMethods
 from algs.search.hash import LinearProbingHashST
 from algs.search.tree import BST
@@ -806,7 +806,8 @@ class MultiValHashST(LinearProbingHashST):
         self._cost = 1
         while self._keys[i] is not None:
             if k == self._keys[i]:
-                self._vals[i].add(v)
+                # Add a new value to an existing key
+                self._vals[i].enqueue(v)
                 return
             else:
                 i = (i + 1) % self.M
@@ -814,9 +815,27 @@ class MultiValHashST(LinearProbingHashST):
         else:
             # Put a new key in the table
             self._keys[i] = k
-            self._vals[i] = Bag()  # keep a list of values for each key
-            self._vals[i].add(v)
+            self._vals[i] = Queue()  # keep a list of values for each key
+            self._vals[i].enqueue(v)
             self.N += 1
+
+    def __getitem__(self, k):
+        return self._get(k).peek()
+
+    def get_all(self, k):
+        return list(self._get(k))
+
+    def _get(self, k):
+        i = self._hash(k)
+        self._cost = 1
+        while self._keys[i] is not None:
+            if k == self._keys[i]:
+                return self._vals[i]
+            else:
+                i = (i + 1) % self.M
+                self._cost += 1
+        else:
+            raise KeyError(k)
 
 
 class MultiValBST(BST):
@@ -826,27 +845,29 @@ class MultiValBST(BST):
     class _Node(BST._Node):
         def __init__(self, key, value=None):
             super().__init__(key, value)
-            self.val = Bag()  # store all values in a queue
-            self.val.add(value)
+            self.val = Queue()  # store all values in a queue
+            self.val.enqueue(value)
 
     @staticmethod
     def _set_func(x, v):
-        x.val.add(v)
+        x.val.enqueue(v)
+
+    def __getitem__(self, k):
+        return self._get_node(k).val.peek()
+
+    def get_all(self, k):
+        return list(self._get_node(k).val)
 
 
-class MultiValRedBlackBST(RedBlackBST):
+class MultiValRedBlackBST(RedBlackBST, MultiValBST):
     """Implements a balanced binary search tree, but allows multiple values to
     be associated with each key."""
 
     class _Node(RedBlackBST._Node):
         def __init__(self, key, value, *args, **kwargs):
             super().__init__(key, value, *args, **kwargs)
-            self.val = Bag()  # store all values in an iterable
-            self.val.add(value)
-
-    @staticmethod
-    def _set_func(x, v):
-        x.val.add(v)
+            self.val = Queue()  # store all values in an iterable
+            self.val.enqueue(value)
 
 
 # -----------------------------------------------------------------------------
@@ -890,28 +911,10 @@ if __name__ == '__main__':
     # tm['X'] = 69
     # TreeArtist(tm).draw(fignum=5, label_vals=True)
 
-    import string
-    U = string.ascii_lowercase[:12]
-
-    print('---MathSet---')
-    A = MathSet(U, keys='abcde')
-    B = MathSet(U, keys='defgh')
-    print(A)
-    print(A.complement())  # == 'fghij'
-    print(A | B)  # == 'abcdefgh'
-    print(A & B)  # == 'de'
-    print(A - B)  # == 'abc'
-    print(A ^ B)  # == 'abcfgh'
-
-    print('---BoolMathSet---')
-    A = BoolMathSet(U, keys='abcde')
-    B = BoolMathSet(U, keys='defgh')
-    print(A)
-    print(A.complement())  # == 'fghij'
-    print(A | B)  # == 'abcdefgh'
-    print(A & B)  # == 'de'
-    print(A - B)  # == 'abc'
-    print(A ^ B)  # == 'abcfgh'
+    # st = MultiValRedBlackBST(items)
+    # print(st['E'])
+    # print(st.get('E'))
+    # print(st.get_all('E'))
 
 # =============================================================================
 # =============================================================================

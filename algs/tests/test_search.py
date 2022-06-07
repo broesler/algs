@@ -12,7 +12,6 @@
 import numpy as np
 import pytest
 
-from algs.basics import Bag
 from algs.search import (SequentialSearchST, BinarySearchST, ArrayST, BST,
                          BST_nr, ThreadedST, ThreadedST_nr, ArrayBST,
                          RedBlackBST, TopDown234, TopDown234_nr,
@@ -404,16 +403,16 @@ def test_comparisons(items):
 # -----------------------------------------------------------------------------
 @pytest.fixture
 def expect_multi():
-    return [('A', Bag([2, 8])),
-            ('C', Bag([4])),
-            ('E', Bag([1, 6, 12])),
-            ('H', Bag([5])),
-            ('L', Bag([11])),
-            ('M', Bag([9])),
-            ('P', Bag([10])),
-            ('R', Bag([3])),
-            ('S', Bag([0])),
-            ('X', Bag([7]))
+    return [('A', [2, 8]),
+            ('C', [4]),
+            ('E', [1, 6, 12]),
+            ('H', [5]),
+            ('L', [11]),
+            ('M', [9]),
+            ('P', [10]),
+            ('R', [3]),
+            ('S', [0]),
+            ('X', [7])
             ]
 
 
@@ -425,17 +424,25 @@ class TestMultiVals:
 
     def test_get(self, st, expect_multi):
         for k, v in expect_multi:
-            assert st[k] == v
+            assert st[k] in v
+
+    def test_get_all(self, st, expect_multi):
+        for k, v in expect_multi:
+            assert st.get_all(k) == list(v)
 
     def test_put_iterable(self, st):
         st['X'] = [1, 2, 3]
-        assert st['X'] == Bag([7, [1, 2, 3]])
+        assert st['X'] in [7, [1, 2, 3]]
+        assert st.get_all('X') == [7, [1, 2, 3]]
         st['Y'] = [4, 5, 6]
-        assert st['Y'] == Bag([[4, 5, 6]])
+        assert st['Y'] in [[4, 5, 6]]
+        assert st.get_all('Y') == [[4, 5, 6]]
         st['Y'] = 7
-        assert st['Y'] == Bag([[4, 5, 6], 7])
+        assert st['Y'] in [[4, 5, 6], 7]
+        assert st.get_all('Y') == [[4, 5, 6], 7]
         st['A'] = 'hello'
-        assert st['A'] == Bag([2, 8, 'hello'])
+        assert st['A'] in [2, 8, 'hello']
+        assert st.get_all('A') == [2, 8, 'hello']
 
     def test_delete(self, st):
         for k in st.keys():
