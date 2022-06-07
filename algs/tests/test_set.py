@@ -231,6 +231,11 @@ def B(SET, U):
     return SET(U, 'DEF')
 
 
+@pytest.fixture
+def disjoint_to_A(SET, U):
+    return SET(U, 'FGHIJ')
+
+
 @pytest.mark.parametrize('SET', MATH_SETS)
 class TestMathSet:
     def test_empty_set(self, empty_set, A, U):
@@ -293,6 +298,9 @@ class TestMathSet:
         assert A <= U
         assert A != U
 
+    def test_disjoint(self, A, disjoint_to_A):
+        assert A.is_disjoint(disjoint_to_A)
+
 
 # -----------------------------------------------------------------------------
 #         Multisets
@@ -310,6 +318,11 @@ def Bm(SET, U):
 @pytest.fixture
 def Cm(SET, U):
     return SET(U, 'AAABBCC')
+
+
+@pytest.fixture
+def disjoint_to_Am(SET, U):
+    return SET(U, 'CCDEEF')
 
 
 @pytest.mark.parametrize('SET', MATH_MULTISETS)
@@ -365,6 +378,9 @@ class TestMultiSets:
         assert Cm >= Am
         assert Am <= Cm
         assert Am != Cm
+
+    def test_disjoint(self, Am, disjoint_to_Am):
+        assert Am.is_disjoint(disjoint_to_Am)
 
 
 # =============================================================================
