@@ -1053,32 +1053,33 @@ if __name__ == '__main__':
     items = list((c, i) for i, c in enumerate(keys))
 
     # Plot multi-key trees vs their unique-key counterparts
-    # t = BST(items)
-    # tm = MultiKeyBST(items)
-    # tm['X'] = 13
-    # tm['X'] = 14
-    # tm['V'] = 69
-    # TreeArtist(t).draw(fignum=1, label_vals=True)
-    # TreeArtist(tm).draw(fignum=2, label_vals=True)
+    t = BST(items)
+    tm = MultiKeyBST(items)
+    tm['X'] = 13
+    tm['X'] = 14
+    tm['V'] = 69
+    TreeArtist(t).draw(fignum=1, label_vals=True)
+    TreeArtist(tm).draw(fignum=2, label_vals=True)
     # tm.delete_max()
-    # TreeArtist(tm).draw(fignum=3, label_vals=True)
+    del tm['X']
+    TreeArtist(tm).draw(fignum=3, label_vals=True)
 
-    t = RedBlackBST(items)
-    tm = MultiKeyRedBlackBST(items)
-    TreeArtist(t).draw(fignum=3, label_vals=True)
-    TreeArtist(tm).draw(fignum=4, label_vals=True)
-    # tm['A'] = 1
-    # tm['B'] = 1
-    # tm['A'] = 1
-    # tm['B'] = 1
-    # tm['A'] = 1
-    # tm['B'] = 1
-    # tm['A'] = 1
-    tm['X'] = 69
-    tm['X'] = 69
-    tm['X'] = 69
-    # del tm['E']
-    TreeArtist(tm).draw(fignum=5, label_vals=True)
+    # t = RedBlackBST(items)
+    # tm = MultiKeyRedBlackBST(items)
+    # TreeArtist(t).draw(fignum=3, label_vals=True)
+    # TreeArtist(tm).draw(fignum=4, label_vals=True)
+    # # tm['A'] = 1
+    # # tm['B'] = 1
+    # # tm['A'] = 1
+    # # tm['B'] = 1
+    # # tm['A'] = 1
+    # # tm['B'] = 1
+    # # tm['A'] = 1
+    # tm['X'] = 69
+    # tm['X'] = 69
+    # tm['X'] = 69
+    # # del tm['E']
+    # TreeArtist(tm).draw(fignum=5, label_vals=True)
 
     # b = MultiKeySet(keys)
     # bm = MultiSet(keys)

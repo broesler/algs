@@ -481,7 +481,7 @@ class TestMultiKeys:
 
 @pytest.mark.parametrize('ST', ORDERED_MULTIKEY_STS)
 @pytest.mark.parametrize('cache', [False, True])
-class TestMultiKeys:
+class TestOrderedMultiKeys:
     def test_rank(self, st, expect_ranks):
         for i, c in zip(expect_ranks, sorted(EXPECT_STR)):
             assert st.rank(c) == i
