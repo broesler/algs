@@ -15,7 +15,9 @@ from tqdm import tqdm
 from algs.basics import Bag
 from algs.search import ST, MultiST, HashST, MultiHashST, invert
 
-# TODO add `header=True` to parse header line
+# TODO 
+# * add `header=True` to parse header line
+# * pass data types to use instead of strings
 
 
 class LookupCSV():
