@@ -14,6 +14,8 @@ import time
 
 from tqdm import tqdm
 
+from util import count_lines
+
 
 class FrequencyCounter():
     """Class to count the frequencies of word occurrences in a given input.
@@ -48,19 +50,11 @@ class FrequencyCounter():
         self.cost = list()  # count compares for each `put` operation
         self.time = list()  # track actual timing of each `put` operation
 
-    @staticmethod
-    def count_lines(fp):
-        """Scan through file to count the number of lines."""
-        for i, line in enumerate(fp, 1):
-            pass
-        fp.seek(0)  # rewind file
-        return i
-
     def count_frequencies(self, filename, minlen=1):
         """Build symbol table of word counts, and find the max."""
         # Compute the frequency counts
         with open(filename, 'r') as fp:
-            for line in tqdm(fp, total=self.count_lines(fp)):
+            for line in tqdm(fp, total=count_lines(fp)):
                 for word in self.pat.findall(line.lower()):
                     if len(word) >= minlen:
                         self.N += 1  # count all words matching criterion
