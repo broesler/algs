@@ -176,16 +176,22 @@ class TestOrderedOps:
         st.delete_max()  # remove 'X'
         assert st.max() == 'S'
 
-    def test_range(self, st, expect_set):
+    def test_range_search(self, st, expect_set):
         assert st == sorted(expect_set)
+        assert st.size() == len(expect_set)
         assert st.keys(lo='P') == list('PRSX')
         assert st.size(lo='P') == 4
         assert st.keys('F', 'P') == list('HLMP')
         assert st.size('F', 'P') == 4
         if 'Multi' in st.__class__.__name__:
-            # TODO fails for MultiKeyRedBlackBST.
+            # multiple lo keys
             assert st.keys(hi='P') == list('AACEEEHLMP')
             assert st.size(hi='P') == 10
+            # test multiple high keys
+            st.add('X')
+            st.add('X')
+            assert st.keys(lo='P') == list('PRSXXX')
+            assert st.size(lo='P') == 6
         else:
             assert st.keys(hi='P') == list('ACEHLMP')
             assert st.size(hi='P') == 7

@@ -13,7 +13,7 @@ import random
 
 from abc import ABC, abstractmethod
 
-from algs.basics import Bag
+from algs.basics import Bag, Queue
 from algs.search.table import SymbolTable, OrderedMethods
 from algs.search.hash import LinearProbingHashST
 from algs.search.tree import BST
@@ -184,6 +184,9 @@ class Set(OrderedSet):
         self._st = RedBlackBST()
         super().__init__(keys)
 
+    def size(self, lo=None, hi=None):
+        return self._st.size(lo, hi)
+
     @property
     def _N(self):
         return self._st._N
@@ -302,6 +305,9 @@ class MultiSet(MultiHashSet, Set):
         """
     # No need to even implement anything?! MultiHashSet does the work, and Set
     # just adds on the ordered methods based on the keys.
+
+    def size(self, lo=None, hi=None):
+        return sum(self._st.values(lo, hi))
 
     def rank(self, k):
         """Return the number of keys strictly less than `k`, including multiple
@@ -852,6 +858,9 @@ class MultiKeyBST(BST):
         {BST._attribs_doc}
         """
 
+    def size(self, lo=None, hi=None):
+        return len(self.keys(lo, hi))  # lazy way but it works
+
     def _set(self, k, v, x=None):
         # subtree is empty, create a new node
         if x is None:
@@ -864,7 +873,7 @@ class MultiKeyBST(BST):
         self._cost += 1
         if k < x.key:
             x.left = self._set(k, v, x.left)
-        elif k > x.key: 
+        elif k > x.key:
             x.right = self._set(k, v, x.right)
         else:  # k == x.key
             # Always insert duplicate keys immediately to the right
@@ -931,6 +940,21 @@ class MultiKeyBST(BST):
         self._update_node(x)
         return x
 
+    def _in_order_range(self, lo, hi, x=None, q=None, op=None):
+        """Recursively range search the BST for keys from `lo` to `hi`."""
+        if x is None:
+            return
+        if q is None:
+            q = Queue()
+        # Operate on nodes in key order, within range
+        if lo < x.key or (x.left and lo == x.left.key):
+            self._in_order_range(lo, hi, x.left, q, op)
+        if lo <= x.key <= hi:
+            q.enqueue(op(x) if op else x.key)
+        if hi > x.key or (x.right and hi == x.right.key):
+            self._in_order_range(lo, hi, x.right, q, op)
+        return list(q)
+
 
 # Exercise 3.5.10
 class MultiKeyRedBlackBST(RedBlackBST):
@@ -940,6 +964,9 @@ class MultiKeyRedBlackBST(RedBlackBST):
         """
     # NOTE only changes in deletion are a while loop to check if the key is
     # still in the table O(m(k)*lg N) where m(k) is the multiplicity of k.
+
+    def size(self, lo=None, hi=None):
+        return len(self.keys(lo, hi))
 
     def __delitem__(self, k):
         """Delete all instances of `k` from the table."""
@@ -959,7 +986,7 @@ class MultiKeyRedBlackBST(RedBlackBST):
         self._empty_check()
         # If root is a 2-node, make it a 3-node
         if (not self._is_red(self._root.left) and
-              not self._is_red(self._root.right)):
+                not self._is_red(self._root.right)):
             self._root.color = self._RED
         k = self.min()
         while k in self:
@@ -974,7 +1001,7 @@ class MultiKeyRedBlackBST(RedBlackBST):
         self._empty_check()
         # If root is a 2-node, make it a 3-node
         if (not self._is_red(self._root.right) and
-              not self._is_red(self._root.left)):
+                not self._is_red(self._root.left)):
             self._root.color = self._RED
         k = self.max()
         while k in self:
@@ -1025,6 +1052,21 @@ class MultiKeyRedBlackBST(RedBlackBST):
                 ell = ell.left
             return self._size(ell)
 
+    def _in_order_range(self, lo, hi, x=None, q=None, op=None):
+        """Recursively range search the BST for keys from `lo` to `hi`."""
+        if x is None:
+            return
+        if q is None:
+            q = Queue()
+        # Operate on nodes in key order, within range
+        if lo < x.key or (x.left and lo == x.left.key):
+            self._in_order_range(lo, hi, x.left, q, op)
+        if lo <= x.key <= hi:
+            q.enqueue(op(x) if op else x.key)
+        if hi > x.key or (x.right and hi == x.right.key):
+            self._in_order_range(lo, hi, x.right, q, op)
+        return list(q)
+
 
 # -----------------------------------------------------------------------------
 #         Functions
@@ -1055,31 +1097,22 @@ if __name__ == '__main__':
     # Plot multi-key trees vs their unique-key counterparts
     t = BST(items)
     tm = MultiKeyBST(items)
-    tm['X'] = 13
-    tm['X'] = 14
-    tm['V'] = 69
+    tm['X'] = 56
+    tm['X'] = 69
     TreeArtist(t).draw(fignum=1, label_vals=True)
     TreeArtist(tm).draw(fignum=2, label_vals=True)
-    # tm.delete_max()
-    del tm['X']
-    TreeArtist(tm).draw(fignum=3, label_vals=True)
+    assert tm.keys(lo='P') == list('PRSXXX')
+    assert tm.size(lo='P') == 6
 
-    # t = RedBlackBST(items)
-    # tm = MultiKeyRedBlackBST(items)
-    # TreeArtist(t).draw(fignum=3, label_vals=True)
-    # TreeArtist(tm).draw(fignum=4, label_vals=True)
-    # # tm['A'] = 1
-    # # tm['B'] = 1
-    # # tm['A'] = 1
-    # # tm['B'] = 1
-    # # tm['A'] = 1
-    # # tm['B'] = 1
-    # # tm['A'] = 1
-    # tm['X'] = 69
-    # tm['X'] = 69
-    # tm['X'] = 69
-    # # del tm['E']
-    # TreeArtist(tm).draw(fignum=5, label_vals=True)
+    t = RedBlackBST(items)
+    tm = MultiKeyRedBlackBST(items)
+    TreeArtist(t).draw(fignum=3, label_vals=True)
+    TreeArtist(tm).draw(fignum=4, label_vals=True)
+    tm['X'] = 56
+    tm['X'] = 69
+    assert tm.keys(lo='P') == list('PRSXXX')
+    assert tm.size(lo='P') == 6
+    TreeArtist(tm).draw(fignum=5, label_vals=True)
 
     # b = MultiKeySet(keys)
     # bm = MultiSet(keys)
