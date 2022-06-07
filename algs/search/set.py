@@ -20,6 +20,7 @@ from algs.search.tree import BST
 from algs.search.balanced_tree import RedBlackBST
 
 __all__ = ['UnorderedSet', 'OrderedSet',
+           'HashSet', 'Set',
            'MultiSet', 'MultiHashSet',
            'MathSet', 'MathMultiSet',
            'MultiValHashST', 'MultiValBST', 'MultiValRedBlackBST',
