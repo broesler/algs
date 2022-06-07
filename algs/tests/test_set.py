@@ -15,7 +15,7 @@ import string
 from algs.tests.test_search import err_test
 from algs.search.set import (Set, HashSet,
                              MultiHashSet, MultiSet,
-                             MathSet, MathMultiSet)
+                             MathSet, BoolMathSet, MathMultiSet)
 
 # TODO
 #   * implement Set and HashSet using built-in `set`?
@@ -24,7 +24,7 @@ from algs.search.set import (Set, HashSet,
 # Determine which classes to test
 UNORDERED_SETS = set([HashSet, MultiHashSet])
 ORDERED_SETS = set([Set, MultiSet])
-MATH_SETS = set([MathSet, MathMultiSet])
+MATH_SETS = set([MathSet, MathMultiSet, BoolMathSet])
 
 MULTISETS = set([MultiHashSet, MultiSet])
 MATH_MULTISETS = set([MathMultiSet])

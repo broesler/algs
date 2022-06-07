@@ -9,11 +9,11 @@ Implements Set and HashSet APIs using symbol tables. See §3.5.
 """
 # =============================================================================
 
-import random
+import numpy as np
 
 from abc import ABC, abstractmethod
 
-from algs.basics import Bag, Queue
+from algs.basics import Bag
 from algs.search.table import SymbolTable, OrderedMethods
 from algs.search.hash import LinearProbingHashST
 from algs.search.tree import BST
@@ -309,12 +309,8 @@ class MultiSet(MultiHashSet, Set):
 class MathSet(HashSet):
     __doc__ = f"""Implements a mathematical set with unique keys.
 
-        .. note:: The named operations in a `MathSet` differ from a Python
-        `set` in that they operate in-place and return `None`, instead of
-        returning a new set.
-
         {HashSet.__doc__}
-        U : HashSet
+        U : set
             The "universe" set of all possible keys allowed in this set. If
             a union or XOR operation is performed between this set and another
             set containing keys outside of the universe, only keys allowed
@@ -327,6 +323,8 @@ class MathSet(HashSet):
         ----------
         U : iterable
             An iterable of the entire universe of allowed keys.
+        keys : iterable, optional
+            An iterable of the keys to add to the set.
         """
         self.U = HashSet(U)
         super().__init__(keys)
@@ -463,6 +461,133 @@ class MathSet(HashSet):
                 self.delete(k)
             elif k in self.U:
                 self.add(k)
+        return self
+
+
+# Exercise 3.5.17
+class BoolMathSet(MathSet, HashSet):
+    __doc__ = f"""Implements a mathematical set with unique keys using boolean
+        arrays.
+
+        .. note:: This implementation uses a hash table to index a boolean
+        array of set membership. Operations are performed using logical boolean
+        operations with the values of another `BoolMathSet`.
+
+        {HashSet.__doc__}
+        U : set
+            The "universe" set of all possible keys allowed in this set. If
+            a union or XOR operation is performed between this set and another
+            set containing keys outside of the universe, only keys allowed
+            within this universe will be added.
+        """
+
+    def __init__(self, U, keys=None):
+        """
+        Parameters
+        ----------
+        U : iterable
+            An iterable of the entire universe of allowed keys.
+        keys : iterable, optional
+            An iterable of the keys to add to the set.
+        """
+        self._st = LinearProbingHashST.fromkeys(U, value=False)
+        self._st._vals = np.r_[self._st._vals].astype(bool)
+        keys = keys or []
+        for k in keys:
+            self.add(k)
+
+    def add(self, k):
+        if k not in self._st:
+            raise ValueError(f"Key {k} is not in universe!")
+        self._st[k] = True
+
+    def size(self):
+        return len(self._keys)
+
+    def __delitem__(self, k):
+        if k in self._st and self._st is True:
+            self._st[k] = False
+        else:
+            raise KeyError(k)
+
+    def _keys(self):
+        return [k for k, v in self._st.items() if v is True]
+
+    def __iter__(self):
+        yield from self._keys()
+
+    def complement(self):
+        """Return a set of the universe of keys except those in this set."""
+        c = self.__class__(self._st._keys)
+        c._st._vals = ~self._st._vals  # invert the set
+        return c
+
+    def union(self, a):
+        """Return a set of elements either in this set or in `a`."""
+        c = self.__class__(self._st._keys)
+        c._st._vals = self._st._vals | a._st._vals
+        return c
+
+    def intersection(self, a):
+        """Return a set of elements both in this set and in `a`."""
+        c = self.__class__(self._st._keys)
+        c._st._vals = self._st._vals & a._st._vals
+        return c
+
+    def difference(self, a):
+        """Return a set of elements that are in this set but not in `a`."""
+        c = self.__class__(self._st._keys)
+        c._st._vals = self._st._vals & ~a._st._vals
+        return c
+
+    def xor(self, a):
+        """Return a set of elements that are only in this set or in `a`."""
+        c = self.__class__(self._st._keys)
+        c._st._vals = self._st._vals ^ a._st._vals
+        return c
+
+    def is_superset(self, a):
+        """Return True if this set is a superset of `a`."""
+        if self.size() < a.size():
+            return False
+        return all((self._st._vals & a._st._vals) == a._st._vals)
+
+    def is_subset(self, a):
+        """Return True if this set is a subset of `a`."""
+        if self.size() > a.size():
+            return False
+        return all((self._st._vals & a._st._vals) == self._st._vals)
+
+    def is_disjoint(self, a):
+        """Return True if none of the elements in `a` are in this set."""
+        # return all((self._st._vals & a._st._vals) is False)
+        return self._is_null(self.intersection(a))
+
+    @staticmethod
+    def _is_null(x):
+        """Return True if the given set is the null set."""
+        return all(x._st._vals is False)
+
+    # In-place operators:
+    #   A = A | B
+    #   A |= B
+    #   A.__ior__(B)
+    # are all equivalent.
+
+    def __ior__(self, a):
+        self._st.vals |= a._st.vals
+        return self
+
+    def __iand__(self, a):
+        self._st.vals &= a._st.vals
+        return self
+
+    def __isub__(self, a):
+        self._st.vals &= ~a._st.vals
+        return self
+
+    def __ixor__(self, a):
+        self._st.vals ^= a._st.vals
         return self
 
 
@@ -747,21 +872,31 @@ if __name__ == '__main__':
     keys = list('SEARCHEXAMPLE')
     items = list((c, i) for i, c in enumerate(keys))
 
-    # Plot multi-key trees vs their unique-key counterparts
-    t = BST(items, cache=True)
-    tm = MultiValBST(items, cache=True)
-    tm['X'] = 56
-    tm['X'] = 69
-    TreeArtist(t).draw(fignum=1, label_vals=True)
-    TreeArtist(tm).draw(fignum=2, label_vals=True)
+    # # Plot multi-key trees vs their unique-key counterparts
+    # t = BST(items, cache=True)
+    # tm = MultiValBST(items, cache=True)
+    # tm['X'] = 56
+    # tm['X'] = 69
+    # TreeArtist(t).draw(fignum=1, label_vals=True)
+    # TreeArtist(tm).draw(fignum=2, label_vals=True)
 
-    t = RedBlackBST(items, cache=True)
-    tm = MultiValRedBlackBST(items, cache=True)
-    TreeArtist(t).draw(fignum=3, label_vals=True)
-    TreeArtist(tm).draw(fignum=4, label_vals=True)
-    tm['X'] = 56
-    tm['X'] = 69
-    TreeArtist(tm).draw(fignum=5, label_vals=True)
+    # t = RedBlackBST(items, cache=True)
+    # tm = MultiValRedBlackBST(items, cache=True)
+    # TreeArtist(t).draw(fignum=3, label_vals=True)
+    # TreeArtist(tm).draw(fignum=4, label_vals=True)
+    # tm['X'] = 56
+    # tm['X'] = 69
+    # TreeArtist(tm).draw(fignum=5, label_vals=True)
+
+    import string
+    U = string.ascii_lowercase
+    A = BoolMathSet(U, keys='abcde')
+    B = BoolMathSet(U, keys='defgh')
+    print(A)
+    print(A | B)
+    print(A & B)
+    print(A - B)
+    print(A ^ B)
 
 # =============================================================================
 # =============================================================================
