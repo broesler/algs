@@ -861,6 +861,11 @@ class MultiKeyBST(BST):
     def size(self, lo=None, hi=None):
         return len(self.keys(lo, hi))  # lazy way but it works
 
+    def __setitem__(self, k, v):
+        # Ignore caching on __setitem__
+        self._cost = 0
+        self._root = self._set(k, v, self._root)
+
     def _set(self, k, v, x=None):
         # subtree is empty, create a new node
         if x is None:
@@ -967,6 +972,12 @@ class MultiKeyRedBlackBST(RedBlackBST):
 
     def size(self, lo=None, hi=None):
         return len(self.keys(lo, hi))
+
+    def __setitem__(self, k, v):
+        self._cost = 0
+        self._root = self._set(k, v, self._root)
+        self._root.color = self._BLACK
+        self._update_node(self._root)
 
     def __delitem__(self, k):
         """Delete all instances of `k` from the table."""
@@ -1095,8 +1106,8 @@ if __name__ == '__main__':
     items = list((c, i) for i, c in enumerate(keys))
 
     # Plot multi-key trees vs their unique-key counterparts
-    t = BST(items)
-    tm = MultiKeyBST(items)
+    t = BST(items, cache=True)
+    tm = MultiKeyBST(items, cache=True)
     tm['X'] = 56
     tm['X'] = 69
     TreeArtist(t).draw(fignum=1, label_vals=True)
@@ -1104,8 +1115,8 @@ if __name__ == '__main__':
     assert tm.keys(lo='P') == list('PRSXXX')
     assert tm.size(lo='P') == 6
 
-    t = RedBlackBST(items)
-    tm = MultiKeyRedBlackBST(items)
+    t = RedBlackBST(items, cache=True)
+    tm = MultiKeyRedBlackBST(items, cache=True)
     TreeArtist(t).draw(fignum=3, label_vals=True)
     TreeArtist(tm).draw(fignum=4, label_vals=True)
     tm['X'] = 56
