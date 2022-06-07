@@ -23,7 +23,7 @@ __all__ = ['UnorderedSet', 'OrderedSet',
            'MultiSet', 'MultiHashSet',
            'MathSet', 'MathMultiSet',
            'MultiValHashST', 'MultiValBST', 'MultiValRedBlackBST',
-           'MultiST',
+           'MultiST', 'MultiHashST',
            'invert']
 
 
@@ -883,7 +883,8 @@ def invert(st):
 
 
 # Aliases
-MultiST = MultiValRedBlackBST  # use "multi-key" to be consistent with book
+MultiHashST = MultiValHashST
+MultiST = MultiValRedBlackBST
 
 
 # -----------------------------------------------------------------------------

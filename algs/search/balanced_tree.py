@@ -15,8 +15,8 @@ from algs.search.table import OrderedSymbolTable
 from algs.basics import Stack
 from algs.search.tree import BST
 
-__all__ = ['RedBlackBST', 'TopDown234', 'TopDown234_nr', 'TopDown234bothways',
-           'BottomUp234', 'Unbalanced23', 'AVLTree']
+__all__ = ['ST', 'RedBlackBST', 'TopDown234', 'TopDown234_nr', 
+           'TopDown234bothways', 'BottomUp234', 'Unbalanced23', 'AVLTree']
 
 
 class KeyChanged(Exception):
@@ -847,6 +847,9 @@ class RandomizedBST(BST):
             s.right, g = self._split(k, t.right, s.right, g)
         return s, g
 
+
+# Alias for convenience
+ST = RedBlackBST
 
 # -----------------------------------------------------------------------------
 #         Interactive test setup
