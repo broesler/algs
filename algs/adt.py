@@ -50,9 +50,7 @@ class Point2D():
         dy = self.y - other.y
         return np.arctan2(dy, dx)
 
-    # ------------------------------------------------------------------------- 
-    #         Comparators
-    # -------------------------------------------------------------------------
+    # Comparators
     # Use these methods with `sorted(points, key=Point2D.X_ORDER)`
     @staticmethod
     def X_ORDER(p):
@@ -78,9 +76,7 @@ class Point2D():
         """Compare points by their angle with this point, in -π to π."""
         return self.angle_to(p)
 
-    # ------------------------------------------------------------------------- 
-    #         Plotting
-    # -------------------------------------------------------------------------
+    # Plotting
     def draw(self, ax=None, **kwargs):
         """Plot the point in the specified axes."""
         if ax is None:
@@ -93,9 +89,7 @@ class Point2D():
             ax = plt.gca()
         ax.plot((self.x, other.x), (self.y, other.y), **kwargs)
 
-    # ------------------------------------------------------------------------- 
-    #         Internals
-    # -------------------------------------------------------------------------
+    # NOTE use np.isclose() here?
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return NotImplemented
@@ -111,8 +105,68 @@ class Point2D():
         return f"<{self.__class__.__name__}: {self.__str__()}>"
 
 
+class Interval1D():
+    """An interval along a single dimension, inclusive of its endpoints."""
+
+    def __init__(self, lo, hi):
+        self.lo = 0 if lo == 0 else lo  # avoid -0.0 issue
+        self.hi = 0 if hi == 0 else hi
+
+    @property
+    def length(self):
+        return self.hi - self.lo
+
+    def __len__(self):
+        return self.length
+
+    def __contains__(self, x):
+        """Return True if the interval contains the point `x`."""
+        return self.lo <= x <= self.hi
+
+    def contains(self, x):
+        return self.__contains__(x)
+
+    def intersects(self, other):
+        """Return True if this interval intersects `other`."""
+        return not ((self.hi < other.lo) or (other.hi < self.lo))
+
+    # Comparators
+    @staticmethod
+    def MIN_ORDER(x):
+        return x.lo
+
+    @staticmethod
+    def MAX_ORDER(x):
+        return x.hi
+
+    @staticmethod
+    def LEN_ORDER(x):
+        return x.length
+
+    # Plots
+    def draw(self, ax=None, marker_height=0.02, **kwargs):
+        """Draw the interval along the x-axis of `ax`."""
+        if ax is None:
+            ax = plt.gca()
+        ax.errorbar((self.lo, self.hi), (0, 0), yerr=marker_height, **kwargs)
+
+    # Internals
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return NotImplemented
+        return (self.lo == other.lo) and (self.hi == other.hi)
+
+    def __hash__(self):
+        return 31*hash(self.lo) + hash(self.hi)
+
+    def __str__(self):
+        return f"[{self.lo}, {self.hi}]"
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__}: {self.__str__()}>"
+
+
 if __name__ == "__main__":
-    import time
     # Generate N random points in the unit square
     rng = np.random.default_rng(seed=565656)
     N = 5
@@ -124,6 +178,14 @@ if __name__ == "__main__":
     p0 = Point2D(x0, y0)
     points = sorted(points, key=p0.DIST_TO_ORDER)
 
+    # Make two intervals
+    i0 = Interval1D(0.1, 0.4)
+    i1 = Interval1D(0.3, 0.5)
+    assert i0.intersects(i1)
+    assert 0.2 in i0
+    assert 0.45 not in i0
+    assert 0.45 in i1
+
     fig = plt.figure(1, clear=True, tight_layout=True)
     ax = fig.add_subplot()
     p0.draw(ax, c='C3')
@@ -132,9 +194,13 @@ if __name__ == "__main__":
         ax.text(p.x, p.y, f"{i}", ha='left', va='bottom')
         p0.draw_to(p, ax=ax)
         fig.canvas.draw()
+    i0.draw(c='C0')
+    i1.draw(c='C2')
 
-    ax.set(xlabel='x', xlim=(0, 1),
-           ylabel='y', ylim=(0, 1),)
+    ax.set(xlabel='x',
+           ylabel='y',)
+    ax.set_xlim(right=1)
+    ax.set_ylim(top=1)
     ax.grid(True)
     plt.show()
 
