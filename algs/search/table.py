@@ -18,6 +18,10 @@ __all__ = ['SymbolTable', 'OrderedSymbolTable',
            'SequentialSearchST', 'BinarySearchST', 'ArrayST']
 
 
+# TODO refactor ArrayST and BinarySearchST to use parallel "arrays" instead of
+# a list of Item objects to be true to the book implementations, as well as
+# more space efficient.
+
 # -----------------------------------------------------------------------------
 #         Define Abstract Base Classes
 # -----------------------------------------------------------------------------
@@ -198,12 +202,11 @@ class SymbolTable(ABC):
 
 
 class OrderedMethods(ABC):
-    # An abstract base class containing the ordered methods. Note that this
-    # class may not be subclasses without providing an __init__ method.
+    # A mix-in class containing the ordered methods. Note that this class may
+    # not be subclasses without providing an __init__ method.
 
     def size(self, lo=None, hi=None):
-        """Number of items in the table between keys `lo` and `hi`,
-        inclusive."""
+        """Number of keys in the table between `lo` and `hi`, inclusive."""
         if lo is None and hi is None:
             return self._N
 
