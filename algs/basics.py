@@ -726,7 +726,10 @@ class DoubleList(Collection):
         self._last = x
         x.next = None
 
-
+    # TODO implement
+    def swap(self, x, y):
+        """Swap the positions of nodes `x` and `y` in the list."""
+        pass
 
 
 
