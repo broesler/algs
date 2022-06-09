@@ -9,7 +9,7 @@ Menagerie of classes that use symbol tables, but don't quite fit in elsewhere.
 """
 # =============================================================================
 
-from algs.basics import Collection, Queue
+from algs.basics import Collection, Queue, DoubleList
 from algs.search import Set, HashSet, ST, HashST
 
 
@@ -18,82 +18,32 @@ class LRUCache(Collection):
     """An implementation of a cache using the least-recently-used (LRU)
     replacement policy."""
 
-    class _DoubleNode():
-        """A node in a doubly-linked list."""
-        def __init__(self, data, prev=None, next=None):
-            self.data = data
-            self.next = next
-            self.prev = prev
-
-        def __str__(self):
-            prev_str = str(repr(self.prev.data)) if self.prev else 'None'
-            next_str = str(repr(self.next.data)) if self.next else 'None'
-            return f"({repr(self.data)}:, P:{prev_str}, N:{next_str})"
-
-        def __repr__(self):
-            return f"<{self.__class__.__name__}: {self.__str__()}>"
-
     def __init__(self, items=None):
-        self._first = None  # pointers to ends of list
-        self._last = None
-        self._N = 0
+        self._items = DoubleList()
         self._st = HashST()  # store locations in the list by key
         items = items or []
         for item in items:
             self.access(item)
 
     @property
-    def size(self):
-        return self._N
+    def _N(self):
+        return self._items.size
 
     def access(self, item):
         """Add `item` to the front of the list if it does not already exist."""
         if item not in self._st:
-            x = self._DoubleNode(item, next=self._first)
-            if self.is_empty:
-                self._first = x
-                self._last = x
-            else:
-                self._first.prev = x
-            self._first = x
-            self._st[item] = x
-            self._N += 1
+            self._items.add_front(item)
+            self._st[item] = self._items._first
         else:
             # Move the item to the front of the list
             x = self._st[item]
-            # Item is already at the front
-            if self._first is x:
-                return
-            elif self._last is x:
-                x.prev.next = None
-                self._last = x.prev
-            else:
-                # item in middle of the list
-                x.prev.next = x.next
-                x.next.prev = x.prev
-            x.next = self._first
-            x.prev = None
-            self._first.prev = x
-            self._first = x
+            self._items.move_to_front(x)
 
     def remove(self):
         """Remove the least-recently used item from the back of the list."""
-        x = self._last
+        x = self._items.remove_back()
         del self._st[x.data]
-        self._last = x.prev
-        self._last.next = None
-        self._N -= 1
         return x.data
-
-    @property
-    def _items(self):
-        """Return a list of the cached items in order."""
-        out = list()
-        x = self._first
-        while x:
-            out.append(x.data)
-            x = x.next
-        return out
 
 
 # Exercise 3.5.27
@@ -249,6 +199,7 @@ if __name__ == '__main__':
     print('----- LRUCache -----')
     c = LRUCache(keys)
     print(c)
+    assert list(c._items) == list('ELPMAXHCRS')
     assert len(c) == len(set(keys))
     assert c.remove() == 'S'
     assert len(c) == len(set(keys))-1

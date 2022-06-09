@@ -18,7 +18,7 @@ from collections.abc import MutableMapping
 from copy import deepcopy
 
 __all__ = ['Collection', 'Bag', 'Stack', 'Queue', 'PriorityQueue', 'IndexPQ',
-           'RandomBag', 'RandomQueue']
+           'RandomBag', 'RandomQueue', 'DoubleList']
 
 
 class Collection(ABC):
@@ -595,6 +595,140 @@ class IndexPQ(Collection, MutableMapping):
             del self._qp[to_del]    # remove the item
         if to_del in self._items:
             del self._items[to_del]
+
+
+# Exercise 1.3.31
+class DoubleList(Collection):
+    """Implements a doubly-linked list."""
+
+    class _DoubleNode():
+        """A node in a doubly-linked list."""
+        def __init__(self, data, prev=None, next=None):
+            self.data = data
+            self.next = next
+            self.prev = prev
+
+        def __str__(self):
+            prev_str = str(repr(self.prev.data)) if self.prev else 'None'
+            next_str = str(repr(self.next.data)) if self.next else 'None'
+            return f"({repr(self.data)}:, P:{prev_str}, N:{next_str})"
+
+        def __repr__(self):
+            return f"<{self.__class__.__name__}: {self.__str__()}>"
+
+    def __init__(self, items=None):
+        self._first = None  # pointers to ends of list
+        self._last = None
+        self._N = None
+        items = items or []
+        for item in items:
+            self.add_back(item)
+
+    @property
+    def _items(self):
+        """Return a list of the items in order."""
+        out = list()
+        x = self._first
+        while x:
+            out.append(x.data)
+            x = x.next
+        return out
+
+    def add_front(self, item):
+        """Add an item to the front of the list."""
+        x = self._DoubleNode(item, next=self._first)
+        if self._first is None:
+            self._first = x
+            self._last = x
+        else:
+            self._first.prev = x
+        self._first = x
+
+    def add_back(self, item):
+        """Add an item to the back of the list."""
+        x = self._DoubleNode(item, prev=self._last)
+        if self._last is None:
+            self._first = x
+            self._last = x
+        else:
+            self._last.next = x
+        self._last = x
+
+    def remove_front(self):
+        """Remove and return the first node in the list."""
+        self._empty_check()
+        x = self._first
+        self._first = self._first.next
+        self._first.prev = None
+        return x
+
+    def remove_back(self):
+        """Remove the last node in the list."""
+        self._empty_check()
+        x = self._last
+        self._last = self._last.prev
+        self._last.next = None
+        return x
+
+    def remove(self, x):
+        """Remove a given Node from the list."""
+        if self._first is x:
+            self._first = x.next
+            self._first.prev = None
+        elif self._last is x:
+            self._last = x.prev
+            self._last.next = None
+        else:
+            x.prev.next = x.next
+            x.next.prev = x.prev
+
+    def insert_before(self, x, item):
+        """Insert an `item` before a given Node `x`."""
+        if self._first is x:
+           self.add_front(item) 
+        else:
+            y = self._DoubleNode(item, next=x, prev=x.prev)
+            x.prev.next = y
+            x.prev = y
+
+    def insert_after(self, x, item):
+        """Insert an `item` after a given Node `x`."""
+        if self._last is x:
+           self.add_back(item) 
+        else:
+            y = self._DoubleNode(item, next=x.next, prev=x)
+            x.next.prev = y
+            x.next = y
+
+    def move_to_front(self, x):
+        """Move a node to the front of the list."""
+        if self._first is x:
+            return
+        if self._last is x:
+            self._last = x.prev
+        x.prev.next = x.next
+        x.next.prev = x.prev
+        x.next = self._first
+        self._first.prev = x
+        self._first = x
+        x.prev = None
+
+    def move_to_back(self, x):
+        """Move a node to the back of the list."""
+        if self._last is x:
+            return
+        if self._first is x:
+            self._first = x.next
+        x.prev.next = x.next
+        x.next.prev = x.prev
+        x.prev = self._last
+        self._last.next = x
+        self._last = x
+        x.next = None
+
+
+
+
 
 
 # =============================================================================
