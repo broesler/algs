@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 #         Geometric
 # -----------------------------------------------------------------------------
 class Point2D:
@@ -114,6 +114,8 @@ class Interval1D:
     """An interval along a single dimension, inclusive of its endpoints."""
 
     def __init__(self, lo, hi):
+        if lo > hi:
+            lo, hi = hi, lo
         self.lo = 0 if lo == 0 else lo  # avoid -0.0 issue
         self.hi = 0 if hi == 0 else hi
 
@@ -165,7 +167,7 @@ class Interval1D:
         return 31*hash(self.lo) + hash(self.hi)
 
     def __str__(self):
-        return f"[{self.lo}, {self.hi}]"
+        return f"[{self.lo:.2f}, {self.hi:.2f}]"
 
     def __repr__(self):
         return f"<{self.__class__.__name__}: {self.__str__()}>"
@@ -209,6 +211,14 @@ class Interval2D:
         """Return True if this interval intersects `other`."""
         return self.x.intersects(other.x) and self.y.intersects(other.y)
 
+    def is_inside(self, other):
+        """Return True if this box is inside the other box."""
+        return self <= other
+
+    def __le__(self, other):
+        return ((self.x.lo >= other.x.lo) and (self.x.hi <= other.x.hi)
+                and (self.y.lo >= other.y.lo) and (self.y.hi <= other.y.hi))
+
     # Plots
     def draw(self, ax=None, facecolor='none', **kwargs):
         """Plot the box in the specified axes."""
@@ -237,7 +247,7 @@ class Interval2D:
         return f"<{self.__class__.__name__}: {self.__str__()}>"
 
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 #         Information Processing
 # -----------------------------------------------------------------------------
 class Date:
@@ -261,7 +271,7 @@ class Date:
         if not (1 <= month <= 12):
             raise ValueError(f"{month} must be between 1 and 12.")
         if not (1 <= day <= self.DAYS[month-1]):
-            raise ValueError(day, 
+            raise ValueError(day,
                              f"There are only {self.DAYS[month-1]} days in {month=}!")
         if month == 2 and day == 29 and not self.is_leap_year(year):
             raise ValueError(f"{month}/{day}/{year} is not a leap year!")
@@ -277,7 +287,7 @@ class Date:
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return NotImplemented
-        return (self.month == other.month 
+        return (self.month == other.month
                 and self.day == other.day
                 and self.year == other.year)
 
@@ -326,7 +336,7 @@ class Date:
 
 class Transaction:
     """A class representing a transaction with a client."""
-    
+
     def __init__(self, who, when, amount):
         assert isinstance(when, Date)
         assert not (np.isnan(amount) and np.isinf(amount))
@@ -382,7 +392,7 @@ class Transaction:
 
 if __name__ == "__main__":
     # Make a date
-    d0= Date('4/16/1990')
+    d0 = Date('4/16/1990')
     d1 = Date(4, 16, 1990)
     assert d0 == d1
     assert d0 < Date('6/8/2022')
@@ -417,7 +427,11 @@ if __name__ == "__main__":
 
     i2 = Interval2D(i0, i1)
     i3 = Interval2D(0.6, 0.5, 0.8, 0.8)
-    assert Point2D(0.2, 0.4) in i2
+    a = Point2D(0.2, 0.4)
+    assert a in i2
+
+    i4 = Interval2D(0.65, 0.55, 0.75, 0.75)
+    assert i4 <= i3
 
     fig = plt.figure(1, clear=True, tight_layout=True)
     ax = fig.add_subplot()
@@ -431,6 +445,8 @@ if __name__ == "__main__":
     i1.draw(c='C2')
     i2.draw(edgecolor='C3', lw=2)
     i3.draw(edgecolor='C4', lw=2)
+    i4.draw(edgecolor='C5', lw=2)
+    a.draw(c='C3')
 
     ax.set(xlabel='x',
            ylabel='y',)
