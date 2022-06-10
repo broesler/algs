@@ -204,7 +204,7 @@ class RandomQueue(Queue):
     def dequeue(self):
         """Remove and return a random item."""
         self._empty_check()
-        k = random.randint(0, self.size-1)
+        k = random.randrange(0, self.size)
         v = self._items[k]
         del self._items[k]
         return v
@@ -212,7 +212,7 @@ class RandomQueue(Queue):
     def sample(self):
         """Return a random item without deletion."""
         self._empty_check()
-        k = random.randint(0, self.size-1)
+        k = random.randrange(0, self.size)
         return self._items[k]
 
     def __iter__(self):
@@ -685,7 +685,7 @@ class DoubleList(Collection):
     def insert_before(self, x, item):
         """Insert an `item` before a given Node `x`."""
         if self._first is x:
-           self.add_front(item) 
+            self.add_front(item)
         else:
             y = self._DoubleNode(item, next=x, prev=x.prev)
             x.prev.next = y
@@ -694,7 +694,7 @@ class DoubleList(Collection):
     def insert_after(self, x, item):
         """Insert an `item` after a given Node `x`."""
         if self._last is x:
-           self.add_back(item) 
+            self.add_back(item)
         else:
             y = self._DoubleNode(item, next=x.next, prev=x)
             x.next.prev = y

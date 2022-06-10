@@ -9,7 +9,7 @@ Menagerie of classes that use symbol tables, but don't quite fit in elsewhere.
 """
 # =============================================================================
 
-from algs.basics import Collection, Queue, DoubleList
+from algs.basics import Collection, Queue, RandomQueue, DoubleList
 from algs.search import Set, HashSet, ST, HashST
 
 
@@ -193,6 +193,32 @@ class Uniqueue(Queue):
             super().enqueue(item)
 
 
+# Exercise 3.5.29
+class RandomST(HashST):
+    """Implements a symbol table with random access."""
+
+    def __init__(self, items=None, *args, **kwargs):
+        self._q = RandomQueue()
+        super().__init__(items, *args, **kwargs)
+
+    def __setitem__(self, k, v):
+        self._q.enqueue(k)
+        super().__setitem__(k, v)
+
+    # Could do:
+    # self._q._items.remove(k)
+    # super().__delitem__(k)
+    # but remove is O(N).
+    def __delitem__(self, k):
+        raise NotImplementedError('Deletion by key not supported! Use pop().')
+
+    def pop(self):
+        """Remove and return a random key."""
+        k = self._q.dequeue()
+        super().__delitem__(k)
+        return k
+
+
 if __name__ == '__main__':
     keys = list('SEARCHEXAMPLE')
 
@@ -237,6 +263,12 @@ if __name__ == '__main__':
     assert q.dequeue() == 'S'
     print(q)
 
+    print('----- RandomST -----')
+    items = [(k, i) for i, k in enumerate(keys)]
+    st = RandomST(items)
+    assert st['A'] == 8
+    print(st)
+    assert st.pop() in keys
 
 # =============================================================================
 # =============================================================================
