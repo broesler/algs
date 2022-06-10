@@ -234,6 +234,8 @@ if __name__ == '__main__':
     print('----- Uniqueue -----')
     q = Uniqueue(keys)
     print(q)
+    assert q.dequeue() == 'S'
+    print(q)
 
 
 # =============================================================================
