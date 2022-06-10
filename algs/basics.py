@@ -726,13 +726,46 @@ class DoubleList(Collection):
         self._last = x
         x.next = None
 
-    # TODO implement
-    def swap(self, x, y):
-        """Swap the positions of nodes `x` and `y` in the list."""
-        pass
+    def swap(self, a, b):
+        """Swap the positions of nodes `a` and `b` in the list."""
+        # Keep pointers to neighbors
+        a_next = a.next
+        a_prev = a.prev
+        # connect a to b's neighbors
+        a.next = b.next
+        a.prev = b.prev
+        if b.prev:
+            b.prev.next = a
+        else:
+            self._first = a
+        if b.next:
+            b.next.prev = a
+        else:
+            self._last = a
+        # connect b to a's neighbors
+        b.next = a_next
+        b.prev = a_prev
+        if a_prev:
+            a_prev.next = b
+        else:
+            self._first = b
+        if a_next:
+            a_next.prev = b
+        else:
+            self._last = b
 
 
-
+if __name__ == "__main__":
+    a = DoubleList('abcde')
+    print(a)
+    assert a._first.data == 'a'
+    assert a._last.data == 'e'
+    a.swap(a._first.next, a._last.prev)
+    print(a)
+    a.swap(a._first, a._last.prev)
+    print(a)
+    a.swap(a._last, a._first.next.next)
+    print(a)
 
 # =============================================================================
 # =============================================================================
