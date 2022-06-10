@@ -18,10 +18,12 @@ from algs.adt import Point2D
 rng = np.random.default_rng(seed=565656)
 N = 50
 
+# Generate N random points in the unit square
 points = []
 for i in range(N):
     points.append(Point2D(*rng.random(2)))
 
+# Naïve O(N²) algorithm
 D = np.full((N, N), np.nan)
 for i in range(N):
     for j in range(i):
@@ -37,11 +39,12 @@ fig = plt.figure(1, clear=True, constrained_layout=True)
 ax = fig.add_subplot()
 
 for p in points:
-    p.draw(ax, color=0.7*np.ones(3))
+    p.draw(color=0.7*np.ones(3))
 
-a.draw(ax, c='C3')
-b.draw(ax, c='C3')
-a.draw_to(b, ax, c='C3')
+# Highlight the closest pait
+a.draw(c='C3')
+b.draw(c='C3')
+a.draw_to(b, c='C3')
 
 ax.set(xlabel='x', xlim=(-0.02, 1.02),
        ylabel='y', ylim=(-0.02, 1.02),
