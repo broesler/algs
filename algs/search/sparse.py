@@ -9,8 +9,6 @@ Sparse vector and matrix classes using symbol tables.
 """
 # =============================================================================
 
-import numpy as np
-
 from algs.search.hash import HashST
 
 
@@ -35,6 +33,7 @@ class SparseVector:
         self.N = N
         self._st = HashST()
 
+    @property
     def size(self):
         """Return the number of elements in the vector."""
         return self._st.size()
@@ -43,10 +42,6 @@ class SparseVector:
         """Put value `v` at integer index `i`."""
         try:
             idxs, vals = iter(i), iter(v)
-            # if len(idxs) != len(vals):
-            #     raise ValueError('shape mismatch: value array of shape '
-            #             + f"({len(vals)},) could not be matched with an "
-            #             + f"indexing result of shape ({len(idxs)},).")
             for idx, val in zip(idxs, vals):
                 self._st[int(idx)] = val
         except TypeError:
@@ -81,11 +76,28 @@ class SparseVector:
         """Return the element-wise product of this vector with another."""
         if self.N != other.N:
             raise ValueError('dimension mismatch!')
+        # Make a copy
         A = self.__class__(self.N)
         for i, v in self._st.items():
             A[i] = v
+        # Multiply element-wise
         for i in A._st.keys():
             A[i] *= other[i]
+        return A
+
+    def __add__(self, other):
+        """Return the sum of this vector with another."""
+        if self.N != other.N:
+            raise ValueError('dimension mismatch!')
+        # Make a copy
+        A = self.__class__(self.N)
+        for i, v in self._st.items():
+            A[i] = v
+        # Add element-wise
+        for i in A._st.keys():
+            A[i] += other[i]
+            if np.isclose(A[i], 0, atol=1e-16):
+                del A._st[i]
         return A
 
     # aliases
@@ -107,6 +119,7 @@ class SparseVector:
 
 
 if __name__ == "__main__":
+    import numpy as np
     N = 10
     a = SparseVector(N)
     b = SparseVector(N)
@@ -115,11 +128,19 @@ if __name__ == "__main__":
     b[[1, 3, 5]] = [1, 3, 5]
     x[[1, 3, 5]] = [1, 9, 25]
     print(a * b)
-    print(a @ b)
-    print(a.dot(b))
+    print(f"{a @ b = }")
+    print(f"{a.dot(b) = }")
     # assert np.allclose(a * b, x)
     assert np.isclose(a @ b, 35.0)
     assert np.isclose(a.dot(b), 35.0)
+    print('a + b =')
+    print(a + b)
+    c = SparseVector(N)
+    d = SparseVector(N)
+    c[[1, 3, 5]] = [1,  3, 5]
+    d[[1, 3, 5]] = [1, -3, 5]
+    print('c + d =')
+    print(c + d)
 
 # =============================================================================
 # =============================================================================
