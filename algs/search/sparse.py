@@ -94,7 +94,6 @@ class SparseVector:
         return self.dot(other)
 
     # Exercise 3.5.16
-    # FIXME does not account for elements in `other` that are not in `self`.
     def __add__(self, other):
         """Return the sum of this vector with another."""
         return self._op(other, op=iadd)
@@ -263,26 +262,14 @@ class SparseMatrix():
             raise ValueError(f"Cannot multiply {self.shape} to {x.shape}")
         if len(x.shape) > 1:
             b = SparseMatrix((self.N, x.M))
-            for i in self._st.keys():
-                # FIXME this line calls SparseVector.dot() even if `x` is matrix,
-                # which then computes dot products of A[i] with *rows* of x.
-                b[i] = A[i].dot(x)
         else:
             b = SparseVector(self.N)
-            for i in self._st.keys():
-                b[i] = A[i].dot(x)
+        for i in self._st.keys():
+            b[i] = self[i].dot(x)
         return b
 
     def __matmul__(self, x):
         return self.dot(x)
-
-    # # FIXME should return x (1, M) @ self (M, N) -> (1, N)
-    # def __rmatmul__(self, x):
-    #     if isinstance(x, SparseVector):
-    #         return x.dot(self)
-    #     else:
-    #         return NotImplemented
-    #     # return self.dot(x)
 
     def __str__(self):
         return '\n'.join([f"({i}, {j})\t{v}" for (i, j), v in self])
@@ -360,20 +347,16 @@ if __name__ == "__main__":
     x[[0, 1, 2, 3]] = [1, 1, 1, 1]
     print('A @ x')
     print(A @ x)  # delta[0] vector
-    print((A[0] @ A).todense())  # select first row??
+    print((A[0] @ A).todense())  # select first row
     print((A @ A[0]).todense())  # select first column
     print('A @ I')
     print((A @ I).todense())
     print('I @ A')
-    print((I @ A).todense())  # FIXME
-    # print('A.T @ A')
-    # K = A.T @ A
-    # # K = A @ A.T
-    # print(K.todense())
-    # # [[1, -1, 0, 0],
-    # #  [-1, 2, -1, 0],
-    # #  [0, -1, 2, -1],
-    # #  [0, 0, -1, 2]]
+    print((I @ A).todense())
+    print('A.T @ A')
+    print((A.T @ A).todense())
+    print('A @ A.T')
+    print((A @ A.T).todense())
 
 # =============================================================================
 # =============================================================================
