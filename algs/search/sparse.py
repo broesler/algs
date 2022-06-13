@@ -143,6 +143,20 @@ class SparseVector:
             A[i] = op(self[i], scalar)
         return A
 
+    def todense(self):
+        A = np.zeros((self.N,))
+        for k, v in self:
+            A[k] = v
+        return A
+
+    def magnitude(self):
+        """Return the magnitude of the vector."""
+        return self.dot(self)**0.5
+
+    def direction(self):
+        """Return a unit vector in the direction of the vector."""
+        return self / self.magnitude()
+
     # aliases
     def put(self, i, v):
         self.__setitem__(i, v)
@@ -159,13 +173,6 @@ class SparseVector:
     # Iterate over coordinates and values
     def __iter__(self):
         yield from self._st.items()
-
-    def todense(self):
-        A = np.zeros((self.N,))
-        for k, v in self:
-            A[k] = v
-        return A
-
 
 # Exercise 3.5.23
 # TODO constructors for row/column vectors
