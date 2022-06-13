@@ -13,10 +13,8 @@ import numpy as np
 from operator import iadd, isub, imul, itruediv
 
 from algs.search.hash import HashST
-from algs.search.set import MathSet
 
 
-# TODO `.todense()` method that returns an `np.ndarray`.
 class SparseVector:
     """Implements a sparse vector.
 
@@ -83,7 +81,7 @@ class SparseVector:
 
     def dot(self, other):
         """Return the dot product of this vector with another."""
-        if self.N != other.N:
+        if self.shape[0] != other.shape[0]:
             raise ValueError('dimension mismatch!')
         s = 0
         for i in self._st.keys():
@@ -126,11 +124,16 @@ class SparseVector:
             raise ValueError('dimension mismatch!')
         A = self.copy()
         if op in [iadd, isub]:
-            iters = set(A._st.keys()).union(set(other._st.keys()))
+            iters = set(A._st.keys()).union(other._st.keys())
         else:
             iters = A._st.keys()
         for i in iters:
-            A[i] = op(A[i], other[i])
+            try:
+                A[i] = op(A[i], other[i])
+            except ZeroDivisionError:
+                # NOTE should be np.nan for all zero entries in A
+                A[i] = (np.nan if A[i] == 0
+                        else (np.inf if A[i] > 0 else -np.inf))
             if np.isclose(A[i], 0, atol=1e-16):
                 del A._st[i]
         return A
@@ -168,14 +171,15 @@ class SparseVector:
 
 # Exercise 3.5.23
 # TODO constructors for row/column vectors
-class SparseMatrix():
+# * store column representation as well?
+class SparseMatrix:
     """Implements a sparse matrix of size `M x N`."""
 
     def __init__(self, shape):
         self.M = shape[0]
         self.N = shape[1]
         self._size = 0
-        self._st = HashST()  # _st represents rows
+        self._rows = HashST()  # _st represents rows
 
     @property
     def size(self):
@@ -195,40 +199,40 @@ class SparseMatrix():
 
     def __setitem__(self, k, v):
         # Parse indices
-        if isinstance(k, int):
-            i, j = k, None
-        else:
+        try:
             i, j = k
-        # if not (0 <= i < self.M):
-        #     raise IndexError(f"Cannot index row {i} in matrix of size ({self.M}, {self.N})!")
-        if i not in self._st:
-            self._st[i] = SparseVector(self.N)
+        except TypeError:
+            i, j = k, None
+        if not (0 <= i < self.M):
+            raise IndexError(f"Cannot index row {i} in matrix of size ({self.M}, {self.N})!")
+        if i not in self._rows:
+            self._rows[i] = SparseVector(self.N)
         if j is not None:
-            self._st[i][j] = v
+            self._rows[i][j] = v
             self._size += 1
         else:
-            self._st[i] = v
+            self._rows[i] = v
             self._size += v.size
 
     def __getitem__(self, k):
         # Parse indices
-        if isinstance(k, int):
-            i, j = k, None
-        else:
+        try:
             i, j = k
+        except TypeError:
+            i, j = k, None
         # Return value
-        if i in self._st:
+        if i in self._rows:
             if j is not None:
-                return self._st[i][j]
+                return self._rows[i][j]
             else:
-                return self._st[i]
+                return self._rows[i]
         else:
             return 0
 
     def col(self, j):
         """Return the `j`th column."""
         c = SparseVector(self.M)
-        for i in self._st.keys():
+        for i in self._rows.keys():
             c[i] = self[i, j]
         return c
 
@@ -248,23 +252,23 @@ class SparseMatrix():
         if self.shape != other.shape:
             raise ValueError(f"Cannot add {self.shape} to {other.shape}")
         A = self.copy()
-        iters = set(self._st.keys()).union(set(other._st.keys()))
+        iters = set(self._rows.keys()).union(other._rows.keys())
         for i in iters:
-            A._st[i] = self._st[i] + other._st[i]
+            A._rows[i] = self._rows[i] + other._rows[i]
         return A
 
     def dot(self, x):
         """Return the matrix multiplication of this matrix with another."""
-        if not (isinstance(x, SparseVector) 
+        if not (isinstance(x, SparseVector)
                 or isinstance(x, SparseMatrix)):
             return NotImplemented
         if self.shape[1] != x.shape[0]:
             raise ValueError(f"Cannot multiply {self.shape} to {x.shape}")
         if len(x.shape) > 1:
-            b = SparseMatrix((self.N, x.M))
+            b = SparseMatrix((self.shape[0], x.shape[1]))
         else:
-            b = SparseVector(self.N)
-        for i in self._st.keys():
+            b = SparseVector(self.shape[1])
+        for i in self._rows.keys():
             b[i] = self[i].dot(x)
         return b
 
@@ -279,14 +283,14 @@ class SparseMatrix():
 
     def _items(self):
         items = list()
-        for i, row in self._st.items():
+        for i, row in self._rows.items():
             for j, v in row:
                 items.append(((i, j), v))
         return items
 
     def __iter__(self):
         yield from self._items()
-        
+
     def todense(self):
         A = np.zeros((self.M, self.N))
         for (i, j), v in self:
@@ -315,8 +319,8 @@ if __name__ == "__main__":
     assert np.isclose(a.dot(b), 44.0)
     assert np.allclose((a + b).todense(), np.r_[0, 3, 0, 7, 0, 0, 11, 7, 7, 0])
     assert np.allclose((a - b).todense(), np.r_[0, 1, 0, 1, 0, 0, 1, 7, -7, 0])
-    # print('a / b =')
-    # print(a / b)
+    print('a / b =')
+    print(a / b)
     # Test close to 0
     c = SparseVector(N)
     d = SparseVector(N)
@@ -330,7 +334,7 @@ if __name__ == "__main__":
     I = SparseMatrix((N, N))  # identity
     A = SparseMatrix((N, N))  # first forward difference
     for i in range(N):
-        I[i, i] =  1
+        I[i, i] = 1
         if i > 0:
             A[i, i-1] = -1
         A[i, i] = 1
@@ -343,20 +347,40 @@ if __name__ == "__main__":
     print(A.T.todense())
     print('A + A.T')
     print((A + A.T).todense())
+    # Test matrix-vector multiplication
     x = SparseVector(N)
     x[[0, 1, 2, 3]] = [1, 1, 1, 1]
     print('A @ x')
     print(A @ x)  # delta[0] vector
     print((A[0] @ A).todense())  # select first row
     print((A @ A[0]).todense())  # select first column
-    print('A @ I')
-    print((A @ I).todense())
-    print('I @ A')
-    print((I @ A).todense())
+    # Test identity matrix multiplication
+    assert np.allclose((I @ x).todense(), x.todense())
+    assert np.allclose((x @ I).todense(), x.todense())
+    assert np.allclose((I @ I).todense(), I.todense())
+    assert np.allclose((A @ I).todense(), A.todense())
+    assert np.allclose((I @ A).todense(), A.todense())
+    # Test matrix multiplication by transpose
     print('A.T @ A')
     print((A.T @ A).todense())
     print('A @ A.T')
     print((A @ A.T).todense())
+    # Test rectangular matrices
+    C = SparseMatrix((3, 5))
+    for k in range(15):
+        i, j = np.unravel_index(k, C.shape)
+        C[i, j] = k
+    D = SparseMatrix((5, 2))
+    for k in range(10):
+        i, j = np.unravel_index(k, D.shape)
+        D[i, j] = k
+    print((C @ D).todense())
+    assert np.allclose((C @ D).todense(),
+                       np.array([[ 60,  70],
+                                 [160, 195],
+                                 [260, 320]])
+                       )
+
 
 # =============================================================================
 # =============================================================================
