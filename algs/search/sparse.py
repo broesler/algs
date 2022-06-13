@@ -10,7 +10,7 @@ Sparse vector and matrix classes using symbol tables.
 # =============================================================================
 
 import numpy as np
-from operator import iadd, isub, imul, itruediv
+from operator import add, sub, mul, truediv
 
 from algs.search.hash import HashST
 
@@ -25,6 +25,7 @@ class SparseVector:
     size : int
         The number of elements in the array.
     """
+    EPS = 1e-16  # tolerance of numbers close to 0.0
 
     def __init__(self, N=1):
         """
@@ -37,8 +38,13 @@ class SparseVector:
         self._st = HashST()
 
     @property
+    def nnz(self):
+        """Return the number of non-zero elements in the vector."""
+        return self._st.size()
+
+    @property
     def size(self):
-        """Return the number of elements in the vector."""
+        """Return the number of non-zero elements in the vector."""
         return self._st.size()
 
     @property
@@ -66,13 +72,6 @@ class SparseVector:
         else:
             return 0
 
-    def copy(self):
-        """Make a copy."""
-        A = self.__class__(self.N)
-        for i, v in self._st.items():
-            A[i] = v
-        return A
-
     # TODO return (N,) bool array for each element.
     def __eq__(self, other):
         if not isinstance(other, SparseVector):
@@ -94,26 +93,26 @@ class SparseVector:
     # Exercise 3.5.16
     def __add__(self, other):
         """Return the sum of this vector with another."""
-        return self._op(other, op=iadd)
+        return self._op(other, op=add)
 
     def __sub__(self, other):
         """Return the difference of this vector with another."""
-        return self._op(other, op=isub)
+        return self._op(other, op=sub)
 
     def __mul__(self, other):
         """Return the element-wise product of this vector with another."""
-        return self._op(other, op=imul)
+        return self._op(other, op=mul)
 
     def __truediv__(self, other):
         """Return the element-wise division of this vector by another."""
-        return self._op(other, op=itruediv)
+        return self._op(other, op=truediv)
 
     __radd__ = __add__  # allow 1 + a or a + 1
     __rsub__ = __sub__
     __rmul__ = __mul__
 
     def _op(self, other, op):
-        if isinstance(other, self.__class__):
+        if isinstance(other, SparseVector):
             return self.__op(other, op=op)
         else:
             return self._scale(other, op=op)
@@ -122,27 +121,26 @@ class SparseVector:
         """Return the element-wise product of this vector with another."""
         if self.N != other.N:
             raise ValueError('dimension mismatch!')
-        A = self.copy()
-        if op in [iadd, isub]:
-            iters = set(A._st.keys()).union(other._st.keys())
+        A = SparseVector(self.N)
+        if op in [add, sub]:
+            iters = set(self._st.keys()).union(other._st.keys())
         else:
-            iters = A._st.keys()
+            iters = self._st.keys()
         for i in iters:
             try:
-                A[i] = op(A[i], other[i])
+                A[i] = op(self[i], other[i])
             except ZeroDivisionError:
                 # NOTE should be np.nan for all zero entries in A
-                A[i] = (np.nan if A[i] == 0
-                        else (np.inf if A[i] > 0 else -np.inf))
-            if np.isclose(A[i], 0, atol=1e-16):
+                A[i] = -np.inf if A[i] < 0 else np.inf
+            if np.isclose(A[i], 0, atol=self.EPS):
                 del A._st[i]
         return A
 
     def _scale(self, scalar, op):
         """Return an operation on this vector with a scalar."""
-        A = self.copy()
-        for i in A._st.keys():
-            A[i] = op(A[i], scalar)
+        A = SparseVector(self.N)
+        for i in self._st.keys():
+            A[i] = op(self[i], scalar)
         return A
 
     # aliases
@@ -182,6 +180,11 @@ class SparseMatrix:
         self._rows = HashST()  # _st represents rows
 
     @property
+    def nnz(self):
+        """Return the number of non-zero elements in the vector."""
+        return self._size
+
+    @property
     def size(self):
         return self._size
 
@@ -189,13 +192,6 @@ class SparseMatrix:
     def shape(self):
         """Return the number of elements in the vector."""
         return (self.M, self.N)
-
-    def copy(self):
-        """Make a copy."""
-        A = self.__class__((self.M, self.N))
-        for (i, j), v in self:
-            A[i, j] = v
-        return A
 
     def __setitem__(self, k, v):
         # Parse indices
@@ -229,15 +225,8 @@ class SparseMatrix:
         else:
             return 0
 
-    def col(self, j):
-        """Return the `j`th column."""
-        c = SparseVector(self.M)
-        for i in self._rows.keys():
-            c[i] = self[i, j]
-        return c
-
     def transpose(self):
-        A = self.__class__((self.M, self.N))
+        A = SparseMatrix((self.M, self.N))
         for (i, j), v in self:
             A[j, i] = v
         return A
@@ -251,7 +240,7 @@ class SparseMatrix:
             return NotImplemented
         if self.shape != other.shape:
             raise ValueError(f"Cannot add {self.shape} to {other.shape}")
-        A = self.copy()
+        A = SparseMatrix(self.shape)
         iters = set(self._rows.keys()).union(other._rows.keys())
         for i in iters:
             A._rows[i] = self._rows[i] + other._rows[i]
@@ -310,6 +299,9 @@ if __name__ == "__main__":
     print('b =', b.todense())
     print('a = ')
     print(a)
+    assert a.nnz == 4
+    assert a.size == 4
+    assert a.shape == (N,)
     assert np.allclose((3*a).todense(), np.r_[0, 6, 0, 12, 0, 0, 18, 21, 0, 0])
     assert np.allclose((3 + a).todense(), np.r_[0, 5, 0, 7, 0, 0, 9, 10, 0, 0])
     print(f"{a @ b = }")
@@ -343,6 +335,9 @@ if __name__ == "__main__":
     print(I)
     print('A')
     print(A.todense())
+    assert I.nnz == 4
+    assert I.size == 4
+    assert I.shape == (N, N)
     print('A.T')
     print(A.T.todense())
     print('A + A.T')
@@ -367,6 +362,7 @@ if __name__ == "__main__":
     print((A @ A.T).todense())
     # Test rectangular matrices
     C = SparseMatrix((3, 5))
+    assert C.shape == (3, 5)
     for k in range(15):
         i, j = np.unravel_index(k, C.shape)
         C[i, j] = k
