@@ -16,30 +16,44 @@ theory states the number of duplicates should be:
 """
 # =============================================================================
 
-import matplotlib.pyplot as plt
 import numpy as np
-import scipy.linalg as la
 import pandas as pd
+import time
 
+# NOTE our implementations show a similar ratio to np.sort() vs set(), but both
+# pale in comparison to the built-in python functions.
+# from algs.sort import qsort
+# from algs.search import HashSet
 
-def count_duplicates(x):
-    """Count the number of duplicate entries in a sorted array."""
-    x = np.sort(np.asarray(x))
+def count_both_sort(x):
+    """Count the number of duplicates and distinct values in a sorted array."""
+    # x = np.sort(np.asarray(x))  # ndarray much faster than `sorted`.
+    x = sorted(x)
+    # x = qsort(x)
     dups = 0
+    uniques = 1
     for i in range(len(x)-1):
         if x[i+1] == x[i]:
             dups += 1
-    return dups
+        else:
+            uniques += 1
+    return dups, uniques
 
 
-def count_distinct(x):
-    """Count the number of distinct entries in a sorted array."""
-    x = np.sort(np.asarray(x))
-    res = 1
-    for i in range(len(x)-1):
-        if x[i+1] != x[i]:
-            res += 1
-    return res
+# Exercise 3.5.30
+def count_both_dict(x):
+    """Count the number of duplicates and distinct entries in an array."""
+    st = set()
+    # st = HashSet()
+    dups = 0
+    uniques = 0
+    for i in x:
+        if i in st:
+            dups += 1
+        else:
+            uniques += 1
+            st.add(i)
+    return dups, uniques
 
 
 if __name__ == '__main__':
@@ -50,38 +64,70 @@ if __name__ == '__main__':
     alphas = np.r_[2.0, 1.0, 0.5]             # fractions of N
 
     cols = pd.MultiIndex.from_product((Ns, alphas,
-                                    ['duplicate', 'distinct'],
-                                    ['actual', 'expect']))
+                                       ['duplicate', 'distinct'],
+                                       ['actual', 'expect']))
     cols.names = ['N', 'α', '', '']
     data = np.zeros((T, len(cols)), dtype=int)
     df = pd.DataFrame(index=range(T), columns=cols, data=data)
-    df.index.name ='T'
+    df.index.name = 'T'
+
+    cols = pd.MultiIndex.from_product((Ns, alphas, ['sort', 'dict']))
+    cols.names = ['N', 'α', '']
+    data = np.zeros((T, len(cols)), dtype=int)
+    tf = pd.DataFrame(index=range(T), columns=cols, data=data)
+    tf.index.name = 'T'
 
     for N in Ns:
         for α in alphas:
             M = N / α   # number of integers
             ints = rng.integers(M, size=(T, N))
-            ints = np.sort(ints, axis=1)
+            # ints = np.sort(ints, axis=1)
             for t in range(T):
-                df.loc[t, (N, α, 'duplicate', 'actual')] = count_duplicates(ints[t])
-                df.loc[t, (N, α, 'distinct', 'actual')] = count_distinct(ints[t])
+                tic = time.process_time()
+                dups_sort, dist_sort = count_both_sort(ints[t])
+                toc = time.process_time()
+                dt_sort = toc - tic
+
+                # Exercise 3.5.30
+                tic = time.process_time()
+                dups_dict, dist_dict = count_both_dict(ints[t])
+                toc = time.process_time()
+                dt_dict = toc - tic
+
+                assert dups_sort == dups_dict
+                assert dist_sort == dist_dict
+
+                df.loc[t, (N, α, 'duplicate', 'actual')] = dups_sort
+                df.loc[t, (N, α, 'distinct', 'actual')] = dist_sort
+                tf.loc[t, (N, α, 'sort')] = dt_sort
+                tf.loc[t, (N, α, 'dict')] = dt_dict
 
     # Average over the trials
     df = (df.mean()
-            .unstack([-2, -1])  # move duplicate/distinct, actual/expect to cols
+            .unstack([-2, -1])  # move dup/distinct, actual/expect to cols
             .reset_index()      # move N, α to cols for math ops
-        )
+          )
+
+    tf = (tf.mean()
+            .unstack(-1)
+            .reset_index()
+            .set_index(['N', 'α'])
+          )
+    tf['ratio'] = tf['sort'] / tf['dict']
 
     # Compute expected values
     M = df['N'] // df['α']
-    df[('distinct', 'expect')] = M * (1 - np.exp(-df['α']))  # probability theory
+    df[('distinct', 'expect')] = M * (1 - np.exp(-df['α']))  # theory
     df[('duplicate', 'expect')] = df['N'] - df[('distinct', 'expect')]
-    assert np.allclose((df['distinct'] + df['duplicate']).values.T - df['N'].values, 0)
+    assert np.allclose((df['distinct'] + df['duplicate']).values.T
+                       - df['N'].values, 0)
 
     # Clean-up for presentation
     df = df.set_index(['N', 'α']).round().astype(int)
 
+    # TODO plot timing on log scale
     print(df)
+    print(tf)
 
 # =============================================================================
 # =============================================================================
