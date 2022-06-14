@@ -242,20 +242,32 @@ class TestCaching:
             st = empty_st
             for k, v in items:
                 st[k] = v
-                assert st._cache.key == k
-                assert st._cache.val == v
+                if st.__class__ in [ArrayST, BinarySearchST]:
+                    assert st._keys[st._cache] == k
+                    assert st._vals[st._cache] == v
+                else:
+                    assert st._cache.key == k
+                    assert st._cache.val == v
 
         def test_put_cache_existing(self, st, items):
             for k in st:
                 st[k] = 56
-                assert st._cache.key == k
-                assert st._cache.val == 56
+                if st.__class__ in [ArrayST, BinarySearchST]:
+                    assert st._keys[st._cache] == k
+                    assert st._vals[st._cache] == 56
+                else:
+                    assert st._cache.key == k
+                    assert st._cache.val == 56
 
         def test_get_cache_existing(self, st, items):
             for k in st:
                 v = st[k]
-                assert st._cache.key == k
-                assert st._cache.val == v
+                if st.__class__ in [ArrayST, BinarySearchST]:
+                    assert st._keys[st._cache] == k
+                    assert st._vals[st._cache] == v
+                else:
+                    assert st._cache.key == k
+                    assert st._cache.val == v
 
     @pytest.mark.parametrize('ST', SINGLEVAL_STS - NO_CACHE - NO_DELETE)
     def test_delete_cache(self, st):
@@ -283,9 +295,10 @@ class TestSelfOrg:
         st = ArrayST(items, selforg=True, cache=True)
         rand_keys = rng.choice(st.keys(), size=st.size())
         for k in rand_keys:
-            st[k]                       # search for the key
-            assert st.keys()[0] == k
-            assert st._cache.key == k
+            v = st[k]                   # search for the key to set cache
+            assert st._keys[0] == k
+            assert st._keys[st._cache] == k
+            assert st._vals[st._cache] == v
         del st[k]
         assert st._cache is None
 
