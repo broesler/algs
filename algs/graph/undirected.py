@@ -410,7 +410,7 @@ class TwoColor(Search):
 
 
 # -----------------------------------------------------------------------------
-#         Functions
+#         Client Functions
 # -----------------------------------------------------------------------------
 # Define some functions for use with graphs that would be too cumbersome to
 # maintain in the basic API.
@@ -439,6 +439,76 @@ def self_loops(G):
     return s // 2  # each edge counted twice
 
 
+def dfs(G, s):
+    """Search the graph from vertex `s`."""
+    search = DepthFirstSearch(G, s)
+    for v in range(G.V):
+        if search.marked(v):
+            print(f"{v} ", end='')
+    print()
+    if search.count() != G.V:
+        print('NOT ', end='')
+    print('connected.')
+    return search
+
+
+def paths(G, s, kind='DFS'):
+    """Search the graph from vertex `s`, returning the paths."""
+    if kind == 'DFS':
+        search = DepthFirstPaths(G, s)
+    elif kind == 'BFS':
+        search = BreadthFirstPaths(G, s)
+    else:
+        raise ValueError(f"{kind=} is unrecognized!")
+    for v in range(G.V):
+        print(f"{s:2d}->{v:2d}: ", end='')
+        if search.has_path_to(v):
+            for x in search.path_to(v):
+                if x == s:
+                    print(x, end='')
+                else:
+                    print(f"-{x}", end='')
+        print()
+
+
+def find_components(G):
+    """Compute the connected components in the graph."""
+    cc = CC(G)
+    M = cc.count()
+    print(f"{M} components")
+    components = [Bag() for _ in range(M)]
+    for v in range(G.V):
+        components[cc.id(v)].add(v)
+    for i in range(M):
+        print(f"{i}: ", end='')
+        for v in components[i]:
+            print(f"{v} ", end='')
+        print()
+
+
+def print_adj(sg, s):
+    """Print the adjacency list of the source."""
+    print(s)
+    for w in sg.G.adj(sg.index(s)):
+        print(' ', sg.name(w))
+
+
+def degrees_of_separation(sg, source, sink):
+    if source not in sg:
+        raise ValueError(f"{repr(source)} not in graph!")
+    s = sg.index(source)
+    bfs = BreadthFirstPaths(sg.G, s)
+    if sink in sg:
+        print(source)
+        t = sg.index(sink)
+        if bfs.has_path_to(t):
+            for v in bfs.path_to(t):
+                print(' ', sg.name(v))
+        else:
+            print('Not connected.')
+    else:
+        raise ValueError(f"{repr(sink)} not in graph!")
+
 # -----------------------------------------------------------------------------
 #         Tests
 # -----------------------------------------------------------------------------
@@ -449,19 +519,6 @@ if __name__ == "__main__":
 
     # Test search
     print('----- DFS -----')
-
-    def dfs(G, s):
-        """Search the graph from vertex `s`."""
-        search = DepthFirstSearch(G, s)
-        for v in range(G.V):
-            if search.marked(v):
-                print(f"{v} ", end='')
-        print()
-        if search.count() != G.V:
-            print('NOT ', end='')
-        print('connected.')
-        return search
-
     dfs(G, 0)
     dfs(G, 9)
 
@@ -469,25 +526,6 @@ if __name__ == "__main__":
     print('----- Connected Graph -----')
     G = Graph.fromfile(Path('../data/tinyCG.txt'))
     print(G)
-
-    def paths(G, s, kind='DFS'):
-        """Search the graph from vertex `s`, returning the paths."""
-        if kind == 'DFS':
-            search = DepthFirstPaths(G, s)
-        elif kind == 'BFS':
-            search = BreadthFirstPaths(G, s)
-        else:
-            raise ValueError(f"{kind=} is unrecognized!")
-        for v in range(G.V):
-            print(f"{s:2d}->{v:2d}: ", end='')
-            if search.has_path_to(v):
-                for x in search.path_to(v):
-                    if x == s:
-                        print(x, end='')
-                    else:
-                        print(f"-{x}", end='')
-            print()
-
     print('----- DFS Paths -----')
     paths(G, 0, kind='DFS')
     print('----- BFS Paths -----')
@@ -496,53 +534,14 @@ if __name__ == "__main__":
     # Test connected components
     print('----- CC -----')
     G = Graph.fromfile(Path('../data/tinyG.txt'))
-
-    def find_components(G):
-        """Compute the connected components in the graph."""
-        cc = CC(G)
-        M = cc.count()
-        print(f"{M} components")
-        components = [Bag() for _ in range(M)]
-        for v in range(G.V):
-            components[cc.id(v)].add(v)
-        for i in range(M):
-            print(f"{i}: ", end='')
-            for v in components[i]:
-                print(f"{v} ", end='')
-            print()
-
     find_components(G)
 
     # Test connected components
     print('----- SymbolGraph -----')
     sg = SymbolGraph.fromfile(Path('../data/routes.txt'))
-
-    def print_adj(sg, s):
-        """Print the adjacency list of the source."""
-        print(s)
-        for w in sg.G.adj(sg.index(s)):
-            print(' ', sg.name(w))
-
     print('--- adjacency lists ---')
     print_adj(sg, 'JFK')
     print_adj(sg, 'LAX')
-
-    def degrees_of_separation(sg, source, sink):
-        if source not in sg:
-            raise ValueError(f"{repr(source)} not in graph!")
-        s = sg.index(source)
-        bfs = BreadthFirstPaths(sg.G, s)
-        if sink in sg:
-            print(source)
-            t = sg.index(sink)
-            if bfs.has_path_to(t):
-                for v in bfs.path_to(t):
-                    print(' ', sg.name(v))
-            else:
-                print('Not connected.')
-        else:
-            raise ValueError(f"{repr(sink)} not in graph!")
-
     print('--- shortest paths ---')
     degrees_of_separation(sg, 'JFK', 'LAS')
     degrees_of_separation(sg, 'JFK', 'DFW')
