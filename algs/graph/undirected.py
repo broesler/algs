@@ -356,6 +356,7 @@ class LeafDFS(GraphSearch):
     def leaf(self):
         return self._leaf
 
+
 # Exercise 4.1.16
 class GraphProperties:
     """A class to determine the geometric properties of a connected graph."""
@@ -366,13 +367,16 @@ class GraphProperties:
         self.G = G
         # pre-compute eccentricities and store in a symbol table (in case
         # vertices are not represented as integers)
-        self._eccs = dict({v: self.eccentricity(v) for v in self.G.vertices()})
+        self._eccs = dict({v: self._ecc(v) for v in self.G.vertices()})
         self._dia = max(self._eccs.values())
         self._rad = min(self._eccs.values())
 
     def eccentricity(self, v):
         """The length of the shortest path from `v` to the furthest vertex from
-        `v`, *i.e.* the maximum length of the shortest path to any vertex.""" 
+        `v`, *i.e.* the maximum length of the shortest path to any vertex."""
+        return self._eccs[v]
+
+    def _ecc(self, v):
         bfs = BreadthFirstPaths(self.G, v)
         return max([bfs.dist_to(x) for x in self.G.vertices()])
 
@@ -389,6 +393,10 @@ class GraphProperties:
         for v in self.G.vertices():
             if self._eccs[v] == self._rad:
                 return v
+
+    def girth(self):
+        """Return the length of the shortest cycle in the graph."""
+        pass
 
 
 # Algorithm 4.3
@@ -754,6 +762,8 @@ if __name__ == "__main__":
     print('    diameter:', gp.diameter())
     print('      radius:', gp.radius())
     print('      center:', gp.center())
+    assert gp.eccentricity(gp.center()) == gp.radius()
+
 
 # =============================================================================
 # =============================================================================
