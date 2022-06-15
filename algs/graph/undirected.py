@@ -175,12 +175,8 @@ class Graph(UndirectedGraph):
     # Exercise 4.1.3
     def copy(self):
         """Make a deep copy of the graph structure."""
-        g = self.__class__(self.V)  # initializes array of empty Bags.
+        g = self.__class__(self.V)
         for v in range(self.V):
-            # NOTE WRONG CODE makes a reference, not a copy:
-            #   g._adj[v] = self._adj[v]
-            #   (G._adj[v] is G.copy()._adj[v]) == True
-            # Correct code makes a copy:
             for w in self._adj[v]:
                 g._adj[v].add(w)
         return g
