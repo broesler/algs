@@ -12,6 +12,7 @@ See Sedgewick and Wayne, §4.1.
 # =============================================================================
 
 from abc import ABC, abstractmethod
+from collections import deque
 
 from algs.basics import Bag, Stack, Queue
 from algs.search import HashST
@@ -511,26 +512,52 @@ class SymbolGraph:
         return self.__contains__(k)
 
 
-class Cycle(GraphSearch):
+class Cycle(DepthFirstPaths):
     __doc__ = f"""Implements depth-first search to find a cycle.
     {GraphSearch.__doc__}"""
     # See p 547
+
+    class CycleFound(Exception):
+        pass
 
     def __init__(self, G, s):
         self.G = G
         self.s = s
         self._marked = G.V * [False]
+        self._edge_to = G.V * [None]  # last vertex on known path to this one
         self.has_cycle = False
-        self._dfs(s)
+        self._cycle_tail = None
+        try:
+            self._dfs(s, s)
+        except self.CycleFound:
+            pass
 
     def _dfs(self, v, u):
-        """Perform depth-first search recursively from vertex `v`."""
+        """Perform depth-first search recursively from vertex `v`.
+
+        .. note:: `u` is the previously-seen vertex. If one of the adjacent
+        vertices to `v` is marked, but is not the vertex from which we just
+        came, we have a cycle.
+        """
         self._marked[v] = True
         for w in self.G.adj(v):
             if not self._marked[w]:
+                self._edge_to[w] = v
                 self._dfs(w, v)
             elif w != u:
                 self.has_cycle = True
+                self._cycle_tail = v
+                self._cycle_head = w
+                raise self.CycleFound
+
+    def cycle_path(self):
+        """Return the path of the found cycle."""
+        p = deque(self.path_to(self._cycle_tail))
+        p.append(self._cycle_head)  # add to end of path
+        # Cycle may not include the source! Remove irrelevant vertices.
+        while p[0] != p[-1]:
+            p.popleft()
+        return p
 
 
 class TwoColor(GraphSearch):
@@ -688,6 +715,17 @@ if __name__ == "__main__":
     print('----- BFS Paths -----')
     paths(G, 0, kind='BFS')
 
+    print('--- Cycle ---')
+    G = Graph.fromfile(Path('../data/tinyG.txt'))
+    c = Cycle(G, 0)
+    assert c.has_cycle
+    assert list(c.cycle_path()) == [5, 4, 3, 5]
+
+    G2 = Graph.fromfile(Path('../data/tinyG2.txt'))
+    c2 = Cycle(G2, 0)
+    assert c2.has_cycle
+    assert list(c2.cycle_path()) == [0, 6, 3, 2, 0]
+
     # Test connected components
     print('----- CC -----')
     G = Graph.fromfile(Path('../data/tinyG.txt'))
@@ -763,7 +801,6 @@ if __name__ == "__main__":
     print('      radius:', gp.radius())
     print('      center:', gp.center())
     assert gp.eccentricity(gp.center()) == gp.radius()
-
 
 # =============================================================================
 # =============================================================================
