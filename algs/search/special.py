@@ -249,7 +249,10 @@ class IndirectPQ(Collection):
             return f"<{self.__class__.__name__}: {self.__str__()}>"
 
     def __init__(self, items=None):
-        # self._pq = PriorityQueue(kind='max')  # NOTE *delete* not implemented
+        # NOTE *delete* not implemented in PriorityQueue. We do not have an
+        # efficient way of computing the _index_ of a given key for an array
+        # binary heap structure.
+        # self._pq = PriorityQueue(kind='max')
         self._pq = Set()  # use ordered set
         self._st = HashST()
         items = items or []
