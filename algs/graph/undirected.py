@@ -356,6 +356,40 @@ class LeafDFS(GraphSearch):
     def leaf(self):
         return self._leaf
 
+# Exercise 4.1.16
+class GraphProperties:
+    """A class to determine the geometric properties of a connected graph."""
+
+    def __init__(self, G):
+        if CC(G).count() > 1:
+            raise ValueError('Graph must be connected!')
+        self.G = G
+        # pre-compute eccentricities and store in a symbol table (in case
+        # vertices are not represented as integers)
+        self._eccs = dict({v: self.eccentricity(v) for v in self.G.vertices()})
+        self._dia = max(self._eccs.values())
+        self._rad = min(self._eccs.values())
+
+    def eccentricity(self, v):
+        """The length of the shortest path from `v` to the furthest vertex from
+        `v`, *i.e.* the maximum length of the shortest path to any vertex.""" 
+        bfs = BreadthFirstPaths(self.G, v)
+        return max([bfs.dist_to(x) for x in self.G.vertices()])
+
+    def diameter(self):
+        """The maximum eccentricity of any vertex."""
+        return self._dia
+
+    def radius(self):
+        """The smallest eccentricity of any vertex."""
+        return self._rad
+
+    def center(self):
+        """A vertex whose eccentricity is the radius."""
+        for v in self.G.vertices():
+            if self._eccs[v] == self._rad:
+                return v
+
 
 # Algorithm 4.3
 class CC:
@@ -706,6 +740,20 @@ if __name__ == "__main__":
     # Test leaf finding
     lfs = LeafDFS(G, 0)
     assert lfs.leaf() == 10
+
+    # Test properties
+    try:
+        gp = GraphProperties(G)
+    except ValueError:
+        pass
+
+    print('--- Graph Properties ---')
+    gc = Graph.fromfile(Path('../data/mediumG.txt'))
+    gp = GraphProperties(gc)
+    print('eccentricity:', gp.eccentricity(56))
+    print('    diameter:', gp.diameter())
+    print('      radius:', gp.radius())
+    print('      center:', gp.center())
 
 # =============================================================================
 # =============================================================================
