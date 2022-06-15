@@ -40,7 +40,8 @@ class UndirectedGraph(ABC):
 
     def _validate_vertex(self, v):
         if not (0 <= v < self.V):
-            raise ValueError(f"Vertex index {v=} must be between 0 and {self.V=}!")
+            raise ValueError((f"Vertex index {v=} must be "
+                              f"between 0 and {self.V=}!"))
 
     @classmethod
     def fromfile(cls, filename, *args, **kwargs):
@@ -141,7 +142,7 @@ class Paths(ABC):
 # -----------------------------------------------------------------------------
 class Graph(UndirectedGraph):
     __doc__ = f"""Implements an undirected graph using adjacency lists.
-        {UndirectedGraph.__doc__}"""
+    {UndirectedGraph.__doc__}"""
     # See p 526
 
     def __init__(self, V, parallel=True):
@@ -155,9 +156,9 @@ class Graph(UndirectedGraph):
             self._adj = [set() for _ in range(V)]
 
     __init__.__doc__ = f"""{UndirectedGraph.__init__.__doc__}
-        parallel : bool, optional
-            If True, allow parallel edges and self-loops. Otherwise, do not.
-        """
+    parallel : bool, optional
+        If True, allow parallel edges and self-loops. Otherwise, do not.
+    """
 
     def adj(self, v):
         self._validate_vertex(v)
@@ -185,7 +186,7 @@ class Graph(UndirectedGraph):
 
 class DepthFirstSearch(GraphSearch):
     __doc__ = f"""Implements depth-first search.
-        {GraphSearch.__doc__}"""
+    {GraphSearch.__doc__}"""
     # See p 531
 
     def __init__(self, G, s):
@@ -212,7 +213,7 @@ class DepthFirstSearch(GraphSearch):
 # Algorithm 4.1
 class DepthFirstPaths(Paths):
     __doc__ = f"""Implements depth-first search to return a path.
-        {Paths.__doc__}"""
+    {Paths.__doc__}"""
 
     def __init__(self, G, s):
         super().__init__(G, s)
@@ -246,7 +247,7 @@ class DepthFirstPaths(Paths):
 # Algorithm 4.2
 class BreadthFirstPaths(Paths):
     __doc__ = f"""Implements breadth-first search to find shortest paths.
-        {Paths.__doc__}"""
+    {Paths.__doc__}"""
 
     def __init__(self, G, s):
         super().__init__(G, s)
@@ -293,7 +294,12 @@ class BreadthFirstPaths(Paths):
 # Exercise 4.1.8
 class UFSearch(GraphSearch):
     __doc__ = f"""Implements the graph search API using Union-Find.
-        {GraphSearch.__doc__}"""
+
+    .. note:: This implementation is simple and efficient if we are only
+    concerned with determining connectivity. The UF algorithm is also an
+    *online* algorithm, as opposed to DFS which must preprocess the entire
+    graph structure.
+    {GraphSearch.__doc__}"""
     # See p 529
 
     def __init__(self, G, s):
@@ -426,7 +432,7 @@ class SymbolGraph:
 
 class Cycle(GraphSearch):
     __doc__ = f"""Implements depth-first search to find a cycle.
-        {GraphSearch.__doc__}"""
+    {GraphSearch.__doc__}"""
     # See p 547
 
     def __init__(self, G, s):
@@ -448,8 +454,8 @@ class Cycle(GraphSearch):
 
 class TwoColor(GraphSearch):
     __doc__ = f"""Implements depth-first search to determine if a graph is
-        bipartite.
-        {GraphSearch.__doc__}"""
+    bipartite.
+    {GraphSearch.__doc__}"""
     # See p 547
 
     def __init__(self, G, s):
