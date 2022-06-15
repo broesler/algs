@@ -68,6 +68,11 @@ class UndirectedGraph(ABC):
         """Return the degree of vertex `v`."""
         return len(self.adj(v))
 
+    # Exercise 4.1.4
+    def has_edge(self, v, w):
+        """Return True if an edge from `v` to `w` exists."""
+        return w in self.adj(v)
+
     def __str__(self):
         s = f"{self.V} vertices, {self.E} edges\n"
         for v in range(self.V):
@@ -596,6 +601,11 @@ if __name__ == "__main__":
     for v in range(G.V):
         assert G.adj(v) == G2.adj(v)
         assert G._adj[v] is not G2._adj[v]
+
+    # Test has_edge
+    assert G.has_edge(0, 5)
+    assert G.has_edge(8, 1)
+    assert not G.has_edge(0, 8)
 
 # =============================================================================
 # =============================================================================
