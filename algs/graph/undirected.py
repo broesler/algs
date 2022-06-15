@@ -358,6 +358,53 @@ class SymbolGraph:
         return self.__contains__(k)
 
 
+# See p 547
+class Cycle(Search):
+    __doc__ = f"""Implements depth-first search to find a cycle.
+        {Search.__doc__}"""
+
+    def __init__(self, G, s):
+        self.G = G
+        self.s = s
+        self._marked = G.V * [False]
+        self.has_cycle = False
+        self._dfs(s)
+
+    def _dfs(self, v, u):
+        """Perform depth-first search recursively from vertex `v`."""
+        self._marked[v] = True
+        for w in self.G.adj(v):
+            if not self._marked[w]:
+                self._dfs(w, v)
+            elif w != u:
+                self.has_cycle = True
+
+
+# See p 547
+class TwoColor(Search):
+    __doc__ = f"""Implements depth-first search to determine if a graph is
+        bipartite.
+        {Search.__doc__}"""
+
+    def __init__(self, G, s):
+        self.G = G
+        self.s = s
+        self._marked = G.V * [False]
+        self._color = G.V * [False]
+        self.is_bipartite = False
+        self._dfs(s)
+
+    def _dfs(self, v):
+        """Perform depth-first search recursively from vertex `v`."""
+        self._marked[v] = True
+        for w in self.G.adj(v):
+            if not self._marked[w]:
+                self._color[w] = not self._color[v]
+                self._dfs(w)
+            elif self._color[w] == self._color[v]:
+                self.is_bipartite = False
+
+
 # -----------------------------------------------------------------------------
 #         Functions
 # -----------------------------------------------------------------------------
