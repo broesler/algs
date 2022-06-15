@@ -20,7 +20,7 @@ from algs.search import HashST
 # -----------------------------------------------------------------------------
 #         Abstract Base Classes
 # -----------------------------------------------------------------------------
-class AGraph(ABC):
+class UndirectedGraph(ABC):
     # An abstract base class implementing the Graph API. See p 522.
     """
     Attributes
@@ -46,11 +46,12 @@ class AGraph(ABC):
         """Construct the graph structure from a file."""
         with open(filename, 'r') as fp:
             V = int(fp.readline())
-            fp.readline()  # skip # of edges?
+            E = int(fp.readline())
             G = cls(V)
             for line in fp.readlines():
                 v, w = line.strip().split()
                 G.add_edge(int(v), int(w))
+            assert E == G.E
             return G
 
     @abstractmethod
@@ -132,9 +133,9 @@ class Paths(ABC):
 # -----------------------------------------------------------------------------
 #         Concrete Classes
 # -----------------------------------------------------------------------------
-class Graph(AGraph):
+class Graph(UndirectedGraph):
     __doc__ = f"""Implements an undirected graph using adjacency lists.
-        {AGraph.__doc__}"""
+        {UndirectedGraph.__doc__}"""
 
     def __init__(self, V):
         super().__init__(V)
@@ -177,6 +178,7 @@ class DepthFirstSearch(Search):
                 self._dfs(w)
 
 
+# Algorithm 4.1
 class DepthFirstPaths(Paths):
     __doc__ = f"""Implements depth-first search to return a path.
         {Paths.__doc__}"""
@@ -210,6 +212,7 @@ class DepthFirstPaths(Paths):
         return path
 
 
+# Algorithm 4.2
 class BreadthFirstPaths(Paths):
     __doc__ = f"""Implements breadth-first search to find shortest paths.
         {Paths.__doc__}"""
@@ -248,6 +251,7 @@ class BreadthFirstPaths(Paths):
         return path
 
 
+# Algorithm 4.3
 class CC:
     """Implements a connected components depth-first search.
 
@@ -519,11 +523,36 @@ if __name__ == "__main__":
         for w in sg.G.adj(sg.index(s)):
             print(' ', sg.name(w))
 
+    print('--- adjacency lists ---')
     print_adj(sg, 'JFK')
     print_adj(sg, 'LAX')
 
+    def degrees_of_separation(sg, source, sink):
+        if source not in sg:
+            raise ValueError(f"{repr(source)} not in graph!")
+        s = sg.index(source)
+        bfs = BreadthFirstPaths(sg.G, s)
+        if sink in sg:
+            print(source)
+            t = sg.index(sink)
+            if bfs.has_path_to(t):
+                for v in bfs.path_to(t):
+                    print(' ', sg.name(v))
+            else:
+                print('Not connected.')
+        else:
+            raise ValueError(f"{repr(sink)} not in graph!")
+
+    print('--- shortest paths ---')
+    degrees_of_separation(sg, 'JFK', 'LAS')
+    degrees_of_separation(sg, 'JFK', 'DFW')
+
     # sg = SymbolGraph.fromfile(Path('../data/movies.txt'), delim='/')
+    # print('--- adjacency lists ---')
     # print_adj(sg, 'Top Gun (1986)')
+    # print('--- shortest paths ---')
+    # degrees_of_separation(sg, 'Animal House (1978)', 'Titanic (1997)')
+    # degrees_of_separation(sg, 'Bacon, Kevin', 'Cruise, Tom')
 
 # =============================================================================
 # =============================================================================
