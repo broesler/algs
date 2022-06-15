@@ -155,7 +155,16 @@ class Graph(UndirectedGraph):
 
     # Exercise 4.1.3
     def copy(self):
-        pass
+        """Make a deep copy of the graph structure."""
+        g = self.__class__(self.V)  # initializes array of empty Bags.
+        for v in range(self.V):
+            # NOTE WRONG CODE makes a reference, not a copy:
+            #   g._adj[v] = self._adj[v]
+            #   (G._adj[v] is G.copy()._adj[v]) == True
+            # Correct code makes a copy:
+            for w in self._adj[v]:
+                g._adj[v].add(w)
+        return g
 
 
 class DepthFirstSearch(Search):
@@ -534,6 +543,7 @@ def degrees_of_separation(sg, source, sink):
 # -----------------------------------------------------------------------------
 #         Tests
 # -----------------------------------------------------------------------------
+# TODO tests/test_graph.py
 if __name__ == "__main__":
     from pathlib import Path
     G = Graph.fromfile(Path('../data/tinyG.txt'))
@@ -574,6 +584,18 @@ if __name__ == "__main__":
     # print('--- shortest paths ---')
     # degrees_of_separation(sg, 'Animal House (1978)', 'Titanic (1997)')
     # degrees_of_separation(sg, 'Bacon, Kevin', 'Cruise, Tom')
+
+    # Test dist_to
+    G = Graph.fromfile(Path('../data/tinyG2.txt'))
+    bfs = BreadthFirstPaths(G, 0)
+    assert ([bfs.dist_to(x) for x in range(G.V)] 
+            == [0, None, 1, 2, None, 1, 1, None, None, None, 2, None])
+
+    # Test copy
+    G2 = G.copy()
+    for v in range(G.V):
+        assert G.adj(v) == G2.adj(v)
+        assert G._adj[v] is not G2._adj[v]
 
 # =============================================================================
 # =============================================================================
