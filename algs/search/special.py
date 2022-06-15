@@ -219,6 +219,99 @@ class RandomST(HashST):
         return k
 
 
+# Web Exercise 9
+class IndirectPQ(Collection):
+    """Implements an indirect priority queue. This class is similar to
+    a priority queue, but allows deletion of any element by name"""
+
+    class _Item:
+        """An internal class to hold a key and its priority."""
+        def __init__(self, key, priority=0):
+            self.key = key
+            self.priority = priority
+
+        # Could pass key=lambda x x.priority to PriorityQueue() instead
+        # Define the comparison functions so that the items are ordered
+        # properly in the priority queue.
+        def __lt__(self, other):
+            return self.priority < other.priority
+
+        def __gt__(self, other):
+            return self.priority > other.priority
+
+        def __eq__(self, other):
+            return self.key == other.key and self.priority == other.priority
+
+        def __str__(self):
+            return f"({repr(self.key)}: {repr(self.priority)})"
+
+        def __repr__(self):
+            return f"<{self.__class__.__name__}: {self.__str__()}>"
+
+    def __init__(self, items=None):
+        # self._pq = PriorityQueue(kind='max')  # NOTE *delete* not implemented
+        self._pq = Set()  # use ordered set
+        self._st = HashST()
+        items = items or []
+        for k, p in items:
+            self.put(k, p)
+
+    @property
+    def _items(self):
+        return [x.key for x in self._pq]
+
+    def __setitem__(self, k, p=0):
+        """Add an item `k` to the queue with priority `p`."""
+        self.__delitem__(k)
+        x = self._Item(k, p)
+        self._st[k] = x
+        self._pq.add(x)
+
+    def __delitem__(self, k):
+        """Remove key `k` from the queue."""
+        if k in self._st:
+            x = self._st[k]
+            self._pq.delete(x)
+            self._st.delete(k)
+
+    def __getitem__(self, k):
+        """Return the priority of a key."""
+        return self._st[k].priority
+
+    def __contains__(self, k):
+        """Return True if `k` is in the queue."""
+        return k in self._st
+
+    def min(self):
+        """Return the minimum priority."""
+        return self._pq.min().priority
+
+    def max(self):
+        """Return the maximum priority."""
+        return self._pq.max().priority
+
+    def delete_min(self):
+        """Delete and return the key with the minimum priority."""
+        k = self._pq.min().key
+        self._pq.delete_min()
+        self._st.delete(k)
+        return k
+
+    def delete_max(self):
+        """Delete and return the key with the maximum priority."""
+        k = self._pq.max().key
+        self._pq.delete_max()
+        self._st.delete(k)
+        return k
+
+    # aliases
+    def put(self, k, p):
+        return self.__setitem__(k, p)
+
+    def get(self, k):
+        return self.__getitem__(k)
+
+
 if __name__ == '__main__':
     keys = list('SEARCHEXAMPLE')
 
@@ -269,6 +362,15 @@ if __name__ == '__main__':
     assert st['A'] == 8
     print(st)
     assert st.pop() in keys
+
+    print('----- IndirectPQ -----')
+    items = [(k, i) for i, k in enumerate(keys)]
+    st = IndirectPQ(items)
+    print(st)
+    print(st.delete_min())
+    print(st)
+    print(st.delete_max())
+    print(st)
 
 # =============================================================================
 # =============================================================================
