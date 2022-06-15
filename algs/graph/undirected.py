@@ -247,6 +247,48 @@ class BreadthFirstPaths(Paths):
         return path
 
 
+class CC:
+    """Implements a connected components depth-first search.
+
+    Attributes
+    ----------
+    G : :obj:`Graph`
+        The graph to analyze.
+    """
+
+    def __init__(self, G):
+        self.G = G
+        self._marked = G.V * [False]
+        self._id = G.V * [0]
+        self._count = 0
+        # Perform DFS for *every* source vertex.
+        for s in range(G.V):
+            if not self._marked[s]:
+                self._dfs(s)
+                self._count += 1
+
+    def _dfs(self, v):
+        """Perform depth-first search recursively from vertex `v`."""
+        self._marked[v] = True
+        self._id[v] = self._count
+        for w in self.G.adj(v):
+            if not self._marked[w]:
+                self._dfs(w)
+
+    def connected(self, v, w):
+        """Return True if `v` and `w` are connected."""
+        # Same as quick-find!
+        return self._id[v] == self._id[w]
+
+    def id(self, v):
+        """Return the component identifier for vertex `v` in `[0, count-1]`."""
+        return self._id[v]
+
+    def count(self):
+        """The number of connected components."""
+        return self._count
+
+
 # -----------------------------------------------------------------------------
 #         Functions
 # -----------------------------------------------------------------------------
@@ -332,6 +374,28 @@ if __name__ == "__main__":
     paths(G, 0, kind='DFS')
     print('----- BFS Paths -----')
     paths(G, 0, kind='BFS')
+
+    # Test connected components
+    print('----- CC -----')
+    filename = Path('../data/tinyG.txt')
+    G = Graph.fromfile(filename)
+
+    def find_components(G):
+        """Compute the connected components in the graph."""
+        cc = CC(G)
+        M = cc.count()
+        print(f"{M} components")
+        components = [Bag() for _ in range(M)]
+        for v in range(G.V):
+            components[cc.id(v)].add(v)
+        for i in range(M):
+            print(f"{i}: ", end='')
+            for v in components[i]:
+                print(f"{v} ", end='')
+            print()
+
+    find_components(G)
+
 
 # =============================================================================
 # =============================================================================
