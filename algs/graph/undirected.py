@@ -42,12 +42,12 @@ class UndirectedGraph(ABC):
             raise ValueError(f"Vertex index {v=} must be between 0 and {self.V=}!")
 
     @classmethod
-    def fromfile(cls, filename):
+    def fromfile(cls, filename, *args, **kwargs):
         """Construct the graph structure from a file."""
         with open(filename, 'r') as fp:
             V = int(fp.readline())
             E = int(fp.readline())
-            G = cls(V)
+            G = cls(V, *args, **kwargs)
             for line in fp.readlines():
                 v, w = line.strip().split()
                 G.add_edge(int(v), int(w))
@@ -143,9 +143,20 @@ class Graph(UndirectedGraph):
         {UndirectedGraph.__doc__}"""
     # See p 526
 
-    def __init__(self, V):
+    def __init__(self, V, parallel=True):
         super().__init__(V)
-        self._adj = [Bag() for _ in range(V)]
+        self._PARALLEL = bool(parallel)
+        if self._PARALLEL:
+            self._adj = [Bag() for _ in range(V)]
+        else:
+            # Exercise 4.1.5 no parallel edges
+            # NOTE that using `set` breaks the ordering of `adj(v)`
+            self._adj = [set() for _ in range(V)]
+
+    __init__.__doc__ = f"""{UndirectedGraph.__init__.__doc__}
+        parallel : bool, optional
+            If True, allow parallel edges and self-loops. Otherwise, do not.
+        """
 
     def adj(self, v):
         self._validate_vertex(v)
@@ -154,6 +165,9 @@ class Graph(UndirectedGraph):
     def add_edge(self, v, w):
         self._validate_vertex(v)
         self._validate_vertex(w)
+        # Exercise 4.1.5
+        if self._PARALLEL and v == w:
+            raise ValueError(f"{v} == {w}! No self-loops allowed.")
         self._adj[v].add(w)
         self._adj[w].add(v)
         self.E += 1
@@ -606,6 +620,19 @@ if __name__ == "__main__":
     assert G.has_edge(0, 5)
     assert G.has_edge(8, 1)
     assert not G.has_edge(0, 8)
+
+    # Test no parallel edges
+    G2 = Graph.fromfile(Path('../data/tinyG2.txt'), parallel=False)
+    G2.add_edge(0, 2)
+    assert sorted(G2.adj(0)) == sorted(G.adj(0))  # no changes made
+    G2.add_edge(0, 9)
+    assert sorted(G2.adj(0)) != sorted(G.adj(0))  # changes made
+
+    # Test no self-edges
+    try:
+        G.add_edge(9, 9)
+    except ValueError:
+        pass
 
 # =============================================================================
 # =============================================================================
