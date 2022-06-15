@@ -14,6 +14,7 @@ See Sedgewick and Wayne, §4.1.
 from abc import ABC, abstractmethod
 
 from algs.basics import Bag, Stack, Queue
+from algs.search import HashST
 
 
 # -----------------------------------------------------------------------------
@@ -289,6 +290,74 @@ class CC:
         return self._count
 
 
+class SymbolGraph:
+    """Implements a symbol graph."""
+
+    def __init__(self):
+        self._st = HashST()  # map : str -> int
+        self._keys = None    # map : int -> str
+        self.G = None
+
+    @classmethod
+    def fromfile(cls, filename, delim=' '):
+        """Construct a SymbolGraph from a delimited text file containing an
+        adjacency list for the graph.
+
+        Parameters
+        ----------
+        filename : str
+            The name of the adjacency list file to process.
+        delim : char, optional
+            The character on which to split words.
+
+        Returns
+        -------
+        res : :obj:`SymbolGraph`
+            The SymbolGraph defined by the adjaceny list file.
+        """
+        sg = cls()
+        # First pass to add all vertices to the symbol table
+        with open(filename, 'r') as fp:
+            for line in fp.readlines():
+                words = line.strip().split(delim)
+                for word in words:
+                    if word not in sg._st:
+                        sg._st[word] = sg._st.size()  # unique index
+
+        # Build inverted index
+        V = sg._st.size()
+        sg._keys = V * [None]
+        for name in sg._st.keys():
+            sg._keys[sg._st[name]] = name
+
+        # Second pass to build the graph
+        sg.G = Graph(V)
+        with open(filename, 'r') as fp:
+            for line in fp.readlines():
+                words = line.strip().split(delim)
+                v = sg._st[words[0]]
+                for w in words[1:]:
+                    sg.G.add_edge(v, sg._st[w])
+
+        return sg
+
+    def __contains__(self, k):
+        """Return True if `k` is a vertex."""
+        return self._st.contains(k)
+
+    def index(self, k):
+        """Return the index associated with `k`."""
+        return self._st[k]
+
+    def name(self, v):
+        """Return the name associated with vertex index `v`."""
+        return self._keys[v]
+
+    # aliases
+    def contains(self, k):
+        return self.__contains__(k)
+
+
 # -----------------------------------------------------------------------------
 #         Functions
 # -----------------------------------------------------------------------------
@@ -396,6 +465,23 @@ if __name__ == "__main__":
 
     find_components(G)
 
+    # Test connected components
+    print('----- SymbolGraph -----')
+    filename = Path('../data/routes.txt')
+    sg = SymbolGraph.fromfile(filename)
+
+    def print_adj(sg, s):
+        """Print the adjacency list of the source."""
+        print(s)
+        for w in sg.G.adj(sg.index(s)):
+            print(' ', sg.name(w))
+
+    print_adj(sg, 'JFK')
+    print_adj(sg, 'LAX')
+
+    filename = Path('../data/movies.txt')
+    sg = SymbolGraph.fromfile(filename, delim='/')
+    print_adj(sg, 'Top Gun (1986)')
 
 # =============================================================================
 # =============================================================================
