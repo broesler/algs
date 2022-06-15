@@ -80,6 +80,7 @@ class Collection(ABC):
             # shorten for printing
             return '[' + a_list(a[:3]) + ' ... ' + a_list(a[-3:]) + ']'
 
+    # NOTE __contains__ automatically defaults to using __iter__
     def __iter__(self):
         yield from self._items
 

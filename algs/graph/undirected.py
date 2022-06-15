@@ -85,7 +85,7 @@ class UndirectedGraph(ABC):
         return f"<{self.__class__.__name__}: {self.__str__()}>"
 
 
-class Search(ABC):
+class GraphSearch(ABC):
     # An abstract base class of graph searches.
     """
     Attributes
@@ -121,8 +121,8 @@ class Search(ABC):
 
 class Paths(ABC):
     # An abstract base class for finding paths through a graph.
-    __doc__ = Search.__doc__
-    __init__ = Search.__init__
+    __doc__ = GraphSearch.__doc__
+    __init__ = GraphSearch.__init__
 
     @abstractmethod
     def has_path_to(self, v):
@@ -172,9 +172,9 @@ class Graph(UndirectedGraph):
         return g
 
 
-class DepthFirstSearch(Search):
+class DepthFirstSearch(GraphSearch):
     __doc__ = f"""Implements depth-first search.
-        {Search.__doc__}"""
+        {GraphSearch.__doc__}"""
     # See p 531
 
     def __init__(self, G, s):
@@ -391,9 +391,9 @@ class SymbolGraph:
         return self.__contains__(k)
 
 
-class Cycle(Search):
+class Cycle(GraphSearch):
     __doc__ = f"""Implements depth-first search to find a cycle.
-        {Search.__doc__}"""
+        {GraphSearch.__doc__}"""
     # See p 547
 
     def __init__(self, G, s):
@@ -413,10 +413,10 @@ class Cycle(Search):
                 self.has_cycle = True
 
 
-class TwoColor(Search):
+class TwoColor(GraphSearch):
     __doc__ = f"""Implements depth-first search to determine if a graph is
         bipartite.
-        {Search.__doc__}"""
+        {GraphSearch.__doc__}"""
     # See p 547
 
     def __init__(self, G, s):
@@ -593,7 +593,7 @@ if __name__ == "__main__":
     # Test dist_to
     G = Graph.fromfile(Path('../data/tinyG2.txt'))
     bfs = BreadthFirstPaths(G, 0)
-    assert ([bfs.dist_to(x) for x in range(G.V)] 
+    assert ([bfs.dist_to(x) for x in range(G.V)]
             == [0, None, 1, 2, None, 1, 1, None, None, None, 2, None])
 
     # Test copy
