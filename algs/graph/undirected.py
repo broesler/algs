@@ -440,46 +440,44 @@ def self_loops(G):
 # -----------------------------------------------------------------------------
 if __name__ == "__main__":
     from pathlib import Path
-    filename = Path('../data/tinyG.txt')
-    G = Graph.fromfile(filename)
+    G = Graph.fromfile(Path('../data/tinyG.txt'))
     print(G)
 
     # Test search
     print('----- DFS -----')
 
-    def search(G, s):
+    def dfs(G, s):
         """Search the graph from vertex `s`."""
-        the_search = DepthFirstSearch(G, s)
+        search = DepthFirstSearch(G, s)
         for v in range(G.V):
-            if the_search.marked(v):
+            if search.marked(v):
                 print(f"{v} ", end='')
         print()
-        if the_search.count() != G.V:
+        if search.count() != G.V:
             print('NOT ', end='')
         print('connected.')
-        return the_search
+        return search
 
-    search(G, 0)
-    search(G, 9)
+    dfs(G, 0)
+    dfs(G, 9)
 
     # Test paths
-    filename = Path('../data/tinyCG.txt')
-    G = Graph.fromfile(filename)
+    print('----- Connected Graph -----')
+    G = Graph.fromfile(Path('../data/tinyCG.txt'))
     print(G)
 
     def paths(G, s, kind='DFS'):
         """Search the graph from vertex `s`, returning the paths."""
         if kind == 'DFS':
-            Path = DepthFirstPaths
+            search = DepthFirstPaths(G, s)
         elif kind == 'BFS':
-            Path = BreadthFirstPaths
+            search = BreadthFirstPaths(G, s)
         else:
             raise ValueError(f"{kind=} is unrecognized!")
-        the_search = Path(G, s)
         for v in range(G.V):
             print(f"{s:2d}->{v:2d}: ", end='')
-            if the_search.has_path_to(v):
-                for x in the_search.path_to(v):
+            if search.has_path_to(v):
+                for x in search.path_to(v):
                     if x == s:
                         print(x, end='')
                     else:
@@ -493,8 +491,7 @@ if __name__ == "__main__":
 
     # Test connected components
     print('----- CC -----')
-    filename = Path('../data/tinyG.txt')
-    G = Graph.fromfile(filename)
+    G = Graph.fromfile(Path('../data/tinyG.txt'))
 
     def find_components(G):
         """Compute the connected components in the graph."""
@@ -514,8 +511,7 @@ if __name__ == "__main__":
 
     # Test connected components
     print('----- SymbolGraph -----')
-    filename = Path('../data/routes.txt')
-    sg = SymbolGraph.fromfile(filename)
+    sg = SymbolGraph.fromfile(Path('../data/routes.txt'))
 
     def print_adj(sg, s):
         """Print the adjacency list of the source."""
@@ -526,9 +522,8 @@ if __name__ == "__main__":
     print_adj(sg, 'JFK')
     print_adj(sg, 'LAX')
 
-    filename = Path('../data/movies.txt')
-    sg = SymbolGraph.fromfile(filename, delim='/')
-    print_adj(sg, 'Top Gun (1986)')
+    # sg = SymbolGraph.fromfile(Path('../data/movies.txt'), delim='/')
+    # print_adj(sg, 'Top Gun (1986)')
 
 # =============================================================================
 # =============================================================================
