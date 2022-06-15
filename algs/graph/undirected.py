@@ -226,13 +226,15 @@ class BreadthFirstPaths(Paths):
     def __init__(self, G, s):
         super().__init__(G, s)
         self._marked = G.V * [False]
-        self._edge_to = G.V * [0]  # last vertex on known path to this one
+        self._edge_to = G.V * [None]  # last vertex on known path to this one
+        self._dist_to = G.V * [None]  # Exercise 4.1.13
         self._bfs(s)
 
     def _bfs(self, v):
         """Perform depth-first search recursively from vertex `v`."""
         q = Queue()
         self._marked[v] = True
+        self._dist_to[v] = 0
         q.enqueue(self.s)
         while not q.is_empty:
             v = q.dequeue()
@@ -240,6 +242,7 @@ class BreadthFirstPaths(Paths):
                 if not self._marked[w]:
                     self._edge_to[w] = v
                     self._marked[w] = True
+                    self._dist_to[w] = self._dist_to[v] + 1
                     q.enqueue(w)
 
     def has_path_to(self, v):
@@ -255,6 +258,11 @@ class BreadthFirstPaths(Paths):
             x = self._edge_to[x]
         path.push(self.s)
         return path
+
+    # Exercise 4.1.13
+    def dist_to(self, v):
+        """Return the distance from source to `v`. None if not connected."""
+        return self._dist_to[v]
 
 
 # Algorithm 4.3
