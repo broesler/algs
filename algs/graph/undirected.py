@@ -378,6 +378,7 @@ class GraphProperties:
         return self._eccs[v]
 
     def _ecc(self, v):
+        # Compute the shortest path from v to every other vertex
         bfs = BreadthFirstPaths(self.G, v)
         return max([bfs.dist_to(x) for x in self.G.vertices()])
 
@@ -397,7 +398,20 @@ class GraphProperties:
 
     def girth(self):
         """Return the length of the shortest cycle in the graph."""
-        pass
+        # G is asserted to be connected, so only need to check one vertex
+        if not Cycle(G, 0).has_cycle:
+            return float('inf')
+        # Run BFS on each vertex. The shortest cycle containing s is a shortest
+        # path from s to some vertex v, plus the edge from v back to s.
+        # for v in self.G.vertices():
+        #     bfs = BreadthFirstPaths(self.G, v)
+
+        # Algorithm 
+        # (see <https://www.cs.princeton.edu/courses/archive/spr08/cos226/exams/fin-f05-sol.pdf>)
+        # For each edge v-w:
+        #   - copy G, but remove edge v-w
+        #   - The shortest path is BFS.dist(v, w) + 1 (the removed edge)
+        #   - compare to the current minimum path length
 
 
 # Algorithm 4.3
@@ -800,6 +814,7 @@ if __name__ == "__main__":
     print('    diameter:', gp.diameter())
     print('      radius:', gp.radius())
     print('      center:', gp.center())
+    print('       girth:', gp.girth())
     assert gp.eccentricity(gp.center()) == gp.radius()
 
 # =============================================================================
