@@ -318,6 +318,38 @@ class UFSearch(GraphSearch):
         return self._uf._size[self._uf.find(self.s)]
 
 
+# Exercise 4.1.10
+class LeafDFS(GraphSearch):
+    __doc__ = f"""Implements depth-first search to find a non-structural
+    vertex, aka a leaf of a spanning tree rooted at the source.
+    {GraphSearch.__doc__}"""
+
+    def __init__(self, G, s):
+        super().__init__(G, s)
+        self._marked = G.V * [False]
+        self._count = 0
+        self._leaf = self._dfs(s)
+
+    def marked(self, v):
+        return self._marked[v]
+
+    def count(self):
+        return self._count
+
+    def _dfs(self, v):
+        """Perform depth-first search recursively from vertex `v`."""
+        self._marked[v] = True
+        self._count += 1
+        if all([self._marked[x] for x in self.G.adj(v)]):
+            return v
+        for w in self.G.adj(v):
+            if not self._marked[w]:
+                return self._dfs(w)
+
+    def leaf(self):
+        return self._leaf
+
+
 # Algorithm 4.3
 class CC:
     """Implements a connected components depth-first search.
@@ -663,6 +695,10 @@ if __name__ == "__main__":
     ufs = UFSearch(G, 0)
     assert all([ufs.marked(x) for x in [2, 3, 5, 6, 10]])
     assert ufs.count() == 6  # number of vertices in source component
+
+    # Test leaf finding
+    lfs = LeafDFS(G, 0)
+    assert lfs.leaf() == 10
 
 # =============================================================================
 # =============================================================================
