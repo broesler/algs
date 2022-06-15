@@ -136,6 +136,7 @@ class Paths(ABC):
 class Graph(UndirectedGraph):
     __doc__ = f"""Implements an undirected graph using adjacency lists.
         {UndirectedGraph.__doc__}"""
+    # See p 526
 
     def __init__(self, V):
         super().__init__(V)
@@ -152,10 +153,15 @@ class Graph(UndirectedGraph):
         self._adj[w].add(v)
         self.E += 1
 
+    # Exercise 4.1.3
+    def copy(self):
+        pass
+
 
 class DepthFirstSearch(Search):
     __doc__ = f"""Implements depth-first search.
         {Search.__doc__}"""
+    # See p 531
 
     def __init__(self, G, s):
         super().__init__(G, s)
@@ -186,7 +192,7 @@ class DepthFirstPaths(Paths):
     def __init__(self, G, s):
         super().__init__(G, s)
         self._marked = G.V * [False]
-        self._edge_to = G.V * [0]  # last vertex on known path to this one
+        self._edge_to = G.V * [None]  # last vertex on known path to this one
         self._dfs(s)
 
     def _dfs(self, v):
@@ -296,6 +302,7 @@ class CC:
 
 class SymbolGraph:
     """Implements a symbol graph."""
+    # See p 552
 
     def __init__(self):
         self._st = HashST()  # map : str -> int
@@ -362,10 +369,10 @@ class SymbolGraph:
         return self.__contains__(k)
 
 
-# See p 547
 class Cycle(Search):
     __doc__ = f"""Implements depth-first search to find a cycle.
         {Search.__doc__}"""
+    # See p 547
 
     def __init__(self, G, s):
         self.G = G
@@ -384,11 +391,11 @@ class Cycle(Search):
                 self.has_cycle = True
 
 
-# See p 547
 class TwoColor(Search):
     __doc__ = f"""Implements depth-first search to determine if a graph is
         bipartite.
         {Search.__doc__}"""
+    # See p 547
 
     def __init__(self, G, s):
         self.G = G
@@ -413,7 +420,7 @@ class TwoColor(Search):
 #         Client Functions
 # -----------------------------------------------------------------------------
 # Define some functions for use with graphs that would be too cumbersome to
-# maintain in the basic API.
+# maintain in the basic API. See p 523.
 def max_degree(G, v):
     """Return the maximum degree all vertices in the graph."""
     m = 0
@@ -441,6 +448,7 @@ def self_loops(G):
 
 def dfs(G, s):
     """Search the graph from vertex `s`."""
+    # See p 529
     search = DepthFirstSearch(G, s)
     for v in range(G.V):
         if search.marked(v):
@@ -454,6 +462,7 @@ def dfs(G, s):
 
 def paths(G, s, kind='DFS'):
     """Search the graph from vertex `s`, returning the paths."""
+    # See p 535
     if kind == 'DFS':
         search = DepthFirstPaths(G, s)
     elif kind == 'BFS':
@@ -473,6 +482,7 @@ def paths(G, s, kind='DFS'):
 
 def find_components(G):
     """Compute the connected components in the graph."""
+    # See p 543
     cc = CC(G)
     M = cc.count()
     print(f"{M} components")
@@ -488,12 +498,15 @@ def find_components(G):
 
 def print_adj(sg, s):
     """Print the adjacency list of the source."""
+    # See p 550
     print(s)
     for w in sg.G.adj(sg.index(s)):
         print(' ', sg.name(w))
 
 
 def degrees_of_separation(sg, source, sink):
+    """Return the shortest path from source to sink in a symbol graph."""
+    # See p 555
     if source not in sg:
         raise ValueError(f"{repr(source)} not in graph!")
     s = sg.index(source)
@@ -508,6 +521,7 @@ def degrees_of_separation(sg, source, sink):
             print('Not connected.')
     else:
         raise ValueError(f"{repr(sink)} not in graph!")
+
 
 # -----------------------------------------------------------------------------
 #         Tests
