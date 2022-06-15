@@ -75,6 +75,10 @@ class UndirectedGraph(ABC):
         """Return True if an edge from `v` to `w` exists."""
         return w in self.adj(v)
 
+    @abstractmethod
+    def vertices(self):
+        """Return an iterable of the vertices."""
+
     def __str__(self):
         s = f"{self.V} vertices, {self.E} edges\n"
         for v in range(self.V):
@@ -159,6 +163,9 @@ class Graph(UndirectedGraph):
     parallel : bool, optional
         If True, allow parallel edges and self-loops. Otherwise, do not.
     """
+
+    def vertices(self):
+        return range(self.V)
 
     def adj(self, v):
         self._validate_vertex(v)
@@ -366,7 +373,7 @@ class CC:
         self._id = G.V * [0]
         self._count = 0
         # Perform DFS for *every* source vertex.
-        for s in range(G.V):
+        for s in G.vertices():
             if not self._marked[s]:
                 self._dfs(s)
                 self._count += 1
@@ -517,7 +524,7 @@ class TwoColor(GraphSearch):
 def max_degree(G, v):
     """Return the maximum degree all vertices in the graph."""
     m = 0
-    for v in range(G.V):
+    for v in G.vertices():
         d = G.degree(v)
         if d > m:
             m = d
@@ -532,7 +539,7 @@ def avg_degree(G):
 def self_loops(G):
     """Return the number of self-loops in the graph."""
     s = 0
-    for v in range(G.V):
+    for v in G.vertices():
         for w in G.adj(v):
             if v == w:
                 s += 1
@@ -543,7 +550,7 @@ def dfs(G, s):
     """Search the graph from vertex `s`."""
     # See p 529
     search = DepthFirstSearch(G, s)
-    for v in range(G.V):
+    for v in G.vertices():
         if search.marked(v):
             print(f"{v} ", end='')
     print()
@@ -562,7 +569,7 @@ def paths(G, s, kind='DFS'):
         search = BreadthFirstPaths(G, s)
     else:
         raise ValueError(f"{kind=} is unrecognized!")
-    for v in range(G.V):
+    for v in G.vertices():
         print(f"{s:2d}->{v:2d}: ", end='')
         if search.has_path_to(v):
             for x in search.path_to(v):
@@ -580,7 +587,7 @@ def find_components(G):
     M = cc.count()
     print(f"{M} components")
     components = [Bag() for _ in range(M)]
-    for v in range(G.V):
+    for v in G.vertices():
         components[cc.id(v)].add(v)
     for i in range(M):
         print(f"{i}: ", end='')
@@ -664,12 +671,12 @@ if __name__ == "__main__":
     # Test dist_to
     G = Graph.fromfile(Path('../data/tinyG2.txt'))
     bfs = BreadthFirstPaths(G, 0)
-    assert ([bfs.dist_to(x) for x in range(G.V)]
+    assert ([bfs.dist_to(x) for x in G.vertices()]
             == [0, None, 1, 2, None, 1, 1, None, None, None, 2, None])
 
     # Test copy
     G2 = G.copy()
-    for v in range(G.V):
+    for v in G.vertices():
         assert G.adj(v) == G2.adj(v)
         assert G._adj[v] is not G2._adj[v]
 
