@@ -13,7 +13,7 @@ See Sedgewick and Wayne, §4.1.
 
 from abc import ABC, abstractmethod
 
-from algs.basics import Bag, Stack
+from algs.basics import Bag, Stack, Queue
 
 
 # -----------------------------------------------------------------------------
@@ -209,6 +209,44 @@ class DepthFirstPaths(Paths):
         return path
 
 
+class BreadthFirstPaths(Paths):
+    __doc__ = f"""Implements breadth-first search to find shortest paths.
+        {Paths.__doc__}"""
+
+    def __init__(self, G, s):
+        super().__init__(G, s)
+        self._marked = G.V * [False]
+        self._edge_to = G.V * [0]  # last vertex on known path to this one
+        self._bfs(s)
+
+    def _bfs(self, v):
+        """Perform depth-first search recursively from vertex `v`."""
+        q = Queue()
+        self._marked[v] = True
+        q.enqueue(self.s)
+        while not q.is_empty:
+            v = q.dequeue()
+            for w in self.G.adj(v):
+                if not self._marked[w]:
+                    self._edge_to[w] = v
+                    self._marked[w] = True
+                    q.enqueue(w)
+
+    def has_path_to(self, v):
+        return self._marked[v]
+
+    def path_to(self, v):
+        if not self.has_path_to(v):
+            return None
+        path = Stack()
+        x = v
+        while x != self.s:
+            path.push(x)
+            x = self._edge_to[x]
+        path.push(self.s)
+        return path
+
+
 # -----------------------------------------------------------------------------
 #         Functions
 # -----------------------------------------------------------------------------
@@ -270,11 +308,16 @@ if __name__ == "__main__":
     filename = Path('../data/tinyCG.txt')
     G = Graph.fromfile(filename)
     print(G)
-    print('----- DFS Paths -----')
 
-    def paths(G, s):
+    def paths(G, s, kind='DFS'):
         """Search the graph from vertex `s`, returning the paths."""
-        the_search = DepthFirstPaths(G, s)
+        if kind == 'DFS':
+            Path = DepthFirstPaths
+        elif kind == 'BFS':
+            Path = BreadthFirstPaths
+        else:
+            raise ValueError(f"{kind=} is unrecognized!")
+        the_search = Path(G, s)
         for v in range(G.V):
             print(f"{s:2d}->{v:2d}: ", end='')
             if the_search.has_path_to(v):
@@ -285,7 +328,10 @@ if __name__ == "__main__":
                         print(f"-{x}", end='')
             print()
 
-    paths(G, 0)
+    print('----- DFS Paths -----')
+    paths(G, 0, kind='DFS')
+    print('----- BFS Paths -----')
+    paths(G, 0, kind='BFS')
 
 # =============================================================================
 # =============================================================================
