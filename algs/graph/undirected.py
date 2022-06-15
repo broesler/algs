@@ -15,6 +15,7 @@ from abc import ABC, abstractmethod
 
 from algs.basics import Bag, Stack, Queue
 from algs.search import HashST
+from algs import WeightedQuickUnionUF
 
 
 # -----------------------------------------------------------------------------
@@ -287,6 +288,28 @@ class BreadthFirstPaths(Paths):
     def dist_to(self, v):
         """Return the distance from source to `v`. None if not connected."""
         return self._dist_to[v]
+
+
+# Exercise 4.1.8
+class UFSearch(GraphSearch):
+    __doc__ = f"""Implements the graph search API using Union-Find.
+        {GraphSearch.__doc__}"""
+    # See p 529
+
+    def __init__(self, G, s):
+        super().__init__(G, s)
+        self._uf = WeightedQuickUnionUF(G.V)
+        for v in range(self.G.V):
+            for w in self.G.adj(v):
+                if not self._uf.connected(v, w):
+                    self._uf.union(v, w)
+
+    def marked(self, v):
+        return self._uf.connected(self.s, v)
+
+    def count(self):
+        # Return the size of the component to which the source belongs
+        return self._uf._size[self._uf.find(self.s)]
 
 
 # Algorithm 4.3
@@ -629,6 +652,11 @@ if __name__ == "__main__":
         G.add_edge(9, 9)
     except ValueError:
         pass
+
+    # Test UF search
+    ufs = UFSearch(G, 0)
+    assert all([ufs.marked(x) for x in [2, 3, 5, 6, 10]])
+    assert ufs.count() == 6  # number of vertices in source component
 
 # =============================================================================
 # =============================================================================
