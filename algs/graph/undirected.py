@@ -215,11 +215,11 @@ class Graph(UndirectedGraph):
         if w not in self._adj[v] or v not in self._adj[w]:
             raise ValueError(f"Graph does not contain edge {v}-{w}!")
         if self._PARALLEL:
-            self._adj[v].remove(w)
-            self._adj[w].remove(v)
-        else:
             self._adj[v]._items.remove(w)  # not really allowed by the Bag API
             self._adj[w]._items.remove(v)
+        else:
+            self._adj[v].remove(w)
+            self._adj[w].remove(v)
         self.E -= 1
 
     # Exercise 4.1.3
