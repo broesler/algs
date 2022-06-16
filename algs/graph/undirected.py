@@ -658,11 +658,17 @@ class MinCyclePath(BreadthFirstPaths):
 
     def cycle_path(self):
         """Return the path of the found cycle."""
+        # BFS gives two paths: one each to head and tail.
+        # Merge the paths to head and tail to remove all common ancestors
+        # except the last that completes the cycle.
         p = deque(self.path_to(self._cycle_tail))
-        p.append(self._cycle_head)  # add to end of path
-        # Cycle may not include the source! Remove irrelevant vertices.
-        while p[0] != p[-1]:
+        q = deque(self.path_to(self._cycle_head))
+        while len(p) > 2 and len(q) > 2 and p[0] == q[0] and p[1] == q[1]:
             p.popleft()
+            q.popleft()
+        p.popleft()      # remove one of the dulicates
+        p.extendleft(q)  # merge
+        p.append(p[0])   # complete the loop
         return p
 
 
