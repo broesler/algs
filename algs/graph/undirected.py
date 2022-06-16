@@ -13,6 +13,7 @@ See Sedgewick and Wayne, §4.1.
 
 from abc import ABC, abstractmethod
 from collections import deque
+from tqdm import tqdm
 
 from algs.basics import Bag, Stack, Queue
 from algs.search import HashST
@@ -47,13 +48,16 @@ class UndirectedGraph(ABC):
                              'expects an iterable of tuples.')
 
     @classmethod
-    def fromfile(cls, filename, *args, **kwargs):
+    def fromfile(cls, filename, *args, verbose=False, **kwargs):
         """Construct the graph structure from a file."""
         with open(filename, 'r') as fp:
             V = int(fp.readline())
             E = int(fp.readline())
             G = cls(V, *args, **kwargs)
-            for line in fp.readlines():
+            iters = fp.readlines()
+            if verbose:
+                iters = tqdm(iters)
+            for line in iters:
                 v, w = line.strip().split()
                 G.add_edge(int(v), int(w))
             assert E == G.E
@@ -431,6 +435,8 @@ class GraphProperties:
         if not Cycle(self.G, 0).has_cycle:
             return m
         # Compute the shortest cycle: O(V(V + E))
+        # TODO come up with example of graph where BFS would *not* find the
+        # minimum cycle in a connected graph just by searching from one vertex.
         for v in self.G.vertices():
             bfs = MinCyclePath(self.G, v)
             m = min(m, bfs.cycle_length)
@@ -448,6 +454,7 @@ class CC:
 
     def __init__(self, G):
         self.G = G
+        self.sizes = [0]
         self._marked = G.V * [False]
         self._id = G.V * [0]
         self._count = 0
@@ -456,11 +463,16 @@ class CC:
             if not self._marked[s]:
                 self._dfs(s)
                 self._count += 1
+                self.sizes.append(0)
+        # Trim extra 0 if necessary
+        self.sizes = self.sizes[:self._count]
+        # assert sum(self.sizes) == self.G.V
 
     def _dfs(self, v):
         """Perform depth-first search recursively from vertex `v`."""
         self._marked[v] = True
         self._id[v] = self._count
+        self.sizes[self._count] += 1
         for w in self.G.adj(v):
             if not self._marked[w]:
                 self._dfs(w)
@@ -478,6 +490,14 @@ class CC:
         """The number of connected components."""
         return self._count
 
+    def vertices(self, k):
+        """Return an iterable of the vertices in the component with id `k`."""
+        return (v for v, c in enumerate(self._id) if c == k)
+
+    def size(self, k):
+        """Return the size of the component with id `k`."""
+        return self.sizes[k]
+
 
 class SymbolGraph:
     """Implements a symbol graph."""
@@ -489,7 +509,7 @@ class SymbolGraph:
         self.G = None
 
     @classmethod
-    def fromfile(cls, filename, delim=' '):
+    def fromfile(cls, filename, *args, delim=' ', verbose=False, **kwargs):
         """Construct a SymbolGraph from a delimited text file containing an
         adjacency list for the graph.
 
@@ -499,16 +519,21 @@ class SymbolGraph:
             The name of the adjacency list file to process.
         delim : char, optional
             The character on which to split words.
+        verbose : bool, optional
+            If True, print a progress bar while reading the file.
 
         Returns
         -------
         res : :obj:`SymbolGraph`
             The SymbolGraph defined by the adjaceny list file.
         """
-        sg = cls()
+        sg = cls(*args, **kwargs)
         # First pass to add all vertices to the symbol table
         with open(filename, 'r') as fp:
-            for line in fp.readlines():
+            iters = fp.readlines()
+            if verbose:
+                iters = tqdm(iters)
+            for line in iters:
                 words = line.strip().split(delim)
                 for word in words:
                     if word not in sg._st:
@@ -530,6 +555,10 @@ class SymbolGraph:
                     sg.G.add_edge(v, sg._st[w])
 
         return sg
+
+    @property
+    def V(self):
+        return self.G.V
 
     def __contains__(self, k):
         """Return True if `k` is a vertex."""
@@ -786,6 +815,7 @@ def find_components(G):
         for v in components[i]:
             print(f"{v} ", end='')
         print()
+    return cc
 
 
 def print_adj(sg, s):
@@ -852,7 +882,7 @@ if __name__ == "__main__":
     # Test connected components
     print('----- CC -----')
     G = Graph.fromfile(Path('../data/tinyG.txt'))
-    find_components(G)
+    cc = find_components(G)
 
     # Test connected components
     print('----- SymbolGraph -----')
@@ -919,6 +949,8 @@ if __name__ == "__main__":
     print('--- Graph Properties ---')
     # gc = Graph.fromfile(Path('../data/tinyCG.txt'))
     gc = Graph.fromfile(Path('../data/mediumG.txt'))
+    # NOTE maximum recursion depth reached in largeG!
+    # gc = Graph.fromfile(Path('../data/largeG.txt'), verbose=True)
 
     gp = GraphProperties(gc)
     print('eccentricity:', gp.eccentricity(0))
@@ -931,13 +963,12 @@ if __name__ == "__main__":
     c = MinCyclePath(gc, 0)
     print(c.cycle_path())
 
-    # gc = Graph.fromfile(Path('../data/fiveG.txt'))  # pentagon girth = 5
     for N in range(2, 10):
         edges = list()
         for i in range(N):
             edges.append((i, (i + 1) % N))
         Ncyc = Graph(N, edges)
-        # assert GraphProperties(Ncyc).girth() == N
+        assert GraphProperties(Ncyc).girth() == N
 
     c = MinCyclePath(Ncyc, 0)
     print(c.cycle_path())
