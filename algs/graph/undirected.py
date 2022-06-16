@@ -163,8 +163,7 @@ class Graph(UndirectedGraph):
     {UndirectedGraph.__doc__}"""
     # See p 526
 
-    def __init__(self, V, parallel=True):
-        super().__init__(V)
+    def __init__(self, V, edges=None, parallel=True):
         self._PARALLEL = bool(parallel)
         if self._PARALLEL:
             self._adj = [Bag() for _ in range(V)]
@@ -172,6 +171,7 @@ class Graph(UndirectedGraph):
             # Exercise 4.1.5 no parallel edges
             # NOTE that using `set` breaks the ordering of `adj(v)`
             self._adj = [set() for _ in range(V)]
+        super().__init__(V, edges)
 
     __init__.__doc__ = f"""{UndirectedGraph.__init__.__doc__}
     parallel : bool, optional
@@ -908,18 +908,24 @@ if __name__ == "__main__":
         pass
 
     print('--- Graph Properties ---')
-    # gc = Graph.fromfile(Path('../data/mediumG.txt'))
     # gc = Graph.fromfile(Path('../data/tinyCG.txt'))
-    # TODO write tests with a 2-, 3-, etc. graph to test girth/cycle paths
-    gc = Graph.fromfile(Path('../data/fiveG.txt'))  # pentagon girth = 5
+    gc = Graph.fromfile(Path('../data/mediumG.txt'))
+
     gp = GraphProperties(gc)
-    # print('eccentricity:', gp.eccentricity(56))
     print('eccentricity:', gp.eccentricity(0))
     print('    diameter:', gp.diameter())
     print('      radius:', gp.radius())
     print('      center:', gp.center())
     print('       girth:', gp.girth())
     assert gp.eccentricity(gp.center()) == gp.radius()
+
+    # gc = Graph.fromfile(Path('../data/fiveG.txt'))  # pentagon girth = 5
+    for N in range(2, 10):
+        edges = list()
+        for i in range(N):
+            edges.append((i, (i + 1) % N))
+        gp = GraphProperties(Graph(N, edges))
+        assert gp.girth() == N
 
 # =============================================================================
 # =============================================================================
