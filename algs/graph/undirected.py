@@ -258,6 +258,38 @@ class STGraph(UndirectedGraph):
                     self.add_vertex(v)
         super().__init__(V=self.V, edges=edges)
 
+    @classmethod
+    def fromadjfile(cls, filename, *args, delim=' ', verbose=False, **kwargs):
+        """Construct an STGraph from a delimited text file containing an
+        adjacency list for the graph.
+
+        Parameters
+        ----------
+        filename : str
+            The name of the adjacency list file to process.
+        delim : char, optional
+            The character on which to split words.
+        verbose : bool, optional
+            If True, print a progress bar while reading the file.
+
+        Returns
+        -------
+        res : :obj:`SymbolGraph`
+            The SymbolGraph defined by the adjaceny list file.
+        """
+        g = cls(*args, **kwargs)
+        # One pass to add all vertices and edges to the symbol table
+        with open(filename, 'r') as fp:
+            iters = fp.readlines()
+            if verbose:
+                iters = tqdm(iters)
+            for line in iters:
+                words = line.strip().split(delim)
+                v = words[0]
+                for w in words[1:]:
+                    g.add_edge(v, w)
+        return g
+
     __init__.__doc__ = f"""{UndirectedGraph.__init__.__doc__}
     parallel : bool, optional
         If True, allow parallel edges.
