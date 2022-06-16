@@ -444,27 +444,24 @@ class GraphProperties:
         The algorithm runs in O(E(V + E)) time, since all edges must be
         checked, and BFS runs in O(V + E) worst-case time."""
         # G is guaranteed to be connected, so only need to check one vertex
-        if not Cycle(self.G, 0).has_cycle:
-            return float('inf')
-
         m = float('inf')  # set "minimum" to maximum
+        if not Cycle(self.G, 0).has_cycle:
+            return m
+
+        # # Compute the shortest cycle: O(V(V + E))
+        # for v in self.G.vertices():
+        #     bfs = MinCyclePath(self.G, v)
+        #     m = min(m, bfs.cycle_length)
 
         # Compute the shortest cycle: O(E(V + E))
-        # G = self.G.copy()
-        # for v, w in self.G.edges():
-        #     G.remove_edge(v, w)
-        #     bfs = BreadthFirstPaths(G, v)
-        #     d = bfs.dist_to(w) + 1
-        #     m = min(m, d)
-        #     G.add_edge(v, w)
-        # return m
+        G = self.G.copy()
+        for v, w in self.G.edges():
+            G.remove_edge(v, w)
+            bfs = BreadthFirstPaths(G, v)
+            m = min(m, bfs.dist_to(w) + 1)
+            G.add_edge(v, w)
 
-        # Compute the shortest cycle: O(V(V + E))?
-        for v in self.G.vertices():
-            bfs = MinCycle(self.G, v)
-            m = min(m, bfs.min_len)
         return m
-
 
 # Algorithm 4.3
 class CC:
