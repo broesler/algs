@@ -16,7 +16,7 @@ from collections import deque
 from tqdm import tqdm
 
 from algs.basics import Bag, Stack, Queue
-from algs.search import HashST
+from algs.search import Set, HashST
 from algs import WeightedQuickUnionUF
 
 
@@ -34,7 +34,7 @@ class UndirectedGraph(ABC):
         number of edges
     """
 
-    def __init__(self, V, edges=None):
+    def __init__(self, V=0, edges=None):
         if V < 0:
             raise ValueError(f"Number of vertices {V=} must be > 0!")
         self.V = V
@@ -48,12 +48,12 @@ class UndirectedGraph(ABC):
                              'expects an iterable of tuples.')
 
     @classmethod
-    def fromfile(cls, filename, *args, verbose=False, **kwargs):
+    def fromfile(cls, filename, verbose=False, **kwargs):
         """Construct the graph structure from a file."""
         with open(filename, 'r') as fp:
             V = int(fp.readline())
             E = int(fp.readline())
-            G = cls(V, *args, **kwargs)
+            G = cls(V=V, **kwargs)
             iters = fp.readlines()
             if verbose:
                 iters = tqdm(iters)
@@ -94,7 +94,7 @@ class UndirectedGraph(ABC):
 
     def __str__(self):
         s = f"{self.V} vertices, {self.E} edges\n"
-        for v in range(self.V):
+        for v in self.vertices():
             s += f"{v}: " + ' '.join(str(w) for w in self.adj(v))
             if v < self.V-1:
                 s += '\n'
@@ -158,23 +158,26 @@ class Paths(ABC):
 #         Concrete Classes
 # -----------------------------------------------------------------------------
 class Graph(UndirectedGraph):
-    __doc__ = f"""Implements an undirected graph using adjacency lists.
+    __doc__ = f"""Implements a graph using an array of adjacency lists.
     {UndirectedGraph.__doc__}"""
     # See p 526
 
-    def __init__(self, V, edges=None, parallel=True):
+    def __init__(self, V=0, edges=None, parallel=True, self_loops=True):
         self._PARALLEL = bool(parallel)
+        self._SELF_LOOPS = bool(self_loops)
         if self._PARALLEL:
             self._adj = [Bag() for _ in range(V)]
         else:
             # Exercise 4.1.5 no parallel edges
             # NOTE that using `set` breaks the ordering of `adj(v)`
             self._adj = [set() for _ in range(V)]
-        super().__init__(V, edges)
+        super().__init__(V=V, edges=edges)
 
     __init__.__doc__ = f"""{UndirectedGraph.__init__.__doc__}
     parallel : bool, optional
-        If True, allow parallel edges and self-loops. Otherwise, do not.
+        If True, allow parallel edges.
+    self_loops : bool, optional
+        If True, allow self-loops.
     """
 
     def _validate_vertex(self, v):
@@ -202,19 +205,127 @@ class Graph(UndirectedGraph):
         self._validate_vertex(v)
         self._validate_vertex(w)
         # Exercise 4.1.5
-        if self._PARALLEL and v == w:
+        if not self._SELF_LOOPS and v == w:
             raise ValueError(f"{v} == {w}! No self-loops allowed.")
+        if not self.has_edge(v, w):
+            self.E += 1
         self._adj[v].add(w)
         self._adj[w].add(v)
-        self.E += 1
 
     # Exercise 4.1.3
     def copy(self):
         """Make a deep copy of the graph structure."""
         g = self.__class__(self.V)
-        for v in range(self.V):
+        for v in self.vertices():
             for w in self._adj[v]:
                 g._adj[v].add(w)
+        return g
+
+    # Exercise 4.1.24 (inspiration)
+    def subgraph(self, vertices):
+        """Make a copy of the subgraph containing the `vertices`.
+
+        .. note:: This method re-maps the vertices to [0, 1, ...len(vertices)]
+        for array indexing, so although the structure of the subgraph will
+        match that of the original, the vertex names will be different.
+        """
+        vertices = Set(vertices)  # use ordered set for ranking adjacents
+        g = self.__class__(len(vertices))
+        for i, v in enumerate(vertices):
+            for w in self._adj[v]:
+                if w in vertices:
+                    g._adj[i].add(vertices.rank(w))
+        return g
+
+
+class STGraph(UndirectedGraph):
+    __doc__ = f"""Implements a graph using a symbol table of adjacency lists.
+    {UndirectedGraph.__doc__}"""
+    # See p 557 and
+    # <https://introcs.cs.princeton.edu/java/45graph/Graph.java.html>
+
+    def __init__(self, V=None, edges=None, parallel=True, self_loops=True):
+        self._PARALLEL = bool(parallel)
+        self._SELF_LOOPS = bool(self_loops)
+        self._adj = HashST()
+        self.V = 0
+        if V is not None:
+            try:
+                # iterate over V itself
+                for v in V:
+                    self.add_vertex(v)
+            except TypeError:
+                # If V is an integer, number the vertices accordingly
+                for v in range(V):
+                    self.add_vertex(v)
+        super().__init__(V=self.V, edges=edges)
+
+    __init__.__doc__ = f"""{UndirectedGraph.__init__.__doc__}
+    parallel : bool, optional
+        If True, allow parallel edges.
+    self_loops : bool, optional
+        If True, allow self-loops.
+    """
+
+    def _validate_vertex(self, v):
+        if not self.has_vertex(v):
+            raise ValueError(f"Vertex {v=} does not exist!")
+
+    def has_vertex(self, v):
+        return v in self._adj
+
+    def vertices(self):
+        return self._adj.keys()
+
+    def edges(self):
+        e = set()
+        for v in self.vertices():
+            for w in self._adj[v]:
+                # Only add single direction
+                if (w, v) not in e:
+                    e.add((v, w))
+        return e
+
+    def adj(self, v):
+        self._validate_vertex(v)
+        return self._adj[v]
+
+    def add_vertex(self, v):
+        """Add a vertex to the graph."""
+        if not self.has_vertex(v):
+            if self._PARALLEL:
+                self._adj[v] = Bag()
+            else:
+                self._adj[v] = set()
+            self.V += 1
+
+    def add_edge(self, v, w):
+        if v not in self._adj:
+            self.add_vertex(v)
+        if w not in self._adj:
+            self.add_vertex(w)
+        # Exercise 4.1.5
+        if not self._SELF_LOOPS and v == w:
+            raise ValueError(f"{v} == {w}! No self-loops allowed.")
+        if not self.has_edge(v, w):
+            self.E += 1
+        self._adj[v].add(w)
+        self._adj[w].add(v)
+
+    # Exercise 4.1.3
+    def copy(self):
+        """Make a deep copy of the graph structure."""
+        return self.subgraph(self.vertices())
+
+    # Exercise 4.1.3 + 4.1.24 (inspiration)
+    def subgraph(self, vertices):
+        """Make a deep copy of the subgraph containing the `vertices`."""
+        vertices = set(vertices)
+        g = self.__class__(vertices)
+        for v in vertices:
+            for w in self._adj[v]:
+                if w in vertices:
+                    g._adj[v].add(w)
         return g
 
 
@@ -340,7 +451,7 @@ class UFSearch(GraphSearch):
     def __init__(self, G, s):
         super().__init__(G, s)
         self._uf = WeightedQuickUnionUF(G.V)
-        for v in range(self.G.V):
+        for v in G.vertices():
             for w in self.G.adj(v):
                 if not self._uf.connected(v, w):
                     self._uf.union(v, w)
@@ -441,6 +552,7 @@ class GraphProperties:
             bfs = MinCyclePath(self.G, v)
             m = min(m, bfs.cycle_length)
         return m
+
 
 # Algorithm 4.3
 class CC:
@@ -801,7 +913,7 @@ def paths(G, s, kind='DFS'):
         print()
 
 
-def find_components(G):
+def print_components(G):
     """Compute the connected components in the graph."""
     # See p 543
     cc = CC(G)
@@ -815,7 +927,7 @@ def find_components(G):
         for v in components[i]:
             print(f"{v} ", end='')
         print()
-    return cc
+    return components
 
 
 def print_adj(sg, s):
@@ -834,7 +946,7 @@ def degrees_of_separation(sg, source, sink):
     s = sg.index(source)
     bfs = BreadthFirstPaths(sg.G, s)
     if sink in sg:
-        print(source)
+        print(f"{source}->{sink}")
         t = sg.index(sink)
         if bfs.has_path_to(t):
             for v in bfs.path_to(t):
@@ -851,6 +963,7 @@ def degrees_of_separation(sg, source, sink):
 # TODO tests/test_graph.py
 if __name__ == "__main__":
     from pathlib import Path
+    # Graph = STGraph
     G = Graph.fromfile(Path('../data/tinyG.txt'))
     print(G)
 
@@ -863,12 +976,13 @@ if __name__ == "__main__":
     print('----- Connected Graph -----')
     G = Graph.fromfile(Path('../data/tinyCG.txt'))
     print(G)
+    dfs(G, 0)
     print('----- DFS Paths -----')
     paths(G, 0, kind='DFS')
     print('----- BFS Paths -----')
     paths(G, 0, kind='BFS')
 
-    print('--- Cycle ---')
+    # print('--- Cycle ---')
     G = Graph.fromfile(Path('../data/tinyG.txt'))
     c = CyclePath(G, 0)
     assert c.has_cycle
@@ -881,8 +995,10 @@ if __name__ == "__main__":
 
     # Test connected components
     print('----- CC -----')
-    G = Graph.fromfile(Path('../data/tinyG.txt'))
-    cc = find_components(G)
+    comps = print_components(G2)
+    print('--- subgraph 0 ---')
+    G20 = G2.subgraph(comps[0])
+    print(G20)
 
     # Test connected components
     print('----- SymbolGraph -----')
