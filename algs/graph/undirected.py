@@ -305,7 +305,7 @@ class BreadthFirstPaths(Paths):
         self._bfs(s)
 
     def _bfs(self, v):
-        """Perform depth-first search recursively from vertex `v`."""
+        """Perform breadth-first search from vertex `v`."""
         q = Queue()
         self._marked[v] = True
         self._dist_to[v] = 0
@@ -323,6 +323,7 @@ class BreadthFirstPaths(Paths):
         return self._marked[v]
 
     def path_to(self, v):
+        # Same as DepthFirstPaths method
         if not self.has_path_to(v):
             return None
         path = Stack()
@@ -588,10 +589,11 @@ class Cycle(DepthFirstPaths):
     def __init__(self, G, s):
         self.G = G
         self.s = s
+        self.has_cycle = False
         self._marked = G.V * [False]
         self._edge_to = G.V * [None]  # last vertex on known path to this one
-        self.has_cycle = False
-        self._cycle_tail = None
+        self._cycle_head = None  # start vertex of the cycle
+        self._cycle_tail = None  # end vertex of the cycle
         try:
             self._dfs(s, s)
         except self.CycleFound:
@@ -611,8 +613,8 @@ class Cycle(DepthFirstPaths):
                 self._dfs(w, v)
             elif w != u:
                 self.has_cycle = True
-                self._cycle_tail = v
                 self._cycle_head = w
+                self._cycle_tail = v
                 raise self.CycleFound
 
     def cycle_path(self):
