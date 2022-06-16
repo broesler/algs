@@ -95,10 +95,8 @@ class UndirectedGraph(ABC):
     def __str__(self):
         s = f"{self.V} vertices, {self.E} edges\n"
         for v in self.vertices():
-            s += f"{v}: " + ' '.join(str(w) for w in self.adj(v))
-            if v < self.V-1:
-                s += '\n'
-        return s
+            s += f"{v}: " + ' '.join(str(w) for w in self.adj(v)) + '\n'
+        return s.strip()
 
     def __repr__(self):
         return f"<{self.__class__.__name__}: {self.__str__()}>"
@@ -216,14 +214,15 @@ class Graph(UndirectedGraph):
     def copy(self):
         """Make a deep copy of the graph structure."""
         g = self.__class__(self.V)
-        for v in self.vertices():
+        g.E = self.E
+        for v in range(self.V):
             for w in self._adj[v]:
                 g._adj[v].add(w)
         return g
 
     # Exercise 4.1.24 (inspiration)
     def subgraph(self, vertices):
-        """Make a copy of the subgraph containing the `vertices`.
+        """Return the subgraph containing the `vertices`.
 
         .. note:: This method re-maps the vertices to [0, 1, ...len(vertices)]
         for array indexing, so although the structure of the subgraph will
@@ -231,10 +230,9 @@ class Graph(UndirectedGraph):
         """
         vertices = Set(vertices)  # use ordered set for ranking adjacents
         g = self.__class__(len(vertices))
-        for i, v in enumerate(vertices):
-            for w in self._adj[v]:
-                if w in vertices:
-                    g._adj[i].add(vertices.rank(w))
+        for v, w in self.edges():
+            if v in vertices and w in vertices:
+                g.add_edge(vertices.rank(v), vertices.rank(w))
         return g
 
 
@@ -1024,10 +1022,10 @@ if __name__ == "__main__":
             == [0, None, 1, 2, None, 1, 1, None, None, None, 2, None])
 
     # Test copy
-    G2 = G.copy()
+    Gc = G.copy()
     for v in G.vertices():
-        assert G.adj(v) == G2.adj(v)
-        assert G._adj[v] is not G2._adj[v]
+        assert G.adj(v) == Gc.adj(v)
+        assert G._adj[v] is not Gc._adj[v]
 
     # Test has_edge
     assert G.has_edge(0, 5)
