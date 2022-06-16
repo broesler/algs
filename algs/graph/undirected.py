@@ -65,11 +65,6 @@ class UndirectedGraph(ABC):
         pass
 
     @abstractmethod
-    def remove_edge(self, v, w):
-        """Remove the edge from `v` to `w`."""
-        pass
-
-    @abstractmethod
     def adj(self, v):
         """Return an iterable of vertices adjacent to `v`."""
         pass
@@ -208,19 +203,6 @@ class Graph(UndirectedGraph):
         self._adj[v].add(w)
         self._adj[w].add(v)
         self.E += 1
-
-    def remove_edge(self, v, w):
-        self._validate_vertex(v)
-        self._validate_vertex(w)
-        if w not in self._adj[v] or v not in self._adj[w]:
-            raise ValueError(f"Graph does not contain edge {v}-{w}!")
-        if self._PARALLEL:
-            self._adj[v]._items.remove(w)  # not really allowed by the Bag API
-            self._adj[w]._items.remove(v)
-        else:
-            self._adj[v].remove(w)
-            self._adj[w].remove(v)
-        self.E -= 1
 
     # Exercise 4.1.3
     def copy(self):
