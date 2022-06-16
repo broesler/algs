@@ -528,15 +528,26 @@ class LeafDFS(GraphSearch):
 
 # Exercise 4.1.16
 class GraphProperties:
-    """A class to determine the geometric properties of a connected graph."""
+    """A class to determine the geometric properties of a connected graph.
 
-    def __init__(self, G):
-        if CC(G).count() > 1:
+    .. note:: The eccentricity of a single vertex is O(V²) since BFS is O(V+E),
+    and we need to repeat for V vertices. The overall calculation is O(V³)(!!)
+    since we need to compute the eccentricity of all V vertices to find the max
+    and min.
+    """
+
+    def __init__(self, G, vertices=None, verbose=False):
+        if CC(G, vertices).count() > 1:
             raise ValueError('Graph must be connected!')
         self.G = G
         # pre-compute eccentricities and store in a symbol table (in case
         # vertices are not represented as integers)
-        self._eccs = dict({v: self._ecc(v) for v in self.G.vertices()})
+        vertices = vertices or self.G.vertices()
+        self.vertices = list(vertices)
+        iters = self.vertices
+        if verbose:
+            iters = tqdm(iters)
+        self._eccs = dict({v: self._ecc(v) for v in iters})
         self._dia = max(self._eccs.values())
         self._rad = min(self._eccs.values())
 
@@ -548,7 +559,7 @@ class GraphProperties:
     def _ecc(self, v):
         # Compute the shortest path from v to every other vertex
         bfs = BreadthFirstPaths(self.G, v)
-        return max([bfs.dist_to(x) for x in self.G.vertices()])
+        return max([bfs.dist_to(x) for x in self.vertices])
 
     def diameter(self):
         """The maximum eccentricity of any vertex."""
@@ -560,7 +571,7 @@ class GraphProperties:
 
     def center(self):
         """A vertex whose eccentricity is the radius."""
-        for v in self.G.vertices():
+        for v in self.vertices:
             if self._eccs[v] == self._rad:
                 return v
 
@@ -573,12 +584,12 @@ class GraphProperties:
         an improvement over O(E(V + E)), since E ∈ [V-1, (V-1)V/2]."""
         # G is guaranteed to be connected, so only need to check one vertex
         m = float('inf')  # set "minimum" to maximum
-        if not Cycle(self.G, 0).has_cycle:
+        if not Cycle(self.G, self.vertices[0]).has_cycle:
             return m
         # Compute the shortest cycle: O(V(V + E))
         # TODO come up with example of graph where BFS would *not* find the
         # minimum cycle in a connected graph just by searching from one vertex.
-        for v in self.G.vertices():
+        for v in self.vertices:
             bfs = MinCyclePath(self.G, v)
             m = min(m, bfs.cycle_length)
         return m
@@ -586,7 +597,7 @@ class GraphProperties:
 
 # Algorithm 4.3
 class CC:
-    """Implements a connected components depth-first search.
+    """Implements a depth-first search to find connected components.
 
     Attributes
     ----------
@@ -594,27 +605,24 @@ class CC:
         The graph to analyze.
     """
 
-    def __init__(self, G):
+    def __init__(self, G, vertices=None):
         self.G = G
-        self.sizes = [0]
+        if vertices is None:
+            vertices = self.G.vertices()
+        self.vertices = vertices
         self._marked = G.V * [False]
-        self._id = G.V * [0]
+        self._id = G.V * [None]
         self._count = 0
         # Perform DFS for *every* source vertex.
-        for s in G.vertices():
+        for s in self.vertices:
             if not self._marked[s]:
                 self._dfs(s)
                 self._count += 1
-                self.sizes.append(0)
-        # Trim extra 0 if necessary
-        self.sizes = self.sizes[:self._count]
-        # assert sum(self.sizes) == self.G.V
 
     def _dfs(self, v):
         """Perform depth-first search recursively from vertex `v`."""
         self._marked[v] = True
         self._id[v] = self._count
-        self.sizes[self._count] += 1
         for w in self.G.adj(v):
             if not self._marked[w]:
                 self._dfs(w)
@@ -632,13 +640,12 @@ class CC:
         """The number of connected components."""
         return self._count
 
-    def vertices(self, k):
-        """Return an iterable of the vertices in the component with id `k`."""
-        return (v for v, c in enumerate(self._id) if c == k)
-
-    def size(self, k):
-        """Return the size of the component with id `k`."""
-        return self.sizes[k]
+    def get_components(self):
+        """Return a list of lists of vertices in each component."""
+        components = [list() for _ in range(self._count)]
+        for v in self.vertices:
+            components[self._id[v]].append(v)
+        return components
 
 
 class SymbolGraph:
@@ -943,15 +950,14 @@ def paths(G, s, kind='DFS'):
         print()
 
 
-def print_components(G):
+def print_components(G, vertices=None):
     """Compute the connected components in the graph."""
     # See p 543
-    cc = CC(G)
+    vertices = vertices or G.vertices()
+    cc = CC(G, vertices)
     M = cc.count()
     print(f"{M} components")
-    components = [Bag() for _ in range(M)]
-    for v in G.vertices():
-        components[cc.id(v)].add(v)
+    components = cc.get_components()
     for i in range(M):
         print(f"{i}: ", end='')
         for v in components[i]:
@@ -1027,8 +1033,11 @@ if __name__ == "__main__":
     print('----- CC -----')
     comps = print_components(G2)
     print('--- subgraph 0 ---')
+    # comps[0].add(9)  # add the vertex with no edges to it
     G20 = G2.subgraph(comps[0])
     print(G20)
+    comps20 = print_components(G2, vertices=comps[0])
+    comps20_sub = print_components(G20)
 
     # Test connected components
     print('----- SymbolGraph -----')
@@ -1118,6 +1127,17 @@ if __name__ == "__main__":
 
     c = MinCyclePath(Ncyc, 0)
     print(c.cycle_path())
+
+    G2 = Graph.fromfile(Path('../data/tinyG2.txt'))
+    c2 = CC(G2)
+    comps2 = c2.get_components()
+    gp = GraphProperties(G2, comps2[0])
+    idx = comps2[0][0]
+    print(f"eccen({idx}): {gp.eccentricity(idx)}")
+    print('diameter:', gp.diameter())
+    print('  radius:', gp.radius())
+    print('  center:', gp.center())
+    print('   girth:', gp.girth())
 
 # =============================================================================
 # =============================================================================
