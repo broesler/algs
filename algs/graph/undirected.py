@@ -63,6 +63,11 @@ class UndirectedGraph(ABC):
         pass
 
     @abstractmethod
+    def remove_edge(self, v, w):
+        """Remove the edge from `v` to `w`."""
+        pass
+
+    @abstractmethod
     def adj(self, v):
         """Return an iterable of vertices adjacent to `v`."""
         pass
@@ -78,7 +83,13 @@ class UndirectedGraph(ABC):
 
     @abstractmethod
     def vertices(self):
-        """Return an iterable of the vertices."""
+        """Return an iterable over the vertices."""
+        pass
+
+    @abstractmethod
+    def edges(self):
+        """Return an iterable over the edges."""
+        pass
 
     def __str__(self):
         s = f"{self.V} vertices, {self.E} edges\n"
@@ -168,6 +179,15 @@ class Graph(UndirectedGraph):
     def vertices(self):
         return range(self.V)
 
+    def edges(self):
+        e = set()
+        for v in self.vertices():
+            for w in self._adj[v]:
+                # Only add single direction
+                if (w, v) not in e:
+                    e.add((v, w))
+        return e
+
     def adj(self, v):
         self._validate_vertex(v)
         return self._adj[v]
@@ -181,6 +201,19 @@ class Graph(UndirectedGraph):
         self._adj[v].add(w)
         self._adj[w].add(v)
         self.E += 1
+
+    def remove_edge(self, v, w):
+        self._validate_vertex(v)
+        self._validate_vertex(w)
+        if w not in self._adj[v] or v not in self._adj[w]:
+            raise ValueError(f"Graph does not contain edge {v}-{w}!")
+        if self._PARALLEL:
+            self._adj[v].remove(w)
+            self._adj[w].remove(v)
+        else:
+            self._adj[v]._items.remove(w)  # not really allowed by the Bag API
+            self._adj[w]._items.remove(v)
+        self.E -= 1
 
     # Exercise 4.1.3
     def copy(self):
@@ -397,21 +430,24 @@ class GraphProperties:
                 return v
 
     def girth(self):
-        """Return the length of the shortest cycle in the graph."""
-        # G is asserted to be connected, so only need to check one vertex
-        if not Cycle(G, 0).has_cycle:
-            return float('inf')
-        # Run BFS on each vertex. The shortest cycle containing s is a shortest
-        # path from s to some vertex v, plus the edge from v back to s.
-        # for v in self.G.vertices():
-        #     bfs = BreadthFirstPaths(self.G, v)
+        """Return the length of the shortest cycle in the graph.
+        If there are no cycles, the girth is infinite.
 
-        # Algorithm 
-        # (see <https://www.cs.princeton.edu/courses/archive/spr08/cos226/exams/fin-f05-sol.pdf>)
-        # For each edge v-w:
-        #   - copy G, but remove edge v-w
-        #   - The shortest path is BFS.dist(v, w) + 1 (the removed edge)
-        #   - compare to the current minimum path length
+        The algorithm runs in O(E(V + E)) time, since all edges must be
+        checked, and BFS runs in O(V + E) worst-case time."""
+        # G is guaranteed to be connected, so only need to check one vertex
+        if not Cycle(self.G, 0).has_cycle:
+            return float('inf')
+        # Compute the shortest cycle
+        m = float('inf')
+        G = self.G.copy()
+        for v, w in self.G.edges():
+            G.remove_edge(v, w)
+            bfs = BreadthFirstPaths(G, v)
+            d = bfs.dist_to(w) + 1
+            m = min(m, d)
+            G.add_edge(v, w)
+        return m
 
 
 # Algorithm 4.3
@@ -606,12 +642,7 @@ class TwoColor(GraphSearch):
 # maintain in the basic API. See p 523.
 def max_degree(G, v):
     """Return the maximum degree all vertices in the graph."""
-    m = 0
-    for v in G.vertices():
-        d = G.degree(v)
-        if d > m:
-            m = d
-    return m
+    return max([G.degree(v) for v in G.vertices()])
 
 
 def avg_degree(G):
@@ -808,9 +839,12 @@ if __name__ == "__main__":
         pass
 
     print('--- Graph Properties ---')
-    gc = Graph.fromfile(Path('../data/mediumG.txt'))
+    # gc = Graph.fromfile(Path('../data/mediumG.txt'))
+    # gc = Graph.fromfile(Path('../data/tinyCG.txt'))
+    gc = Graph.fromfile(Path('../data/fiveG.txt'))  # pentagon
     gp = GraphProperties(gc)
-    print('eccentricity:', gp.eccentricity(56))
+    # print('eccentricity:', gp.eccentricity(56))
+    print('eccentricity:', gp.eccentricity(0))
     print('    diameter:', gp.diameter())
     print('      radius:', gp.radius())
     print('      center:', gp.center())
