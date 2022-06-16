@@ -11,7 +11,6 @@ Exercise 4.1.24 Connected components in the movies.txt graph.
 
 import sys
 import pickle
-import numpy as np
 from pathlib import Path
 
 from algs.graph import STGraph, SymbolGraph, GraphProperties, CC
@@ -20,7 +19,7 @@ FORCE_UPDATE = False
 pkl_file = Path('./pkl/movies_SymbolGraph.pkl')
 # pkl_file = Path('./pkl/movies_STGraph.pkl')
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 #         Load the data
 # -----------------------------------------------------------------------------
 if FORCE_UPDATE or not pkl_file.exists():
@@ -32,14 +31,17 @@ else:
     with open(pkl_file, 'rb') as fp:
         sg = pickle.load(fp)
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 #         Process
 # -----------------------------------------------------------------------------
 G = sg.G
 sys.setrecursionlimit(G.V + 1)  # needed for DFS
 
+
 def argmax(a):
+    """Compute the index of the maximum value of the array."""
     return max(range(len(a)), key=lambda i: a[i])
+
 
 # Compute connected components
 cc = CC(G)
