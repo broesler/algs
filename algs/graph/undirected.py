@@ -210,6 +210,11 @@ class Graph(UndirectedGraph):
         self._adj[v].add(w)
         self._adj[w].add(v)
 
+    def _hide_vertex(self, v):
+        """Hide the vertex from the graph."""
+        self._validate_vertex(v)
+        self._adj[v] = Bag()  # remove all edges so we don't include in paths
+
     # Exercise 4.1.3
     def copy(self):
         """Make a deep copy of the graph structure."""
