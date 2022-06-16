@@ -33,16 +33,18 @@ class UndirectedGraph(ABC):
         number of edges
     """
 
-    def __init__(self, V=0):
+    def __init__(self, V, edges=None):
         if V < 0:
             raise ValueError(f"Number of vertices {V=} must be > 0!")
         self.V = V
         self.E = 0
-
-    def _validate_vertex(self, v):
-        if not (0 <= v < self.V):
-            raise ValueError((f"Vertex index {v=} must be "
-                              f"between 0 and {self.V=}!"))
+        edges = edges or []
+        try:
+            for v, w in edges:
+                self.add_edge(v, w)
+        except ValueError:
+            raise ValueError(f"{self.__class__.__name__} "
+                             'expects an iterable of tuples.')
 
     @classmethod
     def fromfile(cls, filename, *args, **kwargs):
@@ -88,7 +90,7 @@ class UndirectedGraph(ABC):
 
     @abstractmethod
     def edges(self):
-        """Return an iterable over the edges."""
+        """Return an iterable over the edges as pairs of vertices."""
         pass
 
     def __str__(self):
@@ -175,6 +177,11 @@ class Graph(UndirectedGraph):
     parallel : bool, optional
         If True, allow parallel edges and self-loops. Otherwise, do not.
     """
+
+    def _validate_vertex(self, v):
+        if not (0 <= v < self.V):
+            raise ValueError((f"Vertex index {v=} must be "
+                              f"between 0 and {self.V=}!"))
 
     def vertices(self):
         return range(self.V)
@@ -901,7 +908,8 @@ if __name__ == "__main__":
     print('--- Graph Properties ---')
     # gc = Graph.fromfile(Path('../data/mediumG.txt'))
     # gc = Graph.fromfile(Path('../data/tinyCG.txt'))
-    gc = Graph.fromfile(Path('../data/fiveG.txt'))  # pentagon
+    # TODO write tests with a 2-, 3-, etc. graph to test girth/cycle paths
+    gc = Graph.fromfile(Path('../data/fiveG.txt'))  # pentagon girth = 5
     gp = GraphProperties(gc)
     # print('eccentricity:', gp.eccentricity(56))
     print('eccentricity:', gp.eccentricity(0))
