@@ -441,26 +441,17 @@ class GraphProperties:
         """Return the length of the shortest cycle in the graph.
         If there are no cycles, the girth is infinite.
 
-        The algorithm runs in O(E(V + E)) time, since all edges must be
-        checked, and BFS runs in O(V + E) worst-case time."""
+        The algorithm runs in O(V(V + E)) time, since all source vertices must
+        be checked, and BFS runs in O(V + E) worst-case time. This runtime is
+        an improvement over O(E(V + E)), since E ∈ [V-1, (V-1)V/2]."""
         # G is guaranteed to be connected, so only need to check one vertex
         m = float('inf')  # set "minimum" to maximum
         if not Cycle(self.G, 0).has_cycle:
             return m
-
-        # # Compute the shortest cycle: O(V(V + E))
-        # for v in self.G.vertices():
-        #     bfs = MinCyclePath(self.G, v)
-        #     m = min(m, bfs.cycle_length)
-
-        # Compute the shortest cycle: O(E(V + E))
-        G = self.G.copy()
-        for v, w in self.G.edges():
-            G.remove_edge(v, w)
-            bfs = BreadthFirstPaths(G, v)
-            m = min(m, bfs.dist_to(w) + 1)
-            G.add_edge(v, w)
-
+        # Compute the shortest cycle: O(V(V + E))
+        for v in self.G.vertices():
+            bfs = MinCyclePath(self.G, v)
+            m = min(m, bfs.cycle_length)
         return m
 
 # Algorithm 4.3
@@ -624,21 +615,21 @@ class Cycle(DepthFirstPaths):
         return p
 
 
-class MinCycle(BreadthFirstPaths):
-    __doc__ = f"""Implements breadth-first search to find a cycle.
+class MinCyclePath(BreadthFirstPaths):
+    __doc__ = f"""Implements breadth-first search to find a minimum cycle.
     {GraphSearch.__doc__}"""
-    # See p 547
 
     def __init__(self, G, s):
         self.G = G
         self.s = s
         self.has_cycle = False
+        self.cycle_length = float('inf')
         self._marked = G.V * [False]
         self._edge_to = G.V * [None]
         self._dist_to = G.V * [None]
         self._cycle_head = None  # start vertex of the cycle
         self._cycle_tail = None  # end vertex of the cycle
-        self.min_len = float('inf')
+        # Run the search
         self._bfs(s)
 
     def _bfs(self, v):
@@ -659,12 +650,11 @@ class MinCycle(BreadthFirstPaths):
                     q.enqueue(w)
                 else:
                     self.has_cycle = True
-                    self._cycle_head = w
-                    self._cycle_tail = v
-                    # If we didn't care about the minimum path, we could break
-                    self.min_len = min(self.min_len,
-                                       (self._dist_to[v]
-                                        + self._dist_to[w] + 1))
+                    d = self._dist_to[v] + self._dist_to[w] + 1
+                    if d < self.cycle_length:
+                        self._cycle_head = w
+                        self._cycle_tail = v
+                        self.cycle_length = d
 
     def cycle_path(self):
         """Return the path of the found cycle."""
@@ -916,13 +906,19 @@ if __name__ == "__main__":
     print('       girth:', gp.girth())
     assert gp.eccentricity(gp.center()) == gp.radius()
 
+    c = MinCyclePath(gc, 0)
+    print(c.cycle_path())
+
     # gc = Graph.fromfile(Path('../data/fiveG.txt'))  # pentagon girth = 5
     for N in range(2, 10):
         edges = list()
         for i in range(N):
             edges.append((i, (i + 1) % N))
-        gp = GraphProperties(Graph(N, edges))
-        assert gp.girth() == N
+        Ncyc = Graph(N, edges)
+        # assert GraphProperties(Ncyc).girth() == N
+
+    c = MinCyclePath(Ncyc, 0)
+    print(c.cycle_path())
 
 # =============================================================================
 # =============================================================================
