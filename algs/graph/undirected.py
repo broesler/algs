@@ -438,15 +438,23 @@ class GraphProperties:
         # G is guaranteed to be connected, so only need to check one vertex
         if not Cycle(self.G, 0).has_cycle:
             return float('inf')
-        # Compute the shortest cycle
-        m = float('inf')
-        G = self.G.copy()
-        for v, w in self.G.edges():
-            G.remove_edge(v, w)
-            bfs = BreadthFirstPaths(G, v)
-            d = bfs.dist_to(w) + 1
-            m = min(m, d)
-            G.add_edge(v, w)
+
+        m = float('inf')  # set "minimum" to maximum
+
+        # Compute the shortest cycle: O(E(V + E))
+        # G = self.G.copy()
+        # for v, w in self.G.edges():
+        #     G.remove_edge(v, w)
+        #     bfs = BreadthFirstPaths(G, v)
+        #     d = bfs.dist_to(w) + 1
+        #     m = min(m, d)
+        #     G.add_edge(v, w)
+        # return m
+
+        # Compute the shortest cycle: O(V(V + E))?
+        for v in self.G.vertices():
+            bfs = MinCycle(self.G, v)
+            m = min(m, bfs.min_len)
         return m
 
 
@@ -599,6 +607,58 @@ class Cycle(DepthFirstPaths):
                 self._cycle_tail = v
                 self._cycle_head = w
                 raise self.CycleFound
+
+    def cycle_path(self):
+        """Return the path of the found cycle."""
+        p = deque(self.path_to(self._cycle_tail))
+        p.append(self._cycle_head)  # add to end of path
+        # Cycle may not include the source! Remove irrelevant vertices.
+        while p[0] != p[-1]:
+            p.popleft()
+        return p
+
+
+class MinCycle(BreadthFirstPaths):
+    __doc__ = f"""Implements breadth-first search to find a cycle.
+    {GraphSearch.__doc__}"""
+    # See p 547
+
+    def __init__(self, G, s):
+        self.G = G
+        self.s = s
+        self.has_cycle = False
+        self._marked = G.V * [False]
+        self._edge_to = G.V * [None]
+        self._dist_to = G.V * [None]
+        self._cycle_head = None  # start vertex of the cycle
+        self._cycle_tail = None  # end vertex of the cycle
+        self.min_len = float('inf')
+        self._bfs(s)
+
+    def _bfs(self, v):
+        """Perform breadth-first search from vertex `v`."""
+        q = Queue()
+        self._marked[v] = True
+        self._dist_to[v] = 0
+        q.enqueue(v)
+        while not q.is_empty:
+            v = q.dequeue()
+            for w in self.G.adj(v):
+                if w == self._edge_to[v]:
+                    continue
+                if not self._marked[w]:
+                    self._edge_to[w] = v
+                    self._marked[w] = True
+                    self._dist_to[w] = self._dist_to[v] + 1
+                    q.enqueue(w)
+                else:
+                    self.has_cycle = True
+                    self._cycle_head = w
+                    self._cycle_tail = v
+                    # If we didn't care about the minimum path, we could break
+                    self.min_len = min(self.min_len,
+                                       (self._dist_to[v]
+                                        + self._dist_to[w] + 1))
 
     def cycle_path(self):
         """Return the path of the found cycle."""
