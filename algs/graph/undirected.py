@@ -566,10 +566,44 @@ class SymbolGraph:
         return self.__contains__(k)
 
 
-class Cycle(DepthFirstPaths):
+class Cycle:
     __doc__ = f"""Implements depth-first search to find a cycle.
     {GraphSearch.__doc__}"""
     # See p 547
+
+    class CycleFound(Exception):
+        """Raise exception to break recursive calls once cycle is found."""
+        pass
+
+    def __init__(self, G, s):
+        self.G = G
+        self.s = s
+        self.has_cycle = False
+        self._marked = G.V * [False]
+        try:
+            self._dfs(s, s)
+        except self.CycleFound:
+            pass
+
+    def _dfs(self, v, u):
+        """Perform depth-first search recursively from vertex `v`.
+
+        .. note:: `u` is the previously-seen vertex. If one of the adjacent
+        vertices to `v` is marked, but is not the vertex from which we just
+        came, we have a cycle.
+        """
+        self._marked[v] = True
+        for w in self.G.adj(v):
+            if not self._marked[w]:
+                self._dfs(w, v)
+            elif w != u:
+                self.has_cycle = True
+                raise self.CycleFound
+
+
+class CyclePath(DepthFirstPaths):
+    __doc__ = f"""Implements depth-first search to find a cyclic path.
+    {GraphSearch.__doc__}"""
 
     class CycleFound(Exception):
         pass
@@ -608,7 +642,7 @@ class Cycle(DepthFirstPaths):
     def cycle_path(self):
         """Return the path of the found cycle."""
         p = deque(self.path_to(self._cycle_tail))
-        p.append(self._cycle_head)  # add to end of path
+        p.append(self._cycle_head)
         # Cycle may not include the source! Remove irrelevant vertices.
         while p[0] != p[-1]:
             p.popleft()
@@ -824,12 +858,12 @@ if __name__ == "__main__":
 
     print('--- Cycle ---')
     G = Graph.fromfile(Path('../data/tinyG.txt'))
-    c = Cycle(G, 0)
+    c = CyclePath(G, 0)
     assert c.has_cycle
     assert list(c.cycle_path()) == [5, 4, 3, 5]
 
     G2 = Graph.fromfile(Path('../data/tinyG2.txt'))
-    c2 = Cycle(G2, 0)
+    c2 = CyclePath(G2, 0)
     assert c2.has_cycle
     assert list(c2.cycle_path()) == [0, 6, 3, 2, 0]
 
