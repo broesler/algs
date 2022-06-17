@@ -545,58 +545,96 @@ class GraphProperties:
         if not CC(G, vertices).is_connected:
             raise ValueError('Graph must be connected!')
         self.G = G
-        # pre-compute eccentricities and store in a symbol table (in case
-        # vertices are not represented as integers)
-        vertices = vertices or self.G.vertices()
-        self.vertices = list(vertices)
-        iters = self.vertices
-        if verbose:
-            iters = tqdm(iters)
-        self._eccs = dict({v: self._ecc(v) for v in iters})
-        self._dia = max(self._eccs.values())
-        self._rad = min(self._eccs.values())
+        self.vertices = list(vertices or self.G.vertices())
+        self._VERBOSE = bool(verbose)
+        # store in a symbol table (if vertices are not represented as integers)
+        self._eccs = dict.fromkeys(self.vertices)
+        self._dia = None
+        self._rad = None
 
     def eccentricity(self, v):
         """The length of the shortest path from `v` to the furthest vertex from
         `v`, *i.e.* the maximum length of the shortest path to any vertex."""
-        return self._eccs[v]
+        e = self._eccs[v]
+        if e is None:
+            e = self._ecc(v)
+            self._eccs[v] = e
+        return e
 
     def _ecc(self, v):
-        # Compute the shortest path from v to every other vertex
+        """Compute the shortest path from `v` to every other vertex."""
         bfs = BreadthFirstPaths(self.G, v)
-        return max([bfs.dist_to(x) for x in self.vertices])
+        return max([bfs.dist_to(w) for w in self.vertices])
+
+    def _compute_missing_eccs(self):
+        """Compute any missing eccentricity values."""
+        if None in self._eccs.values():
+            vs = [k for k, e in self._eccs.items() if e is None]
+            if self._VERBOSE:
+                vs = tqdm(vs)
+            for v in vs:
+                self._eccs[v] = self._ecc(v)
 
     def diameter(self):
         """The maximum eccentricity of any vertex."""
+        self._compute_missing_eccs()
+        self._dia = max(self._eccs.values())
         return self._dia
 
     def radius(self):
         """The smallest eccentricity of any vertex."""
+        self._compute_missing_eccs()
+        self._rad = min(self._eccs.values())
         return self._rad
 
+    # TODO center and periphery should return the entire set of vertices
     def center(self):
         """A vertex whose eccentricity is the radius."""
+        self._compute_missing_eccs()
         for v in self.vertices:
             if self._eccs[v] == self._rad:
+                return v
+
+    def periphery(self):
+        """A vertex whose eccentricity is the diameter."""
+        self._compute_missing_eccs()
+        for v in self.vertices:
+            if self._eccs[v] == self._dia:
                 return v
 
     def girth(self):
         """Return the length of the shortest cycle in the graph.
         If there are no cycles, the girth is infinite.
 
-        The algorithm runs in O(V(V + E)) time, since all source vertices must
-        be checked, and BFS runs in O(V + E) worst-case time. This runtime is
-        an improvement over O(E(V + E)), since E ∈ [V-1, (V-1)V/2]."""
+        .. note:: This algorithm runs in O(V(V + E)) time, since all source
+        vertices must be checked, and BFS runs in O(V + E) worst-case time.
+        This runtime improves over O(E(V + E)), since E ∈ [V-1, (V-1)V/2].
+
+        .. note:: Example of graph where BFS would *not* find the minimum cycle
+        in a connected graph just by searching from one vertex:
+        >>> G = Graph.fromfile('../data/tinyG2.txt')
+        >>> cc = CC(G).get_components()
+        >>> print(cc[0])
+        [0, 2, 3, 5, 6, 10]
+        >>> list(MinCyclePath(G,  0).cycle_path())
+        [2, 0, 6, 2]
+        >>> list(MinCyclePath(G, 10).cycle_path())
+        [2, 3, 10, 5, 2]
+        
+        Lengths are not equal! The minimum path in that group is 3.
+        """
         # G is guaranteed to be connected, so only need to check one vertex
         m = float('inf')  # set "minimum" to maximum
         if not Cycle(self.G, self.vertices[0]).has_cycle:
             return m
+
         # Compute the shortest cycle: O(V(V + E))
-        # TODO come up with example of graph where BFS would *not* find the
-        # minimum cycle in a connected graph just by searching from one vertex.
-        for v in self.vertices:
+        vs = tqdm(self.vertices) if self._VERBOSE else self.vertices
+        for v in vs:
             bfs = MinCyclePath(self.G, v)
             m = min(m, bfs.cycle_length)
+            if m == 3:
+                break  # no possible shorter cycle
         return m
 
 
@@ -1117,11 +1155,12 @@ if __name__ == "__main__":
     # gc = Graph.fromfile(Path('../data/largeG.txt'), verbose=True)
 
     gp = GraphProperties(gc)
-    print('eccentricity:', gp.eccentricity(0))
-    print('    diameter:', gp.diameter())
-    print('      radius:', gp.radius())
-    print('      center:', gp.center())
-    print('       girth:', gp.girth())
+    print('        ϵ:', gp.eccentricity(0))
+    print(' diameter:', gp.diameter())
+    print('   radius:', gp.radius())
+    print('   center:', gp.center())
+    print('periphery:', gp.periphery())
+    print('    girth:', gp.girth())
     assert gp.eccentricity(gp.center()) == gp.radius()
 
     c = MinCyclePath(gc, 0)
@@ -1142,11 +1181,12 @@ if __name__ == "__main__":
     comps2 = c2.get_components()
     gp = GraphProperties(G2, comps2[0])
     idx = comps2[0][0]
-    print(f"eccen({idx}): {gp.eccentricity(idx)}")
-    print('diameter:', gp.diameter())
-    print('  radius:', gp.radius())
-    print('  center:', gp.center())
-    print('   girth:', gp.girth())
+    print(f"ϵ({idx}): {gp.eccentricity(idx)}")
+    print(' diameter:', gp.diameter())
+    print('   radius:', gp.radius())
+    print('   center:', gp.center())
+    print('periphery:', gp.periphery())
+    print('    girth:', gp.girth())
 
 # =============================================================================
 # =============================================================================
