@@ -13,6 +13,7 @@ See Sedgewick and Wayne, §4.1.
 
 from abc import ABC, abstractmethod
 from collections import deque
+from pathlib import Path
 from tqdm import tqdm
 
 from algs.basics import Bag, Stack, Queue
@@ -50,7 +51,7 @@ class UndirectedGraph(ABC):
     @classmethod
     def fromfile(cls, filename, verbose=False, **kwargs):
         """Construct the graph structure from a file."""
-        with open(filename, 'r') as fp:
+        with open(Path(filename), 'r') as fp:
             V = int(fp.readline())
             E = int(fp.readline())
             G = cls(V=V, **kwargs)
@@ -284,7 +285,7 @@ class STGraph(UndirectedGraph):
         """
         g = cls(*args, **kwargs)
         # One pass to add all vertices and edges to the symbol table
-        with open(filename, 'r') as fp:
+        with open(Path(filename), 'r') as fp:
             iters = fp.readlines()
             if verbose:
                 iters = tqdm(iters)
@@ -725,7 +726,7 @@ class SymbolGraph:
         """
         sg = cls(*args, **kwargs)
         # First pass to add all vertices to the symbol table
-        with open(filename, 'r') as fp:
+        with open(Path(filename), 'r') as fp:
             iters = fp.readlines()
             if verbose:
                 iters = tqdm(iters)
@@ -743,7 +744,7 @@ class SymbolGraph:
 
         # Second pass to build the graph
         sg.G = Graph(V)
-        with open(filename, 'r') as fp:
+        with open(Path(filename), 'r') as fp:
             for line in fp.readlines():
                 words = line.strip().split(delim)
                 v = sg._st[words[0]]
@@ -899,7 +900,7 @@ class MinCyclePath(BreadthFirstPaths):
 
     def cycle_path(self):
         """Return the path of the found cycle."""
-        # BFS gives two paths: one each to head and tail.
+        # BFS gives two paths: one each from the source to the head and tail.
         # Merge the paths to head and tail to remove all common ancestors
         # except the last that completes the cycle.
         p = deque(self.path_to(self._cycle_tail))
@@ -1045,9 +1046,8 @@ def degrees_of_separation(sg, source, sink):
 # -----------------------------------------------------------------------------
 # TODO tests/test_graph.py
 if __name__ == "__main__":
-    from pathlib import Path
     # Graph = STGraph
-    G = Graph.fromfile(Path('../data/tinyG.txt'))
+    G = Graph.fromfile('../data/tinyG.txt')
     print(G)
 
     # Test search
@@ -1057,7 +1057,7 @@ if __name__ == "__main__":
 
     # Test paths
     print('----- Connected Graph -----')
-    G = Graph.fromfile(Path('../data/tinyCG.txt'))
+    G = Graph.fromfile('../data/tinyCG.txt')
     print(G)
     dfs(G, 0)
     print('----- DFS Paths -----')
@@ -1066,12 +1066,12 @@ if __name__ == "__main__":
     paths(G, 0, kind='BFS')
 
     # print('--- Cycle ---')
-    G = Graph.fromfile(Path('../data/tinyG.txt'))
+    G = Graph.fromfile('../data/tinyG.txt')
     c = CyclePath(G, 0)
     assert c.has_cycle
     assert list(c.cycle_path()) == [5, 4, 3, 5]
 
-    G2 = Graph.fromfile(Path('../data/tinyG2.txt'))
+    G2 = Graph.fromfile('../data/tinyG2.txt')
     c2 = CyclePath(G2, 0)
     assert c2.has_cycle
     assert list(c2.cycle_path()) == [0, 6, 3, 2, 0]
@@ -1088,7 +1088,7 @@ if __name__ == "__main__":
 
     # Test connected components
     print('----- SymbolGraph -----')
-    sg = SymbolGraph.fromfile(Path('../data/routes.txt'))
+    sg = SymbolGraph.fromfile('../data/routes.txt')
     print('--- adjacency lists ---')
     print_adj(sg, 'JFK')
     print_adj(sg, 'LAX')
@@ -1096,7 +1096,7 @@ if __name__ == "__main__":
     degrees_of_separation(sg, 'JFK', 'LAS')
     degrees_of_separation(sg, 'JFK', 'DFW')
 
-    # sg = SymbolGraph.fromfile(Path('../data/movies.txt'), delim='/')
+    # sg = SymbolGraph.fromfile('../data/movies.txt', delim='/')
     # print('--- adjacency lists ---')
     # print_adj(sg, 'Top Gun (1986)')
     # print('--- shortest paths ---')
@@ -1104,7 +1104,7 @@ if __name__ == "__main__":
     # degrees_of_separation(sg, 'Bacon, Kevin', 'Cruise, Tom')
 
     # Test dist_to
-    G = Graph.fromfile(Path('../data/tinyG2.txt'))
+    G = Graph.fromfile('../data/tinyG2.txt')
     bfs = BreadthFirstPaths(G, 0)
     assert ([bfs.dist_to(x) for x in G.vertices()]
             == [0, None, 1, 2, None, 1, 1, None, None, None, 2, None])
@@ -1121,7 +1121,7 @@ if __name__ == "__main__":
     assert not G.has_edge(0, 8)
 
     # Test no parallel edges
-    G2 = Graph.fromfile(Path('../data/tinyG2.txt'), parallel=False)
+    G2 = Graph.fromfile('../data/tinyG2.txt', parallel=False)
     G2.add_edge(0, 2)
     assert sorted(G2.adj(0)) == sorted(G.adj(0))  # no changes made
     G2.add_edge(0, 9)
@@ -1149,10 +1149,10 @@ if __name__ == "__main__":
         pass
 
     print('--- Graph Properties ---')
-    # gc = Graph.fromfile(Path('../data/tinyCG.txt'))
-    gc = Graph.fromfile(Path('../data/mediumG.txt'))
+    # gc = Graph.fromfile('../data/tinyCG.txt')
+    gc = Graph.fromfile('../data/mediumG.txt')
     # NOTE maximum recursion depth reached in largeG!
-    # gc = Graph.fromfile(Path('../data/largeG.txt'), verbose=True)
+    # gc = Graph.fromfile('../data/largeG.txt', verbose=True)
 
     gp = GraphProperties(gc)
     print('        ϵ:', gp.eccentricity(0))
@@ -1170,13 +1170,13 @@ if __name__ == "__main__":
         edges = list()
         for i in range(N):
             edges.append((i, (i + 1) % N))
-        Ncyc = Graph(N, edges)
-        assert GraphProperties(Ncyc).girth() == N
+        Gcyc = Graph(N, edges)
+        assert GraphProperties(Gcyc).girth() == N
 
-    c = MinCyclePath(Ncyc, 0)
+    c = MinCyclePath(Gcyc, 0)
     print(c.cycle_path())
 
-    G2 = Graph.fromfile(Path('../data/tinyG2.txt'))
+    G2 = Graph.fromfile('../data/tinyG2.txt')
     c2 = CC(G2)
     comps2 = c2.get_components()
     gp = GraphProperties(G2, comps2[0])
