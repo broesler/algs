@@ -542,7 +542,7 @@ class GraphProperties:
     """
 
     def __init__(self, G, vertices=None, verbose=False):
-        if CC(G, vertices).count() > 1:
+        if not CC(G, vertices).is_connected:
             raise ValueError('Graph must be connected!')
         self.G = G
         # pre-compute eccentricities and store in a symbol table (in case
@@ -644,6 +644,10 @@ class CC:
     def count(self):
         """The number of connected components."""
         return self._count
+
+    @property
+    def is_connected(self):
+        return self._count == 1
 
     def get_components(self):
         """Return a list of lists of vertices in each component."""
