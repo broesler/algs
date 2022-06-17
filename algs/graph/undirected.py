@@ -88,10 +88,15 @@ class UndirectedGraph(ABC):
         """Return an iterable over the vertices."""
         pass
 
-    @abstractmethod
     def edges(self):
         """Return an iterable over the edges as pairs of vertices."""
-        pass
+        e = set()
+        for v in self.vertices():
+            for w in self.adj(v):
+                # Only add single direction
+                if (w, v) not in e:
+                    e.add((v, w))
+        return e
 
     def __str__(self):
         s = f"{self.V} vertices, {self.E} edges\n"
@@ -186,15 +191,6 @@ class Graph(UndirectedGraph):
 
     def vertices(self):
         return range(self.V)
-
-    def edges(self):
-        e = set()
-        for v in self.vertices():
-            for w in self._adj[v]:
-                # Only add single direction
-                if (w, v) not in e:
-                    e.add((v, w))
-        return e
 
     def adj(self, v):
         self._validate_vertex(v)
@@ -312,15 +308,6 @@ class STGraph(UndirectedGraph):
 
     def vertices(self):
         return self._adj.keys()
-
-    def edges(self):
-        e = set()
-        for v in self.vertices():
-            for w in self._adj[v]:
-                # Only add single direction
-                if (w, v) not in e:
-                    e.add((v, w))
-        return e
 
     def adj(self, v):
         self._validate_vertex(v)
@@ -920,7 +907,7 @@ class MinCyclePath(BreadthFirstPaths):
         return list(p)
 
 
-class TwoColor(GraphSearch):
+class Bipartite(GraphSearch):
     __doc__ = f"""Implements depth-first search to determine if a graph is
     bipartite.
     {GraphSearch.__doc__}"""
