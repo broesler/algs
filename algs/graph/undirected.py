@@ -552,6 +552,7 @@ class GraphProperties:
         self._eccs = dict.fromkeys(self.vertices)
         self._dia = None
         self._rad = None
+        self._girth = None
 
     def eccentricity(self, v):
         """The length of the shortest path from `v` to the furthest vertex from
@@ -588,20 +589,19 @@ class GraphProperties:
         self._rad = min(self._eccs.values())
         return self._rad
 
-    # TODO center and periphery should return the entire set of vertices
     def center(self):
-        """A vertex whose eccentricity is the radius."""
+        """The set of vertices whose eccentricity is the radius."""
         self._compute_missing_eccs()
-        for v in self.vertices:
-            if self._eccs[v] == self._rad:
-                return v
+        if self._rad is None:
+            self.radius()
+        return [k for k, e in self._eccs.items() if e == self._rad]
 
     def periphery(self):
-        """A vertex whose eccentricity is the diameter."""
+        """The set of vertices whose eccentricity is the diameter."""
         self._compute_missing_eccs()
-        for v in self.vertices:
-            if self._eccs[v] == self._dia:
-                return v
+        if self._dia is None:
+            self.diameter()
+        return [k for k, e in self._eccs.items() if e == self._dia]
 
     def girth(self):
         """Return the length of the shortest cycle in the graph.
@@ -624,9 +624,13 @@ class GraphProperties:
         
         Lengths are not equal! The minimum path in that group is 3.
         """
+        if self._girth is not None:
+            return self._girth
+
         # G is guaranteed to be connected, so only need to check one vertex
         m = float('inf')  # set "minimum" to maximum
         if not Cycle(self.G, self.vertices[0]).has_cycle:
+            self._girth = m
             return m
 
         # Compute the shortest cycle: O(V(V + E))
@@ -636,6 +640,8 @@ class GraphProperties:
             m = min(m, bfs.cycle_length)
             if m == 3:
                 break  # no possible shorter cycle
+
+        self._girth = m
         return m
 
 
@@ -911,7 +917,7 @@ class MinCyclePath(BreadthFirstPaths):
         p.popleft()      # remove one of the dulicates
         p.extendleft(q)  # merge
         p.append(p[0])   # complete the loop
-        return p
+        return list(p)
 
 
 class TwoColor(GraphSearch):
@@ -1161,7 +1167,7 @@ if __name__ == "__main__":
     print('   center:', gp.center())
     print('periphery:', gp.periphery())
     print('    girth:', gp.girth())
-    assert gp.eccentricity(gp.center()) == gp.radius()
+    assert gp.eccentricity(gp.center()[0]) == gp.radius()
 
     c = MinCyclePath(gc, 0)
     print(c.cycle_path())

@@ -16,15 +16,24 @@ from pathlib import Path
 from algs.graph import STGraph, SymbolGraph, GraphProperties, CC
 
 FORCE_UPDATE = False
-pkl_file = Path('./pkl/movies_SymbolGraph.pkl')
+
+# datafile = Path('../data/movies.txt')
+# pkl_file = Path('./pkl/movies_SymbolGraph.pkl')
 # pkl_file = Path('./pkl/movies_STGraph.pkl')
+
+# datafile = Path('../data/movies-top-grossing.txt')
+
+datafile = Path('../data/movies-hero.txt')
+
+pkl_file = Path(f"./pkl/{datafile.stem}.pkl")
+gp_file =  Path(f"./pkl/{datafile.stem}_gp.pkl")
 
 # -----------------------------------------------------------------------------
 #         Load the data
 # -----------------------------------------------------------------------------
 if FORCE_UPDATE or not pkl_file.exists():
-    sg = SymbolGraph.fromfile(Path('../data/movies.txt'), delim='/', verbose=True)
-    # sg = STGraph.fromadjfile(Path('../data/movies.txt'), delim='/', verbose=True)
+    sg = SymbolGraph.fromfile(datafile, delim='/', verbose=True)
+    # sg = STGraph.fromadjfile(datafile, delim='/', verbose=True)
     with open(pkl_file, 'wb') as fp:
         pickle.dump(sg, fp)
 else:
@@ -55,7 +64,7 @@ lt = [x for x in components if len(x) < 10]
 # max_c = max(range(M), key=lambda i: sizes[i])
 max_c = argmax(sizes)
 
-print('--- movies.txt ---')
+print(f"--- {datafile.name} ---")
 print(f"{cc.count():,d} components.")
 print(f"{len(lt):,d} components with < 10 vertices.")
 print(f"{max(sizes):,d} vertices in the largest component ({max_c}).")
@@ -67,17 +76,70 @@ if sg.index(q) not in components[max_c]:
     print('not ', end='')
 print('in the largest component.')
 
-# Find the properties of the largest component -- SLOW!! Test on other.
-# i = max_c # == 0
-i = 2
+# ----------------------------------------------------------------------------- 
+#         Find the properties of the largest component
+# -----------------------------------------------------------------------------
+# NOTE The ϵ(v) algorithm is O(V²) -> O(V³) for diameter/radius/center!!
+i = max_c
+# i = 2
 comp = components[i]
-gp = GraphProperties(G, vertices=comp, verbose=False)
+
+if FORCE_UPDATE or not gp_file.exists():
+    gp = GraphProperties(G, vertices=comp, verbose=True)
+else:
+    with open(gp_file, 'rb') as fp:
+        gp = pickle.load(fp)
+
+c = gp.center()
+p = gp.periphery()
+print(f"There are {len(c)} center vertices.")
+print(f"There are {len(p)} periphery vertices.")
+
 print(f"--- Properties of Component {i} ---")
 print('eccentricity:', gp.eccentricity(comp[0]))
 print('    diameter:', gp.diameter())
 print('      radius:', gp.radius())
-print('      center:', sg.name(gp.center()))
+print('      center:', [sg.name(v) for v in c[:3]])
+print('   periphery:', [sg.name(v) for v in p[:3]])
 print('       girth:', gp.girth())
+
+# Store expensive properties computations
+if FORCE_UPDATE or not gp_file.exists():
+    with open(gp_file, 'wb') as fp:
+        pickle.dump(gp, fp)
+
+# ----------------------------------------------------------------------------- 
+#         Output
+# -----------------------------------------------------------------------------
+
+# --- movies-top-grossing.txt ---
+# 2 components.
+# 0 components with < 10 vertices.
+# 8,440 vertices in the largest component (0).
+# Bacon, Kevin is in the largest component.
+# There are 1 center vertices.
+# There are 2950 periphery vertices.
+# --- Properties of Component 0 ---
+# eccentricity: 9
+#     diameter: 12
+#       radius: 6
+#       center: ['Howard, Clint']
+#    periphery: ['Akinnuoye-Agbaje, Adewale', 'Allen, Kayla', 'Callow, Simon']
+#        girth: 4
+
+# --- movies-hero.txt ---
+# 112 components.
+# 70 components with < 10 vertices.
+# 1,405 vertices in the largest component (0).
+# Bacon, Kevin is in the largest component.
+# There are 1 center vertices.
+# There are 67 periphery vertices.
+# eccentricity: 13
+#     diameter: 24
+#       radius: 12
+#       center: ['Clemenson, Christian']
+#    periphery: ['Arne, Peter', 'Brunius, Jacques B.', 'Bryan, Dora']
+#        girth: 4
 
 # =============================================================================
 # =============================================================================
