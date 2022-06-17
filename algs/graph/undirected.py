@@ -169,12 +169,7 @@ class Graph(UndirectedGraph):
     def __init__(self, V=0, edges=None, parallel=True, self_loops=True):
         self._PARALLEL = bool(parallel)
         self._SELF_LOOPS = bool(self_loops)
-        if self._PARALLEL:
-            self._adj = [Bag() for _ in range(V)]
-        else:
-            # Exercise 4.1.5 no parallel edges
-            # NOTE that using `set` breaks the ordering of `adj(v)`
-            self._adj = [set() for _ in range(V)]
+        self._adj = [Bag() for _ in range(V)]
         super().__init__(V=V, edges=edges)
 
     __init__.__doc__ = f"""{UndirectedGraph.__init__.__doc__}
@@ -199,13 +194,13 @@ class Graph(UndirectedGraph):
     def add_edge(self, v, w):
         self._validate_vertex(v)
         self._validate_vertex(w)
-        # Exercise 4.1.5
+        # Exercise 4.1.5 no self-loops
         if not self._SELF_LOOPS and v == w:
             raise ValueError(f"{v} == {w}! No self-loops allowed.")
-        if not self.has_edge(v, w):
+        if self._PARALLEL or not self.has_edge(v, w):
             self.E += 1
-        self._adj[v].add(w)
-        self._adj[w].add(v)
+            self._adj[v].add(w)
+            self._adj[w].add(v)
 
     def _hide_vertex(self, v):
         """Hide the vertex from the graph."""
@@ -223,18 +218,18 @@ class Graph(UndirectedGraph):
         return g
 
     # Exercise 4.1.24 (inspiration)
-    def subgraph(self, vertices):
-        """Return the subgraph containing the `vertices`.
+    def subgraph(self, vs):
+        """Return the subgraph containing the vertices in `vs`.
 
         .. note:: This method re-maps the vertices to [0, 1, ...len(vertices)]
         for array indexing, so although the structure of the subgraph will
         match that of the original, the vertex names will be different.
         """
-        vertices = Set(vertices)  # use ordered set for ranking adjacents
-        g = self.__class__(len(vertices))
+        vs = Set(vs)  # use ordered set for ranking adjacents
+        g = self.__class__(len(vs))
         for v, w in self.edges():
-            if v in vertices and w in vertices:
-                g.add_edge(vertices.rank(v), vertices.rank(w))
+            if v in vs and w in vs:
+                g.add_edge(vs.rank(v), vs.rank(w))
         return g
 
 
@@ -244,8 +239,7 @@ class STGraph(UndirectedGraph):
     # See p 557 and
     # <https://introcs.cs.princeton.edu/java/45graph/Graph.java.html>
 
-    def __init__(self, V=None, edges=None, parallel=True, self_loops=True):
-        self._PARALLEL = bool(parallel)
+    def __init__(self, V=None, edges=None, self_loops=True):
         self._SELF_LOOPS = bool(self_loops)
         self._adj = HashST()
         self.V = 0
@@ -293,8 +287,6 @@ class STGraph(UndirectedGraph):
         return g
 
     __init__.__doc__ = f"""{UndirectedGraph.__init__.__doc__}
-    parallel : bool, optional
-        If True, allow parallel edges.
     self_loops : bool, optional
         If True, allow self-loops.
     """
@@ -316,10 +308,7 @@ class STGraph(UndirectedGraph):
     def add_vertex(self, v):
         """Add a vertex to the graph."""
         if not self.has_vertex(v):
-            if self._PARALLEL:
-                self._adj[v] = Bag()
-            else:
-                self._adj[v] = set()
+            self._adj[v] = set()
             self.V += 1
 
     def add_edge(self, v, w):
@@ -332,8 +321,8 @@ class STGraph(UndirectedGraph):
             raise ValueError(f"{v} == {w}! No self-loops allowed.")
         if not self.has_edge(v, w):
             self.E += 1
-        self._adj[v].add(w)
-        self._adj[w].add(v)
+            self._adj[v].add(w)
+            self._adj[w].add(v)
 
     # Exercise 4.1.3
     def copy(self):
@@ -341,13 +330,13 @@ class STGraph(UndirectedGraph):
         return self.subgraph(self.vertices())
 
     # Exercise 4.1.3 + 4.1.24 (inspiration)
-    def subgraph(self, vertices):
-        """Make a deep copy of the subgraph containing the `vertices`."""
-        vertices = set(vertices)
-        g = self.__class__(vertices)
-        for v in vertices:
+    def subgraph(self, vs):
+        """Make a deep copy of the subgraph containing the vertices."""
+        vs = set(vs)
+        g = self.__class__(vs)
+        for v in vs:
             for w in self._adj[v]:
-                if w in vertices:
+                if w in vs:
                     g._adj[v].add(w)
         return g
 
@@ -907,7 +896,7 @@ class MinCyclePath(BreadthFirstPaths):
         return list(p)
 
 
-class Bipartite(GraphSearch):
+class Bipartite:
     __doc__ = f"""Implements depth-first search to determine if a graph is
     bipartite.
     {GraphSearch.__doc__}"""
@@ -918,7 +907,7 @@ class Bipartite(GraphSearch):
         self.s = s
         self._marked = G.V * [False]
         self._color = G.V * [False]
-        self.is_bipartite = False
+        self.is_bipartite = True
         self._dfs(s)
 
     def _dfs(self, v):
@@ -1039,7 +1028,6 @@ def degrees_of_separation(sg, source, sink):
 # -----------------------------------------------------------------------------
 # TODO tests/test_graph.py
 if __name__ == "__main__":
-    # Graph = STGraph
     G = Graph.fromfile('../data/tinyG.txt')
     print(G)
 
@@ -1073,11 +1061,11 @@ if __name__ == "__main__":
     print('----- CC -----')
     comps = print_components(G2)
     print('--- subgraph 0 ---')
-    # comps[0].add(9)  # add the vertex with no edges to it
+    # comps[0].append(9)  # add the vertex with no edges to it
     G20 = G2.subgraph(comps[0])
     print(G20)
-    comps20 = print_components(G2, vertices=comps[0])
     comps20_sub = print_components(G20)
+    comps20 = print_components(G2, vertices=comps[0])
 
     # Test connected components
     print('----- SymbolGraph -----')
@@ -1116,9 +1104,9 @@ if __name__ == "__main__":
     # Test no parallel edges
     G2 = Graph.fromfile('../data/tinyG2.txt', parallel=False)
     G2.add_edge(0, 2)
-    assert sorted(G2.adj(0)) == sorted(G.adj(0))  # no changes made
+    assert G2.adj(0) == G.adj(0)  # no changes made
     G2.add_edge(0, 9)
-    assert sorted(G2.adj(0)) != sorted(G.adj(0))  # changes made
+    assert G2.adj(0) != G.adj(0)  # changes made
 
     # Test no self-edges
     try:
@@ -1180,6 +1168,12 @@ if __name__ == "__main__":
     print('   center:', gp.center())
     print('periphery:', gp.periphery())
     print('    girth:', gp.girth())
+
+    b = Bipartite(G2, 0)
+    assert not b.is_bipartite
+
+    # 3 co-linear nodes are bipartite
+    assert Bipartite(Graph(3, [(0, 1), (1, 2)]), 0).is_bipartite
 
 # =============================================================================
 # =============================================================================
