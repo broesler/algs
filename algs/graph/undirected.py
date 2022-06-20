@@ -763,6 +763,33 @@ class Cycle:
         self._marked = G.V * [False]
         self._dfs(G, s, s)
 
+    @staticmethod
+    def has_self_loop(G):
+        """Return True if the graph has a self-loop."""
+        for v in G.vertices():
+            for w in G.adj(v):
+                if v == w:
+                    return True
+        else:
+            return False
+
+    @staticmethod
+    def has_parallel_edges(G):
+        """Return True if the graph has parallel edges.
+
+        .. note:: All undirected `Graph`s are defined by directed parallel
+            edges in opposite directions, so this method always returns True.
+        """
+        marked = G.V * [False]
+        for v in G.vertices():
+            for w in G.adj(v):
+                if marked[w]:
+                    return True
+                else:
+                    marked[w] = True
+        else:
+            return False
+
     def _dfs(self, G, v, u):
         """Perform depth-first search recursively from vertex `v`.
 
@@ -1128,6 +1155,8 @@ if __name__ == "__main__":
     print('--- Cycles ---')
     c = Cycle(gc, 0)
     assert c.has_cycle
+    assert c.has_self_loop
+    assert c.has_parallel_edges
     c = MinCyclePath(gc, 0)
     print(c.cycle_path())
 
