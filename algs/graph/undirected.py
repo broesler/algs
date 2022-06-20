@@ -819,7 +819,7 @@ class CyclePath(DepthFirstPaths):
         # Cycle may not include the source! Remove irrelevant vertices.
         while p[0] != p[-1]:
             p.popleft()
-        return p
+        return list(p)
 
 
 class MinCyclePath(BreadthFirstPaths):
