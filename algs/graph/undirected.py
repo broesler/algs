@@ -113,8 +113,6 @@ class GraphSearch(ABC):
     """
     Attributes
     ----------
-    G : :obj:`Graph`
-        The graph over which to search.
     s : int
         The index of the source vertex.
     """
@@ -128,7 +126,6 @@ class GraphSearch(ABC):
         s : int, optional
             The index of the source vertex.
         """
-        self.G = G
         self.s = s
 
     @abstractmethod
@@ -350,7 +347,7 @@ class DepthFirstSearch(GraphSearch):
         super().__init__(G, s)
         self._marked = G.V * [False]
         self._count = 0
-        self._dfs(s)
+        self._dfs(G, s)
 
     def marked(self, v):
         return self._marked[v]
@@ -358,13 +355,13 @@ class DepthFirstSearch(GraphSearch):
     def count(self):
         return self._count
 
-    def _dfs(self, v):
+    def _dfs(self, G, v):
         """Perform depth-first search recursively from vertex `v`."""
         self._marked[v] = True
         self._count += 1
-        for w in self.G.adj(v):
+        for w in G.adj(v):
             if not self._marked[w]:
-                self._dfs(w)
+                self._dfs(G, w)
 
 
 # Algorithm 4.1
@@ -376,15 +373,15 @@ class DepthFirstPaths(Paths):
         super().__init__(G, s)
         self._marked = G.V * [False]
         self._edge_to = G.V * [None]  # last vertex on known path to this one
-        self._dfs(s)
+        self._dfs(G, s)
 
-    def _dfs(self, v):
+    def _dfs(self, G, v):
         """Perform depth-first search recursively from vertex `v`."""
         self._marked[v] = True
-        for w in self.G.adj(v):
+        for w in G.adj(v):
             if not self._marked[w]:
                 self._edge_to[w] = v
-                self._dfs(w)
+                self._dfs(G, w)
 
     def has_path_to(self, v):
         return self._marked[v]
@@ -411,9 +408,9 @@ class BreadthFirstPaths(Paths):
         self._marked = G.V * [False]
         self._edge_to = G.V * [None]  # last vertex on known path to this one
         self._dist_to = G.V * [None]  # Exercise 4.1.13
-        self._bfs(s)
+        self._bfs(G, s)
 
-    def _bfs(self, v):
+    def _bfs(self, G, v):
         """Perform breadth-first search from vertex `v`."""
         q = Queue()
         self._marked[v] = True
@@ -421,7 +418,7 @@ class BreadthFirstPaths(Paths):
         q.enqueue(self.s)
         while not q.is_empty:
             v = q.dequeue()
-            for w in self.G.adj(v):
+            for w in G.adj(v):
                 if not self._marked[w]:
                     self._edge_to[w] = v
                     self._marked[w] = True
@@ -464,7 +461,7 @@ class UFSearch(GraphSearch):
         super().__init__(G, s)
         self._uf = WeightedQuickUnionUF(G.V)
         for v in G.vertices():
-            for w in self.G.adj(v):
+            for w in G.adj(v):
                 if not self._uf.connected(v, w):
                     self._uf.union(v, w)
 
@@ -486,7 +483,7 @@ class LeafDFS(GraphSearch):
         super().__init__(G, s)
         self._marked = G.V * [False]
         self._count = 0
-        self._leaf = self._dfs(s)
+        self._leaf = self._dfs(G, s)
 
     def marked(self, v):
         return self._marked[v]
@@ -494,15 +491,15 @@ class LeafDFS(GraphSearch):
     def count(self):
         return self._count
 
-    def _dfs(self, v):
+    def _dfs(self, G, v):
         """Perform depth-first search recursively from vertex `v`."""
         self._marked[v] = True
         self._count += 1
-        if all([self._marked[x] for x in self.G.adj(v)]):
+        if all([self._marked[x] for x in G.adj(v)]):
             return v
-        for w in self.G.adj(v):
+        for w in G.adj(v):
             if not self._marked[w]:
-                return self._dfs(w)
+                return self._dfs(G, w)
 
     def leaf(self):
         return self._leaf
@@ -597,7 +594,7 @@ class GraphProperties:
         [2, 0, 6, 2]
         >>> list(MinCyclePath(G, 10).cycle_path())
         [2, 3, 10, 5, 2]
-        
+
         Lengths are not equal! The minimum path in that group is 3.
         """
         if self._girth is not None:
@@ -632,9 +629,8 @@ class CC:
     """
 
     def __init__(self, G, vertices=None):
-        self.G = G
         if vertices is None:
-            vertices = self.G.vertices()
+            vertices = G.vertices()
         self.vertices = vertices
         self._marked = G.V * [False]
         self._id = G.V * [None]
@@ -642,16 +638,16 @@ class CC:
         # Perform DFS for *every* source vertex.
         for s in self.vertices:
             if not self._marked[s]:
-                self._dfs(s)
+                self._dfs(G, s)
                 self._count += 1
 
-    def _dfs(self, v):
+    def _dfs(self, G, v):
         """Perform depth-first search recursively from vertex `v`."""
         self._marked[v] = True
         self._id[v] = self._count
-        for w in self.G.adj(v):
+        for w in G.adj(v):
             if not self._marked[w]:
-                self._dfs(w)
+                self._dfs(G, w)
 
     def connected(self, v, w):
         """Return True if `v` and `w` are connected."""
@@ -766,16 +762,15 @@ class Cycle:
         pass
 
     def __init__(self, G, s):
-        self.G = G
         self.s = s
         self.has_cycle = False
         self._marked = G.V * [False]
         try:
-            self._dfs(s, s)
+            self._dfs(G, s, s)
         except self.CycleFound:
             pass
 
-    def _dfs(self, v, u):
+    def _dfs(self, G, v, u):
         """Perform depth-first search recursively from vertex `v`.
 
         .. note:: `u` is the previously-seen vertex. If one of the adjacent
@@ -783,9 +778,9 @@ class Cycle:
         came, we have a cycle.
         """
         self._marked[v] = True
-        for w in self.G.adj(v):
+        for w in G.adj(v):
             if not self._marked[w]:
-                self._dfs(w, v)
+                self._dfs(G, w, v)
             elif w != u:
                 self.has_cycle = True
                 raise self.CycleFound
@@ -799,7 +794,6 @@ class CyclePath(DepthFirstPaths):
         pass
 
     def __init__(self, G, s):
-        self.G = G
         self.s = s
         self.has_cycle = False
         self._marked = G.V * [False]
@@ -807,11 +801,11 @@ class CyclePath(DepthFirstPaths):
         self._cycle_head = None  # start vertex of the cycle
         self._cycle_tail = None  # end vertex of the cycle
         try:
-            self._dfs(s, s)
+            self._dfs(G, s, s)
         except self.CycleFound:
             pass
 
-    def _dfs(self, v, u):
+    def _dfs(self, G, v, u):
         """Perform depth-first search recursively from vertex `v`.
 
         .. note:: `u` is the previously-seen vertex. If one of the adjacent
@@ -819,10 +813,10 @@ class CyclePath(DepthFirstPaths):
         came, we have a cycle.
         """
         self._marked[v] = True
-        for w in self.G.adj(v):
+        for w in G.adj(v):
             if not self._marked[w]:
                 self._edge_to[w] = v
-                self._dfs(w, v)
+                self._dfs(G, w, v)
             elif w != u:
                 self.has_cycle = True
                 self._cycle_head = w
@@ -844,7 +838,6 @@ class MinCyclePath(BreadthFirstPaths):
     {GraphSearch.__doc__}"""
 
     def __init__(self, G, s):
-        self.G = G
         self.s = s
         self.has_cycle = False
         self.cycle_length = float('inf')
@@ -854,9 +847,9 @@ class MinCyclePath(BreadthFirstPaths):
         self._cycle_head = None  # start vertex of the cycle
         self._cycle_tail = None  # end vertex of the cycle
         # Run the search
-        self._bfs(s)
+        self._bfs(G, s)
 
-    def _bfs(self, v):
+    def _bfs(self, G, v):
         """Perform breadth-first search from vertex `v`."""
         q = Queue()
         self._marked[v] = True
@@ -864,7 +857,7 @@ class MinCyclePath(BreadthFirstPaths):
         q.enqueue(v)
         while not q.is_empty:
             v = q.dequeue()
-            for w in self.G.adj(v):
+            for w in G.adj(v):
                 if w == self._edge_to[v]:
                     continue
                 if not self._marked[w]:
@@ -903,20 +896,19 @@ class Bipartite:
     # See p 547
 
     def __init__(self, G, s):
-        self.G = G
         self.s = s
         self._marked = G.V * [False]
         self._color = G.V * [False]
         self.is_bipartite = True
-        self._dfs(s)
+        self._dfs(G, s)
 
-    def _dfs(self, v):
+    def _dfs(self, G, v):
         """Perform depth-first search recursively from vertex `v`."""
         self._marked[v] = True
-        for w in self.G.adj(v):
+        for w in G.adj(v):
             if not self._marked[w]:
                 self._color[w] = not self._color[v]
-                self._dfs(w)
+                self._dfs(G, w)
             elif self._color[w] == self._color[v]:
                 self.is_bipartite = False
 
@@ -1162,7 +1154,7 @@ if __name__ == "__main__":
     comps2 = c2.get_components()
     gp = GraphProperties(G2, comps2[0])
     idx = comps2[0][0]
-    print(f"ϵ({idx}): {gp.eccentricity(idx)}")
+    print(f"     ϵ({idx}): {gp.eccentricity(idx)}")
     print(' diameter:', gp.diameter())
     print('   radius:', gp.radius())
     print('   center:', gp.center())
