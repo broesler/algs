@@ -219,8 +219,8 @@ class Graph(UndirectedGraph):
         """Return the subgraph containing the vertices in `vs`.
 
         .. note:: This method re-maps the vertices to [0, 1, ...len(vertices)]
-        for array indexing, so although the structure of the subgraph will
-        match that of the original, the vertex names will be different.
+            for array indexing, so although the structure of the subgraph will
+            match that of the original, the vertex names will be different.
         """
         vs = Set(vs)  # use ordered set for ranking adjacents
         g = self.__class__(len(vs))
@@ -451,9 +451,9 @@ class UFSearch(GraphSearch):
     __doc__ = f"""Implements the graph search API using Union-Find.
 
     .. note:: This implementation is simple and efficient if we are only
-    concerned with determining connectivity. The UF algorithm is also an
-    *online* algorithm, as opposed to DFS which must preprocess the entire
-    graph structure.
+        concerned with determining connectivity. The UF algorithm is also an
+        *online* algorithm, as opposed to DFS which must preprocess the entire
+        graph structure.
     {GraphSearch.__doc__}"""
     # See p 529
 
@@ -510,9 +510,9 @@ class GraphProperties:
     """A class to determine the geometric properties of a connected graph.
 
     .. note:: The eccentricity of a single vertex is O(V²) since BFS is O(V+E),
-    and we need to repeat for V vertices. The overall calculation is O(V³)(!!)
-    since we need to compute the eccentricity of all V vertices to find the max
-    and min.
+        and we need to repeat for V vertices. The overall calculation is
+        O(V³)(!!) since we need to compute the eccentricity of all V vertices
+        to find the max and min.
     """
 
     def __init__(self, G, vertices=None, verbose=False):
@@ -581,11 +581,11 @@ class GraphProperties:
         If there are no cycles, the girth is infinite.
 
         .. note:: This algorithm runs in O(V(V + E)) time, since all source
-        vertices must be checked, and BFS runs in O(V + E) worst-case time.
-        This runtime improves over O(E(V + E)), since E ∈ [V-1, (V-1)V/2].
+            vertices must be checked, and BFS runs in O(V + E) worst-case time.
+            This runtime improves over O(E(V + E)), since E ∈ [V-1, (V-1)V/2].
 
         .. note:: Example of graph where BFS would *not* find the minimum cycle
-        in a connected graph just by searching from one vertex:
+            in a connected graph just by searching from one vertex:
         >>> G = Graph.fromfile('../data/tinyG2.txt')
         >>> cc = CC(G).get_components()
         >>> print(cc[0])
@@ -760,15 +760,45 @@ class Cycle:
     def __init__(self, G, s):
         self.s = s
         self.has_cycle = False
+        # Don't actually check for undirected graphs. See method note.
+        # if self.has_parallel_edges(G):
+        #     return
         self._marked = G.V * [False]
         self._dfs(G, s, s)
+
+    @staticmethod
+    def has_self_loop(G):
+        """Return True if the graph has a self-loop."""
+        for v in G.vertices():
+            for w in G.adj(v):
+                if v == w:
+                    return True
+        else:
+            return False
+
+    @staticmethod
+    def has_parallel_edges(G):
+        """Return True if the graph has parallel edges.
+
+        .. note:: All undirected `Graph`s are defined by directed parallel
+            edges in opposite directions, so this method always returns True.
+        """
+        marked = G.V * [False]
+        for v in G.vertices():
+            for w in G.adj(v):
+                if marked[w]:
+                    return True
+                else:
+                    marked[w] = True
+        else:
+            return False
 
     def _dfs(self, G, v, u):
         """Perform depth-first search recursively from vertex `v`.
 
         .. note:: `u` is the previously-seen vertex. If one of the adjacent
-        vertices to `v` is marked, but is not the vertex from which we just
-        came, we have a cycle.
+            vertices to `v` is marked, but is not the vertex from which we just
+            came, we have a cycle.
         """
         self._marked[v] = True
         for w in G.adj(v):
@@ -798,8 +828,8 @@ class CyclePath(DepthFirstPaths):
         """Perform depth-first search recursively from vertex `v`.
 
         .. note:: `u` is the previously-seen vertex. If one of the adjacent
-        vertices to `v` is marked, but is not the vertex from which we just
-        came, we have a cycle.
+            vertices to `v` is marked, but is not the vertex from which we just
+            came, we have a cycle.
         """
         self._marked[v] = True
         for w in G.adj(v):
@@ -901,6 +931,78 @@ class Bipartite:
                 self._dfs(G, w)
             elif self._color[w] == self._color[v]:
                 self.is_bipartite = False
+
+
+# Exercise 4.1.32
+class ParallelEdges:
+    __doc__ = f"""Implements breadth-first search to count parallel edges.
+    {Paths.__doc__}"""
+
+    def __init__(self, G, s):
+        self.count = 0
+        self._marked = G.V * [False]
+        self._bfs(G, s)
+        self.count /= 2  # undirected edges counted 2x
+
+    def _bfs(self, G, s):
+        """Perform breadth-first search from source vertex `s`."""
+        q = Queue()
+        self._marked[s] = True
+        q.enqueue(s)
+        while not q.is_empty:
+            v = q.dequeue()
+            neighbs = G.V * [False]  # boolean array of (possible) neighbors
+            for w in G.adj(v):
+                # Same as using a hash table since we have integer vertices.
+                if neighbs[w]:
+                    self.count += 1
+                else:
+                    neighbs[w] = True
+
+                if not self._marked[w]:
+                    self._marked[w] = True
+                    q.enqueue(w)
+
+
+# Exercise 4.1.36
+class Bridge:
+    __doc__ = f"""Implements depth-first search to determine if a graph is
+    edge-connected, aka biconnected.
+    {GraphSearch.__doc__}"""
+
+    def __init__(self, G):
+        self.Nbridges = 0
+        self._count = 0
+        self._pre = G.V * [None]  # order in which DFS examines v
+        self._low = G.V * [None]  # lowest preorder of any vertex adjacent to v
+        for s in G.vertices():
+            if self._pre[s] is None:
+                self._dfs(G, s, s)
+
+    @property
+    def is_edge_connected(self):
+        return self.Nbridges == 0
+
+    def _dfs(self, G, v, u):
+        """Perform depth-first search recursively from vertex `v`.
+
+        .. note:: `u` is the previously-seen vertex. If one of the adjacent
+            vertices to `v` is marked, but is not the vertex from which we just
+            came, we have a cycle.
+        """
+        self._pre[v] = self._count
+        self._low[v] = self._pre[v]
+        self._count += 1
+        for w in G.adj(v):
+            # "pre is None" takes the place of "not marked"
+            if self._pre[w] is None:
+                self._dfs(G, w, v)
+                self._low[v] = min(self._low[v], self._low[w])
+                if self._low[w] == self._pre[w]:
+                    self.Nbridges += 1
+            elif w != u:
+                # Update low number -- ignore reverse of edge leading to v
+                self._low[v] = min(self._low[v], self._pre[w])
 
 
 # -----------------------------------------------------------------------------
@@ -1129,6 +1231,8 @@ if __name__ == "__main__":
     print('--- Cycles ---')
     c = Cycle(gc, 0)
     assert c.has_cycle
+    assert c.has_self_loop
+    assert c.has_parallel_edges
     c = MinCyclePath(gc, 0)
     print(c.cycle_path())
 
@@ -1159,6 +1263,20 @@ if __name__ == "__main__":
 
     # 3 co-linear nodes are bipartite
     assert Bipartite(Graph(3, [(0, 1), (1, 2)]), 0).is_bipartite
+
+    # Parallel edges
+    G2.add_edge(0, 2)
+    G2.add_edge(2, 6)
+    G2.add_edge(10, 3)
+    p = ParallelEdges(G2, 0)
+    assert p.count == 3
+
+    # print('----- Bridges -----')
+    G2 = Graph.fromfile('../data/tinyG2.txt')
+    G2.add_edge(5, 7)  # one bridge
+    b = Bridge(G2)
+    assert b.Nbridges == 1
+
 
 # =============================================================================
 # =============================================================================
