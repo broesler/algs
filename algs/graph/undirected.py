@@ -963,6 +963,47 @@ class ParallelEdges:
                     q.enqueue(w)
 
 
+# Exercise 4.1.36
+class Bridge:
+    __doc__ = f"""Implements depth-first search to determine if a graph is
+    edge-connected, aka biconnected.
+    {GraphSearch.__doc__}"""
+
+    def __init__(self, G):
+        self.Nbridges = 0
+        self._count = 0
+        self._pre = G.V * [None]  # order in which DFS examines v
+        self._low = G.V * [None]  # lowest preorder of any vertex adjacent to v
+        for s in G.vertices():
+            if self._pre[s] is None:
+                self._dfs(G, s, s)
+
+    @property
+    def is_edge_connected(self):
+        return self.Nbridges == 0
+
+    def _dfs(self, G, v, u):
+        """Perform depth-first search recursively from vertex `v`.
+
+        .. note:: `u` is the previously-seen vertex. If one of the adjacent
+            vertices to `v` is marked, but is not the vertex from which we just
+            came, we have a cycle.
+        """
+        self._pre[v] = self._count
+        self._low[v] = self._pre[v]
+        self._count += 1
+        for w in G.adj(v):
+            # "pre is None" takes the place of "not marked"
+            if self._pre[w] is None:
+                self._dfs(G, w, v)
+                self._low[v] = min(self._low[v], self._low[w])
+                if self._low[w] == self._pre[w]:
+                    self.Nbridges += 1
+            elif w != u:
+                # Update low number -- ignore reverse of edge leading to v
+                self._low[v] = min(self._low[v], self._pre[w])
+
+
 # -----------------------------------------------------------------------------
 #         Client Functions
 # -----------------------------------------------------------------------------
@@ -1228,6 +1269,13 @@ if __name__ == "__main__":
     G2.add_edge(10, 3)
     p = ParallelEdges(G2, 0)
     assert p.count == 3
+
+    # print('----- Bridges -----')
+    G2 = Graph.fromfile('../data/tinyG2.txt')
+    G2.add_edge(5, 7)  # one bridge
+    b = Bridge(G2)
+    assert b.Nbridges == 1
+
 
 # =============================================================================
 # =============================================================================
