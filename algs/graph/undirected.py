@@ -219,8 +219,8 @@ class Graph(UndirectedGraph):
         """Return the subgraph containing the vertices in `vs`.
 
         .. note:: This method re-maps the vertices to [0, 1, ...len(vertices)]
-        for array indexing, so although the structure of the subgraph will
-        match that of the original, the vertex names will be different.
+            for array indexing, so although the structure of the subgraph will
+            match that of the original, the vertex names will be different.
         """
         vs = Set(vs)  # use ordered set for ranking adjacents
         g = self.__class__(len(vs))
@@ -451,9 +451,9 @@ class UFSearch(GraphSearch):
     __doc__ = f"""Implements the graph search API using Union-Find.
 
     .. note:: This implementation is simple and efficient if we are only
-    concerned with determining connectivity. The UF algorithm is also an
-    *online* algorithm, as opposed to DFS which must preprocess the entire
-    graph structure.
+        concerned with determining connectivity. The UF algorithm is also an
+        *online* algorithm, as opposed to DFS which must preprocess the entire
+        graph structure.
     {GraphSearch.__doc__}"""
     # See p 529
 
@@ -510,9 +510,9 @@ class GraphProperties:
     """A class to determine the geometric properties of a connected graph.
 
     .. note:: The eccentricity of a single vertex is O(V²) since BFS is O(V+E),
-    and we need to repeat for V vertices. The overall calculation is O(V³)(!!)
-    since we need to compute the eccentricity of all V vertices to find the max
-    and min.
+        and we need to repeat for V vertices. The overall calculation is
+        O(V³)(!!) since we need to compute the eccentricity of all V vertices
+        to find the max and min.
     """
 
     def __init__(self, G, vertices=None, verbose=False):
@@ -581,11 +581,11 @@ class GraphProperties:
         If there are no cycles, the girth is infinite.
 
         .. note:: This algorithm runs in O(V(V + E)) time, since all source
-        vertices must be checked, and BFS runs in O(V + E) worst-case time.
-        This runtime improves over O(E(V + E)), since E ∈ [V-1, (V-1)V/2].
+            vertices must be checked, and BFS runs in O(V + E) worst-case time.
+            This runtime improves over O(E(V + E)), since E ∈ [V-1, (V-1)V/2].
 
         .. note:: Example of graph where BFS would *not* find the minimum cycle
-        in a connected graph just by searching from one vertex:
+            in a connected graph just by searching from one vertex:
         >>> G = Graph.fromfile('../data/tinyG2.txt')
         >>> cc = CC(G).get_components()
         >>> print(cc[0])
@@ -794,8 +794,8 @@ class Cycle:
         """Perform depth-first search recursively from vertex `v`.
 
         .. note:: `u` is the previously-seen vertex. If one of the adjacent
-        vertices to `v` is marked, but is not the vertex from which we just
-        came, we have a cycle.
+            vertices to `v` is marked, but is not the vertex from which we just
+            came, we have a cycle.
         """
         self._marked[v] = True
         for w in G.adj(v):
@@ -824,8 +824,8 @@ class CyclePath(DepthFirstPaths):
         """Perform depth-first search recursively from vertex `v`.
 
         .. note:: `u` is the previously-seen vertex. If one of the adjacent
-        vertices to `v` is marked, but is not the vertex from which we just
-        came, we have a cycle.
+            vertices to `v` is marked, but is not the vertex from which we just
+            came, we have a cycle.
         """
         self._marked[v] = True
         for w in G.adj(v):
