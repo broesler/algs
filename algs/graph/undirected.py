@@ -787,6 +787,7 @@ class CyclePath(DepthFirstPaths):
     def __init__(self, G, s):
         self.s = s
         self.has_cycle = False
+        self._path = None
         self._marked = G.V * [False]
         self._edge_to = G.V * [None]  # last vertex on known path to this one
         self._cycle_head = None  # start vertex of the cycle
@@ -809,17 +810,17 @@ class CyclePath(DepthFirstPaths):
                 self._dfs(G, w, v)
             elif w != u:
                 self.has_cycle = True
-                self._cycle_head = w
-                self._cycle_tail = v
+                self._path = Stack()
+                x = v
+                while x != w:
+                    self._path.push(x)
+                    x = self._edge_to[x]
+                self._path.push(w)
+                self._path.push(v)
 
     def cycle_path(self):
         """Return the path of the found cycle."""
-        p = deque(self.path_to(self._cycle_tail))
-        p.append(self._cycle_head)
-        # Cycle may not include the source! Remove irrelevant vertices.
-        while p[0] != p[-1]:
-            p.popleft()
-        return list(p)
+        return list(self._path)
 
 
 class MinCyclePath(BreadthFirstPaths):
@@ -1031,12 +1032,12 @@ if __name__ == "__main__":
     G = Graph.fromfile('../data/tinyG.txt')
     c = CyclePath(G, 0)
     assert c.has_cycle
-    assert list(c.cycle_path()) == [5, 4, 3, 5]
+    assert list(c.cycle_path()) == [3, 5, 4, 3]
 
     G2 = Graph.fromfile('../data/tinyG2.txt')
     c2 = CyclePath(G2, 0)
     assert c2.has_cycle
-    assert list(c2.cycle_path()) == [0, 6, 3, 2, 0]
+    assert list(c2.cycle_path()) == [2, 0, 6, 3, 2]
 
     # Test connected components
     print('----- CC -----')
