@@ -932,6 +932,37 @@ class Bipartite:
                 self.is_bipartite = False
 
 
+# Exercise 4.1.32
+class ParallelEdges:
+    __doc__ = f"""Implements breadth-first search to count parallel edges.
+    {Paths.__doc__}"""
+
+    def __init__(self, G, s):
+        self.count = 0
+        self._marked = G.V * [False]
+        self._bfs(G, s)
+        self.count /= 2  # undirected edges counted 2x
+
+    def _bfs(self, G, s):
+        """Perform breadth-first search from source vertex `s`."""
+        q = Queue()
+        self._marked[s] = True
+        q.enqueue(s)
+        while not q.is_empty:
+            v = q.dequeue()
+            neighbs = G.V * [False]  # boolean array of (possible) neighbors
+            for w in G.adj(v):
+                # Same as using a hash table since we have integer vertices.
+                if neighbs[w]:
+                    self.count += 1
+                else:
+                    neighbs[w] = True
+
+                if not self._marked[w]:
+                    self._marked[w] = True
+                    q.enqueue(w)
+
+
 # -----------------------------------------------------------------------------
 #         Client Functions
 # -----------------------------------------------------------------------------
@@ -1190,6 +1221,13 @@ if __name__ == "__main__":
 
     # 3 co-linear nodes are bipartite
     assert Bipartite(Graph(3, [(0, 1), (1, 2)]), 0).is_bipartite
+
+    # Parallel edges
+    G2.add_edge(0, 2)
+    G2.add_edge(2, 6)
+    G2.add_edge(10, 3)
+    p = ParallelEdges(G2, 0)
+    assert p.count == 3
 
 # =============================================================================
 # =============================================================================
