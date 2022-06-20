@@ -760,6 +760,9 @@ class Cycle:
     def __init__(self, G, s):
         self.s = s
         self.has_cycle = False
+        # Don't actually check for undirected graphs. See method note.
+        # if self.has_parallel_edges(G):
+        #     return
         self._marked = G.V * [False]
         self._dfs(G, s, s)
 
