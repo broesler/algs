@@ -267,8 +267,8 @@ class STGraph(UndirectedGraph):
 
         Returns
         -------
-        res : :obj:`SymbolGraph`
-            The SymbolGraph defined by the adjaceny list file.
+        res : :obj:`STGraph`
+            The STGraph defined by the adjaceny list file.
         """
         g = cls(*args, **kwargs)
         # One pass to add all vertices and edges to the symbol table
@@ -757,18 +757,11 @@ class Cycle:
     {GraphSearch.__doc__}"""
     # See p 547
 
-    class CycleFound(Exception):
-        """Raise exception to break recursive calls once cycle is found."""
-        pass
-
     def __init__(self, G, s):
         self.s = s
         self.has_cycle = False
         self._marked = G.V * [False]
-        try:
-            self._dfs(G, s, s)
-        except self.CycleFound:
-            pass
+        self._dfs(G, s, s)
 
     def _dfs(self, G, v, u):
         """Perform depth-first search recursively from vertex `v`.
@@ -779,19 +772,17 @@ class Cycle:
         """
         self._marked[v] = True
         for w in G.adj(v):
+            if self.has_cycle:
+                return
             if not self._marked[w]:
                 self._dfs(G, w, v)
             elif w != u:
                 self.has_cycle = True
-                raise self.CycleFound
 
 
 class CyclePath(DepthFirstPaths):
     __doc__ = f"""Implements depth-first search to find a cyclic path.
     {GraphSearch.__doc__}"""
-
-    class CycleFound(Exception):
-        pass
 
     def __init__(self, G, s):
         self.s = s
@@ -800,10 +791,7 @@ class CyclePath(DepthFirstPaths):
         self._edge_to = G.V * [None]  # last vertex on known path to this one
         self._cycle_head = None  # start vertex of the cycle
         self._cycle_tail = None  # end vertex of the cycle
-        try:
-            self._dfs(G, s, s)
-        except self.CycleFound:
-            pass
+        self._dfs(G, s, s)
 
     def _dfs(self, G, v, u):
         """Perform depth-first search recursively from vertex `v`.
@@ -814,6 +802,8 @@ class CyclePath(DepthFirstPaths):
         """
         self._marked[v] = True
         for w in G.adj(v):
+            if self.has_cycle:
+                return
             if not self._marked[w]:
                 self._edge_to[w] = v
                 self._dfs(G, w, v)
@@ -821,7 +811,6 @@ class CyclePath(DepthFirstPaths):
                 self.has_cycle = True
                 self._cycle_head = w
                 self._cycle_tail = v
-                raise self.CycleFound
 
     def cycle_path(self):
         """Return the path of the found cycle."""
@@ -1121,7 +1110,7 @@ if __name__ == "__main__":
     except ValueError:
         pass
 
-    print('--- Graph Properties ---')
+    print('----- Graph Properties -----')
     # gc = Graph.fromfile('../data/tinyCG.txt')
     gc = Graph.fromfile('../data/mediumG.txt')
     # NOTE maximum recursion depth reached in largeG!
@@ -1136,6 +1125,9 @@ if __name__ == "__main__":
     print('    girth:', gp.girth())
     assert gp.eccentricity(gp.center()[0]) == gp.radius()
 
+    print('--- Cycles ---')
+    c = Cycle(gc, 0)
+    assert c.has_cycle
     c = MinCyclePath(gc, 0)
     print(c.cycle_path())
 

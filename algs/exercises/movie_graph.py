@@ -26,7 +26,7 @@ FORCE_UPDATE = False
 datafile = Path('../data/movies-hero.txt')
 
 pkl_file = Path(f"./pkl/{datafile.stem}.pkl")
-gp_file =  Path(f"./pkl/{datafile.stem}_gp.pkl")
+gp_file = Path(f"./pkl/{datafile.stem}_gp.pkl")
 
 # -----------------------------------------------------------------------------
 #         Load the data
@@ -76,7 +76,7 @@ if sg.index(q) not in components[max_c]:
     print('not ', end='')
 print('in the largest component.')
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 #         Find the properties of the largest component
 # -----------------------------------------------------------------------------
 # NOTE The ϵ(v) algorithm is O(V²) -> O(V³) for diameter/radius/center!!
@@ -108,7 +108,7 @@ if FORCE_UPDATE or not gp_file.exists():
     with open(gp_file, 'wb') as fp:
         pickle.dump(gp, fp)
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 #         Output
 # -----------------------------------------------------------------------------
 
