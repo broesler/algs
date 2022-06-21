@@ -965,16 +965,17 @@ class ParallelEdges:
 
 
 # Exercise 4.1.36
-class Bridge:
+class Biconnected:
     __doc__ = f"""Implements depth-first search to determine if a graph is
     edge-connected, aka biconnected.
     {GraphSearch.__doc__}"""
 
     def __init__(self, G):
         self.Nbridges = 0
-        self._count = 0
+        self._count = 0           # depth counter
         self._pre = G.V * [None]  # order in which DFS examines v
         self._low = G.V * [None]  # lowest preorder of any vertex adjacent to v
+        self._art = G.V * [False]  # is the vertex an articulation point?
         for s in G.vertices():
             if self._pre[s] is None:
                 self._dfs(G, s, s)
@@ -990,19 +991,32 @@ class Bridge:
             vertices to `v` is marked, but is not the vertex from which we just
             came, we have a cycle.
         """
+        children = 0
         self._pre[v] = self._count
         self._low[v] = self._pre[v]
         self._count += 1
         for w in G.adj(v):
             # "pre is None" takes the place of "not marked"
             if self._pre[w] is None:
+                children += 1
                 self._dfs(G, w, v)
                 self._low[v] = min(self._low[v], self._low[w])
+                # Check if edge_to[w] is a bridge
                 if self._low[w] == self._pre[w]:
                     self.Nbridges += 1
+                # Check if non-root is an articulation point
+                if self._low[w] >= self._pre[v] and u != v:
+                    self._art[w] = True
             elif w != u:
                 # Update low number -- ignore reverse of edge leading to v
                 self._low[v] = min(self._low[v], self._pre[w])
+        # root is an articulation point if it has multiple children
+        if u == v and children > 1:
+            self._art[v] = True
+
+    def articulation(self, v):
+        """Return True if `v` is an articulation point."""
+        return self._art[v]
 
 
 # -----------------------------------------------------------------------------
@@ -1273,9 +1287,14 @@ if __name__ == "__main__":
 
     # print('----- Bridges -----')
     G2 = Graph.fromfile('../data/tinyG2.txt')
-    G2.add_edge(5, 7)  # one bridge
-    b = Bridge(G2)
-    assert b.Nbridges == 1
+    # G2.add_edge(5, 7)  # one bridge
+    G2.add_edge(5, 9)  # two bridges
+    G2.add_edge(9, 7)  # 9 is an articulation point
+    b = Biconnected(G2)
+    # assert b.Nbridges == 1
+    # assert b.articulation(7)
+    assert b.Nbridges == 2
+    assert b.articulation(9)
 
 
 # =============================================================================
