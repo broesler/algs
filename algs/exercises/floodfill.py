@@ -18,42 +18,116 @@ See Also
 import matplotlib.pyplot as plt
 import numpy as np
 
-from algs.graph import Graph, CC
-
-# Define example array
-BW = np.array([[1, 1, 1, 0, 0, 0, 0, 0],
-               [1, 1, 1, 0, 1, 1, 0, 0],
-               [1, 1, 1, 0, 1, 1, 0, 0],
-               [1, 1, 1, 0, 0, 0, 1, 0],
-               [1, 1, 1, 0, 0, 0, 1, 0],
-               [1, 1, 1, 0, 0, 0, 1, 0],
-               [1, 1, 1, 0, 0, 1, 1, 0],
-               [1, 1, 1, 0, 0, 0, 0, 0]])
-
-# Connected components expectation
-CC = np.array([[1, 1, 1, 0, 0, 0, 0, 0],
-               [1, 1, 1, 0, 2, 2, 0, 0],
-               [1, 1, 1, 0, 2, 2, 0, 0],
-               [1, 1, 1, 0, 0, 0, 3, 0],
-               [1, 1, 1, 0, 0, 0, 3, 0],
-               [1, 1, 1, 0, 0, 0, 3, 0],
-               [1, 1, 1, 0, 0, 3, 3, 0],
-               [1, 1, 1, 0, 0, 0, 0, 0]])
+from algs.basics import Queue
 
 # Steps:
-#   * convert image array into a graph -> each pixel is a vertex, edges
-#     between pixels that are the same color
-#   * find connected components of the graph
-#   * perform flood fill operation to change all pixels in a component
+#   * convert image array into a graph -> each pixel is a vertex, edges between
+#     pixels that are the same color.
+#   * find connected components of the graph.
+#   * perform flood fill operation on all pixels in the component containing
+#     `v` to change all pixels in a component.
 #   * convert graph back to array.
 
 
-fig = plt.figure(1, clear=True, constrained_layout=True)
-ax = fig.add_subplot()
-# ax.imshow(BW, cmap='gray')
-ax.imshow(CC, cmap='gray')
-# ax.axis('off')
+def flood_fill(img, si, sj, c, conn=4):
+    """Fill the adjacent pixels of the same color.
 
-plt.show()
+    Parameters
+    ----------
+    img : (M, N, C) array_like
+        Image matrix of M vectors in N dimensions, with color depth C.
+    i0, j0 : int
+        Coordinate pixel from which to search.
+    c : int or (C,) array_like
+        The new color with which to fill the image.
+    conn : int in [4, 8], optional
+        Define the connectivity by the number of neighbors to consider.
+        4 : Pixels are connected if their edges touch.
+        8 : Pixels are connected if their edges or corners touch.
+
+    Returns
+    -------
+    img : (M, N, C) ndarray
+        A copy of the image with changed pixels.
+    """
+    img = np.asarray(img).copy()
+    M, N = img.shape
+    if not (0 <= si < M and 0 <= sj < N):
+        raise ValueError(f"Index ({si=}, {sj=}) invalid for ({M}, {N}) image!")
+    if conn not in [4, 8]:
+        raise ValueError('`conn` must be one of [4, 8].')
+    if img[si, sj] == c:
+        return img
+    else:
+        prev_c = img[si, sj]
+
+    def _is_valid(i, j):
+        return (0 <= i < M and 0 <= j < N and img[i, j] == prev_c)
+
+    def _adj(si, sj):
+        """Return a list of adjacent indices to `(i, j)` in the image.
+
+        Parameters
+        ----------
+        si, sj : int
+            Index of the source pixel.
+
+        Returns
+        -------
+        res : list of (2,) tuples
+            Indices of adjacent pixels that are "connected" by having the same
+            color as img[si, sj].
+        """
+        test = [(i-1, j), (i+1, j), (i, j-1), (i, j+1)]
+        if conn == 8:
+            test += [(i-1, j-1), (i+1, j-1), (i-1, j+1), (i+1, j+1)]
+        return [t for t in test if _is_valid(*t)]
+
+    # Perform breadth-first search on the image
+    q = Queue()
+    img[si, sj] = c  # serves as "marked"
+    q.enqueue((si, sj))
+    while not q.is_empty:
+        i, j = q.dequeue()
+        for wi, wj in _adj(i, j):
+            if img[wi, wj] != c:
+                img[wi, wj] = c
+                q.enqueue((wi, wj))
+    return img
+
+
+if __name__ == "__main__":
+    # Define example array
+    BW = np.array([[1, 1, 1, 0, 0, 0, 0, 0],
+                   [1, 1, 1, 0, 1, 1, 0, 0],
+                   [1, 1, 1, 0, 1, 1, 0, 0],
+                   [1, 1, 1, 0, 0, 0, 1, 0],
+                   [1, 1, 1, 0, 0, 0, 1, 0],
+                   [1, 1, 1, 0, 0, 0, 1, 0],
+                   [1, 1, 1, 0, 0, 1, 1, 0],
+                   [1, 1, 1, 0, 0, 0, 0, 0]])
+
+    # Connected components expectation
+    CC = np.array([[1, 1, 1, 0, 0, 0, 0, 0],
+                   [1, 1, 1, 0, 2, 2, 0, 0],
+                   [1, 1, 1, 0, 2, 2, 0, 0],
+                   [1, 1, 1, 0, 0, 0, 3, 0],
+                   [1, 1, 1, 0, 0, 0, 3, 0],
+                   [1, 1, 1, 0, 0, 0, 3, 0],
+                   [1, 1, 1, 0, 0, 3, 3, 0],
+                   [1, 1, 1, 0, 0, 0, 0, 0]])
+
+    FF = flood_fill(BW, 1, 4, 2)
+
+    fig = plt.figure(1, clear=True, constrained_layout=True)
+    gs = fig.add_gridspec(ncols=3)
+    for i, (img, title) in enumerate(zip([BW, CC, FF], ['BW', 'CC', 'FF'])):
+        ax = fig.add_subplot(gs[i])
+        ax.imshow(img, cmap='plasma')
+        ax.set_title(title)
+        ax.axis('off')
+
+    plt.show()
+
 # =============================================================================
 # =============================================================================
