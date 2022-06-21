@@ -403,29 +403,6 @@ class DepthFirstPaths(Paths):
 
 
 # Web Exercise 28
-class DepthFirstPaths_nr_simple(DepthFirstPaths):
-    __doc__ = f"""Implements depth-first search non-recursively.
-
-    .. note:: Extra memory is proportional to V + E, since each vertex may be
-    pushed more than once. This implementation explores adjacent vertices in
-    the opposite order of recursive DFS.
-    {GraphSearch.__doc__}"""
-
-    def _dfs(self, G, v):
-        """Perform depth-first search from `v` with an explicit stack."""
-        stack = Stack()
-        stack.push(v)
-        while not stack.is_empty:
-            v = stack.pop()
-            if not self._marked[v]:
-                self._marked[v] = True
-                for w in G.adj(v):
-                    if not self._marked[w]:
-                        self._edge_to[w] = v
-                        stack.push(w)
-
-
-# Web Exercise 28
 class DepthFirstPaths_nr(DepthFirstPaths):
     __doc__ = f"""Implements depth-first search non-recursively.
 
@@ -450,6 +427,29 @@ class DepthFirstPaths_nr(DepthFirstPaths):
                     stack.push(w)
             except StopIteration:
                 stack.pop()
+
+
+# Web Exercise 28
+class DepthFirstPaths_nr_simple(DepthFirstPaths):
+    __doc__ = f"""Implements depth-first search non-recursively.
+
+    .. note:: Extra memory is proportional to V + E, since each vertex may be
+    pushed more than once. This implementation explores adjacent vertices in
+    the opposite order of recursive DFS.
+    {GraphSearch.__doc__}"""
+
+    def _dfs(self, G, v):
+        """Perform depth-first search from `v` with an explicit stack."""
+        stack = Stack()
+        stack.push(v)
+        while not stack.is_empty:
+            v = stack.pop()
+            if not self._marked[v]:
+                self._marked[v] = True
+                for w in G.adj(v):
+                    if not self._marked[w]:
+                        self._edge_to[w] = v
+                        stack.push(w)
 
 
 # Algorithm 4.2
@@ -1366,7 +1366,7 @@ if __name__ == "__main__":
     print('          G2:', DepthFirstPaths(G2, 0).path_to(10))
     print('       G2_nr:', DepthFirstPaths_nr(G2, 0).path_to(10))
     print('G2_nr_simple:', DepthFirstPaths_nr_simple(G2, 0).path_to(10))
-    assert (DepthFirstPaths(G2, 0).path_to(10) 
+    assert (DepthFirstPaths(G2, 0).path_to(10)
             == DepthFirstPaths_nr(G2, 0).path_to(10))
 
     print('----- BFS Paths -----')
