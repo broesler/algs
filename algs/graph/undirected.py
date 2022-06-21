@@ -1203,45 +1203,81 @@ class EuclideanGraph(Graph):
         """Get the coordinates of the vertices."""
         return np.c_[self.x[vs], self.y[vs]]
 
-    def draw(self, ax=None, label_nodes=False, vprops=None, eprops=None):
-        """Plot the graph."""
+    def _draw_node(self, v, ax, scale=1, **vkws):
+        """Draw a single node."""
+        fontcolor = vkws.get('fontcolor', 'k')
+        edgecolor = vkws.get('edgecolor', 'k')
+        circ = patches.Circle(
+                (self.x[v] / scale, self.y[v] / scale),
+                radius=0.25 / scale,
+                edgecolor=edgecolor, facecolor='#EEE',
+                zorder=3  # place on top of lines
+                )
+        ax.add_patch(circ)
+        ax.annotate(v, xy=(self.x[v] / scale, self.y[v] / scale),
+                    color=fontcolor, fontsize=12, ha='center', va='center')
+
+    def draw(self, p=None, ax=None, label_nodes=False, vkws=None, ekws=None):
+        """Plot the entire graph.
+
+        Parameters
+        ----------
+        p : iterable of int
+            Iterable of the vertices on the path from start to finish.
+        ax : :obj:`plt.axes`
+            The axes on which to plot. Uses current axes if None.
+        label_nodes : bool
+            If True, label the nodes with their indices.
+        vkws, ekws : dict
+            Vertex and edge keyword arguments to be passed to `ax.plot`.
+
+        Returns
+        -------
+        ax : :obj:`plt.axes`
+            The axes on which the graph was plotted.
+        """
+        if p is None:
+            vs = self.vertices()
+            es = self.edges()
+            _vkws = dict(c='k', s=100)
+            _ekws = dict(ls='-', c='k', lw=2)
+        else:
+            _vkws = dict(edgecolor='C3', s=100)
+            _ekws = dict(ls='-', c='C3', lw=2)
+            p = list(p)
+            vs = p
+            es = [[p[i], p[i+1]] for i in range(len(p)-1)]
+
         if ax is None:
             ax = plt.gca()
-        if vprops is None:
-            vprops = dict(c='k', s=100)
-        if eprops is None:
-            eprops = dict(ls='-', c='k', lw=2)
+
+        # Set any user-defined parameters
+        if vkws is not None:
+            _vkws.update(vkws)
+        if ekws is not None:
+            _ekws.update(ekws)
 
         # Scale to the unit square
-        maxval = np.max([self.x, self.y])
-        x = self.x / maxval
-        y = self.y / maxval
+        scale = np.max([self.x, self.y])
+        x = self.x / scale
+        y = self.y / scale
 
         # Make the plot
-        ax.scatter(x, y, **vprops)
-        for e in self.edges():
-            ax.plot(x[list(e)], y[list(e)], **eprops)
+        for e in es:
+            ax.plot(x[list(e)], y[list(e)], **_ekws)
 
         # Plot the node itself
         if label_nodes:
-            fontcolor = 'k'
-            edgecolor = 'k'
-            for v in self.vertices():
-                circ = patches.Circle(
-                        (x[v], y[v]),
-                        radius=0.2 / maxval,
-                        edgecolor=edgecolor, facecolor='#EEE',
-                        zorder=3  # place on top of lines
-                        )
-                ax.add_patch(circ)
-                ax.annotate(v, xy=(x[v], y[v]), color=fontcolor,
-                            fontsize=12, ha='center', va='center')
+            for v in vs:
+                self._draw_node(v, ax, scale, **_vkws)
+        else:
+            ax.scatter(x, y, **vkws)
 
         ax.set_aspect('equal')
         ax.grid('off')
         ax.axis('off')  # hide everything but the grid
-
         return ax
+
 
 
 # -----------------------------------------------------------------------------
