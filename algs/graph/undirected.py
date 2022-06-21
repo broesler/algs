@@ -99,7 +99,7 @@ class UndirectedGraph(ABC):
             for w in self.adj(v):
                 # Only add single direction (SLOW WITH LIST -- linear search)
                 if (w, v) not in e:
-                    e.add((v, w))
+                    e.append((v, w))
         return e
 
     def __str__(self):
@@ -1203,19 +1203,20 @@ class EuclideanGraph(Graph):
         """Get the coordinates of the vertices."""
         return np.c_[self.x[vs], self.y[vs]]
 
-    def _draw_node(self, v, ax, scale=1, **vkws):
+    def _draw_node(self, v, ax, **vkws):
         """Draw a single node."""
         fontcolor = vkws.get('fontcolor', 'k')
         edgecolor = vkws.get('edgecolor', 'k')
         circ = patches.Circle(
-                (self.x[v] / scale, self.y[v] / scale),
-                radius=0.25 / scale,
+                (self.x[v], self.y[v]),
+                radius=0.025,
                 edgecolor=edgecolor, facecolor='#EEE',
                 zorder=3  # place on top of lines
                 )
         ax.add_patch(circ)
-        ax.annotate(v, xy=(self.x[v] / scale, self.y[v] / scale),
-                    color=fontcolor, fontsize=12, ha='center', va='center')
+        ax.annotate(v, xy=(self.x[v], self.y[v]),
+                    color=fontcolor, fontsize=12,
+                    ha='center', va='center')
 
     def draw(self, p=None, ax=None, label_nodes=False, vkws=None, ekws=None):
         """Plot the entire graph.
@@ -1257,21 +1258,16 @@ class EuclideanGraph(Graph):
         if ekws is not None:
             _ekws.update(ekws)
 
-        # Scale to the unit square
-        scale = np.max([self.x, self.y])
-        x = self.x / scale
-        y = self.y / scale
-
         # Make the plot
         for e in es:
-            ax.plot(x[list(e)], y[list(e)], **_ekws)
+            ax.plot(self.x[list(e)], self.y[list(e)], **_ekws)
 
         # Plot the node itself
         if label_nodes:
             for v in vs:
-                self._draw_node(v, ax, scale, **_vkws)
+                self._draw_node(v, ax, **_vkws)
         else:
-            ax.scatter(x, y, **vkws)
+            ax.scatter(self.x, self.y, **_vkws)
 
         ax.set_aspect('equal')
         ax.grid('off')

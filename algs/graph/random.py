@@ -9,12 +9,12 @@ Functions to generate random graphs.
 """
 # =============================================================================
 
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import numpy as np
 
-from algs.graph.undirected import Graph, CC
+from algs.graph.undirected import Graph, EuclideanGraph, CC
 
-rng = np.random.default_rng(seed=565656)
+rng = np.random.default_rng(seed=19900416)
 
 
 def erdos_renyi(V, E):
@@ -40,12 +40,76 @@ def erdos_renyi(V, E):
     if E < 1:
         raise ValueError(f"{E=} must be > 0")
 
-    g = Graph(V)
-    vs, ws = rng.integers(V, size=(2, E))
-    for i in range(E):
-        g.add_edge(vs[i], ws[i])
+    G = Graph(V)
+    for v, w in rng.integers(V, size=(E, 2)):
+        G.add_edge(v, w)
 
-    return g
+    assert G.V == V
+    assert G.E == E
+    return G
+
+
+def random_simple_graph(V, E):
+    """Generate a random graph with `V` vertices and `E` edges.
+
+    .. note:: This generator rejects self-loops and parallel edges.
+
+    Parameters
+    ----------
+    V : int
+        The number of vertices.
+    E : int
+        The number of edges. The graph may only be connected if
+        E ∈ [V-1, V(V-1)/2].
+
+    Returns
+    -------
+    G : Graph
+        An undirected graph with vertices labeled as integers [0, ..., V-1].
+    """
+    if V < 1:
+        raise ValueError(f"{V=} must be > 0")
+    if E < 1:
+        raise ValueError(f"{E=} must be > 0")
+
+    G = Graph(V)
+    i = 0
+    while i < E:
+        v, w = rng.integers(V, size=2)  # could be slow for large E
+        if v != w and not G.has_edge(v, w):
+            G.add_edge(v, w)
+            i += 1
+
+    assert G.V == V
+    assert G.E == E
+    return G
+
+
+def random_sparse_graph(V):
+    """Generate a random, sparse graph with `V` vertices."""
+    # Choose E between [V-1, ~cV**(3/2)] for sparsity
+    E = rng.integers(V-1, V**1.4)
+    return erdos_renyi(V, E)
+
+
+def random_euclidean_graph(V, d):
+    """Generate a random, Euclidean graph by connecting `V` vertices to all
+    points within radius `d` of each other."""
+    if not (0 <= d < 1):
+        raise ValueError(f"{d=} must be in [0, 1)")
+    # Generate random points in the unit square
+    x, y = rng.random((2, V))
+    G = EuclideanGraph(V=V, x=x, y=y)
+    # Compute the pair-wise distance matrix
+    p = np.c_[x, y]
+    D = p[:, None, :] - p[None, :, :]  # (V, V, 2)
+    D = np.sum(D**2, axis=-1)**0.5     # (V, V)
+    # Connect vertices within threshold
+    for v in range(V):
+        for w in range(v+1, V):
+            if D[v, w] < d:
+                G.add_edge(v, w)
+    return G
 
 
 if __name__ == "__main__":
@@ -53,8 +117,16 @@ if __name__ == "__main__":
     G = erdos_renyi(V, E)
     print(G)
 
-    c = CC(G)
-    print(c.get_components())
+    Gs = random_simple_graph(V, E)
+    print(Gs)
+
+    Ge = random_euclidean_graph(V, 0.5)
+    fig, ax = plt.subplots(num=1, clear=True, constrained_layout=True)
+    Ge.draw(ax=ax, label_nodes=True)
+    plt.show()
+
+    # c = CC(G)
+    # print(c.get_components())
 
 
 # =============================================================================
