@@ -11,6 +11,11 @@ See Sedgewick and Wayne, §4.1.
 """
 # =============================================================================
 
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+import matplotlib.transforms as mtransforms
+
 from abc import ABC, abstractmethod
 from collections import deque
 from pathlib import Path
@@ -1017,6 +1022,87 @@ class Biconnected:
     def articulation(self, v):
         """Return True if `v` is an articulation point."""
         return self._art[v]
+
+
+# Exercise 4.1.37
+class EuclideanGraph(Graph):
+    __doc__ = f"""Implements an undirected graph whose vertices are points in
+    the plane with coordinates.
+    {UndirectedGraph.__doc__}"""
+
+    def __init__(self, x=None, y=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if x is None:
+            x = np.zeros(self.V)
+        if y is None:
+            y = np.zeros(self.V)
+        if len(x) != self.V or len(y) != self.V:
+            raise ValueError(f"Coordinates must have dimension {self.V=}")
+        self.x = np.r_[x]
+        self.y = np.r_[y]
+
+    __init__.__doc__ = f"""{Graph.__init__.__doc__}
+    x, y : (V,) arrays
+        Cartesian coordinates for each vertex.
+    """
+
+    def set_coordinates(self, vs, xs, ys):
+        """Set the coordinates of the vertices."""
+        for v in vs:
+            self.x[v] = xs[v]
+            self.y[v] = ys[v]
+
+    def get_coordinates(self, vs):
+        """Get the coordinates of the vertices."""
+        return np.c_[self.x[vs], self.y[vs]]
+
+    def draw(self, ax=None, label_nodes=False, vprops=None, eprops=None):
+        """Plot the graph."""
+        if ax is None:
+            ax = plt.gca()
+        if vprops is None:
+            vprops = dict(c='k', s=100)
+        if eprops is None:
+            eprops = dict(ls='-', c='k', lw=2)
+
+        # Scale to the unit square
+        maxval = np.max([self.x, self.y])
+        x = self.x / maxval
+        y = self.y / maxval
+
+        # Make the plot
+        ax.scatter(x, y, **vprops)
+        for e in self.edges():
+            ax.plot(x[list(e)], y[list(e)], **eprops)
+
+        # Plot the node itself
+        if label_nodes:
+            fontcolor = 'k'
+            edgecolor = 'k'
+            for v in self.vertices():
+                circ = patches.Circle(
+                        (x[v], y[v]),
+                        radius=0.2 / maxval,
+                        edgecolor=edgecolor, facecolor='#EEE',
+                        zorder=3  # place on top of lines
+                        )
+                ax.add_patch(circ)
+                ax.annotate(v, xy=(x[v], y[v]), color=fontcolor,
+                            fontsize=12, ha='center', va='center')
+
+            # fig = plt.gcf()
+            # # Label the nodes
+            # trans_offset = mtransforms.offset_copy(ax.transData, fig=fig,
+            #                                        x=-5, y=5, units='points')
+            # for i, (xn, yn) in enumerate(zip(x, y)):
+            #     ax.text(xn, yn, f"{i}", ha='right', va='bottom',
+            #             transform=trans_offset)
+
+        ax.set_aspect('equal')
+        ax.grid('off')
+        ax.axis('off')  # hide everything but the grid
+
+        return ax
 
 
 # -----------------------------------------------------------------------------
