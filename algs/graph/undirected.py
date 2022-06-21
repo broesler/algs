@@ -14,7 +14,6 @@ See Sedgewick and Wayne, §4.1.
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-import matplotlib.transforms as mtransforms
 
 from abc import ABC, abstractmethod
 from collections import deque
@@ -403,6 +402,56 @@ class DepthFirstPaths(Paths):
         return path
 
 
+# Web Exercise 28
+class DepthFirstPaths_nr_simple(DepthFirstPaths):
+    __doc__ = f"""Implements depth-first search non-recursively.
+
+    .. note:: Extra memory is proportional to V + E, since each vertex may be
+    pushed more than once. This implementation explores adjacent vertices in
+    the opposite order of recursive DFS.
+    {GraphSearch.__doc__}"""
+
+    def _dfs(self, G, v):
+        """Perform depth-first search from `v` with an explicit stack."""
+        stack = Stack()
+        stack.push(v)
+        while not stack.is_empty:
+            v = stack.pop()
+            if not self._marked[v]:
+                self._marked[v] = True
+                for w in G.adj(v):
+                    if not self._marked[w]:
+                        self._edge_to[w] = v
+                        stack.push(w)
+
+
+# Web Exercise 28
+class DepthFirstPaths_nr(DepthFirstPaths):
+    __doc__ = f"""Implements depth-first search non-recursively.
+
+    .. note:: Extra memory includes a list of iterators over each adjacency
+    list, plus the stack of vertices. Explores vertices in the same order as
+    recursive DFS.
+    {GraphSearch.__doc__}"""
+
+    def _dfs(self, G, v):
+        """Perform depth-first search from `v` with an explicit stack."""
+        stack = Stack()
+        adj = [iter(G.adj(v)) for v in G.vertices()]
+        self._marked[v] = True
+        stack.push(v)
+        while not stack.is_empty:
+            v = stack.peek()
+            try:
+                w = next(adj[v])
+                if not self._marked[w]:
+                    self._marked[w] = True
+                    self._edge_to[w] = v
+                    stack.push(w)
+            except StopIteration:
+                stack.pop()
+
+
 # Algorithm 4.2
 class BreadthFirstPaths(Paths):
     __doc__ = f"""Implements breadth-first search to find shortest paths.
@@ -521,7 +570,7 @@ class GraphProperties:
     """
 
     def __init__(self, G, vertices=None, verbose=False):
-        if not CC(G, vertices).is_connected:
+        if not CC_nr(G, vertices).is_connected:
             raise ValueError('Graph must be connected!')
         self.G = G
         self.vertices = list(vertices or self.G.vertices())
@@ -607,7 +656,7 @@ class GraphProperties:
 
         # G is guaranteed to be connected, so only need to check one vertex
         m = float('inf')  # set "minimum" to maximum
-        if not Cycle(self.G, self.vertices[0]).has_cycle:
+        if not Cycle_nr(self.G, self.vertices[0]).has_cycle:
             self._girth = m
             return m
 
@@ -677,6 +726,35 @@ class CC:
         for v in self.vertices:
             components[self._id[v]].append(v)
         return components
+
+
+class CC_nr(CC):
+    """Implements a depth-first search to find connected components,
+    non-recursively.
+
+    Attributes
+    ----------
+    G : :obj:`Graph`
+        The graph to analyze.
+    """
+
+    def _dfs(self, G, v):
+        """Perform depth-first search non-recursively from vertex `v`."""
+        stack = Stack()
+        adj = [iter(G.adj(v)) for v in G.vertices()]
+        self._marked[v] = True
+        self._id[v] = self._count
+        stack.push(v)
+        while not stack.is_empty:
+            v = stack.peek()
+            try:
+                w = next(adj[v])
+                if not self._marked[w]:
+                    self._marked[w] = True
+                    self._id[w] = self._count
+                    stack.push(w)
+            except StopIteration:
+                stack.pop()
 
 
 class SymbolGraph:
@@ -815,6 +893,37 @@ class Cycle:
                 self.has_cycle = True
 
 
+class Cycle_nr(Cycle):
+    __doc__ = f"""Implements depth-first search to find a cycle.
+    {GraphSearch.__doc__}"""
+    # See p 547
+
+    def _dfs(self, G, v, u):
+        """Perform depth-first search non-recursively from vertex `v`.
+
+        .. note:: `u` is the previously-seen vertex. If one of the adjacent
+            vertices to `v` is marked, but is not the vertex from which we just
+            came, we have a cycle.
+        """
+        stack = Stack()
+        adj = [iter(G.adj(v)) for v in G.vertices()]
+        self._marked[v] = True
+        stack.push(v)
+        while not stack.is_empty:
+            v = stack.peek()
+            try:
+                w = next(adj[v])
+                if not self._marked[w]:
+                    self._marked[w] = True
+                    u = v
+                    stack.push(w)
+                elif w != u:
+                    self.has_cycle = True
+                    return
+            except StopIteration:
+                stack.pop()
+
+
 class CyclePath(DepthFirstPaths):
     __doc__ = f"""Implements depth-first search to find a cyclic path.
     {GraphSearch.__doc__}"""
@@ -856,6 +965,44 @@ class CyclePath(DepthFirstPaths):
     def cycle_path(self):
         """Return the path of the found cycle."""
         return list(self._path)
+
+
+class CyclePath_nr(CyclePath):
+    __doc__ = f"""Implements depth-first search to find a cyclic path.
+    {GraphSearch.__doc__}"""
+
+    def _dfs(self, G, v, u):
+        """Perform depth-first search non-recursively from vertex `v`.
+
+        .. note:: `u` is the previously-seen vertex. If one of the adjacent
+            vertices to `v` is marked, but is not the vertex from which we just
+            came, we have a cycle.
+        """
+        stack = Stack()
+        adj = [iter(G.adj(v)) for v in G.vertices()]
+        self._marked[v] = True
+        stack.push(v)
+        while not stack.is_empty:
+            v = stack.peek()
+            try:
+                w = next(adj[v])
+                if not self._marked[w]:
+                    self._edge_to[w] = v
+                    u = v
+                    self._marked[w] = True
+                    stack.push(w)
+                elif w != u:
+                    self.has_cycle = True
+                    self._path = Stack()
+                    x = v
+                    while x != w:
+                        self._path.push(x)
+                        x = self._edge_to[x]
+                    self._path.push(w)
+                    self._path.push(v)
+                    return
+            except StopIteration:
+                stack.pop()
 
 
 class MinCyclePath(BreadthFirstPaths):
@@ -1090,14 +1237,6 @@ class EuclideanGraph(Graph):
                 ax.annotate(v, xy=(x[v], y[v]), color=fontcolor,
                             fontsize=12, ha='center', va='center')
 
-            # fig = plt.gcf()
-            # # Label the nodes
-            # trans_offset = mtransforms.offset_copy(ax.transData, fig=fig,
-            #                                        x=-5, y=5, units='points')
-            # for i, (xn, yn) in enumerate(zip(x, y)):
-            #     ax.text(xn, yn, f"{i}", ha='right', va='bottom',
-            #             transform=trans_offset)
-
         ax.set_aspect('equal')
         ax.grid('off')
         ax.axis('off')  # hide everything but the grid
@@ -1130,10 +1269,10 @@ def self_loops(G):
     return s // 2  # each edge counted twice
 
 
-def dfs(G, s):
+def dfs(G, s, DFS=DepthFirstSearch):
     """Search the graph from vertex `s`."""
     # See p 529
-    search = DepthFirstSearch(G, s)
+    search = DFS(G, s)
     for v in G.vertices():
         if search.marked(v):
             print(f"{v} ", end='')
@@ -1144,15 +1283,10 @@ def dfs(G, s):
     return search
 
 
-def paths(G, s, kind='DFS'):
+def paths(G, s, GS=DepthFirstPaths):
     """Search the graph from vertex `s`, returning the paths."""
     # See p 535
-    if kind == 'DFS':
-        search = DepthFirstPaths(G, s)
-    elif kind == 'BFS':
-        search = BreadthFirstPaths(G, s)
-    else:
-        raise ValueError(f"{kind=} is unrecognized!")
+    search = GS(G, s)
     for v in G.vertices():
         print(f"{s:2d}->{v:2d}: ", end='')
         if search.has_path_to(v):
@@ -1226,14 +1360,23 @@ if __name__ == "__main__":
     print(G)
     dfs(G, 0)
     print('----- DFS Paths -----')
-    paths(G, 0, kind='DFS')
+    paths(G, 0, GS=DepthFirstPaths)
+
+    G2 = Graph.fromfile('../data/tinyG2.txt')
+    print('          G2:', DepthFirstPaths(G2, 0).path_to(10))
+    print('       G2_nr:', DepthFirstPaths_nr(G2, 0).path_to(10))
+    print('G2_nr_simple:', DepthFirstPaths_nr_simple(G2, 0).path_to(10))
+    assert (DepthFirstPaths(G2, 0).path_to(10) 
+            == DepthFirstPaths_nr(G2, 0).path_to(10))
+
     print('----- BFS Paths -----')
-    paths(G, 0, kind='BFS')
+    paths(G, 0, GS=BreadthFirstPaths)
 
     # print('--- Cycle ---')
     G = Graph.fromfile('../data/tinyG.txt')
     c = CyclePath(G, 0)
     assert c.has_cycle
+    assert c.cycle_path() == CyclePath_nr(G, 0).cycle_path()
     assert list(c.cycle_path()) == [3, 5, 4, 3]
 
     G2 = Graph.fromfile('../data/tinyG2.txt')
@@ -1348,7 +1491,9 @@ if __name__ == "__main__":
 
     G2 = Graph.fromfile('../data/tinyG2.txt')
     c2 = CC(G2)
+    c2_nr = CC_nr(G2)
     comps2 = c2.get_components()
+    assert comps2 == c2_nr.get_components()
     gp = GraphProperties(G2, comps2[0])
     idx = comps2[0][0]
     print(f"     ϵ({idx}): {gp.eccentricity(idx)}")

@@ -9,20 +9,15 @@ Exercise 4.1.24 Connected components in the movies.txt graph.
 """
 # =============================================================================
 
-import sys
 import pickle
 from pathlib import Path
 
-from algs.graph import STGraph, SymbolGraph, GraphProperties, CC
+from algs.graph import SymbolGraph, GraphProperties, CC_nr
 
 FORCE_UPDATE = False
 
 # datafile = Path('../data/movies.txt')
-# pkl_file = Path('./pkl/movies_SymbolGraph.pkl')
-# pkl_file = Path('./pkl/movies_STGraph.pkl')
-
 # datafile = Path('../data/movies-top-grossing.txt')
-
 datafile = Path('../data/movies-hero.txt')
 
 pkl_file = Path(f"./pkl/{datafile.stem}.pkl")
@@ -44,16 +39,9 @@ else:
 #         Process
 # -----------------------------------------------------------------------------
 G = sg.G
-sys.setrecursionlimit(G.V + 1)  # needed for DFS
-
-
-def argmax(a):
-    """Compute the index of the maximum value of the array."""
-    return max(range(len(a)), key=lambda i: a[i])
-
 
 # Compute connected components
-cc = CC(G)
+cc = CC_nr(G)
 
 # Determine the largest component
 M = cc.count()
@@ -61,8 +49,7 @@ components = cc.get_components()
 
 sizes = [len(c) for c in components]
 lt = [x for x in components if len(x) < 10]
-# max_c = max(range(M), key=lambda i: sizes[i])
-max_c = argmax(sizes)
+max_c = max(range(M), key=lambda i: sizes[i])  # argmax
 
 print(f"--- {datafile.name} ---")
 print(f"{cc.count():,d} components.")
@@ -92,8 +79,8 @@ else:
 
 c = gp.center()
 p = gp.periphery()
-print(f"There are {len(c)} center vertices.")
-print(f"There are {len(p)} periphery vertices.")
+print(f"There are {len(c):,d} center vertices.")
+print(f"There are {len(p):,d} periphery vertices.")
 
 print(f"--- Properties of Component {i} ---")
 print('eccentricity:', gp.eccentricity(comp[0]))
@@ -118,7 +105,7 @@ if FORCE_UPDATE or not gp_file.exists():
 # 8,440 vertices in the largest component (0).
 # Bacon, Kevin is in the largest component.
 # There are 1 center vertices.
-# There are 2950 periphery vertices.
+# There are 2,950 periphery vertices.
 # --- Properties of Component 0 ---
 # eccentricity: 9
 #     diameter: 12
