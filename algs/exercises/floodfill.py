@@ -20,25 +20,17 @@ import numpy as np
 
 from algs.basics import Queue
 
-# Steps:
-#   * convert image array into a graph -> each pixel is a vertex, edges between
-#     pixels that are the same color.
-#   * find connected components of the graph.
-#   * perform flood fill operation on all pixels in the component containing
-#     `v` to change all pixels in a component.
-#   * convert graph back to array.
 
-
-def flood_fill(img, si, sj, c, conn=4):
+def flood_fill(img, si, sj, c, conn=8):
     """Fill the adjacent pixels of the same color.
 
     Parameters
     ----------
-    img : (M, N, C) array_like
-        Image matrix of M vectors in N dimensions, with color depth C.
+    img : (M, N) array_like
+        Grayscale image matrix of M vectors in N dimensions.
     i0, j0 : int
         Coordinate pixel from which to search.
-    c : int or (C,) array_like
+    c : int
         The new color with which to fill the image.
     conn : int in [4, 8], optional
         Define the connectivity by the number of neighbors to consider.
@@ -47,7 +39,7 @@ def flood_fill(img, si, sj, c, conn=4):
 
     Returns
     -------
-    img : (M, N, C) ndarray
+    img : (M, N) ndarray
         A copy of the image with changed pixels.
     """
     img = np.asarray(img).copy()
@@ -117,7 +109,8 @@ if __name__ == "__main__":
                    [1, 1, 1, 0, 0, 3, 3, 0],
                    [1, 1, 1, 0, 0, 0, 0, 0]])
 
-    FF = flood_fill(BW, 1, 4, 2)
+    # Fill the small square with a new color
+    FF = flood_fill(BW, 1, 4, c=2)
 
     fig = plt.figure(1, clear=True, constrained_layout=True)
     gs = fig.add_gridspec(ncols=3)
