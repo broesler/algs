@@ -95,10 +95,10 @@ class UndirectedGraph(ABC):
 
     def edges(self):
         """Return an iterable over the edges as pairs of vertices."""
-        e = set()
+        e = list()  # could use MultiHashSet for faster build
         for v in self.vertices():
             for w in self.adj(v):
-                # Only add single direction
+                # Only add single direction (SLOW WITH LIST -- linear search)
                 if (w, v) not in e:
                     e.add((v, w))
         return e
