@@ -195,15 +195,7 @@ def random_DQgraph(V, E):
     df = df.iloc[rows]
     # Build a symbol graph using the names of the restaurants
     sg = SymbolGraph(keys=df['name'])
-    sg.G = EuclideanGraph(V=V, x=df['lat'], y=df['lon'])
-    # Generate random edges
-    # TODO allow EuclideanGraph to take Graph as an argument
-    i = 0
-    while i < E:
-        v, w = rng.integers(V, size=2)  # could be slow for large E
-        if v != w and not sg.G.has_edge(v, w):
-            sg.G.add_edge(v, w)
-            i += 1
+    sg.G = EuclideanGraph(random_simple_graph(V, E), x=df['lat'], y=df['lon'])
     return sg
 
 
@@ -228,7 +220,10 @@ if __name__ == "__main__":
 
     sg = random_DQgraph(500, 500)
     fig, ax = plt.subplots(num=3, clear=True, constrained_layout=True)
-    sg.G.draw(ax=ax, vkws=dict(s=10, alpha=0.5), ekws=dict(lw=1, alpha=0.5))
+    sg.G.draw(ax=ax,
+              vkws=dict(s=10, alpha=0.4), 
+              ekws=dict(lw=1, alpha=0.2)
+              )
 
     plt.show()
 

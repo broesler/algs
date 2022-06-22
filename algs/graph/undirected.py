@@ -1182,8 +1182,17 @@ class EuclideanGraph(Graph):
     the plane with coordinates.
     {UndirectedGraph.__doc__}"""
 
-    def __init__(self, x=None, y=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, G=None, x=None, y=None, *args, **kwargs):
+        if G is None:
+            super().__init__(*args, **kwargs)
+        else:
+            G = G.copy()
+            self.V = G.V
+            self.E = G.E
+            self._adj = G._adj
+            self._PARALLEL = G._PARALLEL
+            self._SELF_LOOPS = G._SELF_LOOPS
+        # Initialize coordinates
         if x is None:
             x = np.zeros(self.V)
         if y is None:
