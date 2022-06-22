@@ -1245,22 +1245,24 @@ class EuclideanGraph(Graph):
         """Get the coordinates of the vertices."""
         return np.c_[self.x[vs], self.y[vs]]
 
-    def _draw_node(self, v, ax, **vkws):
+    def _draw_node(self, v, ax, label=None, **vkws):
         """Draw a single node."""
         fontcolor = vkws.get('fontcolor', 'k')
         edgecolor = vkws.get('edgecolor', 'k')
+        fontsize = vkws.get('fontsize', 12)
+        radius = vkws.get('radius', 0.02)
         circ = patches.Circle(
                 (self.x[v], self.y[v]),
-                radius=0.02,
+                radius=radius,
                 edgecolor=edgecolor, facecolor='#EEE',
                 zorder=3  # place on top of lines
                 )
         ax.add_patch(circ)
-        ax.annotate(v, xy=(self.x[v], self.y[v]),
-                    color=fontcolor, fontsize=10,
+        ax.annotate(label or v, xy=(self.x[v], self.y[v]),
+                    color=fontcolor, fontsize=fontsize,
                     ha='center', va='center')
 
-    def draw(self, p=None, ax=None, label_nodes=False, c=None,
+    def draw(self, p=None, ax=None, label_nodes=False, labels=None, c=None,
              vkws=None, ekws=None):
         """Plot the entire graph.
 
@@ -1272,6 +1274,8 @@ class EuclideanGraph(Graph):
             The axes on which to plot. Uses current axes if None.
         label_nodes : bool
             If True, label the nodes with their indices.
+        labels : dict
+            Mapping from vertex IDs to strings for labelling nodes.
         c : color string
             Color to use for all edges and nodes.
         vkws, ekws : dict
@@ -1282,14 +1286,13 @@ class EuclideanGraph(Graph):
         ax : :obj:`plt.axes`
             The axes on which the graph was plotted.
         """
+        _ekws = dict(ls='-', c='k', lw=2)
+        _vkws = dict(s=100, c='k')
         if p is None:
             vs = self.vertices()
             es = self.edges()
-            _vkws = dict(c='k', s=100)
-            _ekws = dict(ls='-', c='k', lw=2)
         else:
-            _vkws = dict(edgecolor='C3', s=100)
-            _ekws = dict(ls='-', c='C3', lw=2)
+            _vkws['edgecolor'] = 'k'
             p = list(p)
             vs = p
             es = [[p[i], p[i+1]] for i in range(len(p)-1)]
@@ -1316,15 +1319,30 @@ class EuclideanGraph(Graph):
 
         # Plot the node itself
         if label_nodes:
-            for v in vs:
-                self._draw_node(v, ax, **_vkws)
+            if labels is not None:
+                for v in vs:
+                    self._draw_node(v, ax, label=labels[v], **_vkws)
+            else:
+                for v in vs:
+                    self._draw_node(v, ax, **_vkws)
         else:
-            ax.scatter(self.x, self.y, **_vkws)
+            ax.scatter(self.x[vs], self.y[vs], **_vkws)
 
         ax.set_aspect('equal')
         ax.grid('off')
         ax.axis('off')  # hide everything but the grid
         return ax
+
+
+class TransportationGraph(EuclideanGraph):
+    __doc__ = f"""Implements an undirected graph whose vertices are points in
+    the plane with coordinates. Also include a symbol table of paths denoting
+    the "routes" in the transportation system.
+    {UndirectedGraph.__doc__}"""
+
+    def __init__(self, *args, routes=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.routes = dict(routes)
 
 
 # -----------------------------------------------------------------------------

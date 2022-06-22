@@ -17,7 +17,7 @@ from pathlib import Path
 from algs.adt import Interval1D
 from algs.unionfind import random_grid
 from algs.graph.undirected import (SimpleGraph, Graph, EuclideanGraph,
-                                   SymbolGraph)
+                                   SymbolGraph, TransportationGraph)
 
 π = np.pi
 rng = np.random.default_rng(seed=19900416)
@@ -244,17 +244,35 @@ def transport_graph(filename, key_file=None, loc_file=None):
         line_name_0: 0-3-1-9-5-12-10-21-...
         line_name_1: 0-3-1-9-5-12-10-21-...
         ...
+
+    If `key_file` or `loc_file` are given, create a symbol table of vertex
+    names and/or the planar coordinates of the vertices.
+
+    The `key_file` format is:
+        ID KEY
+        0 key0
+        1 key1
+        2 key2
+        ...
+
+    The `loc_file` format is:
+        Location, X, Y
+        key0, x, y
+        key1, x, y
+        ...
     """
     edges = list()
+    routes = dict()  # named (ordered) list of vertices in the system
     with open(Path(filename), 'r') as fp:
         for line in fp.readlines():
             words = line.strip().split(':')
-            path = words[1].split('-')
+            path = [int(w) for w in words[1].split('-')]
+            routes[words[0]] = path[1:]  # FIXME HACK skip 0
             for i in range(len(path)-1):
-                edges.append((int(path[i]), int(path[i+1])))
+                edges.append((path[i], path[i+1]))
     V = 1 + max(max(edges))
-    G = SimpleGraph(V=V, edges=edges)
-    out = G
+    TG = TransportationGraph(SimpleGraph(V=V, edges=edges), routes=routes)
+    out = TG
 
     if key_file is not None:
         keys = dict()
@@ -270,17 +288,16 @@ def transport_graph(filename, key_file=None, loc_file=None):
         sg = SymbolGraph()
         sg._keys = keys
         sg._st = ids
-        sg.G = G
+        sg.G = TG
 
         if loc_file is not None:
             # Read in coordinates mapping
-            sg.G = EuclideanGraph(sg.G)
             with open(Path(loc_file), 'r') as fp:
                 for line in fp.readlines()[1:]:
                     words = line.strip().split(',')
                     name = words[0]
                     lat, lon = float(words[1]), float(words[2])
-                    sg.G.set_coordinates(sg.index(name), lat, lon)
+                    sg.G.set_coordinates(sg.index(name), lon, lat)
         out = sg
     return out
 
@@ -320,7 +337,6 @@ if __name__ == "__main__":
               ekws=dict(lw=1, alpha=0.2)
               )
 
-    # tg = transport_graph('../data/bostonT_symbol_lines.txt')
     tg = transport_graph('../data/bostonT_lines.txt',
                          key_file='../data/bostonT_stations.txt',
                          loc_file='../data/bostonT_locs.txt')
@@ -330,8 +346,23 @@ if __name__ == "__main__":
               vkws=dict(s=10, alpha=0.4),
               ekws=dict(lw=1, alpha=0.2)
               )
-    # ax.set_xlim(left=0.99*tg.G.x.max())
-    # ax.set_ylim(top=1.01*tg.G.y.min())
+
+    # Plot the routes
+    def line_colors(name):
+        colors = dict({'Blue': 'C0', 'Orange': 'C1', 'Green': 'C2', 'Red': 'C3', 
+                      'Silver': '#CCC', 'Mattapan': 'C3'})
+        for k in colors.keys():
+            if k in name:
+                return colors[k]
+
+    for name, route in tg.G.routes.items():
+        tg.G.draw(p=route, ax=ax, c=line_colors(name),
+                  label_nodes=True, labels={i: tg.name(i) for i in route},
+                  vkws=dict(s=50, alpha=1.0, radius=0.0002, fontsize=8))
+    # TODO correct 'Harvard' vs 'HarvardAvenue'
+    # 'Central' vs 'CentralAvenue'
+
+    ax.axis('on')
 
     plt.show()
 
