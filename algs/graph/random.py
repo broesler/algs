@@ -142,7 +142,7 @@ def random_euclidean_graph(V, d=None, connected=None):
     return G
 
 
-def random_grid_graph(V, R=0):
+def random_grid_graph(V, R=0, dist_edges=False):
     """Generate a random graph where vertices are aligned on a `V`-by-`V` grid
     and connected randomly to their neighbors.
 
@@ -153,6 +153,10 @@ def random_grid_graph(V, R=0):
         of vertices is `V^2`.
     R : int
         The number of extra random edges to add.
+    dist_edges : bool
+        If True, connect extra edge between vertices `s` and `t` with
+        probability inversely proportional to the Euclidean distance between
+        them.
 
     Returns
     -------
@@ -164,13 +168,21 @@ def random_grid_graph(V, R=0):
     Vsq = V**2  # number of vertices
     # Generate all neighbor edges, but in random order (as a RandomBag)
     edges = random_grid(V)
-    edges = [(p, q) for i, (p, q) in enumerate(edges) if i < E]  # take only E
+    edges = np.r_[[(p, q) for i, (p, q) in enumerate(edges) if i < E]]
     # Vertex coordinates are on the grid
     y, x = np.mgrid[:V, :V]
     x, y = np.ravel(x), np.ravel(y)
     # Generate R additional edges
-    edges.extend([(v, w) for v, w in rng.integers(Vsq, size=(R, 2))])
-    return EuclideanGraph(V=Vsq, edges=edges, x=x, y=y,
+    extra_edges = rng.integers(Vsq, size=(R, 2))
+    if dist_edges:
+        for v, w in extra_edges:
+            r = ((x[v] - x[w])**2 + (y[v] - y[w])**2)**0.5  # [0, ∞)
+            P = 1 / r
+            if rng.random() < P:
+                edges = np.r_[edges, [[v, w]]]
+    else:
+        edges = np.r_[edges, extra_edges]
+    return EuclideanGraph(V=Vsq, edges=list(edges), x=x, y=y,
                           self_loops=False, parallel=False)
 
 
@@ -189,7 +201,7 @@ if __name__ == "__main__":
     Gb.draw(ax=ax, label_nodes=True, c='C0')
     plt.show()
 
-    Gg = random_grid_graph(V, R=10)
+    Gg = random_grid_graph(V, R=20, dist_edges=True)
     fig, ax = plt.subplots(num=2, clear=True, constrained_layout=True)
     Gg.draw(ax=ax)
 
