@@ -12,10 +12,11 @@ Functions to generate random graphs.
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from pathlib import Path
 
 from algs.adt import Interval1D
 from algs.unionfind import random_grid
-from algs.graph.undirected import Graph, EuclideanGraph, SymbolGraph
+from algs.graph.undirected import Graph, STGraph, EuclideanGraph, SymbolGraph,
 
 π = np.pi
 rng = np.random.default_rng(seed=19900416)
@@ -235,113 +236,27 @@ def random_interval_graph(V, d):
 
 
 # Exercise 4.1.46
-def random_transport_graph(filename, delim='-'):
-    """Define a transportation graph based on an input file."""
-    edges = list()
-    with open(filename, 'r') as fp:
+def transport_graph(filename):
+    """Define a transportation graph based on an input file.
+
+    The transportation file format is as follows:
+        line_name_0: 0-3-1-9-5-12-10-21-...
+        line_name_1: 0-3-1-9-5-12-10-21-...
+        ...
+    """
+    G = STGraph(self_loops=False)
+    with open(Path(filename), 'r') as fp:
         for line in fp.readlines():
-            words = line.strip().split(delim)
-            for i in range(len(words)-1):
-                edges.append((words[i], words[i+1]))
-    V = 1 + max(max(edges))
-    return Graph(V=V, edges=edges)
+            words = line.strip().split(':')
+            path = words[1].split('-')
+            for i in range(len(path)-1):
+                G.add_edge(path[i], path[i+1])
+    return G
 
 
-# TODO get GPS coordinates for the stations, and compute distances
-def _parse_bostonmetro():
-    """Parse the 'bostonmetro.txt' file."""
-    station_names = dict()  # map: id -> name
-    station_ids = dict()    # map: name -> id
-    tlines = dict()
-    with open('../data/bostonmetro.txt', 'r') as fp:
-        for line in fp.readlines()[1:]:
-            words = line.strip().split()
-            station_id = int(words[0])
-            station_name = words[1]
-            station_names[station_id] = station_name
-            station_ids[station_name] = station_id
-            ws = iter(words[2:])
-            # Iterate over possibly multiple in/outbound lines
-            # NOTE the return structure gives directional edges. We can use
-            # these edges directly to build a (symbol) graph, but the tricky
-            # part is (automatically) converting the list of tuples into
-            # a path string like 0-1-2-6-5-12-4, etc.
-            try:
-                while True:
-                    line_name = next(ws)
-                    outbound = int(next(ws))
-                    inbound = int(next(ws))
-                    if line_name not in tlines:
-                        tlines[line_name] = list()
-                    # tlines[line_name].append((inbound, station_id))
-                    # tlines[line_name].append((station_id, outbound))
-                    tlines[line_name].append((inbound, station_id, outbound))
-            except StopIteration:
-                continue
-
-    return station_names, station_ids, tlines
-
-
-# FIXME this function is wrong. It outputs, e.g.:
-#   GreenC: 0-34-41-47-51-54-56-58-61-63-68-73-74-76-77-80-81-83
-# but for GreenC, the order should be 0-34-41-*51*-47-54-56-...
-def _list_to_path(a):
-    """Convert a sorted list of tuples [(0, 1), (1, 2), (2, 3), ...] to
-    a string like '0-1-2-3-...'."""
-    af = [leaf for tree in a for leaf in tree]
-    af = sorted(set(af))  # sort integer values
-    return '-'.join([str(x) for x in af])
-
-    # NOTE this code on the right track... but fails for some cases
-    # a = sorted(set(a))  # unique list of edges
-    # s = ''
-    # for i in range(len(a)-1):
-    #     # Four cases:
-    #     # 1. (a, b), (b, c) -> a-b-c
-    #     if a[i][1] == a[i+1][0]:
-    #         s += f"{a[i][0]}-{a[i][1]}-{a[i+1][1]}-"
-    #     # 2. (b, a), (c, b) -> a-b-c
-    #     elif a[i][0] == a[i+1][1]:
-    #         s += f"{a[i][1]}-{a[i][0]}-{a[i+1][0]}-"
-    #     # 3. (b, a), (b, c) -> a-b-c
-    #     elif a[i][0] == a[i+1][0]:
-    #         s += f"{a[i][0]}-{a[i][1]}-{a[i+1][1]}-"
-    #     # 4. (a, b), (c, b) -> a-b-c
-    #     elif a[i][1] == a[i+1][1]:
-    #         s += f"{a[i][0]}-{a[i][1]}-{a[i+1][0]}-"
-    #     else:
-    #         raise ValueError(f"Stations do not connect! {(a[i], a[i+1])}")
-    # return s
-
-
-def _write_bostont_files(station_names, station_ids, tlines):
-    # Write re-formatted output files
-    with open('../data/bostont_stations.txt', 'w') as fp:
-        for k, v in station_names.items():
-            fp.write(f"{k} {v}\n")
-
-    with open('../data/bostont_lines.txt', 'w') as fp:
-        for k, v in tlines.items():
-            fp.write(f"{k}: {_list_to_path(v)}\n")
-
-
-# Intermediate structure:
-# Line  , edges
-# Orange, 2-1, 1-0, 5-2, 2-1, ...
-# Blue, 4-3, 3-0, 6-4, 4-3, ...
-
-# Q: how to sort the edges and combine into paths?
-
-# Output file(s):
-# 'bostont_lines.txt'
-# Orange: 0-1-2-5-...
-# Blue: 0-3-4-6-...
-#
-# 'bostont_stations.txt'
-# 1 OakGrove
-# 2 Malden
-# ...
-
+# ----------------------------------------------------------------------------- 
+#         Tests
+# -----------------------------------------------------------------------------
 if __name__ == "__main__":
     # Define the parameters
     V, E = 10, 9
@@ -374,7 +289,9 @@ if __name__ == "__main__":
               ekws=dict(lw=1, alpha=0.2)
               )
 
-    station_names, station_ids, tlines = _parse_bostonmetro()
+    # tg = transport_graph('../data/bostonT_symbol_lines.txt')
+    tg = transport_graph('../data/bostonT_lines.txt')
+    print(tg)
 
     plt.show()
 
