@@ -51,8 +51,6 @@ def _parse_bostonmetro(fname):
     names[0] = 'END'
     ids['END'] = 0
     assert len(ids) == len(names)
-    # NOTE changed "38 St.PaulStreet" -> "38 AmoryStreet" for 2022 update
-    # Also some other GreenB stops removed/changed, but fine for now.
     return names, ids, tlines
 
 
@@ -127,7 +125,8 @@ def _reformat_bostonT_files(fname=None, force_update=False):
         'Airport': dict(lat=42.37273343268597, lon=-71.03519439697266),
         'Central': dict(lat=42.36516344770085, lon=-71.10332250595093),
         'Charles/MGH': dict(lat=42.36127108986245, lon=-71.07208013534546),
-        'AmoryStreet': dict(lat=42.35117407125386, lon=-71.11476505448644),
+        'St.PaulStreetB': dict(lat=42.35117407125386, lon=-71.11476505448644),
+        'St.PaulStreetC': dict(lat=42.34322515730961, lon=-71.11734509468079),
         'FordhamRoad': dict(lat=42.350564, lon=-71.128047),
         'Harvard': dict(lat=42.373939, lon=-71.119106),
         'SummitAvenue': dict(lat=42.3458745625443, lon=-71.14135804111079),

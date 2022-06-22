@@ -358,9 +358,7 @@ if __name__ == "__main__":
     for name, route in tg.G.routes.items():
         tg.G.draw(p=route, ax=ax, c=line_colors(name),
                   label_nodes=True, labels={i: tg.name(i) for i in route},
-                  vkws=dict(s=50, alpha=1.0, radius=0.0002, fontsize=8))
-    # TODO correct 'Harvard' vs 'HarvardAvenue'
-    # 'Central' vs 'CentralAvenue'
+                  vkws=dict(s=50, alpha=1.0, radius=1e-4, fontsize=8))
 
     ax.axis('on')
 
