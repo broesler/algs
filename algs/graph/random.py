@@ -16,7 +16,8 @@ from pathlib import Path
 
 from algs.adt import Interval1D
 from algs.unionfind import random_grid
-from algs.graph.undirected import Graph, STGraph, EuclideanGraph, SymbolGraph,
+from algs.graph.undirected import (SimpleGraph, Graph, EuclideanGraph,
+                                   SymbolGraph)
 
 π = np.pi
 rng = np.random.default_rng(seed=19900416)
@@ -236,25 +237,55 @@ def random_interval_graph(V, d):
 
 
 # Exercise 4.1.46
-def transport_graph(filename):
-    """Define a transportation graph based on an input file.
+def transport_graph(filename, key_file=None, loc_file=None):
+    """Define a transportation graph based on an input file of paths.
 
     The transportation file format is as follows:
         line_name_0: 0-3-1-9-5-12-10-21-...
         line_name_1: 0-3-1-9-5-12-10-21-...
         ...
     """
-    G = STGraph(self_loops=False)
+    edges = list()
     with open(Path(filename), 'r') as fp:
         for line in fp.readlines():
             words = line.strip().split(':')
             path = words[1].split('-')
             for i in range(len(path)-1):
-                G.add_edge(path[i], path[i+1])
-    return G
+                edges.append((int(path[i]), int(path[i+1])))
+    V = 1 + max(max(edges))
+    G = SimpleGraph(V=V, edges=edges)
+    out = G
+
+    if key_file is not None:
+        keys = dict()
+        ids = dict()
+        with open(Path(key_file), 'r') as fp:
+            for line in fp.readlines():
+                words = line.strip().split()
+                idn = int(words[0])
+                name = words[1]
+                keys[idn] = name
+                ids[name] = idn
+        # Build a symbol graph
+        sg = SymbolGraph()
+        sg._keys = keys
+        sg._st = ids
+        sg.G = G
+
+        if loc_file is not None:
+            # Read in coordinates mapping
+            sg.G = EuclideanGraph(sg.G)
+            with open(Path(loc_file), 'r') as fp:
+                for line in fp.readlines()[1:]:
+                    words = line.strip().split(',')
+                    name = words[0]
+                    lat, lon = float(words[1]), float(words[2])
+                    sg.G.set_coordinates(sg.index(name), lat, lon)
+        out = sg
+    return out
 
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 #         Tests
 # -----------------------------------------------------------------------------
 if __name__ == "__main__":
@@ -290,8 +321,17 @@ if __name__ == "__main__":
               )
 
     # tg = transport_graph('../data/bostonT_symbol_lines.txt')
-    tg = transport_graph('../data/bostonT_lines.txt')
-    print(tg)
+    tg = transport_graph('../data/bostonT_lines.txt',
+                         key_file='../data/bostonT_stations.txt',
+                         loc_file='../data/bostonT_locs.txt')
+
+    fig, ax = plt.subplots(num=4, clear=True, constrained_layout=True)
+    tg.G.draw(ax=ax,
+              vkws=dict(s=10, alpha=0.4),
+              ekws=dict(lw=1, alpha=0.2)
+              )
+    # ax.set_xlim(left=0.99*tg.G.x.max())
+    # ax.set_ylim(top=1.01*tg.G.y.min())
 
     plt.show()
 

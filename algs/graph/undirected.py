@@ -235,6 +235,15 @@ class Graph(UndirectedGraph):
         return g
 
 
+class SimpleGraph(Graph):
+    __doc__ = f"""Implements a graph using an array of adjacency lists, with no
+    self-loops or parallel edges allowed.
+    {UndirectedGraph.__doc__}"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs, self_loops=False, parallel=False)
+
+
 class STGraph(UndirectedGraph):
     __doc__ = f"""Implements a graph using a symbol table of adjacency lists.
     {UndirectedGraph.__doc__}"""
@@ -1229,9 +1238,8 @@ class EuclideanGraph(Graph):
 
     def set_coordinates(self, vs, xs, ys):
         """Set the coordinates of the vertices."""
-        for v in vs:
-            self.x[v] = xs[v]
-            self.y[v] = ys[v]
+        self.x[vs] = xs
+        self.y[vs] = ys
 
     def get_coordinates(self, vs):
         """Get the coordinates of the vertices."""
@@ -1252,7 +1260,7 @@ class EuclideanGraph(Graph):
                     color=fontcolor, fontsize=10,
                     ha='center', va='center')
 
-    def draw(self, p=None, ax=None, label_nodes=False, c=None, 
+    def draw(self, p=None, ax=None, label_nodes=False, c=None,
              vkws=None, ekws=None):
         """Plot the entire graph.
 
@@ -1265,7 +1273,7 @@ class EuclideanGraph(Graph):
         label_nodes : bool
             If True, label the nodes with their indices.
         c : color string
-            Color to use for all edges and nodes. 
+            Color to use for all edges and nodes.
         vkws, ekws : dict
             Vertex and edge keyword arguments to be passed to `ax.plot`.
 
@@ -1317,7 +1325,6 @@ class EuclideanGraph(Graph):
         ax.grid('off')
         ax.axis('off')  # hide everything but the grid
         return ax
-
 
 
 # -----------------------------------------------------------------------------
