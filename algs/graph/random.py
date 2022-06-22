@@ -12,7 +12,8 @@ Functions to generate random graphs.
 import matplotlib.pyplot as plt
 import numpy as np
 
-from algs.graph.undirected import Graph, EuclideanGraph, CC
+from algs.unionfind import random_grid
+from algs.graph.undirected import Graph, EuclideanGraph
 
 π = np.pi
 rng = np.random.default_rng(seed=19900416)
@@ -94,12 +95,32 @@ def random_sparse_graph(V):
 
 
 def random_euclidean_graph(V, d=None, connected=None):
-    """Generate a random, Euclidean graph by connecting `V` vertices to all
-    points within radius `d` of each other."""
+    r"""Generate a random, Euclidean graph by connecting `V` vertices to all
+    points within radius `d` of each other.
+
+    Parameters
+    ----------
+    V : int
+        The number of vertices.
+    d : float in [0, 1], optional
+        The radius within which vertices will be connected.
+    connected : bool, optional
+        If True, set `d` much greater than the threshold
+        :math:`\sqrt{\frac{\log V}{\pi V}}`, such that the probability of
+        a connected graph is ~ 1.
+        Otherwise, set `d` to a fraction of the threshold, such that the
+        probability of a connected graph is ~ 0.
+
+    Returns
+    -------
+    G : EuclideanGraph
+        An undirected graph with vertices labeled as integers [0, ..., V-1],
+        each with (x, y) coordinates.
+    """
     if d is None and connected is None:
         raise ValueError('One of `d` or `connected` must be non-null.')
-    if d is not None and not (0 <= d < 1):
-        raise ValueError(f"{d=} must be in [0, 1)")
+    if d is not None and not (0 <= d <= 1):
+        raise ValueError(f"{d=} must be in [0, 1]")
     if d is None:
         thresh = (np.log(V) / (π*V))**0.5
         if connected:
@@ -121,6 +142,38 @@ def random_euclidean_graph(V, d=None, connected=None):
     return G
 
 
+def random_grid_graph(V, R=0):
+    """Generate a random graph where vertices are aligned on a `V`-by-`V` grid
+    and connected randomly to their neighbors.
+
+    Parameters
+    ----------
+    V : int
+        The number of vertices per side of the grid, such that the total number
+        of vertices is `V^2`.
+    R : int
+        The number of extra random edges to add.
+
+    Returns
+    -------
+    G : EuclideanGraph
+        An undirected graph with vertices labeled as integers [0, ..., V-1],
+        with (x, y) coordinates.
+    """
+    E = V**2 - R
+    Vsq = V**2  # number of vertices
+    # Generate all neighbor edges, but in random order (as a RandomBag)
+    edges = random_grid(V)
+    edges = [(p, q) for i, (p, q) in enumerate(edges) if i < E]  # take only E
+    # Vertex coordinates are on the grid
+    y, x = np.mgrid[:V, :V]
+    x, y = np.ravel(x), np.ravel(y)
+    # Generate R additional edges
+    edges.extend([(v, w) for v, w in rng.integers(Vsq, size=(R, 2))])
+    return EuclideanGraph(V=Vsq, edges=edges, x=x, y=y,
+                          self_loops=False, parallel=False)
+
+
 if __name__ == "__main__":
     V, E = 10, 9
     G = erdos_renyi(V, E)
@@ -136,9 +189,11 @@ if __name__ == "__main__":
     Gb.draw(ax=ax, label_nodes=True, c='C0')
     plt.show()
 
-    # c = CC(G)
-    # print(c.get_components())
+    Gg = random_grid_graph(V, R=10)
+    fig, ax = plt.subplots(num=2, clear=True, constrained_layout=True)
+    Gg.draw(ax=ax)
 
+    plt.show()
 
 # =============================================================================
 # =============================================================================
