@@ -84,7 +84,7 @@ def _write_bostonT_paths(fname, tlines, names=None):
     print('done.')
 
 
-def _write_bostonT_locs(fname, stations, force_update=False):
+def _write_bostonT_locs(fname, stations):
     print(f"Writing to {fname}... ", end='')
     with open(Path(fname), 'w') as fp:
         fp.write('Station, Latitude, Longitude\n')
@@ -138,7 +138,7 @@ def _reformat_bostonT_files(fname=None, force_update=False):
         })
 
     assert sorted(missing) == sorted(manual_map.keys())
-    ids.update(manual_map)
+    locs.update(manual_map)
 
     # Bash one-liner:
     # tail -n +2 bostonmetro.txt \
