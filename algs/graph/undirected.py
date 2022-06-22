@@ -403,6 +403,26 @@ class DepthFirstPaths(Paths):
         return path
 
 
+class STDepthFirstPaths(DepthFirstPaths):
+    __doc__ = f"""Implements depth-first search to return a path in an STGraph.
+    {Paths.__doc__}"""
+
+    def __init__(self, G, s):
+        self.s = s
+        self._marked = dict.fromkeys(G.vertices(), False)
+        self._edge_to = dict.fromkeys(G.vertices())
+        self.leaf = self._dfs(G, s)
+
+    def _dfs(self, G, v):
+        """Perform depth-first search recursively from vertex `v`."""
+        self._marked[v] = True
+        for w in G.adj(v):
+            if not self._marked[w]:
+                self._edge_to[w] = v
+                return self._dfs(G, w)
+        return v  # last seen vertex
+
+
 # Web Exercise 28
 class DepthFirstPaths_nr(DepthFirstPaths):
     __doc__ = f"""Implements depth-first search non-recursively.
@@ -550,11 +570,10 @@ class LeafDFS(GraphSearch):
         """Perform depth-first search recursively from vertex `v`."""
         self._marked[v] = True
         self._count += 1
-        if all([self._marked[x] for x in G.adj(v)]):
-            return v
         for w in G.adj(v):
             if not self._marked[w]:
                 return self._dfs(G, w)
+        return v  # last seen vertex
 
     def leaf(self):
         return self._leaf
