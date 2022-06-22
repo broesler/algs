@@ -21,6 +21,7 @@ from algs.graph.undirected import Graph, EuclideanGraph, SymbolGraph
 rng = np.random.default_rng(seed=19900416)
 
 
+# Exercise 4.1.39
 def erdos_renyi(V, E):
     """Generate a random graph with `V` vertices and `E` edges.
 
@@ -53,6 +54,7 @@ def erdos_renyi(V, E):
     return G
 
 
+# Exercise 4.1.40
 def random_simple_graph(V, E):
     """Generate a random graph with `V` vertices and `E` edges.
 
@@ -89,6 +91,7 @@ def random_simple_graph(V, E):
     return G
 
 
+# Exercise 4.1.41
 def random_sparse_graph(V):
     """Generate a random, sparse graph with `V` vertices."""
     # Choose E between [V-1, ~cV**(3/2)] for sparsity
@@ -96,6 +99,7 @@ def random_sparse_graph(V):
     return erdos_renyi(V, E)
 
 
+# Exercise 4.1.42
 def random_euclidean_graph(V, d=None, connected=None):
     r"""Generate a random, Euclidean graph by connecting `V` vertices to all
     points within radius `d` of each other.
@@ -144,6 +148,7 @@ def random_euclidean_graph(V, d=None, connected=None):
     return G
 
 
+# Exercise 4.1.43
 def random_grid_graph(V, R=0, dist_edges=False):
     """Generate a random graph where vertices are aligned on a `V`-by-`V` grid
     and connected randomly to their neighbors.
@@ -187,6 +192,7 @@ def random_grid_graph(V, R=0, dist_edges=False):
     return EuclideanGraph(V=Vsq, edges=edges, x=x, y=y)
 
 
+# Exercise 4.1.44
 def random_DQgraph(V, E):
     """Create a random graph from Dairy Queen locations in the U.S."""
     df = pd.read_csv('../data/dairyqueen.csv', header=None)
@@ -199,6 +205,7 @@ def random_DQgraph(V, E):
     return sg
 
 
+# Exercise 4.1.45
 def random_interval_graph(V, d):
     """Define a graph consisting of `V` intervals of length `d` on the unit
     interval, connected if they intersect.
@@ -219,12 +226,121 @@ def random_interval_graph(V, d):
         raise ValueError(f"{d=} must be in [0, 1]!")
     ints = [Interval1D(lo, lo+d) for lo in rng.random(V)]
     edges = list()
+    # TODO use a BST instead of brute-forcing it
     for i in range(V):
         for j in range(i+1, V):
             if ints[i].intersects(ints[j]):
                 edges.append((i, j))
     return SymbolGraph(ints, edges)
 
+
+# Exercise 4.1.46
+def random_transport_graph(filename, delim='-'):
+    """Define a transportation graph based on an input file."""
+    edges = list()
+    with open(filename, 'r') as fp:
+        for line in fp.readlines():
+            words = line.strip().split(delim)
+            for i in range(len(words)-1):
+                edges.append((words[i], words[i+1]))
+    V = 1 + max(max(edges))
+    return Graph(V=V, edges=edges)
+
+
+# TODO get GPS coordinates for the stations, and compute distances
+def _parse_bostonmetro():
+    """Parse the 'bostonmetro.txt' file."""
+    station_names = dict()  # map: id -> name
+    station_ids = dict()    # map: name -> id
+    tlines = dict()
+    with open('../data/bostonmetro.txt', 'r') as fp:
+        for line in fp.readlines()[1:]:
+            words = line.strip().split()
+            station_id = int(words[0])
+            station_name = words[1]
+            station_names[station_id] = station_name
+            station_ids[station_name] = station_id
+            ws = iter(words[2:])
+            # Iterate over possibly multiple in/outbound lines
+            # NOTE the return structure gives directional edges. We can use
+            # these edges directly to build a (symbol) graph, but the tricky
+            # part is (automatically) converting the list of tuples into
+            # a path string like 0-1-2-6-5-12-4, etc.
+            try:
+                while True:
+                    line_name = next(ws)
+                    outbound = int(next(ws))
+                    inbound = int(next(ws))
+                    if line_name not in tlines:
+                        tlines[line_name] = list()
+                    # tlines[line_name].append((inbound, station_id))
+                    # tlines[line_name].append((station_id, outbound))
+                    tlines[line_name].append((inbound, station_id, outbound))
+            except StopIteration:
+                continue
+
+    return station_names, station_ids, tlines
+
+
+# FIXME this function is wrong. It outputs, e.g.:
+#   GreenC: 0-34-41-47-51-54-56-58-61-63-68-73-74-76-77-80-81-83
+# but for GreenC, the order should be 0-34-41-*51*-47-54-56-...
+def _list_to_path(a):
+    """Convert a sorted list of tuples [(0, 1), (1, 2), (2, 3), ...] to
+    a string like '0-1-2-3-...'."""
+    af = [leaf for tree in a for leaf in tree]
+    af = sorted(set(af))  # sort integer values
+    return '-'.join([str(x) for x in af])
+
+    # NOTE this code on the right track... but fails for some cases
+    # a = sorted(set(a))  # unique list of edges
+    # s = ''
+    # for i in range(len(a)-1):
+    #     # Four cases:
+    #     # 1. (a, b), (b, c) -> a-b-c
+    #     if a[i][1] == a[i+1][0]:
+    #         s += f"{a[i][0]}-{a[i][1]}-{a[i+1][1]}-"
+    #     # 2. (b, a), (c, b) -> a-b-c
+    #     elif a[i][0] == a[i+1][1]:
+    #         s += f"{a[i][1]}-{a[i][0]}-{a[i+1][0]}-"
+    #     # 3. (b, a), (b, c) -> a-b-c
+    #     elif a[i][0] == a[i+1][0]:
+    #         s += f"{a[i][0]}-{a[i][1]}-{a[i+1][1]}-"
+    #     # 4. (a, b), (c, b) -> a-b-c
+    #     elif a[i][1] == a[i+1][1]:
+    #         s += f"{a[i][0]}-{a[i][1]}-{a[i+1][0]}-"
+    #     else:
+    #         raise ValueError(f"Stations do not connect! {(a[i], a[i+1])}")
+    # return s
+
+
+def _write_bostont_files(station_names, station_ids, tlines):
+    # Write re-formatted output files
+    with open('../data/bostont_stations.txt', 'w') as fp:
+        for k, v in station_names.items():
+            fp.write(f"{k} {v}\n")
+
+    with open('../data/bostont_lines.txt', 'w') as fp:
+        for k, v in tlines.items():
+            fp.write(f"{k}: {_list_to_path(v)}\n")
+
+
+# Intermediate structure:
+# Line  , edges
+# Orange, 2-1, 1-0, 5-2, 2-1, ...
+# Blue, 4-3, 3-0, 6-4, 4-3, ...
+
+# Q: how to sort the edges and combine into paths?
+
+# Output file(s):
+# 'bostont_lines.txt'
+# Orange: 0-1-2-5-...
+# Blue: 0-3-4-6-...
+#
+# 'bostont_stations.txt'
+# 1 OakGrove
+# 2 Malden
+# ...
 
 if __name__ == "__main__":
     # Define the parameters
@@ -257,6 +373,8 @@ if __name__ == "__main__":
               vkws=dict(s=10, alpha=0.4),
               ekws=dict(lw=1, alpha=0.2)
               )
+
+    station_names, station_ids, tlines = _parse_bostonmetro()
 
     plt.show()
 
