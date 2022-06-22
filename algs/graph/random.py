@@ -14,6 +14,7 @@ import numpy as np
 
 from algs.graph.undirected import Graph, EuclideanGraph, CC
 
+π = np.pi
 rng = np.random.default_rng(seed=19900416)
 
 
@@ -92,11 +93,19 @@ def random_sparse_graph(V):
     return erdos_renyi(V, E)
 
 
-def random_euclidean_graph(V, d):
+def random_euclidean_graph(V, d=None, connected=None):
     """Generate a random, Euclidean graph by connecting `V` vertices to all
     points within radius `d` of each other."""
-    if not (0 <= d < 1):
+    if d is None and connected is None:
+        raise ValueError('One of `d` or `connected` must be non-null.')
+    if d is not None and not (0 <= d < 1):
         raise ValueError(f"{d=} must be in [0, 1)")
+    if d is None:
+        thresh = (np.log(V) / (π*V))**0.5
+        if connected:
+            d = 1.5 * thresh  # P ~ 1 that graph will be connected
+        else:
+            d = 0.5 * thresh  # P ~ 0 that graph will be connected
     # Generate random points in the unit square
     x, y = rng.random((2, V))
     G = EuclideanGraph(V=V, x=x, y=y)
@@ -120,9 +129,11 @@ if __name__ == "__main__":
     Gs = random_simple_graph(V, E)
     print(Gs)
 
-    Ge = random_euclidean_graph(V, 0.5)
+    Ge = random_euclidean_graph(V, d=0.5)
+    Gb = random_euclidean_graph(V, connected=True)
     fig, ax = plt.subplots(num=1, clear=True, constrained_layout=True)
     Ge.draw(ax=ax, label_nodes=True)
+    Gb.draw(ax=ax, label_nodes=True, c='C0')
     plt.show()
 
     # c = CC(G)

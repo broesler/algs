@@ -1209,16 +1209,17 @@ class EuclideanGraph(Graph):
         edgecolor = vkws.get('edgecolor', 'k')
         circ = patches.Circle(
                 (self.x[v], self.y[v]),
-                radius=0.025,
+                radius=0.02,
                 edgecolor=edgecolor, facecolor='#EEE',
                 zorder=3  # place on top of lines
                 )
         ax.add_patch(circ)
         ax.annotate(v, xy=(self.x[v], self.y[v]),
-                    color=fontcolor, fontsize=12,
+                    color=fontcolor, fontsize=10,
                     ha='center', va='center')
 
-    def draw(self, p=None, ax=None, label_nodes=False, vkws=None, ekws=None):
+    def draw(self, p=None, ax=None, label_nodes=False, c=None, 
+             vkws=None, ekws=None):
         """Plot the entire graph.
 
         Parameters
@@ -1229,6 +1230,8 @@ class EuclideanGraph(Graph):
             The axes on which to plot. Uses current axes if None.
         label_nodes : bool
             If True, label the nodes with their indices.
+        c : color string
+            Color to use for all edges and nodes. 
         vkws, ekws : dict
             Vertex and edge keyword arguments to be passed to `ax.plot`.
 
@@ -1251,6 +1254,13 @@ class EuclideanGraph(Graph):
 
         if ax is None:
             ax = plt.gca()
+
+        if c is not None:
+            _ekws['c'] = c
+            _vkws['c'] = c
+            _vkws['edgecolor'] = c
+            if label_nodes:
+                _vkws['fontcolor'] = c
 
         # Set any user-defined parameters
         if vkws is not None:
