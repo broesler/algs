@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from algs.adt import Interval1D
 from algs.unionfind import random_grid
 from algs.graph.undirected import Graph, EuclideanGraph, SymbolGraph
 
@@ -178,13 +179,12 @@ def random_grid_graph(V, R=0, dist_edges=False):
     if dist_edges:
         for v, w in extra_edges:
             r = ((x[v] - x[w])**2 + (y[v] - y[w])**2)**0.5  # [0, ∞)
-            P = 1 / r
+            P = 1 / r if r else 0
             if rng.random() < P:
                 edges = np.r_[edges, [[v, w]]]
     else:
         edges = np.r_[edges, extra_edges]
-    return EuclideanGraph(V=Vsq, edges=list(edges), x=x, y=y,
-                          self_loops=False, parallel=False)
+    return EuclideanGraph(V=Vsq, edges=edges, x=x, y=y)
 
 
 def random_DQgraph(V, E):
@@ -199,14 +199,47 @@ def random_DQgraph(V, E):
     return sg
 
 
+def random_interval_graph(V, d):
+    """Define a graph consisting of `V` intervals of length `d` on the unit
+    interval, connected if they intersect.
+
+    Parameters
+    ----------
+    V : int
+        The number of vertices.
+    d : float in [0, 1]
+        The length of the intervals.
+
+    Returns
+    -------
+    G : Graph
+        An undirected graph with vertices labeled as integers [0, ..., V-1].
+    """
+    if not (0 <= d <= 1):
+        raise ValueError(f"{d=} must be in [0, 1]!")
+    ints = [Interval1D(lo, lo+d) for lo in rng.random(V)]
+    edges = list()
+    for i in range(V):
+        for j in range(i+1, V):
+            if ints[i].intersects(ints[j]):
+                edges.append((i, j))
+    return SymbolGraph(ints, edges)
+
+
 if __name__ == "__main__":
+    # Define the parameters
     V, E = 10, 9
+
+    # Random graphs
     G = erdos_renyi(V, E)
     print(G)
 
     Gs = random_simple_graph(V, E)
     print(Gs)
 
+    sgi = random_interval_graph(V, d=0.1)
+
+    # Plots
     Ge = random_euclidean_graph(V, d=0.5)
     Gb = random_euclidean_graph(V, connected=True)
     fig, ax = plt.subplots(num=1, clear=True, constrained_layout=True)
@@ -218,10 +251,10 @@ if __name__ == "__main__":
     fig, ax = plt.subplots(num=2, clear=True, constrained_layout=True)
     Gg.draw(ax=ax)
 
-    sg = random_DQgraph(500, 500)
+    sg = random_DQgraph(V=500, E=500)
     fig, ax = plt.subplots(num=3, clear=True, constrained_layout=True)
     sg.G.draw(ax=ax,
-              vkws=dict(s=10, alpha=0.4), 
+              vkws=dict(s=10, alpha=0.4),
               ekws=dict(lw=1, alpha=0.2)
               )
 
