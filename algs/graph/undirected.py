@@ -44,7 +44,8 @@ class UndirectedGraph(ABC):
             raise ValueError(f"Number of vertices {V=} must be > 0!")
         self.V = V
         self.E = 0
-        edges = edges or []
+        if edges is None:
+            edges = []
         try:
             for v, w in edges:
                 self.add_edge(v, w)
