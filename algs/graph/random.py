@@ -11,9 +11,10 @@ Functions to generate random graphs.
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 from algs.unionfind import random_grid
-from algs.graph.undirected import Graph, EuclideanGraph
+from algs.graph.undirected import Graph, EuclideanGraph, SymbolGraph
 
 π = np.pi
 rng = np.random.default_rng(seed=19900416)
@@ -186,6 +187,26 @@ def random_grid_graph(V, R=0, dist_edges=False):
                           self_loops=False, parallel=False)
 
 
+def random_DQgraph(V, E):
+    """Create a random graph from Dairy Queen locations in the U.S."""
+    df = pd.read_csv('../data/dairyqueen.csv', header=None)
+    df.columns = ['lat', 'lon', 'name', 'address']
+    rows = rng.integers(df.shape[0], size=V)
+    df = df.iloc[rows]
+    # Build a symbol graph using the names of the restaurants
+    sg = SymbolGraph(keys=df['name'])
+    sg.G = EuclideanGraph(V=V, x=df['lat'], y=df['lon'])
+    # Generate random edges
+    # TODO allow EuclideanGraph to take Graph as an argument
+    i = 0
+    while i < E:
+        v, w = rng.integers(V, size=2)  # could be slow for large E
+        if v != w and not sg.G.has_edge(v, w):
+            sg.G.add_edge(v, w)
+            i += 1
+    return sg
+
+
 if __name__ == "__main__":
     V, E = 10, 9
     G = erdos_renyi(V, E)
@@ -204,6 +225,10 @@ if __name__ == "__main__":
     Gg = random_grid_graph(V, R=20, dist_edges=True)
     fig, ax = plt.subplots(num=2, clear=True, constrained_layout=True)
     Gg.draw(ax=ax)
+
+    sg = random_DQgraph(500, 500)
+    fig, ax = plt.subplots(num=3, clear=True, constrained_layout=True)
+    sg.G.draw(ax=ax, vkws=dict(s=10, alpha=0.5), ekws=dict(lw=1, alpha=0.5))
 
     plt.show()
 
