@@ -351,8 +351,8 @@ if __name__ == "__main__":
 
     # Plot the routes
     def line_colors(name):
-        colors = dict({'Blue': 'C0', 'Orange': 'C1', 'Green': 'C2', 'Red': 'C3', 
-                      'Silver': '#CCC', 'Mattapan': 'C3'})
+        colors = dict({'Blue': 'C0', 'Orange': 'C1', 'Green': 'C2',
+                       'Red': 'C3', 'Silver': '#CCC', 'Mattapan': 'C3'})
         for k in colors.keys():
             if k in name:
                 return colors[k]
