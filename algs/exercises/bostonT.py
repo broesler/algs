@@ -15,12 +15,10 @@ from yaml import Loader
 from pathlib import Path
 
 from algs.search import ST
-from algs.graph.undirected import STGraph, EuclideanGraph, STDepthFirstPaths
+from algs.graph.undirected import STGraph, STDepthFirstPaths
 
 
 # TODO
-# * get GPS coordinates for the stations, and compute distances
-# * plot the map!
 # * add Silver line branches
 def _parse_bostonmetro(fname):
     """Parse the 'bostonmetro.txt' file."""
@@ -146,9 +144,11 @@ def _reformat_bostonT_files(fname=None, force_update=False):
     locs.update(manual_map)
 
     # Bash one-liner:
-    # tail -n +2 bostonmetro.txt \
+    # echo "0 END" > bostonT_stations.txt \
+    #   | tail -n +2 bostonmetro.txt \
     #   | awk '{print $1 " " $2}' \
-    #   > bostonT_stations.txt
+    #   >> bostonT_stations.txt
+    #
     # namefile = Path('../data/bostonT_stations.txt')
     # if force_update or not namefile.exists():
     #     print(f"Writing to {namefile}... ", end='')
@@ -169,7 +169,9 @@ def _reformat_bostonT_files(fname=None, force_update=False):
 
 
 def _parse_mbta_yaml(fname=None):
-    """Parse the YAML file to extract latitude and longitude."""
+    """Parse the [YAML file](https://erikdemaine.org/maps/mbta/mbta.yaml) to
+    extract latitude and longitude."""
+
     fname = fname or '../data/mbta.yaml'
     with open(Path(fname), 'r') as fp:
         data = yaml.load(fp, Loader=Loader)

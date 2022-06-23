@@ -337,6 +337,8 @@ if __name__ == "__main__":
               ekws=dict(lw=1, alpha=0.2)
               )
 
+    # Plot the Boston T
+    # TODO use geopandas(?) to get actual basemap
     tg = transport_graph('../data/bostonT_lines.txt',
                          key_file='../data/bostonT_stations.txt',
                          loc_file='../data/bostonT_locs.txt')
@@ -357,10 +359,11 @@ if __name__ == "__main__":
 
     for name, route in tg.G.routes.items():
         tg.G.draw(p=route, ax=ax, c=line_colors(name),
-                  label_nodes=True, labels={i: tg.name(i) for i in route},
-                  vkws=dict(s=50, alpha=1.0, radius=1e-4, fontsize=8))
+                  # label_nodes=True, labels={i: tg.name(i) for i in route},
+                  # vkws=dict(s=50, alpha=1.0, radius=1e-4, fontsize=8))
+                  vkws=dict(s=20, alpha=1.0))
 
-    ax.axis('on')
+    # ax.axis('on')
 
     plt.show()
 
