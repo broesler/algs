@@ -43,9 +43,9 @@ else:
         for name, UF in zip(names, UFs):
             Es = np.zeros(T)
             for i in tqdm(range(T), leave=False):
-                tic = time.time()
+                tic = time.process_time()
                 uf = ErdosRenyi(N, UF=UF)
-                toc = time.time()
+                toc = time.process_time()
                 Es[i] = uf.E
 
             df.loc[N, ('edges', name)] = Es.mean()
