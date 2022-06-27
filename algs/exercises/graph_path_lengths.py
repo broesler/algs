@@ -44,11 +44,11 @@ rng = np.random.default_rng(seed=565656)
 FORCE_UPDATE = False
 SAVE_FIGS = True
 
-# generate_graph = random_simple_graph
-generate_graph = erdos_renyi
+generate_graph = random_simple_graph
+tag = 'simple'
 
-# tag = 'simple'
-tag = 'erdos'
+# generate_graph = erdos_renyi
+# tag = 'erdos'
 
 V = 100
 
@@ -99,8 +99,8 @@ print(tf)
 
 fig = plt.figure(1, clear=True, constrained_layout=True)
 ax = fig.add_subplot()
-ax.scatter(tf['EoV'], tf['depth'], c='C0')
-ax.scatter(tf['EoV'], tf['breadth'], c='C3')
+ax.scatter(tf['EoV'], tf['depth'], c='C0', zorder=3, label='DFS')
+ax.scatter(tf['EoV'], tf['breadth'], c='C3', zorder=3, label='BFS')
 
 ax.set(xlabel='density (E/V)', xscale='log',
        ylabel='path length')
@@ -109,15 +109,17 @@ ax.set_xticklabels([r'$\frac{\sqrt{V}}{V}$',
                     '1',
                     r'$\sqrt{V}$',
                     r'$\frac{V-1}{2}$'])
+ax.legend()
+ax.set_ylim(top=1.1*50)
+ax.grid(which='both')
 
-# # Plot the count fraction on the other axis
-# ax1 = ax.twinx()
-# ax1.scatter(tf['EoV'], tf['count'], c='C3')
-# ax1.set_ylabel('fraction connected')
-# # Match tick marks
-# ax1.set_ylim((0, 1.1))
-# ax.set_ylim(top=1.1*50)
-# ax1.grid('off')
+# Plot the count fraction on the other axis
+ax1 = ax.twinx()
+ax1.plot(tf['EoV'], tf['count'], c='k', alpha=0.5)
+ax1.set_ylabel('fraction connected')
+# Match tick marks
+ax1.set_ylim(top=1.1)
+ax1.grid(visible=False)
 
 if SAVE_FIGS:
     fig.savefig(f"./figures/graph_path_lengths_{tag}_V{V}.png")
