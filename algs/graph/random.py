@@ -182,15 +182,16 @@ def random_grid_graph(V, R=0, dist_edges=False):
     y, x = np.mgrid[:V, :V]
     x, y = np.ravel(x), np.ravel(y)
     # Generate R additional edges
-    extra_edges = rng.integers(Vsq, size=(R, 2))
-    if dist_edges:
-        for v, w in extra_edges:
-            r = ((x[v] - x[w])**2 + (y[v] - y[w])**2)**0.5  # [0, ∞)
-            P = 1 / r if r else 0
-            if rng.random() < P:
-                edges = np.r_[edges, [[v, w]]]
-    else:
-        edges = np.r_[edges, extra_edges]
+    if R > 0:
+        extra_edges = rng.integers(Vsq, size=(R, 2))
+        if dist_edges:
+            for v, w in extra_edges:
+                r = ((x[v] - x[w])**2 + (y[v] - y[w])**2)**0.5  # [0, ∞)
+                P = 1 / r if r else 0
+                if rng.random() < P:
+                    edges = np.r_[edges, [[v, w]]]
+        else:
+            edges = np.r_[edges, extra_edges]
     return EuclideanGraph(V=Vsq, edges=edges, x=x, y=y)
 
 

@@ -1,0 +1,128 @@
+#!/usr/bin/env python3
+# =============================================================================
+#     File: graph_path_lengths.py
+#  Created: 2022-06-22 21:30
+#   Author: Bernie Roesler
+#
+"""
+Exercise 4.1.47: Test probability of finding a path between two random vertices
+and length of path when found.
+
+Inputs:
+* N graphs generated
+* V
+* E -> E/V gives sparsity. E in [V-1, V(V-1)/2] for connected graph, so
+       1 < E/V < V^0.5 is sparse, E/V ~ V is dense
+Each graph:
+* T random pairs of vertices attempted in a given graph
+
+Outputs:
+Each trial:
+* whether or not s and t are connected
+* path length if connected
+Each graph:
+* fraction of trials that resulted in a path
+* average path length
+Aggregate over N graphs:
+* fraction of trials that resulted in a path
+* average path length
+"""
+# =============================================================================
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import pickle
+from pathlib import Path
+from tqdm import tqdm
+
+from algs.graph import DepthFirstPaths_nr, BreadthFirstPaths
+from algs.graph.random import erdos_renyi, random_simple_graph
+
+rng = np.random.default_rng(seed=565656)
+
+FORCE_UPDATE = False
+SAVE_FIGS = True
+
+# generate_graph = random_simple_graph
+generate_graph = erdos_renyi
+
+# tag = 'simple'
+tag = 'erdos'
+
+V = 100
+
+pkl_file = Path(f"./pkl/graph_path_lengths_{tag}_V{V}.pkl")
+
+if FORCE_UPDATE or not pkl_file.exists():
+    N = 30   # graphs to generate
+    T = 10  # trials per graph
+    Es = np.geomspace(V**0.5, V*(V-1)//2, num=20).astype(int)
+
+    index = pd.MultiIndex.from_product((Es, range(N), range(T)),
+                                       names=['E', 'N', 'T'])
+    data = np.full((len(Es)*N*T, 2), np.nan)
+    df = pd.DataFrame(index=index, columns=['depth', 'breadth'], data=data)
+
+    for E in tqdm(Es):
+        for i in range(N):
+            G = generate_graph(V, E)
+            for j in range(T):
+                s, t = rng.integers(V, size=2)
+                dfs = DepthFirstPaths_nr(G, s)
+                bfs = BreadthFirstPaths(G, s)
+                if dfs.has_path_to(t):
+                    df.loc[(E, i, j), 'depth'] = len(dfs.path_to(t))
+                if bfs.has_path_to(t):
+                    df.loc[(E, i, j), 'breadth'] = len(bfs.path_to(t))
+
+    # Process: average over trials
+    tf = (df.reset_index()
+            .assign(count=lambda x: ~np.isnan(x['depth']) / (N*T))
+            .groupby('E')
+            .agg({'depth': np.nanmean, 'breadth': np.nanmean, 'count': np.sum})
+            .assign(VoE=V/Es)
+            .assign(EoV=Es/V)
+          )
+
+    with open(pkl_file, 'wb') as fp:
+        pickle.dump(tf, fp)
+else:
+    with open(pkl_file, 'rb') as fp:
+        tf = pickle.load(fp)
+
+
+# -----------------------------------------------------------------------------
+#         Plot
+# -----------------------------------------------------------------------------
+print(tf)
+
+fig = plt.figure(1, clear=True, constrained_layout=True)
+ax = fig.add_subplot()
+ax.scatter(tf['EoV'], tf['depth'], c='C0')
+ax.scatter(tf['EoV'], tf['breadth'], c='C3')
+
+ax.set(xlabel='density (E/V)', xscale='log',
+       ylabel='path length')
+ax.set_xticks([V**-0.5, 1, V**0.5, (V-1)/2])
+ax.set_xticklabels([r'$\frac{\sqrt{V}}{V}$',
+                    '1',
+                    r'$\sqrt{V}$',
+                    r'$\frac{V-1}{2}$'])
+
+# # Plot the count fraction on the other axis
+# ax1 = ax.twinx()
+# ax1.scatter(tf['EoV'], tf['count'], c='C3')
+# ax1.set_ylabel('fraction connected')
+# # Match tick marks
+# ax1.set_ylim((0, 1.1))
+# ax.set_ylim(top=1.1*50)
+# ax1.grid('off')
+
+if SAVE_FIGS:
+    fig.savefig(f"./figures/graph_path_lengths_{tag}_V{V}.png")
+
+plt.show()
+
+# =============================================================================
+# =============================================================================
