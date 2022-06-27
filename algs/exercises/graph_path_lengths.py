@@ -36,19 +36,19 @@ import pickle
 from pathlib import Path
 from tqdm import tqdm
 
-from algs.graph import DepthFirstPaths_nr, BreadthFirstPaths
+from algs.graph import DepthFirstPaths_nr, BreadthFirstPaths, CC_nr
 from algs.graph.random import erdos_renyi, random_simple_graph
 
 rng = np.random.default_rng(seed=565656)
 
 FORCE_UPDATE = False
-SAVE_FIGS = True
+SAVE_FIGS = False
 
-generate_graph = random_simple_graph
-tag = 'simple'
+# generate_graph = random_simple_graph
+# tag = 'simple'
 
-# generate_graph = erdos_renyi
-# tag = 'erdos'
+generate_graph = erdos_renyi
+tag = 'erdos'
 
 V = 100
 
@@ -61,12 +61,16 @@ if FORCE_UPDATE or not pkl_file.exists():
 
     index = pd.MultiIndex.from_product((Es, range(N), range(T)),
                                        names=['E', 'N', 'T'])
-    data = np.full((len(Es)*N*T, 2), np.nan)
-    df = pd.DataFrame(index=index, columns=['depth', 'breadth'], data=data)
+    data = np.full((len(Es)*N*T, 3), np.nan)
+    df = pd.DataFrame(index=index, columns=['depth', 'breadth', 'comps'], data=data)
+    cf = pd.Series(index=index.droplevel(-1).drop_duplicates(), 
+                   data=np.full(len(Es)*N, np.nan))
 
     for E in tqdm(Es):
         for i in range(N):
             G = generate_graph(V, E)
+            cc = CC_nr(G)
+            cf.loc[(E, i)] = cc.count()
             for j in range(T):
                 s, t = rng.integers(V, size=2)
                 dfs = DepthFirstPaths_nr(G, s)
@@ -76,7 +80,7 @@ if FORCE_UPDATE or not pkl_file.exists():
                 if bfs.has_path_to(t):
                     df.loc[(E, i, j), 'breadth'] = len(bfs.path_to(t))
 
-    # Process: average over trials
+    # Average path lengths over trials
     tf = (df.reset_index()
             .assign(count=lambda x: ~np.isnan(x['depth']) / (N*T))
             .groupby('E')
@@ -85,11 +89,14 @@ if FORCE_UPDATE or not pkl_file.exists():
             .assign(EoV=Es/V)
           )
 
+    # Average components over trials
+    cf = cf.groupby('E').mean()
+
     with open(pkl_file, 'wb') as fp:
-        pickle.dump(tf, fp)
+        pickle.dump((tf, cf), fp)
 else:
     with open(pkl_file, 'rb') as fp:
-        tf = pickle.load(fp)
+        tf, cf = pickle.load(fp)
 
 
 # -----------------------------------------------------------------------------
@@ -101,16 +108,23 @@ fig = plt.figure(1, clear=True, constrained_layout=True)
 ax = fig.add_subplot()
 ax.scatter(tf['EoV'], tf['depth'], c='C0', zorder=3, label='DFS')
 ax.scatter(tf['EoV'], tf['breadth'], c='C3', zorder=3, label='BFS')
+ax.scatter(tf['EoV'], cf.values, c='C2', zorder=3, label='CC')
+# ax.axvline(1/2 * np.log(V), c='k', ls='--', alpha=0.5)
+ax.axhline(V/2, c='k', ls='--', alpha=0.5)
 
 ax.set(xlabel='density (E/V)', xscale='log',
-       ylabel='path length')
+       ylabel='path length, # components')
 ax.set_xticks([V**-0.5, 1, V**0.5, (V-1)/2])
 ax.set_xticklabels([r'$\frac{\sqrt{V}}{V}$',
                     '1',
                     r'$\sqrt{V}$',
                     r'$\frac{V-1}{2}$'])
+ax.set_yticks(V*np.arange(0, 1.2, 0.2))
+ax.set_yticklabels(['0'] + [f"{x:.1f}V" for x in np.arange(0.2, 1, 0.2)] + ['V'])
+# ax.set_yticks([0, V//4, V//2, 3*V//4, V])
+# ax.set_yticklabels(['0', r'$\frac{V}{4}$', r'$\frac{V}{2}$', r'$\frac{3V}{4}$', r'$V$'])
 ax.legend()
-ax.set_ylim(top=1.1*50)
+ax.set_ylim(top=1.03*V)
 ax.grid(which='both')
 
 # Plot the count fraction on the other axis
@@ -118,7 +132,7 @@ ax1 = ax.twinx()
 ax1.plot(tf['EoV'], tf['count'], c='k', alpha=0.5)
 ax1.set_ylabel('fraction connected')
 # Match tick marks
-ax1.set_ylim(top=1.1)
+ax1.set_ylim(top=1.03)
 ax1.grid(visible=False)
 
 if SAVE_FIGS:
