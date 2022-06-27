@@ -49,7 +49,7 @@ class SymbolTable(ABC):
 
     __doc__ = _attribs_doc + "\n" + _other_doc
 
-    def __init__(self, items=None, cache=False):
+    def __init__(self, items=None, cache=False, **kwargs):
         """
         Parameters
         ----------
@@ -572,12 +572,12 @@ class BinarySearchST(OrderedSymbolTable):
     __doc__ = f"""Implements an ordered-array with binary search symbol table.
               {OrderedSymbolTable.__doc__}"""
 
-    def __init__(self, items=None, cache=True):
+    def __init__(self, items=None, cache=True, **kwargs):
         self._keys = list()  # internal arrays of keys and values
         self._vals = list()
         # Ex 3.1.12(b) sort by keys for O(N log N) construction vs. O(N^2)
         items = mergesort(items or [])
-        super().__init__(items, cache)
+        super().__init__(items, cache, **kwargs)
         self._assert_integrity()
 
     @property
