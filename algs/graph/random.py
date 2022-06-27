@@ -227,13 +227,15 @@ def random_interval_graph(V, d):
     """
     if not (0 <= d <= 1):
         raise ValueError(f"{d=} must be in [0, 1]!")
-    ints = [Interval1D(lo, lo+d) for lo in rng.random(V)]
+    ints = sorted([Interval1D(lo, lo+d) for lo in rng.random(V)*(1-d)],
+                  key=Interval1D.MIN_ORDER)
     edges = list()
-    # TODO use a BST instead of brute-forcing it
     for i in range(V):
         for j in range(i+1, V):
             if ints[i].intersects(ints[j]):
                 edges.append((i, j))
+            else:
+                break  # ordered, so if they don't intersect, we're done.
     return SymbolGraph(ints, edges)
 
 
@@ -317,7 +319,7 @@ if __name__ == "__main__":
     Gs = random_simple_graph(V, E)
     print(Gs)
 
-    sgi = random_interval_graph(V, d=0.1)
+    sgi = random_interval_graph(V=5, d=0.1)
 
     # Plots
     Ge = random_euclidean_graph(V, d=0.5)
