@@ -53,7 +53,7 @@ N_s = drivers[(dists[0], ST_names[0], Ns[0])].runtimes.size
 
 # Store the individual search runtimes
 cols = pd.MultiIndex.from_product([dists, ST_names, ops, Ns],
-                                names=['dist', 'ST', 'op', 'N'])
+                                  names=['dist', 'ST', 'op', 'N'])
 data = np.empty((N_s, len(dists)*len(ST_names)*len(Ns)*2))
 
 df = pd.DataFrame(columns=cols.droplevel('op').unique(),
@@ -66,7 +66,7 @@ for (d, ST_name, N), driver in drivers.items():
     df[(d, ST_name, N)] = driver.runtimes
 
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 #         Plot distributions of runtimes
 # -----------------------------------------------------------------------------
 tf = df.melt(value_name='runtime')
@@ -84,8 +84,8 @@ sns.pointplot(data=tf, x='N', y='runtime', hue='ST',
               palette='dark')
 
 # Nice legend
-h, l = ax.get_legend_handles_labels()
-ax.legend(h[3:], l[3:], title='Symbol Table',
+handles, labels = ax.get_legend_handles_labels()
+ax.legend(handles[3:], labels[3:], title='Symbol Table',
           handletextpad=0, labelspacing=1,
           loc='upper left', frameon=True)
 
@@ -100,7 +100,7 @@ fig.tight_layout()
 if SAVE_FIGS:
     fig.savefig(fig_dir.joinpath(f"self_org_timedists{tag}.pdf"))
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 #         Plot total runtimes
 # -----------------------------------------------------------------------------
 g = sns.FacetGrid(tots.reset_index(), row='op', col='dist', hue='ST',
@@ -114,7 +114,7 @@ g.tight_layout()
 if SAVE_FIGS:
     g.savefig(fig_dir.joinpath(f"self_org_tots{tag}.pdf"))
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 #         Plot keys vs. index
 # -----------------------------------------------------------------------------
 fig = plt.figure(3, clear=True, figsize=(12, 6))
@@ -136,7 +136,7 @@ gs.tight_layout(fig)
 if SAVE_FIGS:
     fig.savefig(fig_dir.joinpath(f"self_org_keys{tag}.pdf"))
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 #         Plot the probability distributions
 # -----------------------------------------------------------------------------
 # TODO count inversions in each array to determine "sortedness"
