@@ -575,7 +575,7 @@ class TransportationGraph(EuclideanGraph):
         self.routes = dict(routes)
 
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 #         Paths/Searches
 # -----------------------------------------------------------------------------
 class DepthFirstSearch(GraphSearch):
@@ -814,7 +814,78 @@ class LeafDFS(GraphSearch):
         return self._leaf
 
 
-# ----------------------------------------------------------------------------- 
+# Web Exercise 33
+def spanning_tree_bfs(G, s):
+    """Return a Graph that is a spanning tree of `G`, rooted at `s`."""
+
+    # Define the search to add edges to `T` as we traverse them.
+    def _bfs(G, v):
+        """Perform breadth-first search from vertex `v`."""
+        q = Queue()
+        _marked[v] = True
+        q.enqueue(v)
+        while not q.is_empty:
+            v = q.dequeue()
+            for w in G.adj(v):
+                if not _marked[w]:
+                    _marked[w] = True
+                    T.add_edge(v, w)
+                    q.enqueue(w)
+
+    # Define the tree with the same vertices as G
+    T = Graph(G.V)
+    _marked = G.V * [False]
+    _bfs(G, s)
+    return T
+
+
+def spanning_tree_dfs(G, s):
+    """Return a Graph that is a spanning tree of `G`, rooted at `s`."""
+
+    # Define the search to add edges to `T` as we traverse them.
+    def _dfs(G, v):
+        """Perform depth-first search from `v` with an explicit stack."""
+        stack = Stack()
+        adj = [iter(G.adj(v)) for v in G.vertices()]
+        _marked[v] = True
+        stack.push(v)
+        while not stack.is_empty:
+            v = stack.peek()
+            try:
+                w = next(adj[v])
+                if not _marked[w]:
+                    _marked[w] = True
+                    T.add_edge(v, w)
+                    stack.push(w)
+            except StopIteration:
+                stack.pop()
+
+    # Define the tree with the same vertices as G
+    T = Graph(G.V)
+    _marked = G.V * [False]
+    _dfs(G, s)
+    return T
+
+
+def spanning_forest_dfs(G):
+    """Return a list of spanning trees for each connected component."""
+    comps = CC(G).get_components()
+    trees = list()
+    for c in comps:
+        trees.append(spanning_tree_dfs(G, c[0]))
+    return trees
+
+
+def spanning_forest_bfs(G):
+    """Return a list of spanning trees for each connected component."""
+    comps = CC(G).get_components()
+    trees = list()
+    for c in comps:
+        trees.append(spanning_tree_bfs(G, c[0]))
+    return trees
+
+
+# -----------------------------------------------------------------------------
 #         Graph Properties
 # -----------------------------------------------------------------------------
 # Exercise 4.1.16
@@ -1633,6 +1704,22 @@ if __name__ == "__main__":
     # assert b.articulation(7)
     assert b.Nbridges == 2
     assert b.articulation(9)
+
+    # Spanning Tree
+    print('----- Spanning Tree -----')
+    G2 = Graph.fromfile('../data/tinyG2.txt')
+    print('--- DFS ---')
+    Td = spanning_tree_dfs(G2, 0)
+    print(Td)
+    print('--- BFS ---')
+    Tb = spanning_tree_bfs(G2, 0)
+    print(Tb)
+    print('--- DFS Forest ---')
+    Tf = spanning_forest_dfs(G2)
+    print(Tf)
+    print('--- BFS Forest ---')
+    Tf = spanning_forest_bfs(G2)
+    print(Tf)
 
 
 # =============================================================================
