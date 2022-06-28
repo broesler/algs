@@ -83,15 +83,15 @@ if __name__ == '__main__':
             ints = rng.integers(M, size=(T, N))
             # ints = np.sort(ints, axis=1)
             for t in range(T):
-                tic = time.process_time()
+                tic = time.perf_counter_ns()
                 dups_sort, dist_sort = count_both_sort(ints[t])
-                toc = time.process_time()
+                toc = time.perf_counter_ns()
                 dt_sort = toc - tic
 
                 # Exercise 3.5.30
-                tic = time.process_time()
+                tic = time.perf_counter_ns()
                 dups_dict, dist_dict = count_both_dict(ints[t])
-                toc = time.process_time()
+                toc = time.perf_counter_ns()
                 dt_dict = toc - tic
 
                 assert dups_sort == dups_dict

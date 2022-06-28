@@ -22,7 +22,7 @@ from pathlib import Path
 
 from self_org_driver import SelfOrganizingDriver
 
-SAVE_FIGS = False
+SAVE_FIGS = True
 
 if SAVE_FIGS:
     plt.close('all')
@@ -47,7 +47,7 @@ for k in drivers:
 
 dists, ST_names = sorted(dists), sorted(ST_names)
 ops = ['put', 'get']
-Ns = np.unique([v.t.size for k, v in drivers.items()])
+Ns = np.unique([v.t.size() for v in drivers.values()])
 
 N_s = drivers[(dists[0], ST_names[0], Ns[0])].runtimes.size
 
@@ -60,18 +60,18 @@ df = pd.DataFrame(columns=cols.droplevel('op').unique(),
                   data=data[:, :data.shape[1]//len(dists)])
 tots = pd.Series(index=cols, name='runtime [s]', dtype=float)
 
+# Times are in nanoseconds
 for (d, ST_name, N), driver in drivers.items():
-    tots[(d, ST_name, 'put', N)] = driver.put_time
-    tots[(d, ST_name, 'get', N)] = driver.get_time
-    df[(d, ST_name, N)] = driver.runtimes
-
+    tots[(d, ST_name, 'put', N)] = driver.put_time / 1e9
+    tots[(d, ST_name, 'get', N)] = driver.get_time / 1e9
+    df[(d, ST_name, N)] = driver.runtimes / 1e9
 
 # -----------------------------------------------------------------------------
 #         Plot distributions of runtimes
 # -----------------------------------------------------------------------------
 tf = df.melt(value_name='runtime')
 
-fig = plt.figure(1, clear=True)
+fig = plt.figure(1, clear=True, constrained_layout=True)
 ax = fig.add_subplot()
 
 # Plot the runtime distributions
@@ -91,11 +91,10 @@ ax.legend(handles[3:], labels[3:], title='Symbol Table',
 
 # Tidy up axes limits and labels
 ax.ticklabel_format(axis='y', style='sci', scilimits=(-3, 3))
-ax.set(ylim=[0.5*tf['runtime'].min(), 5*tf['runtime'].max()],
-       ylabel='time per search [s]',
+# ax.set_ylim([0.5*tf['runtime'].min(), 5*tf['runtime'].max()])
+ax.set(ylabel='time per search [s]',
        yscale='log')
 ax.grid('on')
-fig.tight_layout()
 
 if SAVE_FIGS:
     fig.savefig(fig_dir.joinpath(f"self_org_timedists{tag}.pdf"))

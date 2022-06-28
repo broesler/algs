@@ -41,14 +41,14 @@ from algs.graph.random import erdos_renyi, random_simple_graph
 
 rng = np.random.default_rng(seed=565656)
 
-FORCE_UPDATE = False
-SAVE_FIGS = False
+FORCE_UPDATE = True
+SAVE_FIGS = True
 
-# generate_graph = random_simple_graph
-# tag = 'simple'
+generate_graph = random_simple_graph
+tag = 'simple'
 
-generate_graph = erdos_renyi
-tag = 'erdos'
+# generate_graph = erdos_renyi
+# tag = 'erdos'
 
 V = 100
 

@@ -59,13 +59,13 @@ class FrequencyCounter():
                     if len(word) >= minlen:
                         self.N += 1  # count all words matching criterion
                         try:
-                            tic = time.process_time()
+                            tic = time.perf_counter_ns()
                             self.t[word] += 1
-                            toc = time.process_time()
+                            toc = time.perf_counter_ns()
                         except KeyError:
-                            tic = time.process_time()
+                            tic = time.perf_counter_ns()
                             self.t[word] = 1
-                            toc = time.process_time()
+                            toc = time.perf_counter_ns()
                         # Track cost for each `put` operation, len(cost) == N
                         self.cost.append(self.t._cost)
                         self.time.append(toc - tic)

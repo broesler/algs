@@ -143,12 +143,12 @@ class SelfOrganizingDriver():
         if self._randinit:
             rng.shuffle(keys)     # insert in random order
 
-        put_tic = time.process_time()  # time the insertions separately
+        put_tic = time.perf_counter_ns()  # time the insertions separately
 
         # Fill the symbol table with keys (no values needed)
         self.t = self.t([(k, None) for k in keys], selforg=self._selforg)
 
-        put_toc = time.process_time()
+        put_toc = time.perf_counter_ns()
         self.put_time = put_toc - put_tic
 
         if verbose:
@@ -157,15 +157,15 @@ class SelfOrganizingDriver():
 
         # Search for 10*N keys
         iterator = tqdm(ks, total=M) if verbose else ks
-        get_tic = time.process_time()
+        get_tic = time.perf_counter_ns()
 
         for i, k in enumerate(iterator):
-            tic = time.process_time()
+            tic = time.perf_counter_ns()
             self.t[k]  # perform get operation
-            toc = time.process_time()
+            toc = time.perf_counter_ns()
             self.runtimes[i] = toc - tic
 
-        get_toc = time.process_time()
+        get_toc = time.perf_counter_ns()
         self.get_time = get_toc - get_tic
 
         # only store subset of runtimes values
@@ -193,6 +193,7 @@ if __name__ == '__main__':
     for N in Ns:
         for d in dists:
             for ST, ST_name, selforg in zip(STs, ST_names, selforgs):
+                print(f"{ST_name=}, {selforg=}, {d=}")
                 zipf = True if d == 'zipf' else 'p'
                 driver = SelfOrganizingDriver(ST, zipf=zipf, selforg=selforg)
                 driver.run_test(N, samples=N_s, verbose=True)
