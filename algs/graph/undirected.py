@@ -161,7 +161,7 @@ class Paths(ABC):
 
 
 # -----------------------------------------------------------------------------
-#         Concrete Classes
+#         Graphs
 # -----------------------------------------------------------------------------
 class Graph(UndirectedGraph):
     __doc__ = f"""Implements a graph using an array of adjacency lists.
@@ -352,6 +352,232 @@ class STGraph(UndirectedGraph):
         return g
 
 
+class SymbolGraph:
+    """Implements a symbol graph."""
+    # See p 552
+
+    def __init__(self, keys=None, edges=None):
+        self._st = HashST()  # map : str -> int
+        self._keys = None    # map : int -> str
+        self.G = None
+        if keys is not None:
+            for i, k in enumerate(keys):
+                self._st[i] = k
+            self._keys = keys
+            self.G = Graph(V=len(keys), edges=edges)
+
+    @classmethod
+    def fromfile(cls, filename, *args, delim=' ', verbose=False, **kwargs):
+        """Construct a SymbolGraph from a delimited text file containing an
+        adjacency list for the graph.
+
+        Parameters
+        ----------
+        filename : str
+            The name of the adjacency list file to process.
+        delim : char, optional
+            The character on which to split words.
+        verbose : bool, optional
+            If True, print a progress bar while reading the file.
+
+        Returns
+        -------
+        res : :obj:`SymbolGraph`
+            The SymbolGraph defined by the adjaceny list file.
+        """
+        sg = cls(*args, **kwargs)
+        # First pass to add all vertices to the symbol table
+        with open(Path(filename), 'r') as fp:
+            iters = fp.readlines()
+            if verbose:
+                iters = tqdm(iters)
+            for line in iters:
+                words = line.strip().split(delim)
+                for word in words:
+                    if word not in sg._st:
+                        sg._st[word] = sg._st.size()  # unique index
+
+        # Build inverted index
+        V = sg._st.size()
+        sg._keys = V * [None]
+        for name in sg._st.keys():
+            sg._keys[sg._st[name]] = name
+
+        # Second pass to build the graph
+        sg.G = Graph(V)
+        with open(Path(filename), 'r') as fp:
+            for line in fp.readlines():
+                words = line.strip().split(delim)
+                v = sg._st[words[0]]
+                for w in words[1:]:
+                    sg.G.add_edge(v, sg._st[w])
+
+        return sg
+
+    @property
+    def V(self):
+        return self.G.V
+
+    def __contains__(self, k):
+        """Return True if `k` is a vertex."""
+        return self._st.contains(k)
+
+    def index(self, k):
+        """Return the index associated with `k`."""
+        return self._st[k]
+
+    def name(self, v):
+        """Return the name associated with vertex index `v`."""
+        return self._keys[v]
+
+    # aliases
+    def contains(self, k):
+        return self.__contains__(k)
+
+
+# Exercise 4.1.37
+class EuclideanGraph(Graph):
+    __doc__ = f"""Implements an undirected graph whose vertices are points in
+    the plane with coordinates.
+    {UndirectedGraph.__doc__}"""
+
+    def __init__(self, G=None, x=None, y=None, *args, **kwargs):
+        if G is None:
+            super().__init__(*args, **kwargs)
+        else:
+            G = G.copy()
+            self.V = G.V
+            self.E = G.E
+            self._adj = G._adj
+            self._PARALLEL = G._PARALLEL
+            self._SELF_LOOPS = G._SELF_LOOPS
+        # Initialize coordinates
+        if x is None:
+            x = np.zeros(self.V)
+        if y is None:
+            y = np.zeros(self.V)
+        if len(x) != self.V or len(y) != self.V:
+            raise ValueError(f"Coordinates must have dimension {self.V=}")
+        self.x = np.r_[x]
+        self.y = np.r_[y]
+
+    __init__.__doc__ = f"""{Graph.__init__.__doc__}
+    x, y : (V,) arrays
+        Cartesian coordinates for each vertex.
+    """
+
+    def set_coordinates(self, vs, xs, ys):
+        """Set the coordinates of the vertices."""
+        self.x[vs] = xs
+        self.y[vs] = ys
+
+    def get_coordinates(self, vs):
+        """Get the coordinates of the vertices."""
+        return np.c_[self.x[vs], self.y[vs]]
+
+    def _draw_node(self, v, ax, label=None, **vkws):
+        """Draw a single node."""
+        fontcolor = vkws.get('fontcolor', 'k')
+        edgecolor = vkws.get('edgecolor', 'k')
+        fontsize = vkws.get('fontsize', 12)
+        radius = vkws.get('radius', 0.02)
+        circ = patches.Circle(
+                (self.x[v], self.y[v]),
+                radius=radius,
+                edgecolor=edgecolor, facecolor='#EEE',
+                zorder=3  # place on top of lines
+                )
+        ax.add_patch(circ)
+        ax.annotate(label or v, xy=(self.x[v], self.y[v]),
+                    color=fontcolor, fontsize=fontsize,
+                    ha='center', va='center')
+
+    def draw(self, p=None, ax=None, label_nodes=False, labels=None, c=None,
+             vkws=None, ekws=None):
+        """Plot the entire graph.
+
+        Parameters
+        ----------
+        p : iterable of int
+            Iterable of the vertices on the path from start to finish.
+        ax : :obj:`plt.axes`
+            The axes on which to plot. Uses current axes if None.
+        label_nodes : bool
+            If True, label the nodes with their indices.
+        labels : dict
+            Mapping from vertex IDs to strings for labelling nodes.
+        c : color string
+            Color to use for all edges and nodes.
+        vkws, ekws : dict
+            Vertex and edge keyword arguments to be passed to `ax.plot`.
+
+        Returns
+        -------
+        ax : :obj:`plt.axes`
+            The axes on which the graph was plotted.
+        """
+        _ekws = dict(ls='-', c='k', lw=2)
+        _vkws = dict(s=100, c='k')
+        if p is None:
+            vs = self.vertices()
+            es = self.edges()
+        else:
+            _vkws['edgecolor'] = 'k'
+            p = list(p)
+            vs = p
+            es = [[p[i], p[i+1]] for i in range(len(p)-1)]
+
+        if ax is None:
+            ax = plt.gca()
+
+        if c is not None:
+            _ekws['c'] = c
+            _vkws['c'] = c
+            _vkws['edgecolor'] = c
+            if label_nodes:
+                _vkws['fontcolor'] = c
+
+        # Set any user-defined parameters
+        if vkws is not None:
+            _vkws.update(vkws)
+        if ekws is not None:
+            _ekws.update(ekws)
+
+        # Make the plot
+        for e in es:
+            ax.plot(self.x[list(e)], self.y[list(e)], **_ekws)
+
+        # Plot the node itself
+        if label_nodes:
+            if labels is not None:
+                for v in vs:
+                    self._draw_node(v, ax, label=labels[v], **_vkws)
+            else:
+                for v in vs:
+                    self._draw_node(v, ax, **_vkws)
+        else:
+            ax.scatter(self.x[vs], self.y[vs], **_vkws)
+
+        ax.set_aspect('equal')
+        ax.grid('off')
+        ax.axis('off')  # hide everything but the grid
+        return ax
+
+
+class TransportationGraph(EuclideanGraph):
+    __doc__ = f"""Implements an undirected graph whose vertices are points in
+    the plane with coordinates. Also include a symbol table of paths denoting
+    the "routes" in the transportation system.
+    {UndirectedGraph.__doc__}"""
+
+    def __init__(self, *args, routes=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.routes = dict(routes)
+
+
+# ----------------------------------------------------------------------------- 
+#         Paths/Searches
+# -----------------------------------------------------------------------------
 class DepthFirstSearch(GraphSearch):
     __doc__ = f"""Implements depth-first search.
     {GraphSearch.__doc__}"""
@@ -588,6 +814,9 @@ class LeafDFS(GraphSearch):
         return self._leaf
 
 
+# ----------------------------------------------------------------------------- 
+#         Graph Properties
+# -----------------------------------------------------------------------------
 # Exercise 4.1.16
 class GraphProperties:
     """A class to determine the geometric properties of a connected graph.
@@ -784,89 +1013,6 @@ class CC_nr(CC):
                     stack.push(w)
             except StopIteration:
                 stack.pop()
-
-
-class SymbolGraph:
-    """Implements a symbol graph."""
-    # See p 552
-
-    def __init__(self, keys=None, edges=None):
-        self._st = HashST()  # map : str -> int
-        self._keys = None    # map : int -> str
-        self.G = None
-        if keys is not None:
-            for i, k in enumerate(keys):
-                self._st[i] = k
-            self._keys = keys
-            self.G = Graph(V=len(keys), edges=edges)
-
-    @classmethod
-    def fromfile(cls, filename, *args, delim=' ', verbose=False, **kwargs):
-        """Construct a SymbolGraph from a delimited text file containing an
-        adjacency list for the graph.
-
-        Parameters
-        ----------
-        filename : str
-            The name of the adjacency list file to process.
-        delim : char, optional
-            The character on which to split words.
-        verbose : bool, optional
-            If True, print a progress bar while reading the file.
-
-        Returns
-        -------
-        res : :obj:`SymbolGraph`
-            The SymbolGraph defined by the adjaceny list file.
-        """
-        sg = cls(*args, **kwargs)
-        # First pass to add all vertices to the symbol table
-        with open(Path(filename), 'r') as fp:
-            iters = fp.readlines()
-            if verbose:
-                iters = tqdm(iters)
-            for line in iters:
-                words = line.strip().split(delim)
-                for word in words:
-                    if word not in sg._st:
-                        sg._st[word] = sg._st.size()  # unique index
-
-        # Build inverted index
-        V = sg._st.size()
-        sg._keys = V * [None]
-        for name in sg._st.keys():
-            sg._keys[sg._st[name]] = name
-
-        # Second pass to build the graph
-        sg.G = Graph(V)
-        with open(Path(filename), 'r') as fp:
-            for line in fp.readlines():
-                words = line.strip().split(delim)
-                v = sg._st[words[0]]
-                for w in words[1:]:
-                    sg.G.add_edge(v, sg._st[w])
-
-        return sg
-
-    @property
-    def V(self):
-        return self.G.V
-
-    def __contains__(self, k):
-        """Return True if `k` is a vertex."""
-        return self._st.contains(k)
-
-    def index(self, k):
-        """Return the index associated with `k`."""
-        return self._st[k]
-
-    def name(self, v):
-        """Return the name associated with vertex index `v`."""
-        return self._keys[v]
-
-    # aliases
-    def contains(self, k):
-        return self.__contains__(k)
 
 
 class Cycle:
@@ -1205,146 +1351,6 @@ class Biconnected:
         return self._art[v]
 
 
-# Exercise 4.1.37
-class EuclideanGraph(Graph):
-    __doc__ = f"""Implements an undirected graph whose vertices are points in
-    the plane with coordinates.
-    {UndirectedGraph.__doc__}"""
-
-    def __init__(self, G=None, x=None, y=None, *args, **kwargs):
-        if G is None:
-            super().__init__(*args, **kwargs)
-        else:
-            G = G.copy()
-            self.V = G.V
-            self.E = G.E
-            self._adj = G._adj
-            self._PARALLEL = G._PARALLEL
-            self._SELF_LOOPS = G._SELF_LOOPS
-        # Initialize coordinates
-        if x is None:
-            x = np.zeros(self.V)
-        if y is None:
-            y = np.zeros(self.V)
-        if len(x) != self.V or len(y) != self.V:
-            raise ValueError(f"Coordinates must have dimension {self.V=}")
-        self.x = np.r_[x]
-        self.y = np.r_[y]
-
-    __init__.__doc__ = f"""{Graph.__init__.__doc__}
-    x, y : (V,) arrays
-        Cartesian coordinates for each vertex.
-    """
-
-    def set_coordinates(self, vs, xs, ys):
-        """Set the coordinates of the vertices."""
-        self.x[vs] = xs
-        self.y[vs] = ys
-
-    def get_coordinates(self, vs):
-        """Get the coordinates of the vertices."""
-        return np.c_[self.x[vs], self.y[vs]]
-
-    def _draw_node(self, v, ax, label=None, **vkws):
-        """Draw a single node."""
-        fontcolor = vkws.get('fontcolor', 'k')
-        edgecolor = vkws.get('edgecolor', 'k')
-        fontsize = vkws.get('fontsize', 12)
-        radius = vkws.get('radius', 0.02)
-        circ = patches.Circle(
-                (self.x[v], self.y[v]),
-                radius=radius,
-                edgecolor=edgecolor, facecolor='#EEE',
-                zorder=3  # place on top of lines
-                )
-        ax.add_patch(circ)
-        ax.annotate(label or v, xy=(self.x[v], self.y[v]),
-                    color=fontcolor, fontsize=fontsize,
-                    ha='center', va='center')
-
-    def draw(self, p=None, ax=None, label_nodes=False, labels=None, c=None,
-             vkws=None, ekws=None):
-        """Plot the entire graph.
-
-        Parameters
-        ----------
-        p : iterable of int
-            Iterable of the vertices on the path from start to finish.
-        ax : :obj:`plt.axes`
-            The axes on which to plot. Uses current axes if None.
-        label_nodes : bool
-            If True, label the nodes with their indices.
-        labels : dict
-            Mapping from vertex IDs to strings for labelling nodes.
-        c : color string
-            Color to use for all edges and nodes.
-        vkws, ekws : dict
-            Vertex and edge keyword arguments to be passed to `ax.plot`.
-
-        Returns
-        -------
-        ax : :obj:`plt.axes`
-            The axes on which the graph was plotted.
-        """
-        _ekws = dict(ls='-', c='k', lw=2)
-        _vkws = dict(s=100, c='k')
-        if p is None:
-            vs = self.vertices()
-            es = self.edges()
-        else:
-            _vkws['edgecolor'] = 'k'
-            p = list(p)
-            vs = p
-            es = [[p[i], p[i+1]] for i in range(len(p)-1)]
-
-        if ax is None:
-            ax = plt.gca()
-
-        if c is not None:
-            _ekws['c'] = c
-            _vkws['c'] = c
-            _vkws['edgecolor'] = c
-            if label_nodes:
-                _vkws['fontcolor'] = c
-
-        # Set any user-defined parameters
-        if vkws is not None:
-            _vkws.update(vkws)
-        if ekws is not None:
-            _ekws.update(ekws)
-
-        # Make the plot
-        for e in es:
-            ax.plot(self.x[list(e)], self.y[list(e)], **_ekws)
-
-        # Plot the node itself
-        if label_nodes:
-            if labels is not None:
-                for v in vs:
-                    self._draw_node(v, ax, label=labels[v], **_vkws)
-            else:
-                for v in vs:
-                    self._draw_node(v, ax, **_vkws)
-        else:
-            ax.scatter(self.x[vs], self.y[vs], **_vkws)
-
-        ax.set_aspect('equal')
-        ax.grid('off')
-        ax.axis('off')  # hide everything but the grid
-        return ax
-
-
-class TransportationGraph(EuclideanGraph):
-    __doc__ = f"""Implements an undirected graph whose vertices are points in
-    the plane with coordinates. Also include a symbol table of paths denoting
-    the "routes" in the transportation system.
-    {UndirectedGraph.__doc__}"""
-
-    def __init__(self, *args, routes=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.routes = dict(routes)
-
-
 # -----------------------------------------------------------------------------
 #         Client Functions
 # -----------------------------------------------------------------------------
@@ -1370,7 +1376,7 @@ def self_loops(G):
     return s // 2  # each edge counted twice
 
 
-def dfs(G, s, DFS=DepthFirstSearch):
+def print_dfs(G, s, DFS=DepthFirstSearch):
     """Search the graph from vertex `s`."""
     # See p 529
     search = DFS(G, s)
@@ -1384,7 +1390,7 @@ def dfs(G, s, DFS=DepthFirstSearch):
     return search
 
 
-def paths(G, s, GS=DepthFirstPaths):
+def print_paths(G, s, GS=DepthFirstPaths):
     """Search the graph from vertex `s`, returning the paths."""
     # See p 535
     search = GS(G, s)
@@ -1452,16 +1458,16 @@ if __name__ == "__main__":
 
     # Test search
     print('----- DFS -----')
-    dfs(G, 0)
-    dfs(G, 9)
+    print_dfs(G, 0)
+    print_dfs(G, 9)
 
     # Test paths
     print('----- Connected Graph -----')
     G = Graph.fromfile('../data/tinyCG.txt')
     print(G)
-    dfs(G, 0)
+    print_dfs(G, 0)
     print('----- DFS Paths -----')
-    paths(G, 0, GS=DepthFirstPaths)
+    print_paths(G, 0, GS=DepthFirstPaths)
 
     G2 = Graph.fromfile('../data/tinyG2.txt')
     print('          G2:', DepthFirstPaths(G2, 0).path_to(10))
@@ -1471,7 +1477,7 @@ if __name__ == "__main__":
             == DepthFirstPaths_nr(G2, 0).path_to(10))
 
     print('----- BFS Paths -----')
-    paths(G, 0, GS=BreadthFirstPaths)
+    print_paths(G, 0, GS=BreadthFirstPaths)
 
     # print('--- Cycle ---')
     G = Graph.fromfile('../data/tinyG.txt')
