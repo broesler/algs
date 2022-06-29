@@ -341,7 +341,10 @@ if __name__ == "__main__":
               )
 
     # Plot the Boston T
-    # TODO use geopandas(?) to get actual basemap
+    # TODO 
+    # * use geopandas(?) to get actual basemap
+    # * run DFS/BFS to get routes between stations, noting line for each and
+    #   where change-overs occur (ala MBTA website/app)
     tg = transport_graph('../data/bostonT_lines.txt',
                          key_file='../data/bostonT_stations.txt',
                          loc_file='../data/bostonT_locs.txt')

@@ -19,6 +19,7 @@ pkl_file = Path('./pkl/movies_SymbolGraph.pkl')
 
 THIS_YEAR = 2011
 
+
 def degrees_of_separation(sg, source, sink, y=None):
     """Return the shortest path from source to sink in a symbol graph."""
     pat = re.compile(r'\(([0-9]{4})[^)]*\)')

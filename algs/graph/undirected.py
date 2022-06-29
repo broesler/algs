@@ -21,7 +21,7 @@ from pathlib import Path
 from tqdm import tqdm
 
 from algs.basics import Bag, Stack, Queue
-from algs.search import Set, HashST
+from algs.search import Set, HashST, MultiHashSet
 from algs import WeightedQuickUnionUF
 
 
@@ -92,16 +92,6 @@ class UndirectedGraph(ABC):
     def vertices(self):
         """Return an iterable over the vertices."""
         pass
-
-    def edges(self):
-        """Return an iterable over the edges as pairs of vertices."""
-        e = list()  # could use MultiHashSet for faster build
-        for v in self.vertices():
-            for w in self.adj(v):
-                # Only add single direction (SLOW WITH LIST -- linear search)
-                if (w, v) not in e:
-                    e.append((v, w))
-        return e
 
     def __str__(self):
         s = f"{self.V} vertices, {self.E} edges\n"
@@ -204,6 +194,7 @@ class Graph(UndirectedGraph):
             self._adj[v].add(w)
             self._adj[w].add(v)
 
+    # Exercise 4.1.25    
     def _hide_vertex(self, v):
         """Hide the vertex from the graph."""
         self._validate_vertex(v)
@@ -217,21 +208,6 @@ class Graph(UndirectedGraph):
         for v in range(self.V):
             for w in self._adj[v]:
                 g._adj[v].add(w)
-        return g
-
-    # Exercise 4.1.24 (inspiration)
-    def subgraph(self, vs):
-        """Return the subgraph containing the vertices in `vs`.
-
-        .. note:: This method re-maps the vertices to [0, 1, ...len(vertices)]
-            for array indexing, so although the structure of the subgraph will
-            match that of the original, the vertex names will be different.
-        """
-        vs = Set(vs)  # use ordered set for ranking adjacents
-        g = self.__class__(len(vs))
-        for v, w in self.edges():
-            if v in vs and w in vs:
-                g.add_edge(vs.rank(v), vs.rank(w))
         return g
 
 
@@ -340,7 +316,7 @@ class STGraph(UndirectedGraph):
         """Make a deep copy of the graph structure."""
         return self.subgraph(self.vertices())
 
-    # Exercise 4.1.3 + 4.1.24 (inspiration)
+    # Exercise 4.1.3 + 4.1.24
     def subgraph(self, vs):
         """Make a deep copy of the subgraph containing the vertices."""
         vs = set(vs)
@@ -474,6 +450,16 @@ class EuclideanGraph(Graph):
     def get_coordinates(self, vs):
         """Get the coordinates of the vertices."""
         return np.c_[self.x[vs], self.y[vs]]
+
+    def edges(self):
+        """Return an iterable over the edges as pairs of vertices."""
+        e = MultiHashSet()
+        for v in self.vertices():
+            for w in self.adj(v):
+                # Only add single direction
+                if (w, v) not in e:
+                    e.append((v, w))
+        return e
 
     def _draw_node(self, v, ax, label=None, **vkws):
         """Draw a single node."""
@@ -1565,11 +1551,6 @@ if __name__ == "__main__":
     # Test connected components
     print('----- CC -----')
     comps = print_components(G2)
-    print('--- subgraph 0 ---')
-    # comps[0].append(9)  # add the vertex with no edges to it
-    G20 = G2.subgraph(comps[0])
-    print(G20)
-    comps20_sub = print_components(G20)
     comps20 = print_components(G2, vertices=comps[0])
 
     # Test connected components
