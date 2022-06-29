@@ -15,6 +15,9 @@ from algs.basics import Stack, Queue
 from algs.graph.undirected import UndirectedGraph, Graph, SymbolGraph, CC
 
 
+# -----------------------------------------------------------------------------
+#         Abstract Base Classes
+# -----------------------------------------------------------------------------
 class DirectedGraph(UndirectedGraph):
     # Extends the UndirectedGraph ABC.
     def reverse(self):
@@ -26,6 +29,9 @@ class DirectedGraph(UndirectedGraph):
         return R
 
 
+# -----------------------------------------------------------------------------
+#         Graphs
+# -----------------------------------------------------------------------------
 class Digraph(DirectedGraph, Graph):
     __doc__ = f"""Implements a digraph using an array of adjacency lists.
     {UndirectedGraph.__doc__}"""
@@ -46,6 +52,9 @@ class SymbolDigraph(SymbolGraph):
         super().__init__(*args, **kwargs, kind=Digraph)
 
 
+# -----------------------------------------------------------------------------
+#         Paths/Searches
+# -----------------------------------------------------------------------------
 # Algorithm 4.4
 class DirectedDFS:
     """Implements depth-first search in a digraph."""
@@ -185,7 +194,47 @@ class TransitiveClosure:
         return self._all[v].marked(w)
 
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
+#         Graph Properties
+# -----------------------------------------------------------------------------
+class Degrees:
+    """Compute the in- and outdegrees of each vertex."""
+
+    def __init__(self, G):
+        self._indegree = G.V * [0]
+        self._outdegree = G.V * [0]
+        for v in G.vertices():
+            adj = G.adj(v)
+            self._outdegree[v] = len(adj)
+            for w in adj:
+                self._indegree[w] += 1
+        self._sources = [v for v in G.vertices() if self._indegree[v] == 0]
+        self._sinks = [v for v in G.vertices() if self._outdegree[v] == 0]
+
+    def indegree(self, v):
+        """Return the number of edges pointing to `v`."""
+        return self._indegree[v]
+
+    def outdegree(self, v):
+        """Return the number of edges pointing from `v`."""
+        return self._outdegree[v]
+
+    def sources(self):
+        """Return a list of vertices with indegree 0."""
+        return self._sources
+
+    def sinks(self):
+        """Return a list of vertices with outdegree 0."""
+        return self._sinks
+
+    @property
+    def is_map(self):
+        """Return True if `G` is a map from the set of integers [0, V-1] onto
+        itself."""
+        return G._SELF_LOOPS and all([x == 1 for x in self._outdegree])
+
+
+# -----------------------------------------------------------------------------
 #         Tests
 # -----------------------------------------------------------------------------
 if __name__ == "__main__":
@@ -233,6 +282,20 @@ if __name__ == "__main__":
     cc = KosarajuSCC(G)
     assert cc.count() == 5
     print(cc.get_components())
+
+    d = Degrees(G)
+    assert d._indegree == [2, 1, 2, 2, 3, 2, 1, 1, 1, 3, 1, 1, 2]
+    assert d._outdegree == [2, 0, 2, 2, 2, 1, 3, 2, 2, 2, 1, 2, 1]
+    assert d.sources() == []
+    assert d.sinks() == [1]
+
+    G2 = Digraph.fromfile('../data/tinyDG2.txt')
+    print(G2)
+    d = Degrees(G2)
+    assert d._indegree == [1, 2, 2, 2, 1, 0, 2, 0, 2, 0, 2, 2]
+    assert d._outdegree == [1, 1, 2, 2, 1, 2, 1, 2, 2, 0, 1, 1]
+    assert d.sources() == [5, 7, 9]
+    assert d.sinks() == [9]
 
 # =============================================================================
 # =============================================================================
