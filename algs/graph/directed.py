@@ -11,10 +11,8 @@ See Sedgewick and Wayne, §4.2.
 """
 # =============================================================================
 
-from abc import abstractmethod
-
 from algs.basics import Stack, Queue
-from algs.graph.undirected import UndirectedGraph, Graph, SymbolGraph
+from algs.graph.undirected import UndirectedGraph, Graph, SymbolGraph, CC
 
 
 class DirectedGraph(UndirectedGraph):
@@ -120,7 +118,7 @@ class DirectedCycle:
 class DepthFirstOrder:
     """Compute the pre-, post-, and reverse post-order traversals of the
     digraph."""
-    
+
     def __init__(self, G):
         self.pre = Queue()
         self.post = Queue()
@@ -157,9 +155,42 @@ class Topological:
         return self.order is not None
 
 
+# Algorithm 4.6
+class KosarajuSCC(CC):
+    """Implements Kosaraju's algorithm for computing strong components."""
+
+    def __init__(self, G):
+        order = DepthFirstOrder(G.reverse())
+        super().__init__(G, vertices=order.reverse_post)
+
+    def strongly_connected(self, v, w):
+        return self.connected(v, w)  # semantic distinction
+
+
+class TransitiveClosure:
+    """Computes the transitive closure of a digraph.
+
+    .. note:: This algorithm uses O(V²) space and O(V(V+E)) time!
+        Each DFS uses O(V) space, and takes O(V+E) time, and we repeat the
+        search for each of the V vertices in G.
+    """
+
+    def __init__(self, G):
+        self._all = G.V * [None]
+        for v in G.vertices():
+            self._all[v] = DirectedDFS(G, v)
+
+    def reachable(self, v, w):
+        """Return True if `w` is reachable from `v`."""
+        return self._all[v].marked(w)
+
+
+# ----------------------------------------------------------------------------- 
+#         Tests
+# -----------------------------------------------------------------------------
 if __name__ == "__main__":
     from algs.graph.undirected import (DepthFirstPaths, BreadthFirstPaths,
-                                       print_paths, print_adj) 
+                                       print_paths)
 
     print('----- Digraph -----')
     G = Digraph.fromfile('../data/tinyDG.txt')
@@ -195,10 +226,13 @@ if __name__ == "__main__":
     assert not t.is_DAG
 
     sg = SymbolDigraph.fromfile('../data/jobs.txt', delim='/')
-    print_adj(sg, 'Algorithms')
     t = Topological(sg.G)
     assert t.is_DAG
     print('\n'.join(sg.name(v) for v in t.order))
+
+    cc = KosarajuSCC(G)
+    assert cc.count() == 5
+    print(cc.get_components())
 
 # =============================================================================
 # =============================================================================
