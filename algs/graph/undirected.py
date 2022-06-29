@@ -815,30 +815,6 @@ class LeafDFS(GraphSearch):
 
 
 # Web Exercise 33
-def spanning_tree_bfs(G, s):
-    """Return a Graph that is a spanning tree of `G`, rooted at `s`."""
-
-    # Define the search to add edges to `T` as we traverse them.
-    def _bfs(G, v):
-        """Perform breadth-first search from vertex `v`."""
-        q = Queue()
-        _marked[v] = True
-        q.enqueue(v)
-        while not q.is_empty:
-            v = q.dequeue()
-            for w in G.adj(v):
-                if not _marked[w]:
-                    _marked[w] = True
-                    T.add_edge(v, w)
-                    q.enqueue(w)
-
-    # Define the tree with the same vertices as G
-    T = Graph(G.V)
-    _marked = G.V * [False]
-    _bfs(G, s)
-    return T
-
-
 def spanning_tree_dfs(G, s):
     """Return a Graph that is a spanning tree of `G`, rooted at `s`."""
 
@@ -864,6 +840,30 @@ def spanning_tree_dfs(G, s):
     T = Graph(G.V)
     _marked = G.V * [False]
     _dfs(G, s)
+    return T
+
+
+def spanning_tree_bfs(G, s):
+    """Return a Graph that is a spanning tree of `G`, rooted at `s`."""
+
+    # Define the search to add edges to `T` as we traverse them.
+    def _bfs(G, v):
+        """Perform breadth-first search from vertex `v`."""
+        q = Queue()
+        _marked[v] = True
+        q.enqueue(v)
+        while not q.is_empty:
+            v = q.dequeue()
+            for w in G.adj(v):
+                if not _marked[w]:
+                    _marked[w] = True
+                    T.add_edge(v, w)
+                    q.enqueue(w)
+
+    # Define the tree with the same vertices as G
+    T = Graph(G.V)
+    _marked = G.V * [False]
+    _bfs(G, s)
     return T
 
 
