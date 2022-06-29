@@ -21,7 +21,7 @@ from pathlib import Path
 from tqdm import tqdm
 
 from algs.basics import Bag, Stack, Queue
-from algs.search import Set, HashST, MultiHashSet
+from algs.search import HashST, MultiHashSet
 from algs import WeightedQuickUnionUF
 
 
@@ -194,7 +194,7 @@ class Graph(UndirectedGraph):
             self._adj[v].add(w)
             self._adj[w].add(v)
 
-    # Exercise 4.1.25    
+    # Exercise 4.1.25
     def _hide_vertex(self, v):
         """Hide the vertex from the graph."""
         self._validate_vertex(v)
@@ -886,6 +886,17 @@ class GraphProperties:
     """
 
     def __init__(self, G, vertices=None, verbose=False):
+        """
+        Parameters
+        ----------
+        G : :obj:`Graph`
+            The graph to analyze.
+        vertices : iterable, optional
+            An iterable of the vertices to consider. If not given, all vertices
+            in `G` will be used.
+        verbose : bool
+            If True, show a progress bar.
+        """
         if not CC_nr(G, vertices).is_connected:
             raise ValueError('Graph must be connected!')
         self.G = G
@@ -998,15 +1009,24 @@ class CC:
         The graph to analyze.
     """
 
-    def __init__(self, G, vs=None):
-        if vs is None:
-            vs = G.vertices()
-        self.vs = vs
+    def __init__(self, G, vertices=None):
+        """
+        Parameters
+        ----------
+        G : :obj:`Graph`
+            The graph to analyze.
+        vertices : iterable, optional
+            An iterable of the vertices to consider. If not given, all vertices
+            in `G` will be used. The order of the iterable is preserved.
+        """
+        if vertices is None:
+            vertices = G.vertices()
+        self._vs = vertices
         self._marked = G.V * [False]
         self._id = G.V * [None]
         self._count = 0
         # Perform DFS for *every* source vertex.
-        for s in self.vs:
+        for s in self._vs:
             if not self._marked[s]:
                 self._dfs(G, s)
                 self._count += 1
@@ -1039,7 +1059,7 @@ class CC:
     def get_components(self):
         """Return a list of lists of vertices in each component."""
         components = [list() for _ in range(self._count)]
-        for v in self.vs:
+        for v in self._vs:
             components[self._id[v]].append(v)
         return components
 
@@ -1464,7 +1484,21 @@ def print_paths(G, s, GS=DepthFirstPaths):
 
 
 def print_components(G, vertices=None):
-    """Compute the connected components in the graph."""
+    """Compute the connected components in the graph.
+
+    Parameters
+    ----------
+    G : :obj:`Graph`
+        The graph to analyze.
+    vertices : iterable, optional
+        An iterable of the vertices to consider. If not given, all vertices
+        in `G` will be used.
+
+    Returns
+    -------
+    components : list of lists
+        List of lists of the vertices in each connected component.
+    """
     # See p 543
     vertices = vertices or G.vertices()
     cc = CC(G, vertices)
