@@ -998,15 +998,15 @@ class CC:
         The graph to analyze.
     """
 
-    def __init__(self, G, vertices=None):
-        if vertices is None:
-            vertices = G.vertices()
-        self.vertices = vertices
+    def __init__(self, G, vs=None):
+        if vs is None:
+            vs = G.vertices()
+        self.vs = vs
         self._marked = G.V * [False]
         self._id = G.V * [None]
         self._count = 0
         # Perform DFS for *every* source vertex.
-        for s in self.vertices:
+        for s in self.vs:
             if not self._marked[s]:
                 self._dfs(G, s)
                 self._count += 1
@@ -1039,7 +1039,7 @@ class CC:
     def get_components(self):
         """Return a list of lists of vertices in each component."""
         components = [list() for _ in range(self._count)]
-        for v in self.vertices:
+        for v in self.vs:
             components[self._id[v]].append(v)
         return components
 
