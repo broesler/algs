@@ -13,7 +13,8 @@ See Sedgewick and Wayne, §4.2.
 
 from abc import abstractmethod
 
-from algs.graph.undirected import UndirectedGraph, Graph
+from algs.basics import Stack, Queue
+from algs.graph.undirected import UndirectedGraph, Graph, SymbolGraph
 
 
 class DirectedGraph(UndirectedGraph):
@@ -27,7 +28,7 @@ class DirectedGraph(UndirectedGraph):
         return R
 
 
-class Digraph(Graph):
+class Digraph(DirectedGraph, Graph):
     __doc__ = f"""Implements a digraph using an array of adjacency lists.
     {UndirectedGraph.__doc__}"""
 
@@ -41,9 +42,163 @@ class Digraph(Graph):
             self.E += 1
             self._adj[v].add(w)  # direction matters! Only change from Graph
 
+
+class SymbolDigraph(SymbolGraph):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs, kind=Digraph)
+
+
+# Algorithm 4.4
+class DirectedDFS:
+    """Implements depth-first search in a digraph."""
+
+    def __init__(self, G, sources):
+        """
+        Parameters
+        ----------
+        G : :obj:`Digraph`
+            The graph over which to search.
+        sources : int or iterable
+            A single source index, or an iterable of indices from which to
+            begin the search.
+        """
+        self._marked = G.V * [False]
+        try:
+            for s in sources:
+                self._dfs(G, s)
+        except TypeError:
+            self._dfs(G, sources)
+
+    def marked(self, v):
+        """Return True if a vertex has been visited."""
+        return self._marked[v]
+
+    def _dfs(self, G, v):
+        self._marked[v] = True
+        for w in G.adj(v):
+            if not self._marked[w]:
+                self._dfs(G, w)
+
+
+class DirectedCycle:
+    """Implements depth-first search to find a directed cycle."""
+
+    def __init__(self, G):
+        self._marked = G.V * [False]
+        self._edge_to = G.V * [None]
+        self._on_stack = G.V * [False]
+        self.cycle = None
+        for v in G.vertices():
+            if not self._marked[v]:
+                self._dfs(G, v)
+
+    @property
+    def has_cycle(self):
+        return bool(self.cycle)
+
+    def _dfs(self, G, v):
+        self._on_stack[v] = True
+        self._marked[v] = True
+        for w in G.adj(v):
+            if self.has_cycle:
+                return
+            elif not self._marked[w]:
+                self._edge_to[w] = v
+                self._dfs(G, w)
+            elif self._on_stack[w]:
+                # Found a cycle
+                self.cycle = Stack()
+                x = v
+                while x != w:
+                    self.cycle.push(x)
+                    x = self._edge_to[x]
+                self.cycle.push(w)
+                self.cycle.push(v)
+        self._on_stack[v] = False
+
+
+class DepthFirstOrder:
+    """Compute the pre-, post-, and reverse post-order traversals of the
+    digraph."""
     
+    def __init__(self, G):
+        self.pre = Queue()
+        self.post = Queue()
+        self.reverse_post = Stack()
+        self._marked = G.V * [False]
+        for v in G.vertices():
+            if not self._marked[v]:
+                self._dfs(G, v)
+
+    def _dfs(self, G, v):
+        self.pre.enqueue(v)
+        self._marked[v] = True
+        for w in G.adj(v):
+            if not self._marked[w]:
+                self._dfs(G, w)
+        self.post.enqueue(v)
+        self.reverse_post.push(v)
+
+
+# Algorithm 4.5
+class Topological:
+    """Compute the topological ordering of a digraph."""
+
+    def __init__(self, G):
+        self.order = None
+        # If the graph is a DAG, it has an order
+        c = DirectedCycle(G)
+        if not c.has_cycle:
+            dfs = DepthFirstOrder(G)
+            self.order = dfs.reverse_post
+
+    @property
+    def is_DAG(self):
+        return self.order is not None
+
+
 if __name__ == "__main__":
+    from algs.graph.undirected import (DepthFirstPaths, BreadthFirstPaths,
+                                       print_paths, print_adj) 
+
+    print('----- Digraph -----')
     G = Digraph.fromfile('../data/tinyDG.txt')
+    print(G)
+    print('----- Reverse -----')
+    R = G.reverse()
+    print(R)
+
+    print('----- DirectedDFS -----')
+    dfs = DirectedDFS(G, 2)
+    print(' '.join(f"{v} " for v in G.vertices() if dfs.marked(v)))
+    dfs = DirectedDFS(G, [1, 2, 6])
+    print(' '.join(f"{v} " for v in G.vertices() if dfs.marked(v)))
+
+    print('----- DFS Paths -----')
+    print_paths(G, 0, GS=DepthFirstPaths)
+    print('----- BFS Paths -----')
+    print_paths(G, 0, GS=BreadthFirstPaths)
+
+    print('----- Cycle -----')
+    c = DirectedCycle(G)
+    assert c.has_cycle
+    print(c.cycle)
+
+    print('----- Orders -----')
+    p = DepthFirstOrder(G)
+    print(p.pre)
+    print(p.post)
+    print(p.reverse_post)
+    assert list(reversed(list(p.post))) == list(p.reverse_post)
+
+    t = Topological(G)
+    assert not t.is_DAG
+
+    sg = SymbolDigraph.fromfile('../data/jobs.txt', delim='/')
+    print_adj(sg, 'Algorithms')
+    t = Topological(sg.G)
+    assert t.is_DAG
+    print('\n'.join(sg.name(v) for v in t.order))
 
 # =============================================================================
 # =============================================================================

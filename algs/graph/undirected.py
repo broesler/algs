@@ -332,15 +332,16 @@ class SymbolGraph:
     """Implements a symbol graph."""
     # See p 552
 
-    def __init__(self, keys=None, edges=None):
+    def __init__(self, keys=None, edges=None, kind=Graph):
         self._st = HashST()  # map : str -> int
         self._keys = None    # map : int -> str
+        self._GraphClass = kind
         self.G = None
         if keys is not None:
             for i, k in enumerate(keys):
                 self._st[i] = k
             self._keys = keys
-            self.G = Graph(V=len(keys), edges=edges)
+            self.G = self._GraphClass(V=len(keys), edges=edges)
 
     @classmethod
     def fromfile(cls, filename, *args, delim=' ', verbose=False, **kwargs):
@@ -380,7 +381,7 @@ class SymbolGraph:
             sg._keys[sg._st[name]] = name
 
         # Second pass to build the graph
-        sg.G = Graph(V)
+        sg.G = sg._GraphClass(V)
         with open(Path(filename), 'r') as fp:
             for line in fp.readlines():
                 words = line.strip().split(delim)
