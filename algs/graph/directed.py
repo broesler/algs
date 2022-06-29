@@ -241,7 +241,9 @@ def check_topological(G, order):
         raise ValueError('G is not a DAG!')
     if sorted(order) != sorted(G.vertices()):
         raise ValueError("order is not a permutation of G's vertices!")
-    index = dict({v: i for i, v in enumerate(order)})  # fast lookup
+    # Check if each vertex in the given order has all of its adjacent vertices
+    # *later* in the order.
+    index = dict({v: i for i, v in enumerate(order)})
     for v in order:
         for w in G.adj(v):
             if index[w] < index[v]:
