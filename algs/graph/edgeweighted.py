@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#==============================================================================
+# =============================================================================
 #     File: graph.py
 #  Created: 2019-02-20 22:40
 #   Author: Bernie Roesler
@@ -7,7 +7,7 @@
 """
   Description: Edge-weighted Directed Graphs and supporting classes
 """
-#==============================================================================
+# =============================================================================
 
 import operator
 from abc import ABC, abstractmethod
@@ -15,6 +15,7 @@ from .basics import Stack, Queue, PriorityQueue
 
 INF = float('inf')
 M_INF = float('-inf')
+
 
 class DirectedEdge():
     """Implements a weighted directed edge from one vertex key to another.
@@ -163,9 +164,10 @@ class Digraph():
     def __str__(self):
         return str(self.adj)
 
-#------------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
 #        Graph Searches
-#------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # TODO implement dist_to method for all searches
 # TODO update __doc__ for GraphSearch -> subclasses to include common
 # attributes in all documentation + custom subclass parameters/attributes
@@ -496,6 +498,7 @@ def TopologicalOrder(G):
         order = dfs.reverse_post
     return order
 
+
 class BreadthFirstSearch(GraphSearch):
     """Breadth-first search class.
 
@@ -569,9 +572,9 @@ class BreadthFirstSearch(GraphSearch):
                 prereqs[w] -= 1
 
 
-#------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 #        Weighted Searches
-#------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 class AcyclicPath(GraphSearch):
     """Find the shortest or longest paths in a DAG.
 
@@ -614,5 +617,5 @@ class AcyclicPath(GraphSearch):
             self._dist_to[e.w] = self._dist_to[e.v] + e.weight
             self._edge_to[e.w] = e
 
-#==============================================================================
-#==============================================================================
+# =============================================================================
+# =============================================================================
