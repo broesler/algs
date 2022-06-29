@@ -234,10 +234,26 @@ class Degrees:
         return G._SELF_LOOPS and all([x == 1 for x in self._outdegree])
 
 
+# Exercise 4.2.8
+def check_topological(G, order):
+    """Return True if `order` is a topological order of `G`."""
+    if not Topological(G).is_DAG:
+        raise ValueError('G is not a DAG!')
+    if sorted(order) != sorted(G.vertices()):
+        raise ValueError("order is not a permutation of G's vertices!")
+    index = dict({v: i for i, v in enumerate(order)})  # fast lookup
+    for v in order:
+        for w in G.adj(v):
+            if index[w] < index[v]:
+                return False
+    return True
+    
+
 # -----------------------------------------------------------------------------
 #         Tests
 # -----------------------------------------------------------------------------
 if __name__ == "__main__":
+    from random import shuffle
     from algs.graph.undirected import (DepthFirstPaths, BreadthFirstPaths,
                                        print_paths)
 
@@ -296,6 +312,22 @@ if __name__ == "__main__":
     assert d._outdegree == [1, 1, 2, 2, 1, 2, 1, 2, 2, 0, 1, 1]
     assert d.sources() == [5, 7, 9]
     assert d.sinks() == [9]
+
+    print('----- DAGs -----')
+    G = Digraph.fromfile('../data/tinyDAG.txt')
+    print(G)
+    orders = DepthFirstOrder(G)
+    print('   pre:', orders.pre)
+    print('  post:', orders.post)
+    print('r_post:', orders.reverse_post)
+    t = Topological(G)
+    print('  topo:', t.order)
+    assert t.order == orders.reverse_post
+
+    assert check_topological(G, t.order)
+    order = list(t.order)
+    shuffle(order)
+    assert not check_topological(G, order)
 
 # =============================================================================
 # =============================================================================
