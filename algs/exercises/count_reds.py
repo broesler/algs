@@ -56,14 +56,16 @@ if FORCE_UPDATE or not pickle_file.exists():
             df.loc[i, N]['rotations'] = st.Nrotations / N
             df.loc[i, N]['splits'] = st.Nsplits / N
 
-    print(f"Writing to '{pickle_file}'...")
+    print(f"Writing to '{pickle_file}'... ", end='')
     df.to_pickle(pickle_file)
+    print('done.')
+else:
+    df = pd.read_pickle(pickle_file)
+
 
 # -----------------------------------------------------------------------------
 #         Plots
 # -----------------------------------------------------------------------------
-df = pd.read_pickle(pickle_file)
-
 opts = dict(reds=dict(ylabel='red nodes'),
             rotations=dict(ylabel='rotations'),
             splits=dict(ylabel='splits'))
