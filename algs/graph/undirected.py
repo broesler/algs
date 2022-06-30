@@ -173,7 +173,7 @@ class Graph(UndirectedGraph):
 
     def _validate_vertex(self, v):
         if not (0 <= v < self.V):
-            raise ValueError((f"Vertex index {v=} must be "
+            raise IndexError((f"Vertex index {v=} must be "
                               f"between 0 and {self.V=}!"))
 
     def vertices(self):
@@ -281,7 +281,7 @@ class STGraph(UndirectedGraph):
 
     def _validate_vertex(self, v):
         if not self.has_vertex(v):
-            raise ValueError(f"Vertex {v=} does not exist!")
+            raise IndexError(f"Vertex {v=} does not exist!")
 
     def has_vertex(self, v):
         return v in self._adj
@@ -796,7 +796,7 @@ class LeafDFS(GraphSearch):
         for w in G.adj(v):
             if not self._marked[w]:
                 return self._dfs(G, w)
-        return v  # last seen vertex
+        return v  # return the leaf immediately when we find it
 
     def leaf(self):
         return self._leaf

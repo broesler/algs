@@ -12,8 +12,8 @@
 import pytest
 
 from algs.graph.undirected import (Graph, SimpleGraph,  STGraph, SymbolGraph,
-                                   DepthFirstPaths, BreadthFirstPaths,
-                                   DepthFirstPaths_nr,
+                                   DepthFirstSearch, DepthFirstPaths,
+                                   BreadthFirstPaths, DepthFirstPaths_nr,
                                    DepthFirstPaths_nr_simple, Cycle, CyclePath,
                                    CyclePath_nr, MinCyclePath, CC, CC_nr,
                                    UFSearch, LeafDFS, GraphProperties,
@@ -23,9 +23,10 @@ from algs.graph.undirected import (Graph, SimpleGraph,  STGraph, SymbolGraph,
                                    print_adj, print_dfs, print_paths,
                                    print_components, degrees_of_separation)
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 #         Fixtures
 # -----------------------------------------------------------------------------
+# Expected values for tinyG
 EXPECT_EDGES = tuple((
     (5, 3),
     (9, 11),
@@ -61,6 +62,17 @@ EXPECT_ADJ = dict({
 })
 
 
+# Expected values for tinyCG
+EXPECT_PATHS = dict({
+    0: [0],
+    1: [0, 2, 1],
+    2: [0, 2],
+    3: [0, 2, 3],
+    4: [0, 2, 3, 4],
+    5: [0, 2, 3, 5],
+})
+
+
 @pytest.fixture
 def tinyCG(GT):
     return GT.fromfile('../data/tinyCG.txt')
@@ -76,7 +88,7 @@ def tinyG2(GT):
     return GT.fromfile('../data/tinyG2.txt')
 
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 #         Tests
 # -----------------------------------------------------------------------------
 @pytest.mark.parametrize('GT', [Graph, SimpleGraph, STGraph])
@@ -107,10 +119,58 @@ class TestTinyG:
         for v in tinyG.vertices():
             assert tinyG.degree(v) == EXPECT_DEGREES[v]
 
+    def test_validate_vertex(self, tinyG):
+        with pytest.raises(IndexError):
+            tinyG._validate_vertex(-1)
+        with pytest.raises(IndexError):
+            tinyG._validate_vertex(99)
 
 
+@pytest.mark.parametrize('GT', [Graph, SimpleGraph])
+@pytest.mark.parametrize('GraphSearch', [DepthFirstSearch, UFSearch])
+class TestDFS:
+    def test_dfs_CG(self, tinyCG, GraphSearch):
+        dfs = GraphSearch(tinyCG, 0)
+        assert dfs.count() == tinyCG.V
+        assert all([dfs.marked(v) for v in tinyCG.vertices()])
+
+    def test_dfs_G(self, tinyG, GraphSearch):
+        dfs = GraphSearch(tinyG, 0)
+        assert dfs.count() == 7
+        assert all([dfs.marked(v) for v in range(6)])
+        dfs = GraphSearch(tinyG, 7)
+        assert dfs.count() == 2
+        assert all([dfs.marked(v) for v in [7, 8]])
+        dfs = GraphSearch(tinyG, 9)
+        assert dfs.count() == 4
+        assert all([dfs.marked(v) for v in [9, 10, 11, 12]])
 
 
+# NOTE STGraph tests pass, but only because vertices are a range of integers
+@pytest.mark.parametrize('GT', [Graph, SimpleGraph, STGraph])
+class TestDFSPaths:
+    @pytest.mark.parametrize('DFS', [DepthFirstPaths, DepthFirstPaths_nr,
+                                     DepthFirstPaths_nr_simple])
+    class TestPathTo:
+        def test_has_path_to(self, tinyCG, DFS):
+            dfs = DFS(tinyCG, 0)
+            for v in tinyCG.vertices():
+                assert dfs.has_path_to(v)
+
+        def test_no_path_to(self, tinyG, DFS):
+            dfs = DFS(tinyG, 0)
+            for v in range(7):
+                assert dfs.has_path_to(v)
+            for v in range(7, tinyG.V):
+                assert not dfs.has_path_to(v)
+
+    # DepthFirstPaths_nr_simple explores vertices in opposite direction, so
+    # paths will be incorrect.
+    @pytest.mark.parametrize('DFS', [DepthFirstPaths, DepthFirstPaths_nr])
+    def test_has_path_to(self, tinyCG, DFS):
+        dfs = DFS(tinyCG, 0)
+        for v in tinyCG.vertices():
+            assert list(dfs.path_to(v)) == EXPECT_PATHS[v]
 
 
 # G = Graph.fromfile('../data/tinyG.txt')
@@ -306,5 +366,5 @@ class TestTinyG:
 # print(Tf)
 
 
-# # =============================================================================
-# # =============================================================================
+# =============================================================================
+# =============================================================================
