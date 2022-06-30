@@ -186,7 +186,7 @@ class Graph(UndirectedGraph):
     def add_edge(self, v, w):
         self._validate_vertex(v)
         self._validate_vertex(w)
-        # Exercise 4.1.5 no self-loops
+        # Exercise 4.1.5
         if not self._SELF_LOOPS and v == w:
             raise ValueError(f"{v} == {w}! No self-loops allowed.")
         if self._PARALLEL or not self.has_edge(v, w):
@@ -226,7 +226,8 @@ class STGraph(UndirectedGraph):
     # See p 557 and
     # <https://introcs.cs.princeton.edu/java/45graph/Graph.java.html>
 
-    def __init__(self, V=None, edges=None, self_loops=True):
+    def __init__(self, V=None, edges=None, parallel=True, self_loops=True):
+        self._PARALLEL = bool(parallel)
         self._SELF_LOOPS = bool(self_loops)
         self._adj = HashST()
         self.V = 0
@@ -295,7 +296,7 @@ class STGraph(UndirectedGraph):
     def add_vertex(self, v):
         """Add a vertex to the graph."""
         if not self.has_vertex(v):
-            self._adj[v] = set()
+            self._adj[v] = Bag()
             self.V += 1
 
     def add_edge(self, v, w):
@@ -306,7 +307,7 @@ class STGraph(UndirectedGraph):
         # Exercise 4.1.5
         if not self._SELF_LOOPS and v == w:
             raise ValueError(f"{v} == {w}! No self-loops allowed.")
-        if not self.has_edge(v, w):
+        if self._PARALLEL or not self.has_edge(v, w):
             self.E += 1
             self._adj[v].add(w)
             self._adj[w].add(v)
