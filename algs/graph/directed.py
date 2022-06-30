@@ -315,6 +315,11 @@ if __name__ == "__main__":
     assert cc.count() == 5
     print(cc.get_components())
 
+    # Web Exercise 17
+    Gm = Digraph.fromfile('../data/mediumDG.txt')
+    cc = KosarajuSCC(Gm)
+    assert cc.count() == 10
+
     d = Degrees(G)
     assert d._indegree == [2, 1, 2, 2, 3, 2, 1, 1, 1, 3, 1, 1, 2]
     assert d._outdegree == [2, 0, 2, 2, 2, 1, 3, 2, 2, 2, 1, 2, 1]
