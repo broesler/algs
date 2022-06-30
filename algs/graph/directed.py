@@ -182,8 +182,8 @@ class KosarajuSCC(CC):
     """Implements Kosaraju's algorithm for computing strong components."""
 
     def __init__(self, G):
-        order = DepthFirstOrder(G.reverse())
-        super().__init__(G, vertices=order.reverse_post)
+        order = DepthFirstOrder(G.reverse()).reverse_post
+        super().__init__(G, vertices=order)
 
     def strongly_connected(self, v, w):
         return self.connected(v, w)  # semantic distinction
@@ -410,20 +410,23 @@ if __name__ == "__main__":
     print(e.cycle)
 
     print('----- DAGs -----')
-    G = Digraph.fromfile('../data/tinyDAG.txt')
-    print(G)
-    orders = DepthFirstOrder(G)
+    D = Digraph.fromfile('../data/tinyDAG.txt')
+    print(D)
+    orders = DepthFirstOrder(D)
     print('   pre:', orders.pre)
     print('  post:', orders.post)
     print('r_post:', orders.reverse_post)
-    t = Topological(G)
+    t = Topological(D)
     print('  topo:', t.order)
     assert t.order == orders.reverse_post
 
-    assert check_topological(G, t.order)
+    assert check_topological(D, t.order)
     order = list(t.order)
     shuffle(order)
-    assert not check_topological(G, order)
+    assert not check_topological(D, order)
+
+    cc = KosarajuSCC(D)
+    print(cc.get_components())
 
 # =============================================================================
 # =============================================================================
