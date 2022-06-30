@@ -60,7 +60,7 @@ UNORDERED_STS = set([SequentialSearchST, ArrayST,
 ORDERED_STS = set([BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr,
                    ArrayBST, RedBlackBST, TopDown234, TopDown234_nr,
                    BottomUp234, TopDown234bothways, Unbalanced23, AVLTree,
-                   MultiValBST, MultiValRedBlackBST ])
+                   MultiValBST, MultiValRedBlackBST])
 
 MULTIVAL_STS = set([MultiValHashST, MultiValBST, MultiValRedBlackBST])
 
@@ -88,6 +88,7 @@ NO_CACHE = set([ArrayBST,
 #         Define fixtures common to each test
 # -----------------------------------------------------------------------------
 EXPECT_STR = 'SEARCHEXAMPLE'
+ITEMS = tuple((c, i) for i, c in enumerate(EXPECT_STR))
 
 
 @pytest.fixture
@@ -101,13 +102,8 @@ def expect_ranks(ST, expect_keys):
 
 
 @pytest.fixture
-def items():
-    return list((c, i) for i, c in enumerate(EXPECT_STR))
-
-
-@pytest.fixture
-def expect_items(items):
-    expect_items = items.copy()
+def expect_items():
+    expect_items = list(ITEMS)
     expect_items.remove(('E', 1))
     expect_items.remove(('A', 2))
     expect_items.remove(('E', 6))
@@ -120,8 +116,8 @@ def empty_st(ST, cache):
 
 
 @pytest.fixture
-def st(ST, cache, items):
-    return ST(items, cache=cache)
+def st(ST, cache):
+    return ST(ITEMS, cache=cache)
 
 
 # TODO separate testing of keys from testing of values/items, then MultiVal*
@@ -188,10 +184,10 @@ class TestUnorderedOps:
             st.put('A', 0)
             assert st.get('A') == 0
 
-        def test_get(self, st, items, expect_keys):
-            for k, v in items:
+        def test_get(self, st, expect_keys):
+            for k, v in ITEMS:
                 if k == 'E' or k == 'A':
-                    assert st[k] == max([val for key, val in items if key == k])
+                    assert st[k] == max([val for key, val in ITEMS if key == k])
                 else:
                     assert st[k] == v
             assert len(st) == len(expect_keys)
@@ -203,10 +199,10 @@ class TestUnorderedOps:
 
     @pytest.mark.parametrize('ST', ALL_STS - NO_DELETE)
     class TestDelete:
-        def test_delete_one(self, ST, items, cache, expect_keys):
+        def test_delete_one(self, ST, cache, expect_keys):
             # Delete arbitrary key, starting with same table
             for k in expect_keys:
-                t = ST(items, cache=cache)
+                t = ST(ITEMS, cache=cache)
                 t[k]    # get item to ensure cache is used
                 del t[k]
                 assert k not in t
@@ -238,9 +234,9 @@ class TestUnorderedOps:
 class TestCaching:
     @pytest.mark.parametrize('ST', SINGLEVAL_STS - NO_CACHE)
     class TestPutGet:
-        def test_cache_new(self, empty_st, items):
+        def test_cache_new(self, empty_st):
             st = empty_st
-            for k, v in items:
+            for k, v in ITEMS:
                 st[k] = v
                 if st.__class__ in [ArrayST, BinarySearchST]:
                     assert st._keys[st._cache] == k
@@ -249,7 +245,7 @@ class TestCaching:
                     assert st._cache.key == k
                     assert st._cache.val == v
 
-        def test_put_cache_existing(self, st, items):
+        def test_put_cache_existing(self, st):
             for k in st:
                 st[k] = 56
                 if st.__class__ in [ArrayST, BinarySearchST]:
@@ -259,7 +255,7 @@ class TestCaching:
                     assert st._cache.key == k
                     assert st._cache.val == 56
 
-        def test_get_cache_existing(self, st, items):
+        def test_get_cache_existing(self, st):
             for k in st:
                 v = st[k]
                 if st.__class__ in [ArrayST, BinarySearchST]:
@@ -280,9 +276,9 @@ class TestCaching:
 
 # Tests specific to a single data type
 class TestSelfOrg:
-    def test_selforg_nocache(self, items):
+    def test_selforg_nocache(self):
         """Test self-organizing search (Exercise 3.1.22)"""
-        st = ArrayST(items, selforg=True, cache=False)
+        st = ArrayST(ITEMS, selforg=True, cache=False)
         rand_keys = rng.choice(st.keys(), size=st.size())
         for k in rand_keys:
             st[k]                       # search for the key
@@ -290,9 +286,9 @@ class TestSelfOrg:
             st[k]                       # search again
             assert st._cost == 1
 
-    def test_selforg_cache(self, items):
+    def test_selforg_cache(self):
         """Test self-organizing search AND caching."""
-        st = ArrayST(items, selforg=True, cache=True)
+        st = ArrayST(ITEMS, selforg=True, cache=True)
         rand_keys = rng.choice(st.keys(), size=st.size())
         for k in rand_keys:
             v = st[k]                   # search for the key to set cache
@@ -304,8 +300,8 @@ class TestSelfOrg:
 
 
 # ---------- Test Ordered Operations ----------
-def test_binary_integrity(items):
-    st = BinarySearchST(items)
+def test_binary_integrity():
+    st = BinarySearchST(ITEMS)
     st._assert_integrity()
 
 
@@ -402,13 +398,13 @@ class TestOrderedOps:
 
 
 # TODO every pair-wise comparison?
-def test_comparisons(items):
-    assert SequentialSearchST(items) == BinarySearchST(items)
-    assert BinarySearchST(items) == SequentialSearchST(items)
-    assert BinarySearchST(items) == BST(items)
-    assert BST(items) == BinarySearchST(items)
-    assert BST(items) == BST_nr(items)
-    assert BST_nr(items) == BST(items)
+def test_comparisons():
+    assert SequentialSearchST(ITEMS) == BinarySearchST(ITEMS)
+    assert BinarySearchST(ITEMS) == SequentialSearchST(ITEMS)
+    assert BinarySearchST(ITEMS) == BST(ITEMS)
+    assert BST(ITEMS) == BinarySearchST(ITEMS)
+    assert BST(ITEMS) == BST_nr(ITEMS)
+    assert BST_nr(ITEMS) == BST(ITEMS)
 
 
 # -----------------------------------------------------------------------------
