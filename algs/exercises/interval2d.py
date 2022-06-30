@@ -5,7 +5,7 @@
 #   Author: Bernie Roesler
 #
 """
-1.2.3 Interval2D client to generate N random boxes and compute the
+Exercise 1.2.3 Interval2D client to generate N random boxes and compute the
 intersections and contains.
 """
 # =============================================================================
