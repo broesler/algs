@@ -237,7 +237,7 @@ class SeparateChainingHashST(HashTable):
         assert self.size() == sum(self._list_lengths())
 
     def _list_lengths(self):
-        return [t.size for t in self._st]
+        return [t.size() for t in self._st]
 
     def _resize(self, M):
         """Resize the array of hash slots."""
@@ -1125,52 +1125,11 @@ class CuckooHashST(HashTable):
 # Alias for convenience
 HashST = LinearProbingHashST
 
-# -----------------------------------------------------------------------------
-#         Run tests
-# -----------------------------------------------------------------------------
-# TODO move to unit tests test_hash.py
-if __name__ == '__main__':
-    # Exercise 3.4.1
-    keys = 'EASYQUTION'
-    items = [(c, i) for i, c in enumerate(keys)]
 
-    def _hash_code(k, R=11):
-        return R*(ord(k) - ord('A'))
+if __name__ == "__main__":
+    from algs.tests.test_hash import ITEMS, MyLinearProbingHashST
 
-    def _hash(self, k, **kwargs):
-        return _hash_code(k, **kwargs) % self.M
-
-    # Override _hash function with custom subclass
-    class MySeparateChainingHashST(SeparateChainingHashST):
-        _hash = _hash
-
-    st = MySeparateChainingHashST(items, M=5)
-    st._validate_size()
-    assert st.keys() == list('UAQNISOTYE')
-
-    try:
-        del st['X']
-    except KeyError:
-        pass
-    assert st._cost == 4  # _hash('X') == 3, len(st[3]) == 3 + 1 = 4
-
-    # Repeat with SeparateChainingLiteHashST
-    class MySeparateChainingLiteHashST(SeparateChainingLiteHashST):
-        _hash = _hash
-
-    stl = MySeparateChainingLiteHashST(items, M=5)
-    assert stl.keys() == list('UAQNISOTYE')
-
-    # Exercise 3.4.3
-    stl.delete_later_than(5)  # corresponds to 'U'
-    assert all([x.N_before <= 5 for x in stl._nodes()])
-    assert all([k in list('EASYQU') for k in stl.keys()])
-
-    # Exercise 3.4.10 (a)
-    # Override _hash function with custom subclass
-    class MyLinearProbingHashST(LinearProbingHashST):
-        _hash = _hash
-
+    class MyLinearProbingHashST(MyLinearProbingHashST):
         # overwrite _resize to print _keys for visualization
         def _print_keys(func):
             def wrapper(self, *args, **kwargs):
@@ -1182,63 +1141,9 @@ if __name__ == '__main__':
         def _resize(self, M):
             super()._resize(M)
 
-    sta = MyLinearProbingHashST(items, M=16, resize=False)
-    assert sta.keys() == list('AQTSYIOEUN')
-    assert np.allclose(sta._cluster_lengths(), [1, 3, 2, 4])
-
-    # Exercise 3.4.10 (b)
-    stb = MyLinearProbingHashST(items, M=10, resize=False)
-    assert stb.keys() == list('AUINEYQOST')
-    assert np.allclose(stb._cluster_lengths(), [10])
-
-    # Exercise 3.4.11
-    stc = MyLinearProbingHashST(items, M=4, resize=True)
-    print(f"M = {stc.M:2d}: {stc._keys}")
-    assert stc.keys() == list('ASYENQTIOU')
-
-    # Exercise 3.4.27
-    class MyDoubleProbingHashST(DoubleProbingHashST):
-        _hash = _hash  # R = 11
-
-        def _hash_b(self, k):
-            return self._hash(k, R=7)
-
-    std = MyDoubleProbingHashST(items, M=3)
-    assert std.keys() == list('YSANOTEIUQ')
-
-    # Exercise 3.4.28
-    class MyDoubleHashingHashST(DoubleHashingHashST):
-        _hash = _hash  # R = 11
-
-        def _hash_b(self, k):
-            return (self._hash(k, R=17) % self.M) + 1  # must be non-zero
-
-    ste = MyDoubleHashingHashST(items, M=11)
-    assert ste.keys() == list('AYOESITQNU')
-
-    # Exercise 3.4.31
-    # Override the hash functions for testing
-    class MyCuckooHashST(CuckooHashST):
-        class HashArrayA(CuckooHashST.HashArrayA):
-            hash = _hash  # R = 11
-
-        class HashArrayB(CuckooHashST.HashArrayB):
-            def hash(self, k):
-                return _hash_code(k, R=17) % self.M
-
-    # choose M = next_prime(2*len(keys))
-    stf = MyCuckooHashST(items, M=23, resize=False)
-    assert stf.keys() == list('ATNYUSQOIE')
-
-    # test resizing
-    st = MyCuckooHashST(items)
-    assert st.keys() == list('AYOESITQNU')
-
-    # test string with repeats
-    keys = 'SEARCHEXAMPLE'
-    items = [(c, i) for i, c in enumerate(keys)]
-    expect_set = set(keys)
-    stg = CuckooHashST(items)
+    st = MyLinearProbingHashST(ITEMS, M=4, resize=True)
+    print(f"M = {st.M:2d}: {st._keys}")
+    assert st.keys() == list('ASYENQTIOU')
 
 # =============================================================================
 # =============================================================================
