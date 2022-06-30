@@ -16,9 +16,9 @@ from algs.graph import SymbolGraph, GraphProperties, CC_nr
 
 FORCE_UPDATE = False
 
-# datafile = Path('../data/movies.txt')
-# datafile = Path('../data/movies-top-grossing.txt')
-datafile = Path('../data/movies-hero.txt')
+# datafile = Path('../data/movies.txt')             # large
+# datafile = Path('../data/movies-top-grossing.txt')  # medium
+datafile = Path('../data/movies-hero.txt')        # small
 
 pkl_file = Path(f"./pkl/{datafile.stem}.pkl")
 gp_file = Path(f"./pkl/{datafile.stem}_gp.pkl")
