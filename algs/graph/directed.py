@@ -207,6 +207,72 @@ class TransitiveClosure:
         return self._all[v].marked(w)
 
 
+# Exercise 4.2.20
+class Euler:
+    """Find a cycle that visits each edge exactly once."""
+
+    def __init__(self, G):
+        assert G.E > 0
+        self._edge_to = G.V * [None]
+        self._on_stack = G.V * [False]
+        self.cycle = None
+        # If degrees are not equal, Eulerian path cannot exist
+        d = Degrees(G)
+        for v in G.vertices():
+            if d.indegree(v) != d.outdegree(v):
+                return
+        # Start with any vertex that is not a sink
+        s = self._non_isolated_vertex(G)
+        # Copy counts of edges into/out of vertices to "mark" edges
+        self._indegree = d._indegree.copy()
+        self._outdegree = d._outdegree.copy()
+        # Find the cycle
+        self._dfs(G, s)
+        # Certify it
+        if self.has_cycle:
+            self._certify(G)
+
+    @property
+    def has_cycle(self):
+        return bool(self.cycle)
+
+    def _non_isolated_vertex(self, G):
+        for v in G.vertices():
+            if G.outdegree(v) > 0:
+                return v
+        else:
+            raise ValueError('No vertices have outward edges!')
+
+    def _dfs(self, G, v):
+        self._on_stack[v] = True
+        for w in G.adj(v):
+            if self.has_cycle:
+                return
+            elif self._outdegree[w] > 0:
+                self._outdegree[v] -= 1
+                self._indegree[w] -= 1
+                self._edge_to[w] = v
+                self._dfs(G, w)
+            elif self._on_stack[w]:
+                self._outdegree[v] -= 1
+                self._indegree[w] -= 1
+                # Found a cycle, backtrack up the stack
+                self.cycle = Stack()
+                x = v
+                while x != w:
+                    self.cycle.push(x)
+                    x = self._edge_to[x]
+                self.cycle.push(w)
+                self.cycle.push(v)
+        self._on_stack[v] = False
+
+    def _certify(self, G):
+        if (self.cycle.size != G.E + 1
+                or any([x != 0 for x in self._indegree])
+                or any([x != 0 for x in self._outdegree])):
+            self.cycle = None
+
+
 # -----------------------------------------------------------------------------
 #         Graph Properties
 # -----------------------------------------------------------------------------
@@ -263,7 +329,7 @@ def check_topological(G, order):
             if index[w] < index[v]:
                 return False
     return True
-    
+
 
 # -----------------------------------------------------------------------------
 #         Tests
@@ -333,6 +399,15 @@ if __name__ == "__main__":
     assert d._outdegree == [1, 1, 2, 2, 1, 2, 1, 2, 2, 0, 1, 1]
     assert d.sources() == [5, 7, 9]
     assert d.sinks() == [9]
+
+    # Create a circular graph
+    edges = list()
+    N = 5
+    Gcyc = Digraph(N)
+    for i in range(N):
+        Gcyc.add_edge(i, (i + 1) % N)
+    e = Euler(Gcyc)
+    print(e.cycle)
 
     print('----- DAGs -----')
     G = Digraph.fromfile('../data/tinyDAG.txt')
