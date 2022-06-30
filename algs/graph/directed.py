@@ -36,6 +36,10 @@ class Digraph(DirectedGraph, Graph):
     __doc__ = f"""Implements a digraph using an array of adjacency lists.
     {UndirectedGraph.__doc__}"""
 
+    def __init__(self, V, *args, **kwargs):
+        self._indegree = V * [0]
+        super().__init__(V, *args, **kwargs)
+
     def add_edge(self, v, w):
         self._validate_vertex(v)
         self._validate_vertex(w)
@@ -45,6 +49,15 @@ class Digraph(DirectedGraph, Graph):
         if self._PARALLEL or not self.has_edge(v, w):
             self.E += 1
             self._adj[v].add(w)  # direction matters! Only change from Graph
+            self._indegree[w] += 1
+
+    def indegree(self, v):
+        """Return the number of edges to `v`."""
+        return self._indegree[v]
+
+    def outdegree(self, v):
+        """Return the number of edges from `v`."""
+        return self.adj(v).size
 
 
 class SymbolDigraph(SymbolGraph):
@@ -197,6 +210,7 @@ class TransitiveClosure:
 # -----------------------------------------------------------------------------
 #         Graph Properties
 # -----------------------------------------------------------------------------
+# Exercise 4.2.7
 class Degrees:
     """Compute the in- and outdegrees of each vertex."""
 
