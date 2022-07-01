@@ -1547,10 +1547,10 @@ def degrees_of_separation(sg, source, sink):
 
 
 if __name__ == "__main__":
-    # NOTE keep `print_`... functions from the book examples in undirected.py for
-    # visual examples. Move other nitty gritty into these tests.
-    print('----- DFS -----')
     G = Graph.fromfile('../data/tinyG.txt')
+    G2 = Graph.fromfile('../data/tinyG2.txt')
+
+    print('----- DFS -----')
     print_dfs(G, 0)
     print_dfs(G, 9)
 
@@ -1565,13 +1565,6 @@ if __name__ == "__main__":
 
     print('----- BFS Paths -----')
     print_paths(GC, 0, GS=BreadthFirstPaths)
-
-    print('--- Cycle ---')
-    c = CyclePath(G, 0)
-    print('G', c.cycle_path())
-
-    c2 = CyclePath(G2, 0)
-    print('G2', c2.cycle_path())
 
     # Test connected components
     print('----- CC -----')
@@ -1595,32 +1588,12 @@ if __name__ == "__main__":
     # degrees_of_separation(sg, 'Animal House (1978)', 'Titanic (1997)')
     # degrees_of_separation(sg, 'Bacon, Kevin', 'Cruise, Tom')
 
-    # Test no parallel edges
-    G2 = Graph.fromfile('../data/tinyG2.txt', parallel=False)
-    G2.add_edge(0, 2)
-    assert G2.adj(0) == G.adj(0)  # no changes made
-    G2.add_edge(0, 9)
-    assert G2.adj(0) != G.adj(0)  # changes made
-
-    # Test no self-edges
-    try:
-        G.add_edge(9, 9)
-    except ValueError:
-        pass
-
-    # Test properties
-    try:
-        gp = GraphProperties(G)
-    except ValueError:
-        pass
-
-    print('----- Graph Properties -----')
-    # gc = Graph.fromfile('../data/tinyCG.txt')
-    gc = Graph.fromfile('../data/mediumG.txt')
+    print('----- Graph Properties of mediumG -----')
+    Gm = Graph.fromfile('../data/mediumG.txt')
     # NOTE maximum recursion depth reached in largeG!
     # gc = Graph.fromfile('../data/largeG.txt', verbose=True)
 
-    gp = GraphProperties(gc)
+    gp = GraphProperties(Gm)
     print('        ϵ:', gp.eccentricity(0))
     print(' diameter:', gp.diameter())
     print('   radius:', gp.radius())
@@ -1629,61 +1602,11 @@ if __name__ == "__main__":
     print('    girth:', gp.girth())
     assert gp.eccentricity(gp.center()[0]) == gp.radius()
 
-    print('--- Cycles ---')
-    c = Cycle(gc, 0)
-    assert c.has_cycle
-    assert c.has_self_loop
-    assert c.has_parallel_edges
-    c = MinCyclePath(gc, 0)
-    print(c.cycle_path())
-
-    for N in range(2, 10):
-        edges = list()
-        for i in range(N):
-            edges.append((i, (i + 1) % N))
-        Gcyc = Graph(N, edges)
-        assert GraphProperties(Gcyc).girth() == N
-
-    c = MinCyclePath(Gcyc, 0)
-    print(c.cycle_path())
-
-    G2 = Graph.fromfile('../data/tinyG2.txt')
-    c2 = CC(G2)
-    c2_nr = CC_nr(G2)
-    comps2 = c2.get_components()
-    assert comps2 == c2_nr.get_components()
-    gp = GraphProperties(G2, comps2[0])
-    idx = comps2[0][0]
-    print(f"     ϵ({idx}): {gp.eccentricity(idx)}")
-    print(' diameter:', gp.diameter())
-    print('   radius:', gp.radius())
-    print('   center:', gp.center())
-    print('periphery:', gp.periphery())
-    print('    girth:', gp.girth())
-
-    b = Bipartite(G2, 0)
-    assert not b.is_bipartite
-
-    # 3 co-linear nodes are bipartite
-    assert Bipartite(Graph(3, [(0, 1), (1, 2)]), 0).is_bipartite
-
-    # Parallel edges
-    G2.add_edge(0, 2)
-    G2.add_edge(2, 6)
-    G2.add_edge(10, 3)
-    p = ParallelEdges(G2, 0)
-    assert p.count == 3
-
-    # print('----- Bridges -----')
-    G2 = Graph.fromfile('../data/tinyG2.txt')
-    # G2.add_edge(5, 7)  # one bridge
-    G2.add_edge(5, 9)  # two bridges
-    G2.add_edge(9, 7)  # 9 is an articulation point
-    b = Biconnected(G2)
-    # assert b.Nbridges == 1
-    # assert b.articulation(7)
-    assert b.Nbridges == 2
-    assert b.articulation(9)
+    print('--- MinCyclePath ---')
+    cp = CyclePath(Gm, 0)
+    print('   path', cp.cycle())
+    cm = MinCyclePath(Gm, 0)
+    print('minpath', cm.cycle())
 
 # =============================================================================
 # =============================================================================
