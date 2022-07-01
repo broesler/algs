@@ -93,6 +93,11 @@ def acyclicG(GT):
     return G
 
 
+@pytest.fixture
+def cc(ConComps, tinyG, GT):
+    return ConComps(tinyG)
+
+
 # -----------------------------------------------------------------------------
 #         Tests
 # -----------------------------------------------------------------------------
@@ -340,30 +345,28 @@ class TestPaths:
 @pytest.mark.parametrize('GT', [Graph, SimpleGraph, STGraph])
 @pytest.mark.parametrize('ConComps', [CC, CC_nr])
 class TestCC:
-    @pytest.mark.parametrize('G, expect', [('tinyG', False), ('tinyCG', True)])
-    def test_is_connected(self, ConComps, GT, G, expect, request):
-        cc = ConComps(request.getfixturevalue(G))
-        assert cc.is_connected == expect
+    def test_is_connected(self, ConComps, tinyG, tinyCG):
+        cc = ConComps(tinyG)
+        assert not cc.is_connected
+        cc = ConComps(tinyCG)
+        assert cc.is_connected
 
     def test_count(self, ConComps, tinyG):
         cc = ConComps(tinyG)
         assert cc.count() == 3
 
-    def test_connected(self, ConComps, tinyG):
-        cc = ConComps(tinyG)
+    def test_connected(self, cc):
         for comp in EXPECT_COMPS:
             for i in range(len(comp)):
                 for j in range(i, len(comp)):
                     assert cc.connected(comp[i], comp[j])
 
-    def test_id(self, ConComps, tinyG):
-        cc = ConComps(tinyG)
+    def test_id(self, cc):
         for i, comp in enumerate(EXPECT_COMPS):
             for c in comp:
                 assert cc.id(c) == i
 
-    def test_get_components(self, ConComps, tinyG):
-        cc = ConComps(tinyG)
+    def test_get_components(self, cc):
         comps = cc.get_components()
         for i, comp in enumerate(EXPECT_COMPS):
             assert comps[i] == comp
