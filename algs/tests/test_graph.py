@@ -85,6 +85,11 @@ def tinyG(GT):
 
 
 @pytest.fixture
+def sg():
+    return SymbolGraph.fromfile('./data/routes.txt')
+
+
+@pytest.fixture
 def acyclicG(GT):
     V = 5
     G = GT(V)
@@ -227,6 +232,16 @@ class TestNonSimple:
         assert G.degree(0) == 4
         assert G.degree(1) == 1
         assert p.count == 0
+
+
+# TODO test STGraph with 'routes.txt'
+
+# TODO expect_edges
+# Test has_edge, add_edge, index, name, contains
+class TestSymbolGraph:
+    def test_adj(self, sg):
+        EXPECT = ['MCO', 'ATL', 'ORD']
+        assert sg.adj('JFK') == EXPECT
 
 
 # NOTE STGraph tests pass, but only because vertices are a range of integers
