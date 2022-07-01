@@ -428,5 +428,19 @@ class TestBipartite:
         assert b.is_bipartite
 
 
+@pytest.mark.parametrize('GT', [Graph, SimpleGraph, STGraph])
+class TestBiconnected:
+    def test_not_biconnected(self, tinyG):
+        b = Biconnected(tinyG)
+        assert not b.is_edge_connected
+        assert b.Nbridges == 4
+        assert all([b.articulation(v) for v in [0, 9]])
+
+    def test_is_biconnected(self, tinyCG):
+        b = Biconnected(tinyCG)
+        assert b.is_edge_connected
+        assert b.Nbridges == 0
+        assert not any([b.articulation(v) for v in tinyCG.vertices()])
+
 # =============================================================================
 # =============================================================================
