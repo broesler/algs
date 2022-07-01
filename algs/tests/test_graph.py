@@ -98,6 +98,7 @@ class TestTinyG:
             G.add_edge(v, w)
             assert G.has_edge(v, w)
             assert G.has_edge(w, v)
+        assert not G.has_edge(0, 7)
         assert G.E == 13
 
     def test_fromfile(self, tinyG):
@@ -106,6 +107,7 @@ class TestTinyG:
         for v, w in EXPECT_EDGES:
             assert tinyG.has_edge(v, w)
             assert tinyG.has_edge(w, v)
+        assert not tinyG.has_edge(0, 7)
         assert list(tinyG.vertices()) == list(range(tinyG.V))
 
     def test_adj(self, tinyG):
@@ -137,6 +139,12 @@ class TestTinyG:
             tinyG._validate_vertex(-1)
         with pytest.raises(IndexError):
             tinyG._validate_vertex(99)
+
+    def test_copy(self, tinyG):
+        H = tinyG.copy()
+        for v in tinyG.vertices():
+            assert H.adj(v) == tinyG.adj(v)
+            assert H._adj[v] is not tinyG._adj[v]
 
 
 # NOTE STGraph tests pass, but only because vertices are a range of integers
@@ -290,6 +298,8 @@ class TestCC:
             assert comps[i] == comp
 
 
+# @pytest.mark.parametrize('GT', [Graph, SimpleGraph, STGraph])
+# class TestCycle:
 
 
 
