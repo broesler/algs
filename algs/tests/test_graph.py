@@ -398,10 +398,11 @@ class TestCC:
 @pytest.mark.parametrize('GT', [Graph, STGraph])
 @pytest.mark.parametrize('CycleT', [Cycle, Cycle_nr])
 class TestCycle:
-    @pytest.mark.parametrize('G, expect', [('tinyG', True), ('acyclicG', False)])
-    def test_has_cycle(self, CycleT, GT, G, expect, request):
-        cyc = CycleT(request.getfixturevalue(G), 0)
-        assert cyc.has_cycle == expect
+    def test_has_cycle(self, CycleT, tinyG, acyclicG):
+        cyc = CycleT(tinyG, 0)
+        assert cyc.has_cycle
+        cyc = CycleT(acyclicG, 0)
+        assert not cyc.has_cycle
 
     def test_has_self_loop(self, CycleT, tinyG):
         assert not CycleT.has_self_loop(tinyG)
