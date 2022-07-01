@@ -406,5 +406,27 @@ class TestCyclePath:
         cyc = MinCyclePath(tinyG, 0)
         assert cyc.cycle() == [4, 6, 0, 5, 4]
 
+
+@pytest.mark.parametrize('GT', [Graph, SimpleGraph, STGraph])
+class TestBipartite:
+    def test_not_bipartite(self, tinyG):
+        b = Bipartite(tinyG, 0)
+        assert not b.is_bipartite
+
+    def test_is_bipartite(self, tinyG):
+        # Tweak tinyG to make it bipartite
+        tinyG.add_edge(1, 3)
+        tinyG.add_edge(6, 7)
+        tinyG.add_edge(8, 10)
+        tinyG.add_edge(10, 12)
+        # Remove edges (inside hack to Bag's _items list)
+        tinyG._adj[3]._items.remove(4)
+        tinyG._adj[4]._items.remove(3)
+        tinyG._adj[9]._items.remove(12)
+        tinyG._adj[12]._items.remove(9)
+        b = Bipartite(tinyG, 0)
+        assert b.is_bipartite
+
+
 # =============================================================================
 # =============================================================================
