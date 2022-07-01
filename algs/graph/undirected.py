@@ -412,6 +412,19 @@ class SymbolGraph:
     def contains(self, k):
         return self.__contains__(k)
 
+    # Implement Graph methods with names as arguments
+    def vertices(self):
+        return [self.name(v) for v in self.G.vertices()]
+
+    def adj(self, v):
+        return [self.name(w) for w in self.G.adj(self.index(v))]
+
+    def has_edge(self, v, w):
+        return self.G.has_edge(self.index(v), self.index(w))
+
+    def add_edge(self, v, w):
+        return self.G.add_edge(self.index(v), self.index(w))
+
 
 # Exercise 4.1.37
 class EuclideanGraph(Graph):
@@ -1512,8 +1525,8 @@ def print_adj(sg, s):
     """Print the adjacency list of the source."""
     # See p 550
     print(s)
-    for w in sg.G.adj(sg.index(s)):
-        print(' ', sg.name(w))
+    for w in sg.adj(s):
+        print(' ', w)
 
 
 def degrees_of_separation(sg, source, sink):
