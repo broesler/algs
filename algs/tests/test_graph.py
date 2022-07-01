@@ -26,7 +26,6 @@ from algs.graph.undirected import (Graph, SimpleGraph,  STGraph, SymbolGraph,
 # -----------------------------------------------------------------------------
 #         Fixtures
 # -----------------------------------------------------------------------------
-# Expected values for tinyG
 EXPECT_EDGES = tuple((
     (5, 3),
     (9, 11),
@@ -41,26 +40,7 @@ EXPECT_EDGES = tuple((
     (0, 1),
     (4, 3),
     (0, 5)
-    ))
-
-EXPECT_DEGREES = tuple((4, 1, 1, 2, 3, 3, 2, 1, 1, 3, 1, 2, 2))
-
-EXPECT_ADJ = dict({
-    0: [6, 2, 1, 5],
-    1: [0],
-    2: [0],
-    3: [5, 4],
-    4: [5, 6, 3],
-    5: [3, 4, 0],
-    6: [0, 4],
-    7: [8],
-    8: [7],
-    9: [11, 10, 12],
-    10: [9],
-    11: [9, 12],
-    12: [11, 9]
-})
-
+))
 
 # Expected values for tinyCG
 EXPECT_DFS = dict({
@@ -90,6 +70,8 @@ EXPECT_BFS = dict({
     5: [0, 5],
 })
 
+EXPECT_COMPS = [list(range(7)), [7, 8], [9, 10, 11, 12]]
+
 
 # NOTE paths are relative to where pytest is run from?
 # See: <https://docs.pytest.org/en/6.2.x/customize.htmlinding-the-rootdir>
@@ -101,11 +83,6 @@ def tinyCG(GT):
 @pytest.fixture
 def tinyG(GT):
     return GT.fromfile('./data/tinyG.txt')
-
-
-@pytest.fixture
-def tinyG2(GT):
-    return GT.fromfile('./data/tinyG2.txt')
 
 
 # -----------------------------------------------------------------------------
@@ -132,10 +109,26 @@ class TestTinyG:
         assert list(tinyG.vertices()) == list(range(tinyG.V))
 
     def test_adj(self, tinyG):
+        EXPECT_ADJ = dict({
+            0: [6, 2, 1, 5],
+            1: [0],
+            2: [0],
+            3: [5, 4],
+            4: [5, 6, 3],
+            5: [3, 4, 0],
+            6: [0, 4],
+            7: [8],
+            8: [7],
+            9: [11, 10, 12],
+            10: [9],
+            11: [9, 12],
+            12: [11, 9]
+        })
         for v in tinyG.vertices():
             assert list(tinyG.adj(v)) == EXPECT_ADJ[v]
 
     def test_degrees(self, tinyG):
+        EXPECT_DEGREES = tuple((4, 1, 1, 2, 3, 3, 2, 1, 1, 3, 1, 2, 2))
         for v in tinyG.vertices():
             assert tinyG.degree(v) == EXPECT_DEGREES[v]
 
@@ -258,14 +251,50 @@ class TestPaths:
                 assert list(T.adj(v)) == expect[v]
 
 
+@pytest.mark.parametrize('GT', [Graph, SimpleGraph, STGraph])
+@pytest.mark.parametrize('ConComps', [CC, CC_nr])
+class TestCC:
+    @pytest.mark.parametrize('G, expect', [('tinyG', False), ('tinyCG', True)])
+    def test_is_connected(self, ConComps, GT, G, expect, request):
+        cc = ConComps(request.getfixturevalue(G))
+        assert cc.is_connected == expect
+
+    def test_connected(self, ConComps, tinyG):
+        cc = ConComps(tinyG)
+        assert cc.count() == 3
+
+    def test_connected(self, ConComps, tinyG):
+        cc = ConComps(tinyG)
+        for comp in EXPECT_COMPS:
+            for i in range(len(comp)):
+                for j in range(i, len(comp)):
+                    assert cc.connected(comp[i], comp[j])
+
+    def test_id(self, ConComps, tinyG):
+        cc = ConComps(tinyG)
+        for i, comp in enumerate(EXPECT_COMPS):
+            for c in comp:
+                assert cc.id(c) == i
+
+    def test_get_components(self, ConComps, tinyG):
+        cc = ConComps(tinyG)
+        comps = cc.get_components()
+        for i, comp in enumerate(EXPECT_COMPS):
+            assert comps[i] == comp
+
+    def test_cc_vs(self, ConComps, tinyG):
+        cc = ConComps(tinyG, vertices=range(9))
+        comps = cc.get_components()
+        assert cc.count() == 2
+        for i, comp in enumerate(EXPECT_COMPS[:2]):
+            assert comps[i] == comp
 
 
-# @pytest.mark.parametrize('ConComps', [CC, CC_nr])
-# class TestCC:
 
 
-# class TestBFSPaths:
 
+# NOTE keep `print_`... functions from the book examples in undirected.py for
+# visual examples. Move other nitty gritty into these tests.
 
 # G = Graph.fromfile('../data/tinyG.txt')
 # G2 = Graph.fromfile('../data/tinyG2.txt')
