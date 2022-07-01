@@ -1541,7 +1541,170 @@ def degrees_of_separation(sg, source, sink):
         raise ValueError(f"{repr(sink)} not in graph!")
 
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
+    # NOTE keep `print_`... functions from the book examples in undirected.py for
+    # visual examples. Move other nitty gritty into these tests.
+    print('----- DFS -----')
+    G = Graph.fromfile('../data/tinyG.txt')
+    print_dfs(G, 0)
+    print_dfs(G, 9)
+
+    # Test paths
+    print('----- Connected Graph -----')
+    GC = Graph.fromfile('../data/tinyCG.txt')
+    print(GC)
+    print_dfs(GC, 0)
+
+    print('----- DFS Paths -----')
+    print_paths(GC, 0, GS=DepthFirstPaths)
+
+    print('----- BFS Paths -----')
+    print_paths(GC, 0, GS=BreadthFirstPaths)
+
+    print('--- Cycle ---')
+    c = CyclePath(G, 0)
+    print('G', c.cycle_path())
+
+    c2 = CyclePath(G2, 0)
+    print('G2', c2.cycle_path())
+
+    # Test connected components
+    print('----- CC -----')
+    comps = print_components(G2)
+    comps20 = print_components(G2, vertices=comps[0])
+
+    # Test connected components
+    print('----- SymbolGraph -----')
+    sg = SymbolGraph.fromfile('../data/routes.txt')
+    print('--- adjacency lists ---')
+    print_adj(sg, 'JFK')
+    print_adj(sg, 'LAX')
+    print('--- shortest paths ---')
+    degrees_of_separation(sg, 'JFK', 'LAS')
+    degrees_of_separation(sg, 'JFK', 'DFW')
+
+    # sg = SymbolGraph.fromfile('../data/movies.txt', delim='/')
+    # print('--- adjacency lists ---')
+    # print_adj(sg, 'Top Gun (1986)')
+    # print('--- shortest paths ---')
+    # degrees_of_separation(sg, 'Animal House (1978)', 'Titanic (1997)')
+    # degrees_of_separation(sg, 'Bacon, Kevin', 'Cruise, Tom')
+
+    # Test no parallel edges
+    G2 = Graph.fromfile('../data/tinyG2.txt', parallel=False)
+    G2.add_edge(0, 2)
+    assert G2.adj(0) == G.adj(0)  # no changes made
+    G2.add_edge(0, 9)
+    assert G2.adj(0) != G.adj(0)  # changes made
+
+    # Test no self-edges
+    try:
+        G.add_edge(9, 9)
+    except ValueError:
+        pass
+
+    # Test UF search
+    ufs = UFSearch(G, 0)
+    assert all([ufs.marked(x) for x in [2, 3, 5, 6, 10]])
+    assert ufs.count() == 6  # number of vertices in source component
+
+    # Test leaf finding
+    lfs = LeafDFS(G, 0)
+    assert lfs.leaf() == 10
+
+    # Test properties
+    try:
+        gp = GraphProperties(G)
+    except ValueError:
+        pass
+
+    print('----- Graph Properties -----')
+    # gc = Graph.fromfile('../data/tinyCG.txt')
+    gc = Graph.fromfile('../data/mediumG.txt')
+    # NOTE maximum recursion depth reached in largeG!
+    # gc = Graph.fromfile('../data/largeG.txt', verbose=True)
+
+    gp = GraphProperties(gc)
+    print('        ϵ:', gp.eccentricity(0))
+    print(' diameter:', gp.diameter())
+    print('   radius:', gp.radius())
+    print('   center:', gp.center())
+    print('periphery:', gp.periphery())
+    print('    girth:', gp.girth())
+    assert gp.eccentricity(gp.center()[0]) == gp.radius()
+
+    print('--- Cycles ---')
+    c = Cycle(gc, 0)
+    assert c.has_cycle
+    assert c.has_self_loop
+    assert c.has_parallel_edges
+    c = MinCyclePath(gc, 0)
+    print(c.cycle_path())
+
+    for N in range(2, 10):
+        edges = list()
+        for i in range(N):
+            edges.append((i, (i + 1) % N))
+        Gcyc = Graph(N, edges)
+        assert GraphProperties(Gcyc).girth() == N
+
+    c = MinCyclePath(Gcyc, 0)
+    print(c.cycle_path())
+
+    G2 = Graph.fromfile('../data/tinyG2.txt')
+    c2 = CC(G2)
+    c2_nr = CC_nr(G2)
+    comps2 = c2.get_components()
+    assert comps2 == c2_nr.get_components()
+    gp = GraphProperties(G2, comps2[0])
+    idx = comps2[0][0]
+    print(f"     ϵ({idx}): {gp.eccentricity(idx)}")
+    print(' diameter:', gp.diameter())
+    print('   radius:', gp.radius())
+    print('   center:', gp.center())
+    print('periphery:', gp.periphery())
+    print('    girth:', gp.girth())
+
+    b = Bipartite(G2, 0)
+    assert not b.is_bipartite
+
+    # 3 co-linear nodes are bipartite
+    assert Bipartite(Graph(3, [(0, 1), (1, 2)]), 0).is_bipartite
+
+    # Parallel edges
+    G2.add_edge(0, 2)
+    G2.add_edge(2, 6)
+    G2.add_edge(10, 3)
+    p = ParallelEdges(G2, 0)
+    assert p.count == 3
+
+    # print('----- Bridges -----')
+    G2 = Graph.fromfile('../data/tinyG2.txt')
+    # G2.add_edge(5, 7)  # one bridge
+    G2.add_edge(5, 9)  # two bridges
+    G2.add_edge(9, 7)  # 9 is an articulation point
+    b = Biconnected(G2)
+    # assert b.Nbridges == 1
+    # assert b.articulation(7)
+    assert b.Nbridges == 2
+    assert b.articulation(9)
+
+    # Spanning Tree
+    print('----- Spanning Tree -----')
+    G2 = Graph.fromfile('../data/tinyG2.txt')
+    print('--- DFS ---')
+    Td = spanning_tree_dfs(G2, 0)
+    print(Td)
+    print('--- BFS ---')
+    Tb = spanning_tree_bfs(G2, 0)
+    print(Tb)
+    print('--- DFS Forest ---')
+    Tf = spanning_forest_dfs(G2)
+    print(Tf)
+    print('--- BFS Forest ---')
+    Tf = spanning_forest_bfs(G2)
+    print(Tf)
+
 
 # =============================================================================
 # =============================================================================
