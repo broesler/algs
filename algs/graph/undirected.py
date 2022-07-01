@@ -713,7 +713,7 @@ class BreadthFirstPaths(Paths):
         q = Queue()
         self._marked[v] = True
         self._dist_to[v] = 0
-        q.enqueue(self.s)
+        q.enqueue(v)
         while not q.is_empty:
             v = q.dequeue()
             for w in G.adj(v):

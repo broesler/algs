@@ -63,7 +63,7 @@ EXPECT_ADJ = dict({
 
 
 # Expected values for tinyCG
-EXPECT_PATHS = dict({
+EXPECT_DFS = dict({
     0: [0],
     1: [0, 2, 1],
     2: [0, 2],
@@ -72,20 +72,40 @@ EXPECT_PATHS = dict({
     5: [0, 2, 3, 5],
 })
 
+EXPECT_DFS_S = dict({
+    0: [0],
+    1: [0, 5, 3, 2, 1],
+    2: [0, 5, 3, 2],
+    3: [0, 5, 3],
+    4: [0, 5, 3, 2, 4],
+    5: [0, 5],
+})
 
+EXPECT_BFS = dict({
+    0: [0],
+    1: [0, 1],
+    2: [0, 2],
+    3: [0, 2, 3],
+    4: [0, 2, 4],
+    5: [0, 5],
+})
+
+
+# NOTE paths are relative to where pytest is run from?
+# See: <https://docs.pytest.org/en/6.2.x/customize.htmlinding-the-rootdir>
 @pytest.fixture
 def tinyCG(GT):
-    return GT.fromfile('../data/tinyCG.txt')
+    return GT.fromfile('./data/tinyCG.txt')
 
 
 @pytest.fixture
 def tinyG(GT):
-    return GT.fromfile('../data/tinyG.txt')
+    return GT.fromfile('./data/tinyG.txt')
 
 
 @pytest.fixture
 def tinyG2(GT):
-    return GT.fromfile('../data/tinyG2.txt')
+    return GT.fromfile('./data/tinyG2.txt')
 
 
 # -----------------------------------------------------------------------------
@@ -126,7 +146,8 @@ class TestTinyG:
             tinyG._validate_vertex(99)
 
 
-@pytest.mark.parametrize('GT', [Graph, SimpleGraph])
+# NOTE STGraph tests pass, but only because vertices are a range of integers
+@pytest.mark.parametrize('GT', [Graph, SimpleGraph, STGraph])
 @pytest.mark.parametrize('GraphSearch', [DepthFirstSearch, UFSearch])
 class TestDFS:
     def test_dfs_CG(self, tinyCG, GraphSearch):
@@ -146,31 +167,104 @@ class TestDFS:
         assert all([dfs.marked(v) for v in [9, 10, 11, 12]])
 
 
-# NOTE STGraph tests pass, but only because vertices are a range of integers
 @pytest.mark.parametrize('GT', [Graph, SimpleGraph, STGraph])
-class TestDFSPaths:
-    @pytest.mark.parametrize('DFS', [DepthFirstPaths, DepthFirstPaths_nr,
-                                     DepthFirstPaths_nr_simple])
-    class TestPathTo:
-        def test_has_path_to(self, tinyCG, DFS):
-            dfs = DFS(tinyCG, 0)
+class TestPaths:
+    @pytest.mark.parametrize('GraphSearch', [DepthFirstPaths,
+                                             DepthFirstPaths_nr,
+                                             DepthFirstPaths_nr_simple,
+                                             BreadthFirstPaths])
+    class TestHasPath:
+        def test_has_path_to(self, tinyCG, GraphSearch):
+            dfs = GraphSearch(tinyCG, 0)
             for v in tinyCG.vertices():
                 assert dfs.has_path_to(v)
 
-        def test_no_path_to(self, tinyG, DFS):
-            dfs = DFS(tinyG, 0)
+        def test_no_path_to(self, tinyG, GraphSearch):
+            dfs = GraphSearch(tinyG, 0)
             for v in range(7):
                 assert dfs.has_path_to(v)
             for v in range(7, tinyG.V):
                 assert not dfs.has_path_to(v)
 
-    # DepthFirstPaths_nr_simple explores vertices in opposite direction, so
-    # paths will be incorrect.
-    @pytest.mark.parametrize('DFS', [DepthFirstPaths, DepthFirstPaths_nr])
-    def test_has_path_to(self, tinyCG, DFS):
+    @pytest.mark.parametrize('DFS, EXPECT', [(DepthFirstPaths, EXPECT_DFS),
+                                             (DepthFirstPaths_nr, EXPECT_DFS),
+                                             (DepthFirstPaths_nr_simple, EXPECT_DFS_S)])
+    def test_dfs_path_to(self, tinyCG, DFS, EXPECT):
         dfs = DFS(tinyCG, 0)
         for v in tinyCG.vertices():
-            assert list(dfs.path_to(v)) == EXPECT_PATHS[v]
+            assert list(dfs.path_to(v)) == EXPECT[v]
+
+    def test_bfs_path_to(self, tinyCG):
+        bfs = BreadthFirstPaths(tinyCG, 0)
+        for v in tinyCG.vertices():
+            assert list(bfs.path_to(v)) == EXPECT_BFS[v]
+        assert [bfs.dist_to(v) for v in tinyCG.vertices()] == [0, 1, 1, 2, 2, 1]
+
+    def test_leaf_CG(self, tinyCG):
+        dfs = LeafDFS(tinyCG, 0)
+        assert dfs.leaf() == 1  # returns first leaft
+
+    def test_leaf_G(self, tinyG):
+        dfs = LeafDFS(tinyG, 0)
+        assert dfs.leaf() == 3  # returns first leaft
+
+    def test_spanning_tree_dfs(self, tinyCG):
+        EXPECT_ST = dict({
+            0: [2],
+            1: [2],
+            2: [0, 1, 3],
+            3: [2, 5, 4],
+            4: [3],
+            5: [3]
+        })
+        T = spanning_tree_dfs(tinyCG, 0)
+        assert T.V == tinyCG.V
+        assert T.E == tinyCG.V - 1  # minimum edges in connected graph
+        assert list(T.vertices()) == list(tinyCG.vertices())
+        for v in T.vertices():
+            assert list(T.adj(v)) == EXPECT_ST[v]
+
+    def test_spanning_tree_bfs(self, tinyCG):
+        EXPECT_ST = dict({
+            0: [2, 1, 5],
+            1: [0],
+            2: [0, 3, 4],
+            3: [2],
+            4: [2],
+            5: [0]
+        })
+        T = spanning_tree_bfs(tinyCG, 0)
+        assert T.V == tinyCG.V
+        assert T.E == tinyCG.V - 1  # minimum edges in connected graph
+        assert list(T.vertices()) == list(tinyCG.vertices())
+        for v in T.vertices():
+            assert list(T.adj(v)) == EXPECT_ST[v]
+
+    def test_spanning_forest_dfs(self, tinyG):
+        EXPECT_ST_0 = dict({
+            0: [6, 2, 1],
+            1: [0],
+            2: [0],
+            3: [5],
+            4: [6, 5],
+            5: [4, 3],
+            6: [0, 4]
+        })
+        EXPECT_ST_1 = dict({7: [8], 8: [7]})
+        EXPECT_ST_2 = dict({9: [11, 10], 10: [9], 11: [9, 12], 12: [11]})
+        Ts = spanning_forest_dfs(tinyG)
+        for T, expect in zip(Ts, [EXPECT_ST_0, EXPECT_ST_1, EXPECT_ST_2]):
+            for v in expect:
+                assert list(T.adj(v)) == expect[v]
+
+
+
+
+# @pytest.mark.parametrize('ConComps', [CC, CC_nr])
+# class TestCC:
+
+
+# class TestBFSPaths:
 
 
 # G = Graph.fromfile('../data/tinyG.txt')
