@@ -147,6 +147,51 @@ class TestTinyG:
             assert H._adj[v] is not tinyG._adj[v]
 
 
+# Simple graph does not allow parallel edges or self-loops
+@pytest.mark.parametrize('GT', [SimpleGraph])
+class TestSimple:
+    def test_self_loop(self, tinyG):
+        with pytest.raises(ValueError):
+            tinyG.add_edge(0, 0)
+
+    def test_parallel_edges(self, tinyG):
+        assert tinyG.degree(0) == 4
+        assert tinyG.degree(1) == 1
+        tinyG.add_edge(0, 1)
+        # No changes
+        assert tinyG.degree(0) == 4
+        assert tinyG.degree(1) == 1
+
+
+@pytest.mark.parametrize('GT', [Graph, STGraph])
+class TestNonSimple:
+    def test_self_loop(self, GT):
+        G = GT.fromfile('./data/tinyG.txt', self_loops=True)
+        G.add_edge(0, 0)
+        assert G.has_edge(0, 0)
+
+    def test_no_self_loop(self, GT):
+        G = GT.fromfile('./data/tinyG.txt', self_loops=False)
+        with pytest.raises(ValueError):
+            G.add_edge(0, 0)
+
+    def test_parallel_edges(self, GT):
+        G = GT.fromfile('./data/tinyG.txt', parallel=True)
+        assert G.degree(0) == 4
+        assert G.degree(1) == 1
+        G.add_edge(0, 1)
+        assert G.degree(0) == 5
+        assert G.degree(1) == 2
+
+    def test_no_parallel_edges(self, GT):
+        G = GT.fromfile('./data/tinyG.txt', parallel=False)
+        assert G.degree(0) == 4
+        assert G.degree(1) == 1
+        G.add_edge(0, 1)
+        assert G.degree(0) == 4
+        assert G.degree(1) == 1
+
+
 # NOTE STGraph tests pass, but only because vertices are a range of integers
 @pytest.mark.parametrize('GT', [Graph, SimpleGraph, STGraph])
 @pytest.mark.parametrize('GraphSearch', [DepthFirstSearch, UFSearch])
