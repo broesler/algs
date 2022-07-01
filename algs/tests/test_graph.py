@@ -185,19 +185,27 @@ class TestNonSimple:
 
     def test_parallel_edges(self, GT):
         G = GT.fromfile('./data/tinyG.txt', parallel=True)
+        p = ParallelEdges(G, 0)
         assert G.degree(0) == 4
         assert G.degree(1) == 1
+        assert p.count == 0
         G.add_edge(0, 1)
+        p = ParallelEdges(G, 0)
         assert G.degree(0) == 5
         assert G.degree(1) == 2
+        assert p.count == 1
 
     def test_no_parallel_edges(self, GT):
         G = GT.fromfile('./data/tinyG.txt', parallel=False)
+        p = ParallelEdges(G, 0)
         assert G.degree(0) == 4
         assert G.degree(1) == 1
+        assert p.count == 0
         G.add_edge(0, 1)
+        p = ParallelEdges(G, 0)
         assert G.degree(0) == 4
         assert G.degree(1) == 1
+        assert p.count == 0
 
 
 # NOTE STGraph tests pass, but only because vertices are a range of integers

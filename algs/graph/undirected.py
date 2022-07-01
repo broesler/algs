@@ -1608,15 +1608,6 @@ if __name__ == "__main__":
     except ValueError:
         pass
 
-    # Test UF search
-    ufs = UFSearch(G, 0)
-    assert all([ufs.marked(x) for x in [2, 3, 5, 6, 10]])
-    assert ufs.count() == 6  # number of vertices in source component
-
-    # Test leaf finding
-    lfs = LeafDFS(G, 0)
-    assert lfs.leaf() == 10
-
     # Test properties
     try:
         gp = GraphProperties(G)
@@ -1693,23 +1684,6 @@ if __name__ == "__main__":
     # assert b.articulation(7)
     assert b.Nbridges == 2
     assert b.articulation(9)
-
-    # Spanning Tree
-    print('----- Spanning Tree -----')
-    G2 = Graph.fromfile('../data/tinyG2.txt')
-    print('--- DFS ---')
-    Td = spanning_tree_dfs(G2, 0)
-    print(Td)
-    print('--- BFS ---')
-    Tb = spanning_tree_bfs(G2, 0)
-    print(Tb)
-    print('--- DFS Forest ---')
-    Tf = spanning_forest_dfs(G2)
-    print(Tf)
-    print('--- BFS Forest ---')
-    Tf = spanning_forest_bfs(G2)
-    print(Tf)
-
 
 # =============================================================================
 # =============================================================================
