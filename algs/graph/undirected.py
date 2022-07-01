@@ -1121,19 +1121,24 @@ class Cycle:
     @staticmethod
     def has_parallel_edges(G):
         """Return True if the graph has parallel edges.
-
-        .. note:: All undirected `Graph`s are defined by directed parallel
-            edges in opposite directions, so this method always returns True.
         """
-        marked = G.V * [False]
+        # Only return True if G.adj(v) has duplicates
         for v in G.vertices():
-            for w in G.adj(v):
-                if marked[w]:
+            adj = sorted(G.adj(v))
+            for i in range(len(adj)-1):
+                if adj[i] == adj[i+1]:
                     return True
-                else:
-                    marked[w] = True
-        else:
-            return False
+        return False
+        # NOTE All undirected `Graph`s are defined by directed parallel edges
+        # in opposite directions, so the method below always returns True.
+        # marked = G.V * [False]
+        # for v in G.vertices():
+        #     for w in G.adj(v):
+        #         if marked[w]:
+        #             return True
+        #         else:
+        #             marked[w] = True
+        # return False
 
     def _dfs(self, G, v, u):
         """Perform depth-first search recursively from vertex `v`.

@@ -13,15 +13,14 @@ import pytest
 
 from algs.graph.undirected import (Graph, SimpleGraph,  STGraph, SymbolGraph,
                                    DepthFirstSearch, DepthFirstPaths,
-                                   BreadthFirstPaths, DepthFirstPaths_nr,
-                                   DepthFirstPaths_nr_simple, Cycle, CyclePath,
-                                   CyclePath_nr, MinCyclePath, CC, CC_nr,
-                                   UFSearch, LeafDFS, GraphProperties,
-                                   Bipartite, Biconnected, ParallelEdges,
+                                   DepthFirstPaths_nr,
+                                   DepthFirstPaths_nr_simple,
+                                   BreadthFirstPaths, UFSearch, LeafDFS,
                                    spanning_tree_dfs, spanning_tree_bfs,
                                    spanning_forest_dfs, spanning_forest_bfs,
-                                   print_adj, print_dfs, print_paths,
-                                   print_components, degrees_of_separation)
+                                   GraphProperties, CC, CC_nr, Cycle, Cycle_nr,
+                                   CyclePath, CyclePath_nr, MinCyclePath,
+                                   Bipartite, ParallelEdges, Biconnected)
 
 # -----------------------------------------------------------------------------
 #         Fixtures
@@ -83,6 +82,15 @@ def tinyCG(GT):
 @pytest.fixture
 def tinyG(GT):
     return GT.fromfile('./data/tinyG.txt')
+
+
+@pytest.fixture
+def acyclicG(GT):
+    V = 5
+    G = GT(V)
+    for i in range(V-1):
+        G.add_edge(i, i+1)
+    return G
 
 
 # -----------------------------------------------------------------------------
@@ -360,10 +368,23 @@ class TestCC:
             assert comps[i] == comp
 
 
-# @pytest.mark.parametrize('GT', [Graph, SimpleGraph, STGraph])
-# class TestCycle:
+@pytest.mark.parametrize('GT', [Graph, STGraph])
+@pytest.mark.parametrize('CycleT', [Cycle, Cycle_nr])
+class TestCycle:
+    @pytest.mark.parametrize('G, expect', [('tinyG', True), ('acyclicG', False)])
+    def test_has_cycle(self, CycleT, GT, G, expect, request):
+        cyc = CycleT(request.getfixturevalue(G), 0)
+        assert cyc.has_cycle == expect
 
+    def test_has_self_loop(self, CycleT, tinyG):
+        assert not CycleT.has_self_loop(tinyG)
+        tinyG.add_edge(1, 1)
+        assert CycleT.has_self_loop(tinyG)
 
+    def test_has_parallel_edges(self, CycleT, tinyG):
+        assert not CycleT.has_parallel_edges(tinyG)
+        tinyG.add_edge(0, 1)
+        assert CycleT.has_parallel_edges(tinyG)
 
 
 # =============================================================================
