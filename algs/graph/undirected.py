@@ -972,9 +972,9 @@ class GraphProperties:
         >>> cc = CC(G).get_components()
         >>> print(cc[0])
         [0, 2, 3, 5, 6, 10]
-        >>> list(MinCyclePath(G,  0).cycle_path())
+        >>> list(MinCyclePath(G,  0).cycle())
         [2, 0, 6, 2]
-        >>> list(MinCyclePath(G, 10).cycle_path())
+        >>> list(MinCyclePath(G, 10).cycle())
         [2, 3, 10, 5, 2]
 
         Lengths are not equal! The minimum path in that group is 3.
@@ -1215,7 +1215,7 @@ class CyclePath(DepthFirstPaths):
                 self._path.push(w)
                 self._path.push(v)
 
-    def cycle_path(self):
+    def cycle(self):
         """Return the path of the found cycle."""
         return list(self._path)
 
@@ -1298,7 +1298,7 @@ class MinCyclePath(BreadthFirstPaths):
                         self._cycle_tail = v
                         self.cycle_length = d
 
-    def cycle_path(self):
+    def cycle(self):
         """Return the path of the found cycle."""
         # BFS gives two paths: one each from the source to the head and tail.
         # Merge the paths to head and tail to remove all common ancestors
