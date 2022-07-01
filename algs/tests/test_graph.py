@@ -395,5 +395,16 @@ class TestCycle:
         assert CycleT.has_parallel_edges(tinyG)
 
 
+@pytest.mark.parametrize('GT', [Graph, SimpleGraph, STGraph])
+class TestCyclePath:
+    @pytest.mark.parametrize('CyclePathT', [CyclePath, CyclePath_nr])
+    def test_cycle_path_dfs(self, CyclePathT, tinyG):
+        cyc = CyclePathT(tinyG, 0)
+        assert cyc.cycle() == [3, 4, 5, 3]
+
+    def test_cycle_path_bfs(self, tinyG):
+        cyc = MinCyclePath(tinyG, 0)
+        assert cyc.cycle() == [4, 6, 0, 5, 4]
+
 # =============================================================================
 # =============================================================================
