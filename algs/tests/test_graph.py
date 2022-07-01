@@ -303,6 +303,23 @@ class TestPaths:
             for v in expect:
                 assert list(T.adj(v)) == expect[v]
 
+    def test_spanning_forest_bfs(self, tinyG):
+        EXPECT_ST_0 = dict({
+            0: [6, 2, 1, 5],
+            1: [0],
+            2: [0],
+            3: [5],
+            4: [6],
+            5: [0, 3],
+            6: [0, 4],
+        })
+        EXPECT_ST_1 = dict({7: [8], 8: [7]})
+        EXPECT_ST_2 = dict({9: [11, 10, 12], 10: [9], 11: [9], 12: [9]})
+        Ts = spanning_forest_bfs(tinyG)
+        for T, expect in zip(Ts, [EXPECT_ST_0, EXPECT_ST_1, EXPECT_ST_2]):
+            for v in expect:
+                assert list(T.adj(v)) == expect[v]
+
 
 @pytest.mark.parametrize('GT', [Graph, SimpleGraph, STGraph])
 @pytest.mark.parametrize('ConComps', [CC, CC_nr])
@@ -312,7 +329,7 @@ class TestCC:
         cc = ConComps(request.getfixturevalue(G))
         assert cc.is_connected == expect
 
-    def test_connected(self, ConComps, tinyG):
+    def test_count(self, ConComps, tinyG):
         cc = ConComps(tinyG)
         assert cc.count() == 3
 
