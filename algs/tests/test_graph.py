@@ -98,6 +98,22 @@ def cc(ConComps, tinyG, GT):
     return ConComps(tinyG)
 
 
+# TODO come up with more interesting graph for GraphProperties that has
+# different values for eccentricities, diameter, radius, etc.
+@pytest.fixture
+def nonogon(GT):
+    V = 9
+    G = GT(V)
+    for i in range(V):
+        G.add_edge(i, (i+1) % V)
+    return G
+
+
+@pytest.fixture
+def gp(GT, nonogon):
+    return GraphProperties(nonogon)
+
+
 # -----------------------------------------------------------------------------
 #         Tests
 # -----------------------------------------------------------------------------
@@ -444,6 +460,41 @@ class TestBiconnected:
         assert b.is_edge_connected
         assert b.Nbridges == 0
         assert not any([b.articulation(v) for v in tinyCG.vertices()])
+
+
+# TODO test unconnected graph
+@pytest.mark.parametrize('GT', [Graph, SimpleGraph, STGraph])
+class TestGraphProperties:
+    def test_eccentricity(self, gp):
+        assert gp.eccentricity(0) == 4
+
+    def test_diameter(self, gp):
+        assert gp.diameter() == 4
+
+    def test_radius(self, gp):
+        assert gp.radius() == 4
+
+    def test_center(self, gp):
+        assert gp.center() == list(range(9))
+
+    def test_periphery(self, gp):
+        assert gp.periphery() == list(range(9))
+
+    def test_girth(self, gp):
+        assert gp.girth() == 9
+
+    def test_inf_girth(self, GT):
+        G = GT(2, [(0, 1)])
+        assert GraphProperties(G).girth() == float('inf')
+
+    def test_girths(self, GT):
+        # Generate a simple cycle graph
+        for N in range(3, 10):
+            edges = list()
+            for i in range(N):
+                edges.append((i, (i + 1) % N))
+            Gcyc = GT(N, edges)
+            assert GraphProperties(Gcyc).girth() == N
 
 # =============================================================================
 # =============================================================================
