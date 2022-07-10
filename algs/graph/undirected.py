@@ -473,7 +473,7 @@ class EuclideanGraph(Graph):
             for w in self.adj(v):
                 # Only add single direction
                 if (w, v) not in e:
-                    e.append((v, w))
+                    e.add((v, w))
         return e
 
     def _draw_node(self, v, ax, label=None, **vkws):

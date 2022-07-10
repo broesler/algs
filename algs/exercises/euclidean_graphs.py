@@ -11,28 +11,56 @@ Exercise 4.1.37: Plotting graphs.
 
 import numpy as np
 import matplotlib.pyplot as plt
+import re
+
 from matplotlib.lines import Line2D
 
 from algs.graph import EuclideanGraph, BreadthFirstPaths, DepthFirstPaths_nr
 
-G = EuclideanGraph.fromfile('../data/tinyG2.txt')
+# G = EuclideanGraph.fromfile('../data/tinyG.txt')
+# # See p 522
+# x, y = np.array([[0,  3],
+#                  [1,  2],
+#                  [2,  2],
+#                  [1,  1],
+#                  [2,  0.5],
+#                  [0,  0],
+#                  [3,  2.5],
+#                  [4,  2.5],
+#                  [5,  2.5],
+#                  [4,  1],
+#                  [5,  1],
+#                  [4,  0],
+#                  [5,  0]]).T / 10  # scale down
+
+G = EuclideanGraph.fromfile('../data/tinyCG.txt')
+# See p 522
+x, y = np.array([[0,  3],
+                 [1,  1.6],
+                 [5,  2.8],
+                 [2,  0.4],
+                 [5,  0],
+                 [0,  0]]).T / 16  # scale down
+
+# G = EuclideanGraph.fromfile('../data/tinyG2.txt')
 # See p 558
-x, y = np.array([[0,  5],
-                 [1,  1],
-                 [1,  4],
-                 [2,  3.5],
-                 [2,  1.5],
-                 [0,  3],
-                 [2,  5],
-                 [0,  2],
-                 [1,  2],
-                 [1,  0],
-                 [1,  3],
-                 [0,  1]]).T / 8  # scale down
+# x, y = np.array([[0,  5],
+#                  [1,  1],
+#                  [1,  4],
+#                  [2,  3.5],
+#                  [2,  1.5],
+#                  [0,  3],
+#                  [2,  5],
+#                  [0,  2],
+#                  [1,  2],
+#                  [1,  0],
+#                  [1,  3],
+#                  [0,  1]]).T / 8  # scale down
+
 G.set_coordinates(G.vertices(), x, y)
 
 s = 0
-i = 10
+i = 4  # 10 for tinyG2
 dfs = DepthFirstPaths_nr(G, s)
 pd = dfs.path_to(i)
 
