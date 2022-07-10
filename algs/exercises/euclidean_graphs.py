@@ -15,32 +15,34 @@ import re
 
 from matplotlib.lines import Line2D
 
-from algs.graph import EuclideanGraph, BreadthFirstPaths, DepthFirstPaths_nr
+from algs.graph import (EuclideanGraph, BreadthFirstPaths, DepthFirstPaths_nr,
+                        Bipartite)
 
 # G = EuclideanGraph.fromfile('../data/tinyG.txt')
-# # See p 522
-# x, y = np.array([[0,  3],
-#                  [1,  2],
-#                  [2,  2],
-#                  [1,  1],
-#                  [2,  0.5],
-#                  [0,  0],
-#                  [3,  2.5],
-#                  [4,  2.5],
-#                  [5,  2.5],
-#                  [4,  1],
-#                  [5,  1],
-#                  [4,  0],
-#                  [5,  0]]).T / 10  # scale down
-
-G = EuclideanGraph.fromfile('../data/tinyCG.txt')
+G = EuclideanGraph.fromfile('../data/tinyG_bp.txt', two_color=True)
 # See p 522
 x, y = np.array([[0,  3],
-                 [1,  1.6],
-                 [5,  2.8],
-                 [2,  0.4],
-                 [5,  0],
-                 [0,  0]]).T / 16  # scale down
+                 [1,  2],
+                 [2,  2],
+                 [1,  1],
+                 [2,  0.5],
+                 [0,  0],
+                 [3,  2.5],
+                 [4,  2.5],
+                 [5,  2.5],
+                 [4,  1],
+                 [5,  1],
+                 [4,  0],
+                 [5,  0]]).T / 10  # scale down
+
+# G = EuclideanGraph.fromfile('../data/tinyCG.txt')
+# # See p 522
+# x, y = np.array([[0,  3],
+#                  [1,  1.6],
+#                  [5,  2.8],
+#                  [2,  0.4],
+#                  [5,  0],
+#                  [0,  0]]).T / 16  # scale down
 
 # G = EuclideanGraph.fromfile('../data/tinyG2.txt')
 # See p 558
@@ -60,7 +62,7 @@ x, y = np.array([[0,  3],
 G.set_coordinates(G.vertices(), x, y)
 
 s = 0
-i = 4  # 10 for tinyG2
+i = 3  # 10 for tinyG2
 dfs = DepthFirstPaths_nr(G, s)
 pd = dfs.path_to(i)
 
@@ -69,13 +71,13 @@ pb = bfs.path_to(i)
 
 fig, ax = plt.subplots(num=1, clear=True, constrained_layout=True)
 G.draw(ax=ax, label_nodes=True)
-G.draw(p=pd, ax=ax, label_nodes=True, c='C3',  ekws=dict(lw=3))
-G.draw(p=pb, ax=ax, label_nodes=True, c='C0')
+# G.draw(p=pd, ax=ax, label_nodes=True, c='C3',  ekws=dict(lw=3))
+# G.draw(p=pb, ax=ax, label_nodes=True, c='C0')
 
-dl = Line2D([0, 1], [0, 1], c='C3')
-bl = Line2D([0, 1], [0, 1], c='C0')
-ax.legend([dl, bl], [f"DFS({s}, {i})", f"BFS({s}, {i})"], 
-          loc='upper left', bbox_to_anchor=(1, 1))
+# dl = Line2D([0, 1], [0, 1], c='C3')
+# bl = Line2D([0, 1], [0, 1], c='C0')
+# ax.legend([dl, bl], [f"DFS({s}, {i})", f"BFS({s}, {i})"], 
+#           loc='upper left', bbox_to_anchor=(1, 1))
 
 plt.show()
 

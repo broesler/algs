@@ -432,7 +432,8 @@ class EuclideanGraph(Graph):
     the plane with coordinates.
     {UndirectedGraph.__doc__}"""
 
-    def __init__(self, G=None, x=None, y=None, *args, **kwargs):
+    def __init__(self, G=None, x=None, y=None, two_color=False,
+                 *args, **kwargs):
         if G is None:
             super().__init__(*args, **kwargs)
         else:
@@ -451,6 +452,8 @@ class EuclideanGraph(Graph):
             raise ValueError(f"Coordinates must have dimension {self.V=}")
         self.x = np.r_[x]
         self.y = np.r_[y]
+        self._TWO_COLOR = bool(two_color)
+        self._node_colors = None
 
     __init__.__doc__ = f"""{Graph.__init__.__doc__}
     x, y : (V,) arrays
@@ -478,16 +481,21 @@ class EuclideanGraph(Graph):
 
     def _draw_node(self, v, ax, label=None, **vkws):
         """Draw a single node."""
-        fontcolor = vkws.get('fontcolor', 'k')
-        edgecolor = vkws.get('edgecolor', 'k')
+        # Better way get these kwargs?
+        fc_default = self._node_colors[v] if self._TWO_COLOR else 'k'
+        ec_default = self._node_colors[v] if self._TWO_COLOR else 'k'
+        fontcolor = vkws.get('fontcolor', fc_default)
+        edgecolor = vkws.get('edgecolor', ec_default)
         fontsize = vkws.get('fontsize', 12)
         radius = vkws.get('radius', 0.02)
+        # Create the node
         circ = patches.Circle(
                 (self.x[v], self.y[v]),
                 radius=radius,
                 edgecolor=edgecolor, facecolor='#EEE',
                 zorder=3  # place on top of lines
                 )
+        # Add it to the axes
         ax.add_patch(circ)
         ax.annotate(label or v, xy=(self.x[v], self.y[v]),
                     color=fontcolor, fontsize=fontsize,
@@ -537,6 +545,10 @@ class EuclideanGraph(Graph):
             _vkws['edgecolor'] = c
             if label_nodes:
                 _vkws['fontcolor'] = c
+
+        if self._TWO_COLOR:
+            bp = Bipartite(self)
+            self._node_colors = np.where(bp._color, 'C3', 'k')
 
         # Set any user-defined parameters
         if vkws is not None:
