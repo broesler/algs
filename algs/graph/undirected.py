@@ -1328,17 +1328,20 @@ class MinCyclePath(BreadthFirstPaths):
 
 
 class Bipartite:
-    __doc__ = f"""Implements depth-first search to determine if a graph is
-    bipartite.
+    __doc__ = f"""Implements depth-first search to determine if a connected
+    graph is bipartite.
     {GraphSearch.__doc__}"""
     # See p 547
 
-    def __init__(self, G, s):
-        self.s = s
+    def __init__(self, G, vertices=None):
+        if vertices is None:
+            vertices = G.vertices()
+        self.is_bipartite = True
         self._marked = G.V * [False]
         self._color = G.V * [False]
-        self.is_bipartite = True
-        self._dfs(G, s)
+        self._count = 0  # number of vertices examined before `is_bipartite`
+        for s in vertices:
+            self._dfs(G, s)
 
     def _dfs(self, G, v):
         """Perform depth-first search recursively from vertex `v`."""
@@ -1348,6 +1351,9 @@ class Bipartite:
                 self._color[w] = not self._color[v]
                 self._dfs(G, w)
             elif self._color[w] == self._color[v]:
+                # Only update the first time
+                if self.is_bipartite:
+                    self._count = sum(self._marked)
                 self.is_bipartite = False
 
 

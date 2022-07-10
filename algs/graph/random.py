@@ -44,8 +44,10 @@ def erdos_renyi(V, E):
     """
     if V < 1:
         raise ValueError(f"{V=} must be > 0")
-    if E < 1:
-        raise ValueError(f"{E=} must be > 0")
+    maxE = V * (V-1) / 2
+    if E < 1 or E > maxE:
+        raise ValueError(f"{E=} must be in [1, {maxE}] for an undirected"
+                         f"graph with {V=} vertices.")
 
     G = Graph(V)
     for v, w in rng.integers(V, size=(E, 2)):
@@ -77,8 +79,10 @@ def random_simple_graph(V, E):
     """
     if V < 1:
         raise ValueError(f"{V=} must be > 0")
-    if E < 1:
-        raise ValueError(f"{E=} must be > 0")
+    maxE = V * (V-1) / 2
+    if E < 1 or E > maxE:
+        raise ValueError(f"{E=} must be in [1, {maxE}] for an undirected"
+                         f"graph with {V=} vertices.")
 
     G = Graph(V)
     i = 0
@@ -341,7 +345,7 @@ if __name__ == "__main__":
               )
 
     # Plot the Boston T
-    # TODO 
+    # TODO
     # * use geopandas(?) to get actual basemap
     # * run DFS/BFS to get routes between stations, noting line for each and
     #   where change-overs occur (ala MBTA website/app)

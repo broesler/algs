@@ -36,13 +36,13 @@ import pickle
 from pathlib import Path
 from tqdm import tqdm
 
-from algs.graph import DepthFirstPaths_nr, BreadthFirstPaths, CC_nr
+from algs.graph import DepthFirstPaths_nr, BreadthFirstPaths, CC_nr, Bipartite
 from algs.graph.random import erdos_renyi, random_simple_graph
 
 rng = np.random.default_rng(seed=565656)
 
 FORCE_UPDATE = True
-SAVE_FIGS = True
+SAVE_FIGS = False
 
 generate_graph = random_simple_graph
 tag = 'simple'
@@ -65,12 +65,16 @@ if FORCE_UPDATE or not pkl_file.exists():
     df = pd.DataFrame(index=index, columns=['depth', 'breadth', 'comps'], data=data)
     cf = pd.Series(index=index.droplevel(-1).drop_duplicates(), 
                    data=np.full(len(Es)*N, np.nan))
+    bf = pd.Series(index=index.droplevel(-1).drop_duplicates(), 
+                   data=np.full(len(Es)*N, np.nan))
 
     for E in tqdm(Es):
         for i in range(N):
             G = generate_graph(V, E)
             cc = CC_nr(G)
+            bp = Bipartite(G)
             cf.loc[(E, i)] = cc.count()
+            bf.loc[(E, i)] = bp._count
             for j in range(T):
                 s, t = rng.integers(V, size=2)
                 dfs = DepthFirstPaths_nr(G, s)
@@ -80,6 +84,10 @@ if FORCE_UPDATE or not pkl_file.exists():
                 if bfs.has_path_to(t):
                     df.loc[(E, i, j), 'breadth'] = len(bfs.path_to(t))
 
+    # Average components over trials
+    cf = cf.groupby('E').mean()
+    bf = bf.groupby('E').mean()
+
     # Average path lengths over trials
     tf = (df.reset_index()
             .assign(count=lambda x: ~np.isnan(x['depth']) / (N*T))
@@ -87,16 +95,15 @@ if FORCE_UPDATE or not pkl_file.exists():
             .agg({'depth': np.nanmean, 'breadth': np.nanmean, 'count': np.sum})
             .assign(VoE=V/Es)
             .assign(EoV=Es/V)
+            .assign(components=cf)
+            .assign(bipartite_depth=bf)
           )
 
-    # Average components over trials
-    cf = cf.groupby('E').mean()
-
     with open(pkl_file, 'wb') as fp:
-        pickle.dump((tf, cf), fp)
+        pickle.dump((tf, cf, bf), fp)
 else:
     with open(pkl_file, 'rb') as fp:
-        tf, cf = pickle.load(fp)
+        tf, cf, bf = pickle.load(fp)
 
 
 # -----------------------------------------------------------------------------
@@ -109,6 +116,7 @@ ax = fig.add_subplot()
 ax.scatter(tf['EoV'], tf['depth'], c='C0', zorder=3, label='DFS')
 ax.scatter(tf['EoV'], tf['breadth'], c='C3', zorder=3, label='BFS')
 ax.scatter(tf['EoV'], cf.values, c='C2', zorder=3, label='CC')
+ax.scatter(tf['EoV'], bf.values, c='C4', zorder=3, label='BP')
 # ax.axvline(1/2 * np.log(V), c='k', ls='--', alpha=0.5)
 ax.axhline(V/2, c='k', ls='--', alpha=0.5)
 
