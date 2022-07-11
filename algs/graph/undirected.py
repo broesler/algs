@@ -60,10 +60,7 @@ class UndirectedGraph(ABC):
             V = int(fp.readline())
             E = int(fp.readline())
             G = cls(V=V, **kwargs)
-            iters = fp.readlines()
-            if verbose:
-                iters = tqdm(iters)
-            for line in iters:
+            for line in tqdm(fp.readlines(), disable=not verbose):
                 v, w = line.strip().split()
                 G.add_edge(int(v), int(w))
             assert E == G.E
@@ -264,10 +261,7 @@ class STGraph(UndirectedGraph):
         g = cls(*args, **kwargs)
         # One pass to add all vertices and edges to the symbol table
         with open(Path(filename), 'r') as fp:
-            iters = fp.readlines()
-            if verbose:
-                iters = tqdm(iters)
-            for line in iters:
+            for line in tqdm(fp.readlines(), disable=not verbose):
                 words = line.strip().split(delim)
                 v = words[0]
                 for w in words[1:]:
@@ -366,10 +360,7 @@ class SymbolGraph:
         sg = cls(*args, **kwargs)
         # First pass to add all vertices to the symbol table
         with open(Path(filename), 'r') as fp:
-            iters = fp.readlines()
-            if verbose:
-                iters = tqdm(iters)
-            for line in iters:
+            for line in tqdm(fp.readlines(), disable=not verbose):
                 words = line.strip().split(delim)
                 for word in words:
                     if word not in sg._st:
@@ -952,9 +943,7 @@ class GraphProperties:
         """Compute any missing eccentricity values."""
         if None in self._eccs.values():
             vs = [k for k, e in self._eccs.items() if e is None]
-            if self._VERBOSE:
-                vs = tqdm(vs)
-            for v in vs:
+            for v in tqdm(vs, disable=not self._VERBOSE):
                 self._eccs[v] = self._ecc(v)
 
     def diameter(self):
@@ -1014,8 +1003,7 @@ class GraphProperties:
             return m
 
         # Compute the shortest cycle: O(V(V + E))
-        vs = tqdm(self.vertices) if self._VERBOSE else self.vertices
-        for v in vs:
+        for v in tqdm(self.vertices, disable=not self._VERBOSE):
             bfs = MinCyclePath(self.G, v)
             m = min(m, bfs.cycle_length)
             if m == 3:
