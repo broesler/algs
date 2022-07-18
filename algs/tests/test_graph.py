@@ -445,7 +445,7 @@ class TestCyclePath:
 @pytest.mark.parametrize('GT', [Graph, SimpleGraph, STGraph])
 class TestBipartite:
     def test_not_bipartite(self, tinyG):
-        b = Bipartite(tinyG, 0)
+        b = Bipartite(tinyG, [0])
         assert not b.is_bipartite
 
     def test_is_bipartite(self, tinyG):
@@ -459,7 +459,7 @@ class TestBipartite:
         tinyG._adj[4]._items.remove(3)
         tinyG._adj[9]._items.remove(12)
         tinyG._adj[12]._items.remove(9)
-        b = Bipartite(tinyG, 0)
+        b = Bipartite(tinyG, [0])
         assert b.is_bipartite
 
 
