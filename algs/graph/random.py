@@ -15,7 +15,7 @@ import pandas as pd
 from pathlib import Path
 
 from algs.adt import Interval1D
-from algs.unionfind import random_grid
+from algs.unionfind import full_grid, random_grid
 from algs.graph.undirected import (SimpleGraph, Graph, EuclideanGraph,
                                    SymbolGraph, TransportationGraph)
 
@@ -152,6 +152,33 @@ def random_euclidean_graph(V, d=None, connected=None):
             if D[v, w] < d:
                 G.add_edge(v, w)
     return G
+
+
+def full_grid_graph(V, random=False):
+    """Generate a graph where vertices are aligned on a `V`-by-`V` grid
+    and connected to each of their neighbors.
+
+    Parameters
+    ----------
+    V : int
+        The number of vertices per side of the grid, such that the total number
+        of vertices is `V^2`.
+    random : bool
+        If True, randomize the order of the edges.
+
+    Returns
+    -------
+    G : EuclideanGraph
+        An undirected graph with vertices labeled as integers [0, ..., V-1],
+        with (x, y) coordinates.
+    """
+    Vsq = V**2  # total number of vertices
+    edges = full_grid(V)     # generate all neighbor edges
+    if random:
+        rng.shuffle(edges)
+    y, x = np.mgrid[:V, :V]  # vertex coordinates are on the grid
+    x, y = np.ravel(x), np.ravel(y)
+    return EuclideanGraph(V=Vsq, edges=edges, x=x, y=y)
 
 
 # Exercise 4.1.43
