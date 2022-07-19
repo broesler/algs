@@ -19,14 +19,6 @@ from algs.search.hash import LinearProbingHashST
 from algs.search.tree import BST
 from algs.search.balanced_tree import RedBlackBST
 
-__all__ = ['UnorderedSet', 'OrderedSet',
-           'HashSet', 'Set',
-           'MultiSet', 'MultiHashSet',
-           'MathSet', 'MathMultiSet',
-           'MultiValHashST', 'MultiValBST', 'MultiValRedBlackBST',
-           'MultiST', 'MultiHashST',
-           'invert']
-
 
 # -----------------------------------------------------------------------------
 #         Define Abstract Base Classes
@@ -871,6 +863,35 @@ class MultiValRedBlackBST(RedBlackBST, MultiValBST):
             self.val.enqueue(value)
 
 
+class IndexSet(HashSet):
+    """Implements an unordered set where each item also has an index."""
+
+    def __init__(self, keys=None):
+        self._n = 0
+        self._st = dict()
+        self._ts = dict()
+        super().__init__(keys)
+
+    @property
+    def N(self):
+        return self._n
+
+    def add(self, k):
+        if k not in self._st:
+            self._st[k] = self._n
+            self._ts[self._n] = k
+            self._n += 1
+
+    def __delitem__(self, k):
+        raise NotImplementedError()
+
+    def index(self, k):
+        return self._st[k]
+
+    def key(self, i):
+        return self._ts[i]
+
+
 # -----------------------------------------------------------------------------
 #         Functions
 # -----------------------------------------------------------------------------
@@ -896,6 +917,10 @@ if __name__ == '__main__':
 
     keys = list('SEARCHEXAMPLE')
     items = list((c, i) for i, c in enumerate(keys))
+
+    st = IndexSet(keys)
+    print(st)
+    print([st.index(k) for k in st])
 
     # # Plot multi-key trees vs their unique-key counterparts
     # t = BST(items, cache=True)
