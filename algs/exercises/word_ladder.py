@@ -27,53 +27,68 @@ def is_neighbor(a, b):
     return True
 
 
-def rotate(a, n):
+def rotate(a, n=1):
+    """Circular shift a list."""
     return a[n:] + a[:n]
 
 
-N = 5  # word length
+def build_word_graph(words, method='fast'):
+    """Build the undirected graph of words that differ by exactly 1 letter."""
+    V = len(words)
+    G = Graph(V)
 
-wordfile = Path(f"../data/words{N}.txt")
-words = IndexSet()
-with open(wordfile, 'r') as fp:
-    for line in fp.readlines():
-        words.add(line.strip())
+    # Web Exercise 11: Slow O(N²) method:
+    if method == 'slow':
+        for v in words:
+            for w in words:
+                if len(v) != len(w):
+                    raise ValueError('{v} and {w} must have same length!')
+                i, j = words.index(v), words.index(w)
+                if is_neighbor(v, w):
+                    G.add_edge(i, j)
 
-# Build the graph
-V = len(words)
-G = Graph(V)
+    elif method == 'fast':
+        # Web Exercise 12: Faster method
+        # Sort the list N times, each time rotating the words by 1 character,
+        # such that words that differ by 1 character are consecutive in the
+        # list. Then, we only have to check N-1 pairs.
+        for n in range(N):
+            sorted_words = sorted(words, key=lambda x: rotate(x, n))
+            for i in range(V-1):
+                # Check if last letters match
+                if is_neighbor(sorted_words[i], sorted_words[i+1]):
+                    v = words.index(sorted_words[i])
+                    w = words.index(sorted_words[i+1])
+                    G.add_edge(v, w)
+    else:
+        raise ValueError(f"{method=} not recognized!")
 
-# Web Exercise 11: Slow O(N²) method:
-# for v in words:
-#     for w in words:
-#         if len(v) != len(w):
-#             raise ValueError('{v} and {w} must have same length!')
-#         i, j = words.index(v), words.index(w)
-#         if is_neighbor(v, w):
-#             G.add_edge(i, j)
-
-# Web Exercise 12: Faster method
-# Sort the list N times, each time rotating the words by 1 character, such that
-# words that differ by 1 character are consecutive in the list. Then, we only
-# have to check N-1 pairs.
-for n in range(N):
-    sorted_words = sorted(words, key=lambda x: rotate(x, n))
-    for i in range(V-1):
-        # Check if last letters match
-        if is_neighbor(sorted_words[i], sorted_words[i+1]):
-            v = words.index(sorted_words[i])
-            w = words.index(sorted_words[i+1])
-            G.add_edge(v, w)
+    return G
 
 
 if __name__ == "__main__":
+    N = 5  # word length
+
+    wordfile = Path(f"../data/words{N}.txt")
+    words = IndexSet()
+    with open(wordfile, 'r') as fp:
+        for line in fp.readlines():
+            words.add(line.strip())
+
+    # Build the graph
+    G = build_word_graph(words, method='fast')
+
+    # Test paths
     a = 'white'
     b = 'house'
+
     bfs = BreadthFirstPaths(G, words.index(a))
     if not bfs.has_path_to(words.index(b)):
         print('not connected.')
     else:
-        for v in bfs.path_to(words.index(b)):
+        p = bfs.path_to(words.index(b))
+        print(f"length: {len(p)}")
+        for v in p:
             print(words.key(v))
 
 
