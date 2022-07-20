@@ -11,7 +11,7 @@
 
 import operator
 from abc import ABC, abstractmethod
-from .basics import Stack, Queue, PriorityQueue
+from algs.basics import Stack, Queue, PriorityQueue
 
 INF = float('inf')
 M_INF = float('-inf')

@@ -314,7 +314,7 @@ class Degrees:
         return G._SELF_LOOPS and all([x == 1 for x in self._outdegree])
 
 
-# Exercise 4.2.8
+# Exercise 4.2.9
 def check_topological(G, order):
     """Return True if `order` is a topological order of `G`."""
     if not Topological(G).is_DAG:
@@ -331,6 +331,7 @@ def check_topological(G, order):
     return True
 
 
+# TODO move to tests/test_digraph.py
 # -----------------------------------------------------------------------------
 #         Tests
 # -----------------------------------------------------------------------------
