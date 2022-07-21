@@ -904,13 +904,10 @@ class ComplementBFS(Paths):
     __doc__ = f"""Implements breadth-first search to find shortest paths in the
     complement graph.
     {Paths.__doc__}"""
-    _WHITE = 0
-    _GREY = 1
-    _BLACK = 2
 
     def __init__(self, G, s):
         super().__init__(G, s)
-        self._color = G.V * [self._WHITE]
+        self._marked = G.V * [False]
         self._edge_to = G.V * [None]  # last vertex on known path to this one
         self._dist_to = G.V * [None]  # Exercise 4.1.13
         self._bfs(G, s)
@@ -918,27 +915,31 @@ class ComplementBFS(Paths):
     def _bfs(self, G, v):
         """Perform breadth-first search from vertex `v`."""
         q = Queue()
+        self._marked[v] = True
         self._dist_to[v] = 0
         q.enqueue(v)
-        L1 = list(range(G.V))  # all nodes in graph
+        # NOTE should use a multi-set for fast deletion
+        # L1 == all nodes *not* adjacent to v in G (i.e. *adjacent* in G')
+        L1 = list(range(G.V))
+        L1.remove(v)
+        # L2 == all unmarked nodes *adjacent* to v in G
         L2 = list()
         while not q.is_empty:
             v = q.dequeue()
             for w in G.adj(v):
-                if self._color[w] == self._WHITE:
+                if not self._marked[w]:
                     L1.remove(w)
                     L2.append(w)
             for w in L1:
                 self._edge_to[w] = v
-                self._color[w] = self._GREY
+                self._marked[w] = True
                 self._dist_to[w] = self._dist_to[v] + 1
                 q.enqueue(w)
-            self._color[v] = self._BLACK
-            L1 = L2.copy()
+            L1 = L2
             L2 = list()
 
     def has_path_to(self, v):
-        return self._color[v] == self._BLACK
+        return self._marked[v]
 
     def path_to(self, v):
         # Same as DepthFirstPaths method
@@ -1687,9 +1688,11 @@ if __name__ == "__main__":
 
     print('complement', complement_graph(GC))
     bfs_cx = BreadthFirstPaths(complement_graph(GC), 0)
-    print(bfs_cx.path_to(4))
-    bfs_c = ComplementBFS(G, 0)
-    print(bfs_c.path_to(4))
+    bfs_c = ComplementBFS(GC, 0)
+    print(bfs_cx.path_to(4))  # [0, 4]
+    print(bfs_c.path_to(4))   # [0, 4]
+    print(bfs_cx.path_to(2))  # [0, 4, 5, 2]
+    print(bfs_c.path_to(2))   # [0, 4, 5, 2]
 
 # =============================================================================
 # =============================================================================
