@@ -516,8 +516,8 @@ class EuclideanGraph(Graph):
         ax : :obj:`plt.axes`
             The axes on which the graph was plotted.
         """
-        _ekws = dict(ls='-', c='k', lw=2)
-        _vkws = dict(s=100, c='k')
+        _ekws = dict(ls='-', c='k', lw=1)
+        _vkws = dict(s=10, c='k')
         if p is None:
             vs = self.vertices()
             es = self.edges()
