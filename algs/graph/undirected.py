@@ -889,6 +889,75 @@ def spanning_forest_bfs(G):
     return trees
 
 
+# Web Exercise 31
+def complement_graph(G):
+    """Return a Graph that has an edge v-w iff v-w is not in `G`."""
+    Gc = Graph(G.V)
+    vs = set(range(G.V))
+    for v in range(G.V):
+        Gc._adj[v] = Bag(vs - set([v] + list(G.adj(v))))
+    return Gc
+
+# See:
+# <https://stackoverflow.com/questions/24476027/shortest-path-in-a-complement-graph-algorithm>
+class ComplementBFS(Paths):
+    __doc__ = f"""Implements breadth-first search to find shortest paths in the
+    complement graph.
+    {Paths.__doc__}"""
+    _WHITE = 0
+    _GREY = 1
+    _BLACK = 2
+
+    def __init__(self, G, s):
+        super().__init__(G, s)
+        self._color = G.V * [self._WHITE]
+        self._edge_to = G.V * [None]  # last vertex on known path to this one
+        self._dist_to = G.V * [None]  # Exercise 4.1.13
+        self._bfs(G, s)
+
+    def _bfs(self, G, v):
+        """Perform breadth-first search from vertex `v`."""
+        q = Queue()
+        self._dist_to[v] = 0
+        q.enqueue(v)
+        L1 = list(range(G.V))  # all nodes in graph
+        L2 = list()
+        while not q.is_empty:
+            v = q.dequeue()
+            for w in G.adj(v):
+                if self._color[w] == self._WHITE:
+                    L1.remove(w)
+                    L2.append(w)
+            for w in L1:
+                self._edge_to[w] = v
+                self._color[w] = self._GREY
+                self._dist_to[w] = self._dist_to[v] + 1
+                q.enqueue(w)
+            self._color[v] = self._BLACK
+            L1 = L2.copy()
+            L2 = list()
+
+    def has_path_to(self, v):
+        return self._color[v] == self._BLACK
+
+    def path_to(self, v):
+        # Same as DepthFirstPaths method
+        if not self.has_path_to(v):
+            return None
+        path = Stack()
+        x = v
+        while x != self.s:
+            path.push(x)
+            x = self._edge_to[x]
+        path.push(self.s)
+        return path
+
+    # Exercise 4.1.13
+    def dist_to(self, v):
+        """Return the distance from source to `v`. None if not connected."""
+        return self._dist_to[v]
+
+
 # -----------------------------------------------------------------------------
 #         Graph Properties
 # -----------------------------------------------------------------------------
@@ -1615,6 +1684,12 @@ if __name__ == "__main__":
     print('   path', cp.cycle())
     cm = MinCyclePath(Gm, 0)
     print('minpath', cm.cycle())
+
+    print('complement', complement_graph(GC))
+    bfs_cx = BreadthFirstPaths(complement_graph(GC), 0)
+    print(bfs_cx.path_to(4))
+    bfs_c = ComplementBFS(G, 0)
+    print(bfs_c.path_to(4))
 
 # =============================================================================
 # =============================================================================
