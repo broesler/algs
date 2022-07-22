@@ -58,6 +58,13 @@ def bounding_box(points):
     return Point2D(xs[0].x, ys[0].y), Point2D(xs[-1].x, ys[-1].y)
 
 
+def round_to_grid(p, d=1.0, p0=Point2D(0, 0)):
+    """Round the point `p` to the nearest grid point."""
+    xg = d * np.floor(p.x / d + 0.5)
+    yg = d * np.floor(p.y / d + 0.5)
+    return Point2D(xg, yg)
+
+
 # def closest_pair_rabin(points):
 #     """Implement the Rabin (1976) algorithm.
 
@@ -79,8 +86,51 @@ d = min([points[a].dist_to(points[b]) for a, b in idx])
 assert d > 0
 # Create d-by-d grid on bounding box of points
 p0, p1 = bounding_box(points)
-y, x = np.mgrid[p0.x-d:p1.x+d:d, p0.y-d:p1.y+d:d]
-# return y, x
+# grid includes origin, but only need points in vicinity of our list of points
+p0, p1 = round_to_grid(p0), round_to_grid(p1)
+yg, xg = np.mgrid[p0.x:p1.x:d, p0.y:p1.y:d]  # only actually need for plotting
+# Round the points to their nearest grid point, storing in a hash table
+grid = dict()
+for p in points:
+    g = round_to_grid(p, d, p0)
+    if g not in grid:
+        grid[g] = list()
+    grid[g].append(p)
+# For each input point, compute the distance to all other points at the same
+# grid point, or any grid point within the neighborhood
+i_min = None
+j_min = None
+q_min = None
+d_min = float('inf')
+for i, p in enumerate(points):
+    g = round_to_grid(p, d, p0)
+    keys = [g,                      # center
+            Point2D(g.x-d, g.y),    # left
+            Point2D(g.x+d, g.y),    # right
+            Point2D(g.x, g.y-d),    # down
+            Point2D(g.x, g.y+d),    # up
+            Point2D(g.x-d, g.y-d),  # bottom left
+            Point2D(g.x-d, g.y+d),  # top left
+            Point2D(g.x+d, g.y-d),  # bottom right
+            Point2D(g.x+d, g.y+d),  # top right
+            ]
+    for k in keys:
+        try:
+            qs = grid[k]
+        except KeyError:
+            print(f'skipping: {(i, p, k)=}')
+            continue
+        for q in qs:
+            test = p.dist_to(q) 
+            if test < d_min:
+                i_min = i
+                q_min = q
+                d_min = test
+
+j_min = points.index(q_min)  # linear search, could store points as IndexSet.
+# return points[i_min], points[j_min]
+a, b =  points[i_min], points[j_min]
+
 
 
 an, bn = closest_pair_naive(points)
@@ -93,24 +143,34 @@ ax = fig.add_subplot()
 
 # Plot the Rabin grid
 # ax.scatter(x, y, c='C2', s=20, alpha=0.5)
-ax.plot(x, y, c='C2', alpha=0.5)
-ax.plot(x.T, y.T, c='C2', alpha=0.5)
+ax.plot(xg, yg, c='C2', alpha=0.5)
+ax.plot(xg.T, yg.T, c='C2', alpha=0.5)
 
 for p in points:
     p.draw(color=0.7*np.ones(3))
 
 # Plot the random pairs of points
-markers = ['o', 's', 'x', 'v', '^', 'd', '*', '<', '>']
-for k, (i, j) in enumerate(idx):
-    marker = markers[k % len(markers)]
-    points[i].draw(marker=marker, c='k', s=50)
-    points[j].draw(marker=marker, c='k', s=50)
+# markers = ['o', 's', 'x', 'v', '^', 'd', '*', '<', '>']
+# for k, (i, j) in enumerate(idx):
+#     marker = markers[k % len(markers)]
+#     points[i].draw(marker=marker, c='k', s=50)
+#     points[j].draw(marker=marker, c='k', s=50)
+
+# Plot the closest grid points
+for g, ps in grid.items():
+    for p in ps:
+        ax.plot((p.x, g.x), (p.y, g.y), '-k', zorder=0)
+
 
 
 # Highlight the closest pait
 an.draw(c='C3')
 bn.draw(c='C3')
 an.draw_to(bn, c='C3')
+
+a.draw(c='C2')
+b.draw(c='C2')
+a.draw_to(b, c='C2')
 
 ax.set(xlabel='x', #xlim=(-0.02, 1.02),
        ylabel='y', #ylim=(-0.02, 1.02),
