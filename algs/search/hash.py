@@ -898,7 +898,7 @@ class DoubleHashingHashST(LinearProbingHashST):
             self._resize(MAX_PRIMES[self._lgM])
 
 
-# Exercise 3.4.31
+# Exercise 3.4.31 (also Web Exercise 14)
 # TODO Try implementing with a single table, where hashes go to different
 # locations in the table like DoubleHashingHashST.
 class CuckooHashST(HashTable):
@@ -1120,6 +1120,50 @@ class CuckooHashST(HashTable):
     def items(self):
         return [(k, v) for (k, v) in zip(self._keys, self._vals)
                 if k is not None]
+
+
+class LIFOHashST(LinearProbingHashST):
+    __doc__ = f"""Implements a hash table using arrays with linear probing,
+    except most recently added item is placed at the hash location, and
+    collisions are moved to the right.
+    {SymbolTable.__doc__}"""
+
+    def __setitem__(self, k, v):
+        if not self._RESIZE_FLAG and self.N == self.M:
+            raise RuntimeError(("Trying to insert into a full table! "
+                                "Set `resize=True`."))
+
+        if self._RESIZE_FLAG and self.N >= self.M // 2:
+            self._resize(2*self.M)
+            self._lgM += 1
+
+        i = self._hash(k)
+        self._cost = 1
+        if k == self._keys[i]:
+            self._vals[i] = v
+            return
+        elif self._keys[i] is not None:
+            # If there is a collision, move the cluster over one spot
+            xk = self._keys[i]  # temp variables
+            xv = self._vals[i]
+            self._keys[i] = k
+            self._vals[i] = v
+            self.N += 1
+            i = (i + 1) % self.M
+            while self._keys[i] is not None:
+                self._keys[i] = xk
+                self._vals[i] = xv
+                i = (i + 1) % self.M
+                xk = self._keys[i]
+                xv = self._vals[i]
+                self._cost += 1
+            # Place the temp variables into the empty slot
+            self._keys[i] = xk
+            self._vals[i] = xv
+        else:
+            self._keys[i] = k
+            self._vals[i] = v
+            self.N += 1
 
 
 # Alias for convenience

@@ -15,7 +15,7 @@ import pytest
 from algs.search.hash import (SeparateChainingHashST,
                               SeparateChainingLiteHashST, LinearProbingHashST,
                               LazyLinearProbingHashST, DoubleProbingHashST,
-                              DoubleHashingHashST, CuckooHashST)
+                              DoubleHashingHashST, CuckooHashST, LIFOHashST)
 
 # Exercise 3.4.1
 KEYS = 'EASYQUTION'
@@ -70,6 +70,10 @@ class MyCuckooHashST(CuckooHashST):
     class HashArrayB(CuckooHashST.HashArrayB):
         def hash(self, k):
             return _hash_code(k, R=17) % self.M
+
+
+class MyLIFOHashST(LIFOHashST):
+    _hash = _hash
 
 
 @pytest.fixture
@@ -172,6 +176,11 @@ def test_cht_resize():
     st = MyCuckooHashST(ITEMS)
     assert st.keys() == list('AYOESITQNU')
 
+
+# Web Exercise 16
+def test_lifo():
+    st = MyLIFOHashST(ITEMS, M=16, resize=False)
+    assert st.keys() == list('QTASIYOUEN')
 
 # =============================================================================
 # =============================================================================
