@@ -151,7 +151,7 @@ def next_prime(n):
 def prev_prime(n):
     """Find the previous prime number 2 <= p < `n`."""
     if n < 0:
-        raise ValueError(f"{n = } must be a postivie integer!")
+        raise ValueError(f"{n = } must be a positive integer!")
     if n < 2:
         return None
     # Start with the next odd number
