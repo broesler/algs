@@ -18,8 +18,8 @@ from matplotlib.lines import Line2D
 from algs.graph import (EuclideanGraph, BreadthFirstPaths, DepthFirstPaths_nr,
                         Bipartite)
 
-# G = EuclideanGraph.fromfile('../data/tinyG.txt')
-G = EuclideanGraph.fromfile('../data/tinyG_bp.txt', two_color=True)
+G = EuclideanGraph.fromfile('../data/tinyG.txt')
+# G = EuclideanGraph.fromfile('../data/tinyG_bp.txt', two_color=True)
 # See p 522
 x, y = np.array([[0,  3],
                  [1,  2],
