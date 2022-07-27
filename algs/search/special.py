@@ -331,6 +331,8 @@ class BloomFilter():
         True if `size == 0`.
     M : int
         The number of bits in the hash table.
+    nbits : int
+        The number of bits set to 1.
     prob : float
         The probability of a false positive `exists` operation.
 
@@ -362,10 +364,10 @@ class BloomFilter():
     def __init__(self, keys=None, p=0.02):
         keys = keys or []
         if len(keys) > 0:
-            M = 8*len(keys)
+            M = int(-len(keys) * np.log2(p) / np.log(2))  # optimal M given `p`
         self.N = 0
         self.M = M
-        self.k = 5  # ln(2) * (M/N) ~ 0.69 * 8 bits/element ~ 5.5 
+        self.k = int(-np.log2(p))  # optimal `k` given M and N
         self._bits = np.zeros(self.M, dtype=bool)
         try:
             for key in keys:
@@ -380,6 +382,15 @@ class BloomFilter():
     @property
     def is_empty(self):
         return self.size() == 0
+
+    @property
+    def nbits(self):
+        """Return the number of bits set to 1."""
+        return self._bits.sum()
+
+    @property
+    def prob(self):
+        return (1 - np.exp(-self.k*self.N/self.M))**self.k
 
     def _hash0(self, k):
         """Take the upper 32 bits of a 64-bit hash function."""
@@ -413,7 +424,6 @@ class BloomFilter():
         """Return False if an element is not in the set. If True, the element
         *may* not be in the set with small probability."""
         return all(self._bits[self._hashes(key)])
-
 
 
 # TODO move to unit tests
@@ -486,8 +496,15 @@ if __name__ == '__main__':
     assert bf.size() == 10
     for k in keys:
         assert k in bf
-    for k in set(string.ascii_uppercase) - set(keys):
-        assert k not in bf
+    for k in string.ascii_uppercase:
+        print(f"{k}: {k in bf}")
+    print(10*'-')
+    print(f"{bf.N = }")
+    print(f"{bf.M = }")
+    print(f"{bf.k = }")
+    print(f"{bf.N/bf.M = :.4g}")
+    print(f"{bf.nbits = }")
+    print(f"{bf.prob = :.4g}")
 
 # =============================================================================
 # =============================================================================
