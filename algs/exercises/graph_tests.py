@@ -9,7 +9,7 @@
 """
 #==============================================================================
 
-from algs.graph import *
+from algs.graph.edgeweighted import *
 
 def load_graph(filename):
     G = Digraph()

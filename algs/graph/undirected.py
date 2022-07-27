@@ -516,8 +516,8 @@ class EuclideanGraph(Graph):
         ax : :obj:`plt.axes`
             The axes on which the graph was plotted.
         """
-        _ekws = dict(ls='-', c='k', lw=2)
-        _vkws = dict(s=100, c='k')
+        _ekws = dict(ls='-', c='k', lw=1)
+        _vkws = dict(s=10, c='k')
         if p is None:
             vs = self.vertices()
             es = self.edges()
@@ -887,6 +887,76 @@ def spanning_forest_bfs(G):
     for c in comps:
         trees.append(spanning_tree_bfs(G, c[0]))
     return trees
+
+
+# Web Exercise 31
+def complement_graph(G):
+    """Return a Graph that has an edge v-w iff v-w is not in `G`."""
+    Gc = Graph(G.V)
+    vs = set(range(G.V))
+    for v in range(G.V):
+        Gc._adj[v] = Bag(vs - set([v] + list(G.adj(v))))
+    return Gc
+
+# See:
+# <https://stackoverflow.com/questions/24476027/shortest-path-in-a-complement-graph-algorithm>
+class ComplementBFS(Paths):
+    __doc__ = f"""Implements breadth-first search to find shortest paths in the
+    complement graph.
+    {Paths.__doc__}"""
+
+    def __init__(self, G, s):
+        super().__init__(G, s)
+        self._marked = G.V * [False]
+        self._edge_to = G.V * [None]  # last vertex on known path to this one
+        self._dist_to = G.V * [None]  # Exercise 4.1.13
+        self._bfs(G, s)
+
+    def _bfs(self, G, v):
+        """Perform breadth-first search from vertex `v`."""
+        q = Queue()
+        self._marked[v] = True
+        self._dist_to[v] = 0
+        q.enqueue(v)
+        # NOTE should use a multi-set for fast deletion
+        # L1 == all nodes *not* adjacent to v in G (i.e. *adjacent* in G')
+        L1 = list(range(G.V))
+        L1.remove(v)
+        # L2 == all unmarked nodes *adjacent* to v in G
+        L2 = list()
+        while not q.is_empty:
+            v = q.dequeue()
+            for w in G.adj(v):
+                if not self._marked[w]:
+                    L1.remove(w)
+                    L2.append(w)
+            for w in L1:
+                self._edge_to[w] = v
+                self._marked[w] = True
+                self._dist_to[w] = self._dist_to[v] + 1
+                q.enqueue(w)
+            L1 = L2
+            L2 = list()
+
+    def has_path_to(self, v):
+        return self._marked[v]
+
+    def path_to(self, v):
+        # Same as DepthFirstPaths method
+        if not self.has_path_to(v):
+            return None
+        path = Stack()
+        x = v
+        while x != self.s:
+            path.push(x)
+            x = self._edge_to[x]
+        path.push(self.s)
+        return path
+
+    # Exercise 4.1.13
+    def dist_to(self, v):
+        """Return the distance from source to `v`. None if not connected."""
+        return self._dist_to[v]
 
 
 # -----------------------------------------------------------------------------
@@ -1615,6 +1685,14 @@ if __name__ == "__main__":
     print('   path', cp.cycle())
     cm = MinCyclePath(Gm, 0)
     print('minpath', cm.cycle())
+
+    print('complement', complement_graph(GC))
+    bfs_cx = BreadthFirstPaths(complement_graph(GC), 0)
+    bfs_c = ComplementBFS(GC, 0)
+    print(bfs_cx.path_to(4))  # [0, 4]
+    print(bfs_c.path_to(4))   # [0, 4]
+    print(bfs_cx.path_to(2))  # [0, 4, 5, 2]
+    print(bfs_c.path_to(2))   # [0, 4, 5, 2]
 
 # =============================================================================
 # =============================================================================
