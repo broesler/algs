@@ -1144,18 +1144,18 @@ class LIFOHashST(LinearProbingHashST):
             return
         elif self._keys[i] is not None:
             # If there is a collision, move the cluster over one spot
-            xk = self._keys[i]  # temp variables
-            xv = self._vals[i]
-            self._keys[i] = k
-            self._vals[i] = v
+            xk, xv = k, v
             self.N += 1
-            i = (i + 1) % self.M
             while self._keys[i] is not None:
+                # Pick up the existing values
+                tk = self._keys[i]
+                tv = self._vals[i]
+                # Place the new values
                 self._keys[i] = xk
                 self._vals[i] = xv
+                # Move to the next slot
+                xk, xv = tk, tv
                 i = (i + 1) % self.M
-                xk = self._keys[i]
-                xv = self._vals[i]
                 self._cost += 1
             # Place the temp variables into the empty slot
             self._keys[i] = xk
@@ -1188,6 +1188,21 @@ if __name__ == "__main__":
     st = MyLinearProbingHashST(ITEMS, M=4, resize=True)
     print(f"M = {st.M:2d}: {st._keys}")
     assert st.keys() == list('ASYENQTIOU')
+
+    class MyLinearProbingHashST(LinearProbingHashST):
+        def _hash(self, k):
+            return 0
+
+    st = MyLinearProbingHashST(ITEMS, M=16, resize=False)
+    print(st._keys)
+
+    class MyLIFOHashST(LIFOHashST):
+        def _hash(self, k):
+            return 0
+            # return 11*(ord(k) - ord('A')) % self.M
+
+    st = MyLIFOHashST(ITEMS, M=16, resize=False)
+    print(st._keys)
 
 # =============================================================================
 # =============================================================================
