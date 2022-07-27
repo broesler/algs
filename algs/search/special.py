@@ -9,6 +9,8 @@ Menagerie of classes that use symbol tables, but don't quite fit in elsewhere.
 """
 # =============================================================================
 
+import numpy as np
+
 from algs.basics import Collection, Queue, RandomQueue, DoubleList
 from algs.search import Set, HashSet, ST, HashST
 
@@ -315,7 +317,108 @@ class IndirectPQ(Collection):
         return self.__getitem__(k)
 
 
+# Web Exercise 9
+class BloomFilter():
+    r"""Implements a hash table with only `add` and `exists` operations.
+    Determines if an element is definitively *not* in the set, or *may* be in
+    the set with probability << 1.
+
+    Attributes
+    ----------
+    size : int
+        The number of elements in the set.
+    is_empty : bool
+        True if `size == 0`.
+    M : int
+        The number of bits in the hash table.
+    prob : float
+        The probability of a false positive `exists` operation.
+
+    Notes
+    -----
+    The optimal number of hash functions is :math:`k = ln(2) * M/N`.
+    The number of bits per element *b = M/N* is:
+
+    .. math::
+        b = \frac{\log\frac{1}{p}}{\log^2 2}
+
+    where *p* is the false positive probability.
+
+    The values of this expression are:
+        p      b
+        0.001  14.38
+        0.003  12.32
+        0.007  10.27
+        0.019   8.22
+        0.052   6.16
+        0.139   4.11
+        0.373   2.05
+        1.000   0.00
+    so choosing *b = 8* gives ~ 2% false positive rate.
+    """
+
+    # TODO allow client to set the false positive rate, then choose `b` and `M`
+    # based on (expected) N = len(keys)
+    def __init__(self, keys=None, p=0.02):
+        keys = keys or []
+        if len(keys) > 0:
+            M = 8*len(keys)
+        self.N = 0
+        self.M = M
+        self.k = 5  # ln(2) * (M/N) ~ 0.69 * 8 bits/element ~ 5.5 
+        self._bits = np.zeros(self.M, dtype=bool)
+        try:
+            for key in keys:
+                self.add(key)
+        except ValueError:
+            raise ValueError(f"{self.__class__.__name__} "
+                             'expects an iterable input.')
+
+    def size(self):
+        return self.N
+
+    @property
+    def is_empty(self):
+        return self.size() == 0
+
+    def _hash0(self, k):
+        """Take the upper 32 bits of a 64-bit hash function."""
+        return hash(k) >> 32
+
+    def _hash1(self, k):
+        """Take the lower 32 bits of a 64-bit hash function."""
+        return hash(k) & ((1 << 32) - 1)
+
+    def _hash(self, k, i=0):
+        """Combine two hash functions to get the `i`th hash function using the
+        Kirsch-Mitzenmacher optimization [0].
+
+        .. [0]:: <https://www.eecs.harvard.edu/~michaelm/postscripts/tr-02-05.pdf>
+        """
+        return (self._hash0(k) + i*self._hash1(k)) % self.M
+
+    def _hashes(self, key):
+        """Return all `k` hashes for `key`."""
+        h0 = self._hash0(key)
+        h1 = self._hash1(key)
+        return [(h0 + i*h1) % self.M for i in range(self.k)]
+
+    def add(self, key):
+        """Add an element to the set by setting corresponding bits to True."""
+        if key not in self:
+            self._bits[self._hashes(key)] = True
+            self.N += 1
+
+    def __contains__(self, key):
+        """Return False if an element is not in the set. If True, the element
+        *may* not be in the set with small probability."""
+        return all(self._bits[self._hashes(key)])
+
+
+
+# TODO move to unit tests
 if __name__ == '__main__':
+    import string
     keys = list('SEARCHEXAMPLE')
 
     print('----- LRUCache -----')
@@ -374,6 +477,17 @@ if __name__ == '__main__':
     print(st)
     print(st.delete_max())
     print(st)
+
+    print('----- BloomFilter -----')
+    # TODO test probabilistically with large number of integers to show that
+    # *p* percent of time, `k in bf` returns True when `k` is not, in fact, in
+    # the table.
+    bf = BloomFilter(keys)
+    assert bf.size() == 10
+    for k in keys:
+        assert k in bf
+    for k in set(string.ascii_uppercase) - set(keys):
+        assert k not in bf
 
 # =============================================================================
 # =============================================================================
