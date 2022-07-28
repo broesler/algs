@@ -1143,32 +1143,27 @@ class LIFOHashST(LinearProbingHashST):
 
         i = self._hash(k)
         self._cost = 1
-        # Key is guaranteed to be at the beginning of the cluster if it exists
+        # If the key already exists, move it to the hash slot
         if k == self._keys[i]:
             self._vals[i] = v
-            return
-        elif self._keys[i] is not None:
+        elif self._keys[i] is None:
+            self._keys[i] = k
+            self._vals[i] = v
+            self.N += 1
+        else:
             # If there is a collision, move the cluster over one spot
             xk, xv = k, v
             self.N += 1
             while self._keys[i] is not None:
-                # Pick up the existing values
-                tk = self._keys[i]
-                tv = self._vals[i]
-                # Place the new values
-                self._keys[i] = xk
-                self._vals[i] = xv
-                # Move to the next slot
-                xk, xv = tk, tv
+                # Swap the values
+                self._keys[i], xk = xk, self._keys[i] 
+                self._vals[i], xv = xv, self._vals[i] 
                 i = (i + 1) % self.M
                 self._cost += 1
-            # Place the temp variables into the empty slot
+            # Place the last key/value into the empty slot
             self._keys[i] = xk
             self._vals[i] = xv
-        else:
-            self._keys[i] = k
-            self._vals[i] = v
-            self.N += 1
+
 
 # # Web Exercise 17
 # class RobinHoodHashST(LinearProbingHashST):
@@ -1188,23 +1183,13 @@ class LIFOHashST(LinearProbingHashST):
 
 #         i = self._hash(k)
 #         self._cost = 1
-#         # If there is a collision, choose the key with the larger displacement
+#         d = 0  # distance to the current slot from the hashed slot
 #         while self._keys[i] is not None:
 #             if k == self._keys[i]:
 #                 self._vals[i] = v
 #                 return
-#             # Compate hash displacements
-#             dk = self._hash_displacement(k)
-#             dx = self._hash_displacement(self._keys[i]
-#             if
-#             # Pick up the existing values
-#             tk = self._keys[i]
-#             tv = self._vals[i]
-#             # Place the new values
-#             self._keys[i] = xk
-#             self._vals[i] = xv
-#             # Move to the next slot
-#             xk, xv = tk, tv
+#             # Swap the key with the larger displacement
+#             dx = (i - self._hash(self._keys[i])) % self.M
 #             i = (i + 1) % self.M
 #             self._cost += 1
 #         # # Place the temp variables into the empty slot
@@ -1239,16 +1224,18 @@ if __name__ == "__main__":
     print(f"M = {st.M:2d}: {st._keys}")
     assert st.keys() == list('ASYENQTIOU')
 
+    KEYS = 'EASYQUS'
+    ITEMS = tuple((c, i) for i, c in enumerate(KEYS))
     class MyLinearProbingHashST(LinearProbingHashST):
         def _hash(self, k):
-            return -2
+            return 0
 
     st = MyLinearProbingHashST(ITEMS, M=16, resize=False)
     print(st._keys)
 
     class MyLIFOHashST(LIFOHashST):
         def _hash(self, k):
-            return -2
+            return 0
             # return 11*(ord(k) - ord('A')) % self.M
 
     st = MyLIFOHashST(ITEMS, M=16, resize=False)
