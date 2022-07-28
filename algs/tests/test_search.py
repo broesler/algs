@@ -20,7 +20,7 @@ from algs.search import (SequentialSearchST, BinarySearchST, ArrayST, BST,
                          SeparateChainingHashST, SeparateChainingLiteHashST,
                          LinearProbingHashST, LazyLinearProbingHashST,
                          DoubleProbingHashST, DoubleHashingHashST,
-                         CuckooHashST,
+                         CuckooHashST, LIFOHashST, RobinHoodHashST,
                          MultiValBST, MultiValRedBlackBST, MultiValHashST)
 from algs.search.set import invert
 
@@ -55,7 +55,8 @@ UNORDERED_STS = set([SequentialSearchST, ArrayST,
                      SeparateChainingHashST, SeparateChainingLiteHashST,
                      LinearProbingHashST, LazyLinearProbingHashST,
                      DoubleProbingHashST, DoubleHashingHashST,
-                     CuckooHashST, MultiValHashST])
+                     CuckooHashST, LIFOHashST, RobinHoodHashST,
+                     MultiValHashST])
 
 ORDERED_STS = set([BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr,
                    ArrayBST, RedBlackBST, TopDown234, TopDown234_nr,
@@ -81,6 +82,8 @@ NO_CACHE = set([ArrayBST,
                 DoubleProbingHashST,
                 DoubleHashingHashST,
                 CuckooHashST,
+                LIFOHashST,
+                RobinHoodHashST,
                 ])
 
 

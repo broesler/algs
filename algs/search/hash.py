@@ -16,7 +16,8 @@ from algs.search.table import SymbolTable, SequentialSearchST
 __all__ = ['HashTable', 'HashST', 'SeparateChainingHashST',
            'SeparateChainingLiteHashST', 'LinearProbingHashST',
            'LazyLinearProbingHashST', 'DoubleProbingHashST',
-           'DoubleHashingHashST', 'CuckooHashST']
+           'DoubleHashingHashST', 'CuckooHashST', 'LIFOHashST',
+           'RobinHoodHashST']
 
 # Table of primes less than the nearest power of 2
 # Mersenne primes like 31 are nice because 31 = 2**5 - 1 == (1 << 5) - 1.
@@ -1152,8 +1153,8 @@ class LIFOHashST(LinearProbingHashST):
             self.N += 1
             while self._keys[i] is not None:
                 # Swap the values
-                self._keys[i], xk = xk, self._keys[i] 
-                self._vals[i], xv = xv, self._vals[i] 
+                self._keys[i], xk = xk, self._keys[i]
+                self._vals[i], xv = xv, self._vals[i]
                 if k == xk:
                     self.N -= 1
                     return
@@ -1164,40 +1165,48 @@ class LIFOHashST(LinearProbingHashST):
             self._vals[i] = xv
 
 
-# # Web Exercise 17
-# class RobinHoodHashST(LinearProbingHashST):
-#     __doc__ = f"""Implements a hash table using arrays with linear probing,
-#     except upon collision, place the key with the larger current displacement
-#     in the hash slot, and move the other to the right.
-#     {SymbolTable.__doc__}"""
+# Web Exercise 17
+class RobinHoodHashST(LinearProbingHashST):
+    __doc__ = f"""Implements a hash table using arrays with linear probing,
+    except upon collision, place the key with the larger current displacement
+    in the hash slot, and move the other to the right.
+    {SymbolTable.__doc__}"""
 
-#     def __setitem__(self, k, v):
-#         if not self._RESIZE_FLAG and self.N == self.M:
-#             raise RuntimeError(("Trying to insert into a full table! "
-#                                 "Set `resize=True`."))
+    def __setitem__(self, k, v):
+        if not self._RESIZE_FLAG and self.N == self.M:
+            raise RuntimeError(("Trying to insert into a full table! "
+                                "Set `resize=True`."))
 
-#         if self._RESIZE_FLAG and self.N >= self.M // 2:
-#             self._resize(2*self.M)
-#             self._lgM += 1
+        if self._RESIZE_FLAG and self.N >= self.M // 2:
+            self._resize(2*self.M)
+            self._lgM += 1
 
-#         i = self._hash(k)
-#         self._cost = 1
-#         d = 0  # distance to the current slot from the hashed slot
-#         while self._keys[i] is not None:
-#             if k == self._keys[i]:
-#                 self._vals[i] = v
-#                 return
-#             # Swap the key with the larger displacement
-#             dx = (i - self._hash(self._keys[i])) % self.M
-#             i = (i + 1) % self.M
-#             self._cost += 1
-#         # # Place the temp variables into the empty slot
-#         # self._keys[i] = xk
-#         # self._vals[i] = xv
-#         else:
-#             self._keys[i] = k
-#             self._vals[i] = v
-#             self.N += 1
+        i = self._hash(k)
+        self._cost = 1
+        if self._keys[i] is None:
+            self._keys[i] = k
+            self._vals[i] = v
+            self.N += 1
+        else:
+            d = 0  # distance to the current slot from the hashed slot
+            xk, xv = k, v
+            while self._keys[i] is not None:
+                if k == self._keys[i]:
+                    self._vals[i] = v
+                    return
+                # Insert the key with the larger displacement
+                dx = (i - self._hash(self._keys[i])) % self.M
+                if d > dx:
+                    self._keys[i], xk = xk, self._keys[i]
+                    self._vals[i], xv = xv, self._vals[i]
+                    d = dx
+                i = (i + 1) % self.M
+                self._cost += 1
+                d += 1
+            else:
+                self._keys[i] = xk
+                self._vals[i] = xv
+                self.N += 1
 
 
 # Alias for convenience
@@ -1225,19 +1234,29 @@ if __name__ == "__main__":
 
     KEYS = 'EASYQUESTION'
     ITEMS = tuple((c, i) for i, c in enumerate(KEYS))
+
+    def _hash(self, k):
+        return 4 if k == 'X' else 0
+
     class MyLinearProbingHashST(LinearProbingHashST):
-        def _hash(self, k):
-            return 0
+        _hash = _hash
 
     st = MyLinearProbingHashST(ITEMS, M=16, resize=False)
     print(st._keys)
 
     class MyLIFOHashST(LIFOHashST):
-        def _hash(self, k):
-            return 0
-            # return 11*(ord(k) - ord('A')) % self.M
+        _hash = _hash
 
     st = MyLIFOHashST(ITEMS, M=16, resize=False)
+    print(st._keys)
+
+    class MyRobinHoodHashST(RobinHoodHashST):
+        _hash = _hash
+
+    print('--- RobinHood ---')
+    st = MyRobinHoodHashST(ITEMS, M=16, resize=False)
+    print(st._keys)
+    st['X'] = 69
     print(st._keys)
 
 # =============================================================================
