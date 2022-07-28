@@ -676,10 +676,13 @@ class LinearProbingHashST(HashTable):
         """
         return 1 + np.sum(self._hash_displacements()) / self.N
 
+    def _hash_displacement(self, k):
+        """Compute the distance of a key from its hash location."""
+        return (self._get_index(k) - self._hash(k)) % self.M
+
     def _hash_displacements(self):
         """Compute the distance of each key from its hash location."""
-        return [(self._get_index(k) - self._hash(k)) % self.M
-                for k in self.keys()]
+        return [self._hash_displacement(k) for k in self.keys()]
 
     def _get_index(self, k):
         """Return the internal index of `k`."""
@@ -1122,6 +1125,7 @@ class CuckooHashST(HashTable):
                 if k is not None]
 
 
+# Web Exercise 16
 class LIFOHashST(LinearProbingHashST):
     __doc__ = f"""Implements a hash table using arrays with linear probing,
     except most recently added item is placed at the hash location, and
@@ -1139,6 +1143,7 @@ class LIFOHashST(LinearProbingHashST):
 
         i = self._hash(k)
         self._cost = 1
+        # Key is guaranteed to be at the beginning of the cluster if it exists
         if k == self._keys[i]:
             self._vals[i] = v
             return
@@ -1164,6 +1169,51 @@ class LIFOHashST(LinearProbingHashST):
             self._keys[i] = k
             self._vals[i] = v
             self.N += 1
+
+# # Web Exercise 17
+# class RobinHoodHashST(LinearProbingHashST):
+#     __doc__ = f"""Implements a hash table using arrays with linear probing,
+#     except upon collision, place the key with the larger current displacement
+#     in the hash slot, and move the other to the right.
+#     {SymbolTable.__doc__}"""
+
+#     def __setitem__(self, k, v):
+#         if not self._RESIZE_FLAG and self.N == self.M:
+#             raise RuntimeError(("Trying to insert into a full table! "
+#                                 "Set `resize=True`."))
+
+#         if self._RESIZE_FLAG and self.N >= self.M // 2:
+#             self._resize(2*self.M)
+#             self._lgM += 1
+
+#         i = self._hash(k)
+#         self._cost = 1
+#         # If there is a collision, choose the key with the larger displacement
+#         while self._keys[i] is not None:
+#             if k == self._keys[i]:
+#                 self._vals[i] = v
+#                 return
+#             # Compate hash displacements
+#             dk = self._hash_displacement(k)
+#             dx = self._hash_displacement(self._keys[i]
+#             if
+#             # Pick up the existing values
+#             tk = self._keys[i]
+#             tv = self._vals[i]
+#             # Place the new values
+#             self._keys[i] = xk
+#             self._vals[i] = xv
+#             # Move to the next slot
+#             xk, xv = tk, tv
+#             i = (i + 1) % self.M
+#             self._cost += 1
+#         # # Place the temp variables into the empty slot
+#         # self._keys[i] = xk
+#         # self._vals[i] = xv
+#         else:
+#             self._keys[i] = k
+#             self._vals[i] = v
+#             self.N += 1
 
 
 # Alias for convenience
@@ -1191,14 +1241,14 @@ if __name__ == "__main__":
 
     class MyLinearProbingHashST(LinearProbingHashST):
         def _hash(self, k):
-            return 0
+            return -2
 
     st = MyLinearProbingHashST(ITEMS, M=16, resize=False)
     print(st._keys)
 
     class MyLIFOHashST(LIFOHashST):
         def _hash(self, k):
-            return 0
+            return -2
             # return 11*(ord(k) - ord('A')) % self.M
 
     st = MyLIFOHashST(ITEMS, M=16, resize=False)
