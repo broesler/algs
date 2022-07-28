@@ -1143,21 +1143,20 @@ class LIFOHashST(LinearProbingHashST):
 
         i = self._hash(k)
         self._cost = 1
-        # If the key already exists, move it to the hash slot
-        if k == self._keys[i]:
-            self._vals[i] = v
-        elif self._keys[i] is None:
+        if self._keys[i] is None:
             self._keys[i] = k
             self._vals[i] = v
             self.N += 1
-        else:
-            # If there is a collision, move the cluster over one spot
+        else:  # there is a collision, move the cluster over one spot
             xk, xv = k, v
             self.N += 1
             while self._keys[i] is not None:
                 # Swap the values
                 self._keys[i], xk = xk, self._keys[i] 
                 self._vals[i], xv = xv, self._vals[i] 
+                if k == xk:
+                    self.N -= 1
+                    return
                 i = (i + 1) % self.M
                 self._cost += 1
             # Place the last key/value into the empty slot
@@ -1224,7 +1223,7 @@ if __name__ == "__main__":
     print(f"M = {st.M:2d}: {st._keys}")
     assert st.keys() == list('ASYENQTIOU')
 
-    KEYS = 'EASYQUS'
+    KEYS = 'EASYQUESTION'
     ITEMS = tuple((c, i) for i, c in enumerate(KEYS))
     class MyLinearProbingHashST(LinearProbingHashST):
         def _hash(self, k):
