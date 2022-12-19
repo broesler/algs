@@ -9,6 +9,8 @@
 """
 # =============================================================================
 
+import warnings
+
 import yaml
 from yaml import Loader
 
@@ -28,8 +30,30 @@ def _parse_bostonmetro(fname):
     with open(fname, 'r') as fp:
         for line in fp.readlines()[1:]:
             words = line.strip().split()
+            if len(words) == 0:
+                continue
             station_id = int(words[0])
             station_name = words[1]
+
+            # Error corrections
+            # NOTE len(names) == 125 because 
+            #   (38, 'St.PaulStreet') --> 'StPaulStreetB'
+            #   (61, 'St.PaulStreet') --> 'StPaulStreetC'
+            # both exist in names.
+            if station_id == 38:
+                station_name += 'B'
+            elif station_id == 61:
+                station_name += 'C'
+
+            if station_name == 'ChesnutHill':
+                station_name = 'ChestnutHill'
+
+            if station_name == 'BrightonAvenue':
+                station_name = 'PackardsCorner'
+
+            if station_name == "St.Mary'sStreet":
+                station_name = "St.MarysStreet"
+
             names[station_id] = station_name
             ids[station_name] = station_id
             # Iterate over possibly multiple in/outbound lines
@@ -109,7 +133,7 @@ def _reformat_bostonT_files(fname=None, force_update=False):
 
     # Need mapping from station_locs.keys() to ids.keys()
     locs = dict()
-    missing = list()
+    missing = set()
     for k in ids:
         for name, loc in station_locs.items():
             # if k.lower() in name.replace(' ', '').lower() and k not in locs:
@@ -117,7 +141,7 @@ def _reformat_bostonT_files(fname=None, force_update=False):
             if short_name.startswith(k.lower()) and k not in locs:
                 locs[k] = loc
         if k not in locs:
-            missing.append(k)
+            missing.add(k)
 
     manual_map = dict({
         'Airport': dict(lat=42.37273343268597, lon=-71.03519439697266),
@@ -140,20 +164,23 @@ def _reformat_bostonT_files(fname=None, force_update=False):
         'ButlerStreet': dict(lat=42.27211695157111, lon=-71.06276750564575),
         })
 
-    # assert sorted(missing) == sorted(manual_map.keys())
     locs.update(manual_map)
 
-    # Bash one-liner:
+    # assert sorted(missing) == sorted(manual_map.keys())
+    missing -= set(manual_map.keys())
+    if len(missing) != 0:
+        pairs = "\n".join([f"{ids[m]} {m}\n" for m in missing])
+        warnings.warn(f"Missing the following locations:\n{pairs}")
+
+    # Bash one-liner to put "0 END" at top of file
     # echo "0 END" > bostonT_stations.txt \
-    #   | tail -n +2 bostonmetro.txt \
+    #   && tail -n +2 bostonmetro.txt \
     #   | awk '{print $1 " " $2}' \
     #   >> bostonT_stations.txt
-    #
-    # namefile = Path('../data/bostonT_stations.txt')
-    # if force_update or not namefile.exists():
-    #     print(f"Writing to {namefile}... ", end='')
-    #     _write_bostonT_ids(namefile, names, ids)
-    #     print('done.')
+
+    namefile = Path('../data/bostonT_stations.txt')
+    if force_update or not namefile.exists():
+        _write_bostonT_ids(namefile, names)
 
     locfile = Path('../data/bostonT_locs.txt')
     if force_update or not locfile.exists():

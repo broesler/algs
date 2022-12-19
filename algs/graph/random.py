@@ -371,7 +371,7 @@ if __name__ == "__main__":
               ekws=dict(lw=1, alpha=0.2)
               )
 
-    # Plot the Boston T
+    # ---------- Plot the Boston T ----------
     # TODO
     # * use geopandas(?) to get actual basemap
     # * run DFS/BFS to get routes between stations, noting line for each and
