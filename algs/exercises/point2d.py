@@ -21,7 +21,7 @@ import numpy as np
 from algs.adt import Point2D
 
 rng = np.random.default_rng(seed=565656)
-N = 50  # FIXME Rabin algorithm fails for N = 20 with seed=565656
+N = 100  # FIXME Rabin algorithm fails for N = 20 with seed=565656
 
 # Generate N random points in the unit square
 points = []
@@ -102,8 +102,8 @@ def closest_pair_rabin(points, plot=False, ax=None):
             grid[g] = list()
         grid[g].append(p)
 
-    # For each input point, compute the distance to all other points at the same
-    # grid point, or any grid point within the neighborhood
+    # For each input point, compute the distance to all other points at the
+    # same grid point, or any grid point within the neighborhood
     i_min = None
     j_min = None
     q_min = None
@@ -128,7 +128,7 @@ def closest_pair_rabin(points, plot=False, ax=None):
             for q in qs:
                 if p == q:
                     continue
-                test = p.dist_to(q) 
+                test = p.dist_to(q)
                 if test < d_min:
                     i_min = i
                     q_min = q
@@ -162,7 +162,7 @@ def closest_pair_rabin(points, plot=False, ax=None):
     return points[i_min], points[j_min]
 
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 #         Plot
 # -----------------------------------------------------------------------------
 fig = plt.figure(1, clear=True, constrained_layout=True)
@@ -175,7 +175,7 @@ a, b = closest_pair_rabin(points, plot=True)
 for p in points:
     p.draw(color=0.7*np.ones(3), s=20)
 
-# Highlight the closest pait
+# Highlight the closest pair(s)
 an.draw(c='C2')
 bn.draw(c='C2')
 an.draw_to(bn, c='C2')
@@ -183,8 +183,8 @@ a.draw(c='C3')
 b.draw(c='C3')
 a.draw_to(b, c='C3')
 
-ax.set(xlabel='x', #xlim=(-0.02, 1.02),
-       ylabel='y', #ylim=(-0.02, 1.02),
+ax.set(xlabel='x', xlim=(-0.02, 1.02),
+       ylabel='y', ylim=(-0.02, 1.02),
        aspect='equal',)
 ax.grid(False)
 

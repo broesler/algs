@@ -77,7 +77,7 @@ if FORCE_UPDATE or not pickle_file.exists():
                 for k in rng.random(N):
                     st[k] = 1  # set an arbitrary value
                     tot_comp += st._cost
-                assert st.size == N
+                assert st.size() == N
 
                 # Store stats for averages
                 df.loc[i, N]['comps'] = tot_comp / N

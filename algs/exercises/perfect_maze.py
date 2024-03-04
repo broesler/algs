@@ -36,11 +36,11 @@ fig, ax = plt.subplots(num=1, clear=True, constrained_layout=True)
 
 # TODO actually plot walls of maze between unconnected vertices
 # Use large linewidth to simulate "walls" of maze
-T.draw(ax=ax, ekws=dict(lw=15))
+T.draw(ax=ax, ekws=dict(lw=10))
 
 # Plot the start, end, and solution!
-ax.scatter(G.x[START], G.y[START], c='C2', s=50, zorder=10)
-ax.scatter(G.x[END], G.y[END], c='C3', s=50, zorder=10)
+ax.scatter(G.x[START], G.y[START], marker='>', c='C2', s=50, zorder=10)
+ax.scatter(G.x[END], G.y[END], marker='x', c='C3', s=50, zorder=10)
 T.draw(ax=ax, p=P, c='C0', ekws=dict(lw=3))
 
 plt.show()
