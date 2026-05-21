@@ -14,9 +14,9 @@
 
 from copy import deepcopy as _deepcopy
 
-from algs.basics import PriorityQueue as _PQ, _empty_check
+from algs.basics import Collection, PriorityQueue as _PQ
 
-class MedianPQ():
+class MedianPQ(Collection):
     """Iterable priority queue object, where priority is given to the median.
 
     A custom key function can be supplied to determine the sort order.
@@ -50,13 +50,9 @@ class MedianPQ():
         else:
             return 1 + len(self._large) + len(self._small)
 
-    @property
-    def is_empty(self):
-        return self.size == 0
-
     def peek(self):
         """Look at first item in queue without dequeue-ing."""
-        _empty_check(self)
+        self._empty_check()
         return self._v
 
     def enqueue(self, k):
@@ -66,6 +62,7 @@ class MedianPQ():
             return
 
         if self._key(k) < self._key(self._v):
+            # TODO abstract this shift operation to _shift_item(small, large)
             self._small.enqueue(k)
             if self._small.size > self._large.size:
                 # shift values to the right
@@ -86,7 +83,7 @@ class MedianPQ():
 
     def dequeue(self):
         """Remove and return median item."""
-        _empty_check(self)
+        self._empty_check()
         out = self._v  # keep pointer to return item
         # Set median to value from queue with more items
         try:
@@ -97,12 +94,6 @@ class MedianPQ():
         except IndexError:
             self._v = None  # last item remaining
         return out
-
-    def __len__(self):
-        return self.size
-
-    def __repr__(self):
-        return f"<{self.__class__.__name__}: {self.__str__()}>"
 
     def __str__(self):
         return str(list(self._small)[::-1] + [self._v] + list(self._large))
