@@ -51,7 +51,7 @@ class LRUCache(Collection):
 # Exercise 3.5.27
 class List(Collection):
     """A data type similar to a deque, but using symbol tables to support
-    efficient operations. Dupilcate elements are allowed."""
+    efficient operations. Duplicate elements are allowed."""
     _LO = 0.0
     _HI = 1.0
     _BASE = 0.1  # bias towards front since constructor adds to back

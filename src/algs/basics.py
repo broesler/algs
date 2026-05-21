@@ -67,7 +67,7 @@ class Collection(ABC):
         return self._items == other._items
 
     def __repr__(self):
-        return '<{}: {}>'.format(self.__class__.__name__, self.__str__())
+        return f"<{self.__class__.__name__}: {self.__str__()}>"
 
     def __str__(self):
         def a_list(a):
