@@ -9,6 +9,7 @@
 """
 # =============================================================================
 
+from pathlib import Path
 import pytest
 
 from algs.graph.undirected import (Graph, SimpleGraph,  STGraph, SymbolGraph,
@@ -72,21 +73,23 @@ EXPECT_BFS = dict({
 EXPECT_COMPS = [list(range(7)), [7, 8], [9, 10, 11, 12]]
 
 
+DATA_DIR = Path(__file__).resolve().parents[1] / 'data'
+
 # NOTE paths are relative to where pytest is run from?
 # See: <https://docs.pytest.org/en/6.2.x/customize.htmlinding-the-rootdir>
 @pytest.fixture
 def tinyCG(GT):
-    return GT.fromfile('./data/tinyCG.txt')
+    return GT.fromfile(DATA_DIR / 'tinyCG.txt')
 
 
 @pytest.fixture
 def tinyG(GT):
-    return GT.fromfile('./data/tinyG.txt')
+    return GT.fromfile(DATA_DIR / 'tinyG.txt')
 
 
 @pytest.fixture
 def sg():
-    return SymbolGraph.fromfile('./data/routes.txt')
+    return SymbolGraph.fromfile(DATA_DIR / 'routes.txt')
 
 
 @pytest.fixture
@@ -200,17 +203,17 @@ class TestSimple:
 @pytest.mark.parametrize('GT', [Graph, STGraph])
 class TestNonSimple:
     def test_self_loop(self, GT):
-        G = GT.fromfile('./data/tinyG.txt', self_loops=True)
+        G = GT.fromfile(DATA_DIR / 'tinyG.txt', self_loops=True)
         G.add_edge(0, 0)
         assert G.has_edge(0, 0)
 
     def test_no_self_loop(self, GT):
-        G = GT.fromfile('./data/tinyG.txt', self_loops=False)
+        G = GT.fromfile(DATA_DIR / 'tinyG.txt', self_loops=False)
         with pytest.raises(ValueError):
             G.add_edge(0, 0)
 
     def test_parallel_edges(self, GT):
-        G = GT.fromfile('./data/tinyG.txt', parallel=True)
+        G = GT.fromfile(DATA_DIR / 'tinyG.txt', parallel=True)
         p = ParallelEdges(G, 0)
         assert G.degree(0) == 4
         assert G.degree(1) == 1
@@ -222,7 +225,7 @@ class TestNonSimple:
         assert p.count == 1
 
     def test_no_parallel_edges(self, GT):
-        G = GT.fromfile('./data/tinyG.txt', parallel=False)
+        G = GT.fromfile(DATA_DIR / 'tinyG.txt', parallel=False)
         p = ParallelEdges(G, 0)
         assert G.degree(0) == 4
         assert G.degree(1) == 1

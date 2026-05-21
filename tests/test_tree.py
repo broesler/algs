@@ -12,7 +12,7 @@ Tests specific to BST data types, not including balanced trees.
 import pytest
 
 from algs.search.tree import BST, BST_nr, ThreadedST, ThreadedST_nr
-from algs.tests.test_search import ITEMS, st, expect_keys
+from tests.test_search import ITEMS, st, expect_keys
 
 TREES = set([BST, BST_nr, ThreadedST, ThreadedST_nr])
 
