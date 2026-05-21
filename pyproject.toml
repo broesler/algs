@@ -25,11 +25,14 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+test = [
+  "pytest",
+  "pytest-env",
+]
+
 dev = [
   "ipython",
   "pyqt5",
-  "pytest",
-  "pytest-env",
 ]
 
 [tool.pytest.ini_options]

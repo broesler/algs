@@ -27,6 +27,8 @@ dependencies = [
 dev = [
     { name = "ipython" },
     { name = "pyqt5" },
+]
+test = [
     { name = "pytest" },
     { name = "pytest-env" },
 ]
@@ -38,13 +40,13 @@ requires-dist = [
     { name = "numpy", specifier = ">=2.0" },
     { name = "pandas", specifier = ">=2.2" },
     { name = "pyqt5", marker = "extra == 'dev'" },
-    { name = "pytest", marker = "extra == 'dev'" },
-    { name = "pytest-env", marker = "extra == 'dev'" },
+    { name = "pytest", marker = "extra == 'test'" },
+    { name = "pytest-env", marker = "extra == 'test'" },
     { name = "scipy" },
     { name = "seaborn" },
     { name = "tqdm" },
 ]
-provides-extras = ["dev"]
+provides-extras = ["test", "dev"]
 
 [[package]]
 name = "asttokens"
