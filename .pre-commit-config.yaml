@@ -1,0 +1,6 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.14 # ruff version
+    hooks:
+      # Run the linter, but do not make any changes
+      - id: ruff-check
