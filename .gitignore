@@ -1,4 +1,4 @@
-*.pyc
+*.py[cod]
 /dist/
 *.egg-info
 *.egg
@@ -6,3 +6,7 @@
 **/pkl
 *.cache
 *.coverage
+__pycache__/
+.venv/
+.pytest_cache/
+.ruff_cache/
