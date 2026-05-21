@@ -26,6 +26,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+  "ipython",
+  "pyqt5",
   "pytest",
   "pytest-env",
 ]
@@ -34,6 +36,3 @@ dev = [
 env = [
     "PYTHONHASHSEED=0",
 ]
-
-[tool.setuptools]
-packages = ["algs"]

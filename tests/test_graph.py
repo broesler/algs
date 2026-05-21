@@ -74,7 +74,6 @@ EXPECT_COMPS = [list(range(7)), [7, 8], [9, 10, 11, 12]]
 
 
 DATA_DIR = Path(__file__).resolve().parents[1] / 'data'
-print(f"DATA_DIR: {DATA_DIR}")
 
 # NOTE paths are relative to where pytest is run from?
 # See: <https://docs.pytest.org/en/6.2.x/customize.htmlinding-the-rootdir>

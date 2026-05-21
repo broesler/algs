@@ -15,7 +15,7 @@ from algs.search.balanced_tree import RedBlackBST
 # from algs.search.balanced_tree import (RedBlackBST, TopDown234, TopDown234_nr,
 #                                        BottomUp234, TopDown234bothways,
 #                                        Unbalanced23, AVLTree)
-from algs.tests.test_search import ITEMS
+from tests.test_search import ITEMS
 
 # BALANCED_TREES = set([RedBlackBST, TopDown234, TopDown234_nr, BottomUp234,
 #                       TopDown234bothways, Unbalanced23, AVLTree])
