@@ -3,42 +3,45 @@
 #     File: euclidean_graphs.py
 #  Created: 2022-06-20 21:44
 #   Author: Bernie Roesler
-#
-"""
-Exercise 4.1.37: Plotting graphs.
-"""
 # =============================================================================
 
-import numpy as np
-import matplotlib.pyplot as plt
-import re
-import numpy.linalg as la
-import scipy.sparse as sps
+"""Exercise 4.1.37: Plotting graphs."""
 
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.lines import Line2D
 
-from algs.graph import (EuclideanGraph, BreadthFirstPaths, DepthFirstPaths_nr,
-                        Bipartite)
+from algs.graph import BreadthFirstPaths, DepthFirstPaths_nr, EuclideanGraph
 
+DATA_PATH = Path(__file__).parent.parent / 'data'
 
 # def distgraph2d():
 
-# G = EuclideanGraph.fromfile('../data/tinyG.txt')
-G = EuclideanGraph.fromfile('../data/tinyG_bp.txt', two_color=True)
+# G = EuclideanGraph.fromfile(DATA_PATH / 'tinyG.txt')
+G = EuclideanGraph.fromfile(DATA_PATH / 'tinyG_bp.txt', two_color=True)
 # See p 522
-x, y = np.array([[0,  3],
-                 [1,  2],
-                 [2,  2],
-                 [1,  1],
-                 [2,  0.5],
-                 [0,  0],
-                 [3,  2.5],
-                 [4,  2.5],
-                 [5,  2.5],
-                 [4,  1],
-                 [5,  1],
-                 [4,  0],
-                 [5,  0]]).T / 10  # scale down
+x, y = (
+    np.array(
+        [
+            [0, 3],
+            [1, 2],
+            [2, 2],
+            [1, 1],
+            [2, 0.5],
+            [0, 0],
+            [3, 2.5],
+            [4, 2.5],
+            [5, 2.5],
+            [4, 1],
+            [5, 1],
+            [4, 0],
+            [5, 0],
+        ]
+    ).T
+    / 10
+)  # scale down
 
 # G = EuclideanGraph.fromfile('../data/tinyCG.txt')
 # # See p 522
@@ -82,8 +85,12 @@ G.draw(ax=ax, label_nodes=True)
 # Label the paths
 dl = Line2D([0, 1], [0, 1], c='C3')
 bl = Line2D([0, 1], [0, 1], c='C0')
-ax.legend([dl, bl], [f"DFS({s}, {i})", f"BFS({s}, {i})"], 
-          loc='upper left', bbox_to_anchor=(1, 1))
+ax.legend(
+    [dl, bl],
+    [f"DFS({s}, {i})", f"BFS({s}, {i})"],
+    loc='upper left',
+    bbox_to_anchor=(1, 1),
+)
 
 plt.show()
 
