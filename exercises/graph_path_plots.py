@@ -3,28 +3,28 @@
 #     File: graph_path_plots.py
 #  Created: 2022-06-22 16:46
 #   Author: Bernie Roesler
-#
-"""
-Draw the graphs on p 542.
-"""
 # =============================================================================
+
+"""Draw the graphs on p 542."""
+
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-from algs.graph import (Graph, EuclideanGraph, CC, DepthFirstPaths,
-                        BreadthFirstPaths)
+from algs.graph import CC, EuclideanGraph, Graph
 
 rng = np.random.default_rng(seed=565656)
 
-G = Graph.fromfile('../data/mediumG.txt')
+DATA_PATH = Path(__file__).parent.parent / 'data'
+G = Graph.fromfile(DATA_PATH / 'mediumG.txt')
 x, y = rng.random((2, G.V))
 G = EuclideanGraph(G, x, sorted(y))
 
 # Search from any vertex will give a spanning tree
 assert CC(G).is_connected
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 #         Search through the graph for the longest path
 # -----------------------------------------------------------------------------
 # Make DFS spanning tree
@@ -40,11 +40,11 @@ assert CC(G).is_connected
 #         if (edge[1], edge[0]) not in dedges:
 #             dedges.add(edge)
 
-# Make BFS spanning tree
-bfs = BreadthFirstPaths(G, s)
+# TODO Make BFS spanning tree
+# bfs = BreadthFirstPaths(G, s)
 # Define paths by dist_to rankings?
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 #         Plot the graph
 # -----------------------------------------------------------------------------
 fig = plt.figure(1, clear=True, constrained_layout=True)
@@ -58,10 +58,11 @@ for i, p in enumerate(ps):
     # TODO only plot a select subset of edges (20% of search, etc.)
     # allow `vs` and `es` kwargs to G.draw()?
     ax = fig.add_subplot(gs[i, 0])
-    G.draw(ax=ax, c='#EEE', vkws=dict(s=20, alpha=0.8), ekws=dict(alpha=0.8))
-    T.draw(ax=ax, vkws=dict(s=20, alpha=0.8), ekws=dict(alpha=0.8))
-    ax.set_title(f"{100*p:.0f}%", color='C3', fontsize=9,
-                 x=0, ha='left', pad=0, va='bottom')
+    G.draw(ax=ax, c='#EEE', vkws={'s': 20, 'alpha': 0.8}, ekws={'alpha': 0.8})
+    # T.draw(ax=ax, vkws={'s': 20, 'alpha': 0.8}, ekws={'alpha': 0.8})
+    ax.set_title(
+        f"{100 * p:.0f}%", color='C3', fontsize=9, x=0, ha='left', pad=0, va='bottom'
+    )
 
     # Plot BFS
     # ax = fig.add_subplot(gs[i, 0])
