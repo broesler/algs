@@ -3,22 +3,23 @@
 #     File: bacon_numbers.py
 #  Created: 2022-06-16 15:21
 #   Author: Bernie Roesler
-#
-"""
-Exercise 4.1.23 Print a histogram of Kevin Bacon numbers.
-"""
 # =============================================================================
 
-import numpy as np
-import matplotlib.pyplot as plt
-import pickle
+"""Exercise 4.1.23: Print a histogram of Kevin Bacon numbers."""
 
+import pickle
 from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
 
 from algs.graph import BreadthFirstPaths
 
-pkl_file = Path('./pkl/movies_SymbolGraph.pkl')
-with open(pkl_file, 'rb') as fp:
+# NOTE: run `exercises/degrees_of_separation.py` to build the SymbolGraph pickle
+pkl_file = Path(__file__).parent / 'pkl' / 'movies_SymbolGraph.pkl'
+print(f"Loading {pkl_file}...")
+
+with pkl_file.open('rb') as fp:
     sg = pickle.load(fp)
 
 q = 'Bacon, Kevin'
@@ -31,16 +32,15 @@ dists = np.nan_to_num(dists, nan=-2)
 dists /= 2  # only distance between actors
 bins = np.arange(-1.5, np.max(dists) + 1.5)
 
-nonames = list()
+nonames = []
 for i in np.argwhere(dists == -1).ravel():
     nonames.append(sg.name(i))
 print(f"{len(nonames)} actors not connected!")
 
 fig = plt.figure(1, clear=True, constrained_layout=True)
 ax = fig.add_subplot()
-ax.hist(dists, bins=bins, density=True, rwidth=0.9, color='k')
-ax.set(xlabel='x',
-       ylabel='y')
+ax.hist(dists, bins=bins, density=True, rwidth=0.9, color='C0', alpha=0.8)
+ax.set(xlabel='x', ylabel='y')
 
 plt.show()
 # =============================================================================
