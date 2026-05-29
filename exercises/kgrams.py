@@ -3,21 +3,20 @@
 #     File: kgrams.py
 #  Created: 2022-06-02 00:55
 #   Author: Bernie Roesler
-#
-"""
-Print a sorted list of k-grams in a string.
-"""
 # =============================================================================
 
+"""Print a sorted list of k-grams in a string."""
+
 from pathlib import Path
+
 from tqdm import tqdm
 
-from algs.search.set import MultiValST
+from algs.search.set import MultiST
 
 
 def kgrams(a, k=1, verbose=False):
     """Return a sorted list of k-grams and their positions in the string."""
-    st = MultiValST()
+    st = MultiST()
     iters = range(len(a) - k + 1)
     if verbose:
         iters = tqdm(iters)
@@ -32,8 +31,9 @@ if __name__ == '__main__':
     st = kgrams(a, k=2)
     print(sorted(st.items()))
 
-    filename = Path('../data/ecoli.txt')
-    with open(filename, 'r') as fp:
+    DATA_PATH = Path(__file__).parent.parent / 'data'
+    filename = DATA_PATH / 'ecoli.txt'
+    with filename.open() as fp:
         a = fp.readline().strip()[:1000]
     st = kgrams(a, k=2)
     print(sorted(st.items()))
