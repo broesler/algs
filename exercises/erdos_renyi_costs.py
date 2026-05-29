@@ -3,16 +3,14 @@
 #     File: erdos_renyi_costs.py
 #  Created: 2022-05-30 18:38
 #   Author: Bernie Roesler
-#
-"""
-Exercise 1.5.26 Amortized costs of the Erdös-Renyi model.
-"""
 # =============================================================================
 
-import matplotlib.pyplot as plt
+"""Exercise 1.5.26: Amortized costs of the Erdös-Renyi model."""
 
+import matplotlib.pyplot as plt
 from ufcounter import cost_plot
-from algs.unionfind import ErdosRenyi, WeightedQuickUnionUF
+
+from algs.unionfind import ErdosRenyi
 
 N = 625
 g = ErdosRenyi(N, costs=True)

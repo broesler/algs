@@ -3,27 +3,23 @@
 #     File: erdos_renyi_doubling.py
 #  Created: 2022-05-26 22:12
 #   Author: Bernie Roesler
-#
-"""
-Exercise 1.5.22 Doubling test for the Erdös-Renyi model.
-"""
 # =============================================================================
 
-import matplotlib.pyplot as plt
+"""Exercise 1.5.22 Doubling test for the Erdös-Renyi model."""
+
+import time
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
-import time
-
-from pathlib import Path
+from scipy.optimize import curve_fit
 from tqdm import tqdm
 
-from scipy.optimize import curve_fit
-
-from algs.unionfind import (ErdosRenyi, QuickFindUF, QuickUnionUF,
-                            WeightedQuickUnionUF)
+from algs.unionfind import ErdosRenyi, QuickFindUF, QuickUnionUF, WeightedQuickUnionUF
 
 FORCE_UPDATE = False
-pkl_file = Path('./pkl/erdos_renyi_doubling.pkl')
+PKL_PATH = Path(__file__).parent / 'pkl'
+pkl_file = PKL_PATH / 'erdos_renyi_doubling.pkl'
 
 UFs = [QuickFindUF, QuickUnionUF, WeightedQuickUnionUF]
 names = ['quick-find', 'quick-union', 'weighted quick-union']
@@ -32,12 +28,9 @@ if not FORCE_UPDATE and pkl_file.exists():
     df = pd.read_pickle(pkl_file)
 else:
     T = 10  # trials
-    Ns = [250*(2**i) for i in range(7)]
+    Ns = [250 * (2**i) for i in range(7)]
 
-    df = pd.DataFrame(index=Ns, data=np.zeros((len(Ns), 2*len(names))),
-                    columns=pd.MultiIndex.from_product([['edges', 'time'], names]))
-    df.index.name = 'N'
-    df.columns.names = ['var', 'name']
+    data = []
 
     for N in tqdm(Ns):
         for name, UF in zip(names, UFs):
@@ -48,31 +41,44 @@ else:
                 toc = time.perf_counter_ns()
                 Es[i] = uf.E
 
-            df.loc[N, ('edges', name)] = Es.mean()
-            df.loc[N, ('time', name)] = toc - tic
+            data.append({
+                'N': N,
+                'name': name,
+                'edges': Es.mean(),
+                'time': toc - tic,
+            })
+
+    df = pd.DataFrame(data).pivot_table(
+        index='N',
+        columns='name',
+        values=['edges', 'time'],
+    )
 
     df.to_pickle(pkl_file)
 
 # Compute time ratio
-ratios = np.full((df.index.size, len(UFs)), np.nan)
-ratios[1:] = df['time'].iloc[1:].values / df['time'].iloc[:-1].values
-idx = pd.MultiIndex.from_product([['ratio'], names])
+ratios = df['time'] / df['time'].shift(1)
+idx = pd.MultiIndex.from_product([['ratio'], ratios.columns])
 df[idx] = ratios
 print(df['ratio'])
 
+
 # Fit power law to the data T(N) ~ a * N**b -> log-space
 def power_func(N, a, b):
-    return a + b*np.log2(N)
+    """Power law function."""
+    return a + b * np.log2(N)
+
 
 tf = df['ratio'].dropna(axis=0)
 
-popt = dict()
-pcov = dict()
+popt = {}
+pcov = {}
 for name in names:
-    popt[name], pcov[name]  = curve_fit(power_func,
-                                        np.log2(tf.index.values),
-                                        np.log2(tf[name].values),
-                                        )
+    popt[name], pcov[name] = curve_fit(
+        power_func,
+        np.log2(tf.index.values),
+        np.log2(tf[name].values),
+    )
 print(popt)
 
 x = np.log2(tf.index.values)
