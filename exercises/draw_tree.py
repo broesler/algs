@@ -3,39 +3,39 @@
 #     File: draw_tree.py
 #  Created: 2021-03-06 13:01
 #   Author: Bernie Roesler
-#
-"""
-  Description: Exercise 3.2.38 *Tree Drawing*
-    Use instance variables to hold node coordinates, and use a recursive method
-    to set the values of these variables.
-
-    See <https://llimllib.github.io/pymag-trees/> for drawing algorithms.
-"""
 # =============================================================================
 
-import matplotlib.patches as patches
+"""Exercise 3.2.38: Tree Drawing.
+Use instance variables to hold node coordinates, and use a recursive method
+to set the values of these variables.
+
+See <https://llimllib.github.io/pymag-trees/> for drawing algorithms.
+"""
+
 import matplotlib.pyplot as plt
+from matplotlib import patches
 
-from algs.search import BST, ThreadedST, RedBlackBST
+from algs.search import RedBlackBST
 
 
-class NodeArtist():
+class NodeArtist:
     """Wrapper class to add graphical coordinates to BST Nodes.
 
     ..note:: This class is a *recursive structure*! It builds itself by
         a pre-order traversal of the given BST.
     """
+
     def __init__(self, h=None, depth=0):
         if h is None:
             return
-        self.node = h        # pointer to node in BST (for key, value, etc.)
-        self.x = 0           # set by layout methods
+        self.node = h  # pointer to node in BST (for key, value, etc.)
+        self.x = 0  # set by layout methods
         self.y = 0
-        self.mod = 0         # position modifier used by Weatherill
+        self.mod = 0  # position modifier used by Weatherill
         self.thread = False  # if True, one of the children is a thread
-        self.depth = depth   # track depth independent of y-coordinate
-        self.left = NodeArtist(h.left, depth+1) or None
-        self.right = NodeArtist(h.right, depth+1) or None
+        self.depth = depth  # track depth independent of y-coordinate
+        self.left = NodeArtist(h.left, depth + 1) or None
+        self.right = NodeArtist(h.right, depth + 1) or None
         # Slots for threads of ThreadedST, etc.
         self.next = None
         self.prev = None
@@ -50,7 +50,7 @@ class NodeArtist():
         return hasattr(self, 'x')  # no attributes set if None
 
 
-class TreeArtist():
+class TreeArtist:
     """Class to plot a BST.
 
     Parameters
@@ -67,6 +67,7 @@ class TreeArtist():
     fig, ax : :obj:Figure, :obj:Axis
         figure and axis handles to the plot.
     """
+
     def __init__(self, st, layout='reingold'):
         self.st = st  # pointer to the original BST
         self._root = NodeArtist(st._root)  # recursive structure!! Θ(N)
@@ -80,12 +81,13 @@ class TreeArtist():
 
     def set_coords(self):
         """Set the layout property and compute the node coordinates."""
-        layouts = dict(knuth=lambda x: self._knuth_layout(x),
-                       wetherell_naive=lambda x: self._wetherell_naive_layout(x),
-                       wetherell_3=lambda x: self._wetherell_layout(x, mod=False),
-                       wetherell=lambda x: self._wetherell_layout(x, mod=True),
-                       reingold=lambda x: self._reingold_layout(x),
-                       )
+        layouts = {
+            'knuth': self._knuth_layout,
+            'wetherell_naive': self._wetherell_naive_layout,
+            'wetherell_3': lambda x: self._wetherell_layout(x, mod=False),
+            'wetherell': lambda x: self._wetherell_layout(x, mod=True),
+            'reingold': self._reingold_layout,
+        }
         try:
             layouts[self.layout](self._root)
         except KeyError:
@@ -93,8 +95,7 @@ class TreeArtist():
 
     def get_coords(self):
         """Return a list of (key, (x, y)) pairs for the TreeArtist."""
-        return self.st._in_order_all(self._root,
-                                     op=lambda h: (h.node.key, (h.x, h.y)))
+        return self.st._in_order_all(self._root, op=lambda h: (h.node.key, (h.x, h.y)))
 
     def get_node(self, k):
         """Return a reference to the NodeArtist with key `k`."""
@@ -108,7 +109,7 @@ class TreeArtist():
             return self._get_node(k, x.left)
         elif k > x.node.key:
             return self._get_node(k, x.right)
-        else: # k == x.node.key:
+        else:  # k == x.node.key:
             return x
 
     def sew_threads(self):
@@ -129,8 +130,6 @@ class TreeArtist():
         while x.node.prev:
             x.prev = self.get_node(x.node.prev.key)
             x = x.prev
-
-
 
     # -------------------------------------------------------------------------
     #         Layout Methods
@@ -266,11 +265,7 @@ class TreeArtist():
         self._wetherell_second_pass(h.left, mod_sum)
         self._wetherell_second_pass(h.right, mod_sum)
 
-    def _wetherell_mod_second_pass(self,
-                                   h=None,
-                                   mod_sum=0,
-                                   p=None,
-                                   from_right=False):
+    def _wetherell_mod_second_pass(self, h=None, mod_sum=0, p=None, from_right=False):
         """Second, in-order pass of Wetherell Algorithm 3."""
         if h is None:
             return
@@ -290,18 +285,22 @@ class TreeArtist():
         self._wetherell_mod_second_pass(h.right, mod_sum, p=h, from_right=True)
 
     # TODO rewrite the Reingold-Tilford algorithm in more clear terms
-    class Extreme():
+    class Extreme:
         """Pointer to the left- and right-most nodes on the lowest level of the
-        subtree."""
+        subtree.
+        """
+
         def __init__(self, addr=None, mod=0, lev=0):
             self.addr = addr  # actual tree node
-            self.mod = mod    # offset from the root of the subtree
-            self.lev = lev    # depth in the tree
+            self.mod = mod  # offset from the root of the subtree
+            self.lev = lev  # depth in the tree
 
         def __str__(self):
-            return (f"key={repr(self.addr.node.key if self.addr else 'None')}:"
-                    f" mod={repr(self.mod)}"
-                    f" lev={repr(self.lev)}")
+            return (
+                f"key={repr(self.addr.node.key if self.addr else 'None')}:"
+                f" mod={repr(self.mod)}"
+                f" lev={repr(self.lev)}"
+            )
 
         def __repr__(self):
             return f"<{self.__class__.__name__}: {self.__str__()}>"
@@ -356,9 +355,9 @@ class TreeArtist():
             RR = self.Extreme()
             RL = self.Extreme()
 
-            MINSEP = 1             # user-defined
-            cursep = 0             # separation on current level
-            rootsep = 0            # current separation at node t
+            MINSEP = 1  # user-defined
+            cursep = 0  # separation on current level
+            rootsep = 0  # current separation at node t
             loffsum = roffsum = 0  # offset from L & R to t
 
             # Recursion
@@ -498,7 +497,7 @@ class TreeArtist():
             lmost.lev = t.depth
             # rmost.mod = 0  # unnecessary since we initialize to 0
             # lmost.mod = 0
-            # t.mod = 0  
+            # t.mod = 0
             return lmost, rmost
 
         # Separate the subtrees and update `t.mod`
@@ -543,9 +542,9 @@ class TreeArtist():
     @staticmethod
     def _contour(t):
         """Place the roots of subtrees of `t` the minimum distance apart."""
-        MINSEP = 1             # user-defined
-        cursep = MINSEP        # separation on current level
-        rootsep = MINSEP       # accumulate separation of children of `t`
+        MINSEP = 1  # user-defined
+        cursep = MINSEP  # separation on current level
+        rootsep = MINSEP  # accumulate separation of children of `t`
         loffsum = roffsum = 0  # offset from L & R to t
 
         # Consider each level in turn until one subtree is exhausted,
@@ -600,14 +599,16 @@ class TreeArtist():
     # -------------------------------------------------------------------------
     #         Drawing Methods
     # -------------------------------------------------------------------------
-    def draw(self,
-             fig=None,
-             ax=None,
-             fignum=None,
-             layout=None,
-             debug=False,
-             quiet=False,
-             **kwargs):
+    def draw(
+        self,
+        fig=None,
+        ax=None,
+        fignum=None,
+        layout=None,
+        debug=False,
+        quiet=False,
+        **kwargs,
+    ):
         """Plot the tree.
 
         Parameters
@@ -672,14 +673,16 @@ class TreeArtist():
         self._draw(h.left, ax, **kwargs)
         self._draw(h.right, ax, **kwargs)
 
-    def draw_node(self,
-                  h=None,
-                  ax=None,
-                  null_links=True,
-                  label_keys=True,
-                  label_vals=False,
-                  threads=True,
-                  **kwargs):
+    def draw_node(
+        self,
+        h=None,
+        ax=None,
+        null_links=True,
+        label_keys=True,
+        label_vals=False,
+        threads=True,
+        **kwargs,
+    ):
         """Plot a single node and its children."""
         if h is None:
             return
@@ -698,18 +701,26 @@ class TreeArtist():
 
         # Plot the node itself
         circ = patches.Circle(
-                (h.x, h.y),
-                radius=0.25,
-                edgecolor=edgecolor, facecolor='#EEE',
-                zorder=3  # place on top of lines
-                )
+            (h.x, h.y),
+            radius=0.25,
+            edgecolor=edgecolor,
+            facecolor='#EEE',
+            zorder=3,  # place on top of lines
+        )
         ax.add_patch(circ)
         if label_keys:
-            ax.annotate(h.node.key, xy=(h.x, h.y), color=fontcolor,
-                        ha='center', va='center')
+            ax.annotate(
+                h.node.key, xy=(h.x, h.y), color=fontcolor, ha='center', va='center'
+            )
         if label_vals:
-            ax.annotate(h.node.val, xy=(h.x+0.35, h.y), color=RED, fontsize=9,
-                        ha='left', va='center')
+            ax.annotate(
+                h.node.val,
+                xy=(h.x + 0.35, h.y),
+                color=RED,
+                fontsize=9,
+                ha='left',
+                va='center',
+            )
 
         # Plot links to children
         for t, is_left in zip([h.left, h.right], [True, False]):
@@ -719,21 +730,30 @@ class TreeArtist():
                 ax.plot((h.x, t.x), (h.y, t.y), color=color, lw=lw)
             elif null_links:
                 shift = -NULL_DIST if is_left else NULL_DIST
-                ax.plot((h.x, h.x + shift), (h.y, h.y - NULL_DIST),
-                        color=LINK_COLOR, lw=LINE_WIDTH)
+                ax.plot(
+                    (h.x, h.x + shift),
+                    (h.y, h.y - NULL_DIST),
+                    color=LINK_COLOR,
+                    lw=LINE_WIDTH,
+                )
 
         if threads:
             for t, is_next in zip([h.next, h.prev], [True, False]):
                 if t:
                     color = 'g' if is_next else 'r'
-                    ax.annotate("", xy=(h.x, h.y), xytext=(t.x, t.y), 
-                                arrowprops=dict(arrowstyle='->', color=color,
-                                                connectionstyle='arc3,rad=0.1',
-                                                shrinkA=15, shrinkB=15,
-                                                linestyle='--'
-                                                )
-                                )
-
+                    ax.annotate(
+                        "",
+                        xy=(h.x, h.y),
+                        xytext=(t.x, t.y),
+                        arrowprops={
+                            'arrowstyle': '->',
+                            'color': color,
+                            'connectionstyle': 'arc3,rad=0.1',
+                            'shrinkA': 15,
+                            'shrinkB': 15,
+                            'linestyle': '--',
+                        },
+                    )
 
     # -------------------------------------------------------------------------
     #         Helper Functions
@@ -753,9 +773,8 @@ class TreeArtist():
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
     # import numpy as np
-    from matplotlib.gridspec import GridSpec
 
-    PLOT_MIRROR = False
+    PLOT_MIRROR = False  # FIXME True fails on missing key 'X'?
 
     # -------------------------------------------------------------------------
     #         Test Trees
@@ -783,25 +802,26 @@ if __name__ == '__main__':
     #         Plots
     # -------------------------------------------------------------------------
     # TODO make nice single-figure layout
-    layouts = dict({'knuth': 'Knuth (1971)',
-                    'wetherell_naive': 'Wetherell and Shannon (1979) (naïve)',
-                    'wetherell_3': 'Wetherell and Shannon (1979) (Alg 3)',
-                    'wetherell': 'Wetherell and Shannon (1979) (Alg 3 mod)',
-                    'reingold': 'Reingold and Tilford (1981)',
-                    })
+    layouts = {
+        'knuth': 'Knuth (1971)',
+        'wetherell_naive': 'Wetherell and Shannon (1979) (naïve)',
+        'wetherell_3': 'Wetherell and Shannon (1979) (Alg 3)',
+        'wetherell': 'Wetherell and Shannon (1979) (Alg 3 mod)',
+        'reingold': 'Reingold and Tilford (1981)',
+    }
 
     for i, (layout, title) in enumerate(layouts.items()):
         dt = TreeArtist(st)
 
         if not PLOT_MIRROR:
-            dt.draw(fignum=i+1, layout=layout)
+            dt.draw(fignum=i + 1, layout=layout)
             dt.ax.set_title(title)
             dt.fig.tight_layout()
         else:
             # Plot the tree and a mirror image to test
-            fig = plt.figure(i+1, clear=True)
+            fig = plt.figure(i + 1, clear=True)
             fig.suptitle(title)
-            gs = GridSpec(nrows=1, ncols=2)
+            gs = fig.add_gridspec(nrows=1, ncols=2)
             ax = fig.add_subplot(gs[0])
             ax.set_title('Original')
             dt.draw(ax=ax, layout=layout)
