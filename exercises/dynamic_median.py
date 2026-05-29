@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
-#==============================================================================
+# ==============================================================================
 #     File: dynamic_median.py
 #  Created: 2020-02-19 14:25
 #   Author: Bernie Roesler
-#
+# ==============================================================================
+
+"""Exercise 2.4.30: Dynamic median-finding.
+Design a data type that supports insert in logarithmic time, find the
+median in constant time, and delete the median in logarithmic time.
+Hint: Use a min-heap and a max-heap.
 """
-  Description: Solution to Exercise 2.4.30: Dynamic median-finding. 
-    Design a data type that supports insert in logarithmic time, find the
-    median in constant time, and delete the median in logarithmic time. 
-    Hint: Use a min-heap and a max-heap.
-"""
-#==============================================================================
 
 from copy import deepcopy as _deepcopy
 
-from algs.basics import Collection, PriorityQueue as _PQ
+from algs.basics import Collection
+from algs.basics import PriorityQueue as _PQ
+
 
 class MedianPQ(Collection):
     """Iterable priority queue object, where priority is given to the median.
@@ -35,7 +36,10 @@ class MedianPQ(Collection):
     is_empty : bool
         True if `size == 0`
     """
-    def __init__(self, items=list(), key=None):
+
+    def __init__(self, items=None, key=None):
+        if items is None:
+            items = []
         self._v = None  # the median item
         self._large = _PQ(kind='min')  # store items > self._v
         self._small = _PQ(kind='max')  # store items < self._v
@@ -45,6 +49,7 @@ class MedianPQ(Collection):
 
     @property
     def size(self):
+        """Number of items in queue."""
         if self._v is None:
             return 0
         else:
@@ -74,12 +79,11 @@ class MedianPQ(Collection):
                 # shift values to the left
                 self._small.enqueue(self._v)
                 self._v = self._large.dequeue()
-        else:  # k == self._v
-            # choose side with fewer items
-            if self._large.size < self._small.size:
-                self._large.enqueue(k)
-            else:
-                self._small.enqueue(k)
+        # choose side with fewer items
+        elif self._large.size < self._small.size:
+            self._large.enqueue(k)
+        else:
+            self._small.enqueue(k)
 
     def dequeue(self):
         """Remove and return median item."""
@@ -112,42 +116,43 @@ class MedianPQ(Collection):
 
 if __name__ == '__main__':
     # TODO move to proper unit testing suite for package
-    import string
-    import numpy as np
+    class TestMedianPQ:
+        """Test suite for `MedianPQ`."""
 
-    tests = fails = 0
+        def __init__(self):
+            self.tests = 0
+            self.fails = 0
 
-    def should_be(a, b, name=None, verbose=False):
-        """Test a condition."""
-        global tests, fails
-        tests += 1
-        try:
-            assert a == b
-            if verbose:
+        def should_be(self, a, b, name=None, verbose=False):
+            """Test a condition."""
+            self.tests += 1
+            try:
+                assert a == b
+                if verbose:
+                    print(f"[{name}]: Got: {a}, Expected: {b}")
+            except AssertionError:
+                self.fails += 1
                 print(f"[{name}]: Got: {a}, Expected: {b}")
-        except AssertionError as e:
-            fails += 1
-            print(f"[{name}]: Got: {a}, Expected: {b}")
-            raise e
+
+        def print_summary(self):
+            """Print summary of tests."""
+            if self.fails > 0:
+                print(f"{self.fails}/{self.tests} tests failed")
+            else:
+                print(f"All {self.tests} tests passed!")
 
     # m = MedianPQ(string.ascii_uppercase[:11])
     # TODO test with, say, tuples as input to use key for sorting
+    runner = TestMedianPQ()
+
     m = MedianPQ(range(11))
-    should_be(m.is_empty, False)
-    should_be(len(m), 11)
-    should_be(m.peek(), 5)
-    should_be(list(m), [5, 4, 6, 3, 7, 2, 8, 1, 9, 0, 10])
 
-    # Summary
-    if fails > 0:
-        print(f"{fails}/{tests} tests failed")
-    else:
-        print(f"All {tests} tests passed!")
+    runner.should_be(m.is_empty, False)
+    runner.should_be(len(m), 11)
+    runner.should_be(m.peek(), 5)
+    runner.should_be(list(m), [5, 4, 6, 3, 7, 2, 8, 1, 9, 0, 10])
 
+    runner.print_summary()
 
-
-
-
-
-#==============================================================================
-#==============================================================================
+# ==============================================================================
+# ==============================================================================
