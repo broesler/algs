@@ -3,18 +3,23 @@
 #     File: test_set.py
 #  Created: 2022-05-31 19:07
 #   Author: Bernie Roesler
-#
-"""
-Unit tests for Sets. Similar to tests for `algs.search` without values.
-"""
 # =============================================================================
 
-import pytest
+"""Unit tests for Sets. Similar to tests for `algs.search` without values."""
+
 import string
 
-from algs.search.set import (Set, HashSet,
-                             MultiHashSet, MultiSet,
-                             MathSet, BoolMathSet, MathMultiSet)
+import pytest
+
+from algs.search.set import (
+    BoolMathSet,
+    HashSet,
+    MathMultiSet,
+    MathSet,
+    MultiHashSet,
+    MultiSet,
+    Set,
+)
 from tests.test_search import err_test
 
 # TODO
@@ -22,12 +27,12 @@ from tests.test_search import err_test
 #   * deprecate `delete` -> `remove`.
 
 # Determine which classes to test
-UNORDERED_SETS = set([HashSet, MultiHashSet])
-ORDERED_SETS = set([Set, MultiSet])
-MATH_SETS = set([MathSet, MathMultiSet, BoolMathSet])
+UNORDERED_SETS = {HashSet, MultiHashSet}
+ORDERED_SETS = {Set, MultiSet}
+MATH_SETS = {MathSet, MathMultiSet, BoolMathSet}
 
-MULTISETS = set([MultiHashSet, MultiSet])
-MATH_MULTISETS = set([MathMultiSet])
+MULTISETS = {MultiHashSet, MultiSet}
+MATH_MULTISETS = {MathMultiSet}
 
 ALL_SETS = UNORDERED_SETS | ORDERED_SETS | MATH_SETS
 
@@ -58,7 +63,7 @@ def expect_ranks(SET):
 
 @pytest.fixture
 def U_keys():
-    """The universe of all possible keys."""
+    """Define the universe of all possible keys."""
     return string.ascii_uppercase
 
 
@@ -93,7 +98,7 @@ class TestUnorderedOps:
         assert len(empty_set) == 0
 
     def test_empty_raises(self, empty_set):
-        err_test(empty_set, '__setitem__', 'A', 1,  err_type=AttributeError)
+        err_test(empty_set, '__setitem__', 'A', 1, err_type=AttributeError)
         err_test(empty_set, '__getitem__', 'A', err_type=AttributeError)
         err_test(empty_set, '__delitem__', 'Z', err_type=KeyError)
 
@@ -159,7 +164,7 @@ class TestOrderedOps:
         assert st.floor('Q') == 'P'
         assert st.ceil('Q') == 'R'
         assert st.floor(chr(ord('A') - 1)) is None  # char < st.min()
-        assert st.ceil('Z') is None                 # char > st.max()
+        assert st.ceil('Z') is None  # char > st.max()
 
     def test_select_raises(self, st):
         err_test(st, 'select', -1, err_type=IndexError)  # too small
@@ -209,7 +214,8 @@ class TestOrderedOps:
         # Ex 3.2.33
         for k in st:
             assert st.select(st.rank(k)) == k
-        for i, c in zip(expect_ranks, sorted(expect_set)):
+        # NOTE expect_set may be smaller than expect_ranks, so zip to avoid IndexError.
+        for i, _ in zip(expect_ranks, sorted(expect_set)):
             assert st.rank(st.select(i)) == i
 
 
@@ -288,9 +294,9 @@ class TestMathSet:
 
     def test_compare(self, A, U):
         # Identity operations
-        assert A == A
-        assert A >= A
-        assert A <= A
+        assert A == A  # noqa
+        assert A >= A  # noqa
+        assert A <= A  # noqa
         # Comparison with universe
         assert U > A
         assert A < U
@@ -369,9 +375,9 @@ class TestMultiSets:
 
     def test_compare(self, Am, Cm):
         # Identity operations
-        assert Am == Am
-        assert Am >= Am
-        assert Am <= Am
+        assert Am == Am  # noqa
+        assert Am >= Am  # noqa
+        assert Am <= Am  # noqa
         # Comparison with superset
         assert Cm > Am
         assert Am < Cm

@@ -3,30 +3,47 @@
 #     File: test_graph.py
 #  Created: 2022-06-30 16:06
 #   Author: Bernie Roesler
-#
-"""
-  Description:
-"""
 # =============================================================================
 
+"""Tests for graph algorithms."""
+
 from pathlib import Path
+
 import pytest
 
-from algs.graph.undirected import (Graph, SimpleGraph,  STGraph, SymbolGraph,
-                                   DepthFirstSearch, DepthFirstPaths,
-                                   DepthFirstPaths_nr,
-                                   DepthFirstPaths_nr_simple,
-                                   BreadthFirstPaths, UFSearch, LeafDFS,
-                                   spanning_tree_dfs, spanning_tree_bfs,
-                                   spanning_forest_dfs, spanning_forest_bfs,
-                                   GraphProperties, CC, CC_nr, Cycle, Cycle_nr,
-                                   CyclePath, CyclePath_nr, MinCyclePath,
-                                   Bipartite, ParallelEdges, Biconnected)
+from algs.graph.undirected import (
+    CC,
+    Biconnected,
+    Bipartite,
+    BreadthFirstPaths,
+    CC_nr,
+    Cycle,
+    Cycle_nr,
+    CyclePath,
+    CyclePath_nr,
+    DepthFirstPaths,
+    DepthFirstPaths_nr,
+    DepthFirstPaths_nr_simple,
+    DepthFirstSearch,
+    Graph,
+    GraphProperties,
+    LeafDFS,
+    MinCyclePath,
+    ParallelEdges,
+    SimpleGraph,
+    STGraph,
+    SymbolGraph,
+    UFSearch,
+    spanning_forest_bfs,
+    spanning_forest_dfs,
+    spanning_tree_bfs,
+    spanning_tree_dfs,
+)
 
 # -----------------------------------------------------------------------------
 #         Fixtures
 # -----------------------------------------------------------------------------
-EXPECT_EDGES = tuple((
+EXPECT_EDGES = (
     (5, 3),
     (9, 11),
     (7, 8),
@@ -39,41 +56,42 @@ EXPECT_EDGES = tuple((
     (9, 12),
     (0, 1),
     (4, 3),
-    (0, 5)
-))
+    (0, 5),
+)
 
 # Expected values for tinyCG
-EXPECT_DFS = dict({
+EXPECT_DFS = {
     0: [0],
     1: [0, 2, 1],
     2: [0, 2],
     3: [0, 2, 3],
     4: [0, 2, 3, 4],
     5: [0, 2, 3, 5],
-})
+}
 
-EXPECT_DFS_S = dict({
+EXPECT_DFS_S = {
     0: [0],
     1: [0, 5, 3, 2, 1],
     2: [0, 5, 3, 2],
     3: [0, 5, 3],
     4: [0, 5, 3, 2, 4],
     5: [0, 5],
-})
+}
 
-EXPECT_BFS = dict({
+EXPECT_BFS = {
     0: [0],
     1: [0, 1],
     2: [0, 2],
     3: [0, 2, 3],
     4: [0, 2, 4],
     5: [0, 5],
-})
+}
 
 EXPECT_COMPS = [list(range(7)), [7, 8], [9, 10, 11, 12]]
 
 
 DATA_DIR = Path(__file__).resolve().parents[1] / 'data'
+
 
 # NOTE paths are relative to where pytest is run from?
 # See: <https://docs.pytest.org/en/6.2.x/customize.htmlinding-the-rootdir>
@@ -96,8 +114,8 @@ def sg():
 def acyclicG(GT):
     V = 5
     G = GT(V)
-    for i in range(V-1):
-        G.add_edge(i, i+1)
+    for i in range(V - 1):
+        G.add_edge(i, i + 1)
     return G
 
 
@@ -113,7 +131,7 @@ def nonogon(GT):
     V = 9
     G = GT(V)
     for i in range(V):
-        G.add_edge(i, (i+1) % V)
+        G.add_edge(i, (i + 1) % V)
     return G
 
 
@@ -148,7 +166,7 @@ class TestTinyG:
         assert list(tinyG.vertices()) == list(range(tinyG.V))
 
     def test_adj(self, tinyG):
-        EXPECT_ADJ = dict({
+        EXPECT_ADJ = {
             0: [6, 2, 1, 5],
             1: [0],
             2: [0],
@@ -161,13 +179,14 @@ class TestTinyG:
             9: [11, 10, 12],
             10: [9],
             11: [9, 12],
-            12: [11, 9]
-        })
+            12: [11, 9],
+        }
+
         for v in tinyG.vertices():
             assert list(tinyG.adj(v)) == EXPECT_ADJ[v]
 
     def test_degrees(self, tinyG):
-        EXPECT_DEGREES = tuple((4, 1, 1, 2, 3, 3, 2, 1, 1, 3, 1, 2, 2))
+        EXPECT_DEGREES = (4, 1, 1, 2, 3, 3, 2, 1, 1, 3, 1, 2, 2)
         for v in tinyG.vertices():
             assert tinyG.degree(v) == EXPECT_DEGREES[v]
 
@@ -239,6 +258,7 @@ class TestNonSimple:
 
 # TODO test STGraph with 'routes.txt'
 
+
 # TODO expect_edges
 # Test has_edge, add_edge, index, name, contains
 class TestSymbolGraph:
@@ -254,26 +274,31 @@ class TestDFS:
     def test_dfs_CG(self, tinyCG, GraphSearch):
         dfs = GraphSearch(tinyCG, 0)
         assert dfs.count() == tinyCG.V
-        assert all([dfs.marked(v) for v in tinyCG.vertices()])
+        assert all(dfs.marked(v) for v in tinyCG.vertices())
 
     def test_dfs_G(self, tinyG, GraphSearch):
         dfs = GraphSearch(tinyG, 0)
         assert dfs.count() == 7
-        assert all([dfs.marked(v) for v in range(6)])
+        assert all(dfs.marked(v) for v in range(6))
         dfs = GraphSearch(tinyG, 7)
         assert dfs.count() == 2
-        assert all([dfs.marked(v) for v in [7, 8]])
+        assert all(dfs.marked(v) for v in [7, 8])
         dfs = GraphSearch(tinyG, 9)
         assert dfs.count() == 4
-        assert all([dfs.marked(v) for v in [9, 10, 11, 12]])
+        assert all(dfs.marked(v) for v in [9, 10, 11, 12])
 
 
 @pytest.mark.parametrize('GT', [Graph, SimpleGraph, STGraph])
 class TestPaths:
-    @pytest.mark.parametrize('GraphSearch', [DepthFirstPaths,
-                                             DepthFirstPaths_nr,
-                                             DepthFirstPaths_nr_simple,
-                                             BreadthFirstPaths])
+    @pytest.mark.parametrize(
+        'GraphSearch',
+        [
+            DepthFirstPaths,
+            DepthFirstPaths_nr,
+            DepthFirstPaths_nr_simple,
+            BreadthFirstPaths,
+        ],
+    )
     class TestHasPath:
         def test_has_path_to(self, tinyCG, GraphSearch):
             dfs = GraphSearch(tinyCG, 0)
@@ -287,9 +312,14 @@ class TestPaths:
             for v in range(7, tinyG.V):
                 assert not dfs.has_path_to(v)
 
-    @pytest.mark.parametrize('DFS, EXPECT', [(DepthFirstPaths, EXPECT_DFS),
-                                             (DepthFirstPaths_nr, EXPECT_DFS),
-                                             (DepthFirstPaths_nr_simple, EXPECT_DFS_S)])
+    @pytest.mark.parametrize(
+        'DFS, EXPECT',
+        [
+            (DepthFirstPaths, EXPECT_DFS),
+            (DepthFirstPaths_nr, EXPECT_DFS),
+            (DepthFirstPaths_nr_simple, EXPECT_DFS_S),
+        ],
+    )
     def test_dfs_path_to(self, tinyCG, DFS, EXPECT):
         dfs = DFS(tinyCG, 0)
         for v in tinyCG.vertices():
@@ -310,14 +340,7 @@ class TestPaths:
         assert dfs.leaf() == 3  # returns first leaft
 
     def test_spanning_tree_dfs(self, tinyCG):
-        EXPECT_ST = dict({
-            0: [2],
-            1: [2],
-            2: [0, 1, 3],
-            3: [2, 5, 4],
-            4: [3],
-            5: [3]
-        })
+        EXPECT_ST = {0: [2], 1: [2], 2: [0, 1, 3], 3: [2, 5, 4], 4: [3], 5: [3]}
         T = spanning_tree_dfs(tinyCG, 0)
         assert T.V == tinyCG.V
         assert T.E == tinyCG.V - 1  # minimum edges in connected graph
@@ -326,14 +349,7 @@ class TestPaths:
             assert list(T.adj(v)) == EXPECT_ST[v]
 
     def test_spanning_tree_bfs(self, tinyCG):
-        EXPECT_ST = dict({
-            0: [2, 1, 5],
-            1: [0],
-            2: [0, 3, 4],
-            3: [2],
-            4: [2],
-            5: [0]
-        })
+        EXPECT_ST = {0: [2, 1, 5], 1: [0], 2: [0, 3, 4], 3: [2], 4: [2], 5: [0]}
         T = spanning_tree_bfs(tinyCG, 0)
         assert T.V == tinyCG.V
         assert T.E == tinyCG.V - 1  # minimum edges in connected graph
@@ -342,24 +358,24 @@ class TestPaths:
             assert list(T.adj(v)) == EXPECT_ST[v]
 
     def test_spanning_forest_dfs(self, tinyG):
-        EXPECT_ST_0 = dict({
+        EXPECT_ST_0 = {
             0: [6, 2, 1],
             1: [0],
             2: [0],
             3: [5],
             4: [6, 5],
             5: [4, 3],
-            6: [0, 4]
-        })
-        EXPECT_ST_1 = dict({7: [8], 8: [7]})
-        EXPECT_ST_2 = dict({9: [11, 10], 10: [9], 11: [9, 12], 12: [11]})
+            6: [0, 4],
+        }
+        EXPECT_ST_1 = {7: [8], 8: [7]}
+        EXPECT_ST_2 = {9: [11, 10], 10: [9], 11: [9, 12], 12: [11]}
         Ts = spanning_forest_dfs(tinyG)
         for T, expect in zip(Ts, [EXPECT_ST_0, EXPECT_ST_1, EXPECT_ST_2]):
             for v in expect:
                 assert list(T.adj(v)) == expect[v]
 
     def test_spanning_forest_bfs(self, tinyG):
-        EXPECT_ST_0 = dict({
+        EXPECT_ST_0 = {
             0: [6, 2, 1, 5],
             1: [0],
             2: [0],
@@ -367,9 +383,9 @@ class TestPaths:
             4: [6],
             5: [0, 3],
             6: [0, 4],
-        })
-        EXPECT_ST_1 = dict({7: [8], 8: [7]})
-        EXPECT_ST_2 = dict({9: [11, 10, 12], 10: [9], 11: [9], 12: [9]})
+        }
+        EXPECT_ST_1 = {7: [8], 8: [7]}
+        EXPECT_ST_2 = {9: [11, 10, 12], 10: [9], 11: [9], 12: [9]}
         Ts = spanning_forest_bfs(tinyG)
         for T, expect in zip(Ts, [EXPECT_ST_0, EXPECT_ST_1, EXPECT_ST_2]):
             for v in expect:
@@ -472,13 +488,13 @@ class TestBiconnected:
         b = Biconnected(tinyG)
         assert not b.is_edge_connected
         assert b.Nbridges == 4
-        assert all([b.articulation(v) for v in [0, 9]])
+        assert all(b.articulation(v) for v in [0, 9])
 
     def test_is_biconnected(self, tinyCG):
         b = Biconnected(tinyCG)
         assert b.is_edge_connected
         assert b.Nbridges == 0
-        assert not any([b.articulation(v) for v in tinyCG.vertices()])
+        assert not any(b.articulation(v) for v in tinyCG.vertices())
 
 
 # TODO test unconnected graph
@@ -509,11 +525,12 @@ class TestGraphProperties:
     def test_girths(self, GT):
         # Generate a simple cycle graph
         for N in range(3, 10):
-            edges = list()
+            edges = []
             for i in range(N):
                 edges.append((i, (i + 1) % N))
             Gcyc = GT(N, edges)
             assert GraphProperties(Gcyc).girth() == N
+
 
 # =============================================================================
 # =============================================================================

@@ -3,25 +3,42 @@
 #     File: test_search.py
 #  Created: 2021-03-02 09:18
 #   Author: Bernie Roesler
-#
-"""
-  Description: Unit tests for algs.search. Exercise 3.1.29 (and then some!)
-"""
 # =============================================================================
+
+"""Unit tests for algs.search. Exercise 3.1.29 (and then some!)."""
 
 import numpy as np
 import pytest
 
-from algs.search import (SequentialSearchST, BinarySearchST, ArrayST, BST,
-                         BST_nr, ThreadedST, ThreadedST_nr, ArrayBST,
-                         RedBlackBST, TopDown234, TopDown234_nr,
-                         TopDown234bothways, BottomUp234, Unbalanced23,
-                         AVLTree,
-                         SeparateChainingHashST, SeparateChainingLiteHashST,
-                         LinearProbingHashST, LazyLinearProbingHashST,
-                         DoubleProbingHashST, DoubleHashingHashST,
-                         CuckooHashST, LIFOHashST, RobinHoodHashST,
-                         MultiValBST, MultiValRedBlackBST, MultiValHashST)
+from algs.search import (
+    BST,
+    ArrayBST,
+    ArrayST,
+    AVLTree,
+    BinarySearchST,
+    BottomUp234,
+    BST_nr,
+    CuckooHashST,
+    DoubleHashingHashST,
+    DoubleProbingHashST,
+    LazyLinearProbingHashST,
+    LIFOHashST,
+    LinearProbingHashST,
+    MultiValBST,
+    MultiValHashST,
+    MultiValRedBlackBST,
+    RedBlackBST,
+    RobinHoodHashST,
+    SeparateChainingHashST,
+    SeparateChainingLiteHashST,
+    SequentialSearchST,
+    ThreadedST,
+    ThreadedST_nr,
+    TopDown234,
+    TopDown234_nr,
+    TopDown234bothways,
+    Unbalanced23,
+)
 from algs.search.set import invert
 
 rng = np.random.default_rng(seed=565656)
@@ -51,40 +68,63 @@ def err_test(container, op, *args, err_type=IndexError):
 
 
 # ---------- Test All STs ----------
-UNORDERED_STS = set([SequentialSearchST, ArrayST,
-                     SeparateChainingHashST, SeparateChainingLiteHashST,
-                     LinearProbingHashST, LazyLinearProbingHashST,
-                     DoubleProbingHashST, DoubleHashingHashST,
-                     CuckooHashST, LIFOHashST, RobinHoodHashST,
-                     MultiValHashST])
+UNORDERED_STS = {
+    SequentialSearchST,
+    ArrayST,
+    SeparateChainingHashST,
+    SeparateChainingLiteHashST,
+    LinearProbingHashST,
+    LazyLinearProbingHashST,
+    DoubleProbingHashST,
+    DoubleHashingHashST,
+    CuckooHashST,
+    LIFOHashST,
+    RobinHoodHashST,
+    MultiValHashST,
+}
 
-ORDERED_STS = set([BinarySearchST, BST, BST_nr, ThreadedST, ThreadedST_nr,
-                   ArrayBST, RedBlackBST, TopDown234, TopDown234_nr,
-                   BottomUp234, TopDown234bothways, Unbalanced23, AVLTree,
-                   MultiValBST, MultiValRedBlackBST])
+ORDERED_STS = {
+    BinarySearchST,
+    BST,
+    BST_nr,
+    ThreadedST,
+    ThreadedST_nr,
+    ArrayBST,
+    RedBlackBST,
+    TopDown234,
+    TopDown234_nr,
+    BottomUp234,
+    TopDown234bothways,
+    Unbalanced23,
+    AVLTree,
+    MultiValBST,
+    MultiValRedBlackBST,
+}
 
-MULTIVAL_STS = set([MultiValHashST, MultiValBST, MultiValRedBlackBST])
+MULTIVAL_STS = {MultiValHashST, MultiValBST, MultiValRedBlackBST}
 
 ALL_STS = UNORDERED_STS | ORDERED_STS
 
 SINGLEVAL_STS = ALL_STS - MULTIVAL_STS
 
-NO_DELETE = set([ArrayBST,
-                 Unbalanced23,
-                 TopDown234bothways,
-                 ])
+NO_DELETE = {
+    ArrayBST,
+    Unbalanced23,
+    TopDown234bothways,
+}
 
-NO_CACHE = set([ArrayBST,
-                SeparateChainingHashST,
-                SeparateChainingLiteHashST,
-                LinearProbingHashST,
-                LazyLinearProbingHashST,
-                DoubleProbingHashST,
-                DoubleHashingHashST,
-                CuckooHashST,
-                LIFOHashST,
-                RobinHoodHashST,
-                ])
+NO_CACHE = {
+    ArrayBST,
+    SeparateChainingHashST,
+    SeparateChainingLiteHashST,
+    LinearProbingHashST,
+    LazyLinearProbingHashST,
+    DoubleProbingHashST,
+    DoubleHashingHashST,
+    CuckooHashST,
+    LIFOHashST,
+    RobinHoodHashST,
+}
 
 
 # -----------------------------------------------------------------------------
@@ -128,6 +168,7 @@ def st(ST, cache):
 # multiple values.
 # Multiple key testing (i.e. multisets) can occur in test_set instead.
 
+
 # -----------------------------------------------------------------------------
 #         Run Tests
 # -----------------------------------------------------------------------------
@@ -136,8 +177,7 @@ class TestUnorderedOps:
     @pytest.mark.parametrize('ST', ALL_STS)
     class TestPut:
         def test_bad_input(self, empty_st):
-            err_test(empty_st, '__init__', list('BADEXAMPLE'),
-                     err_type=ValueError)
+            err_test(empty_st, '__init__', list('BADEXAMPLE'), err_type=ValueError)
 
         def test_empty_table(self, empty_st):
             assert empty_st.size() == 0
@@ -189,7 +229,7 @@ class TestUnorderedOps:
 
         def test_get(self, st, expect_keys):
             for k, v in ITEMS:
-                if k == 'E' or k == 'A':
+                if k in {'E', 'A'}:
                     assert st[k] == max([val for key, val in ITEMS if key == k])
                 else:
                     assert st[k] == v
@@ -206,10 +246,10 @@ class TestUnorderedOps:
             # Delete arbitrary key, starting with same table
             for k in expect_keys:
                 t = ST(ITEMS, cache=cache)
-                t[k]    # get item to ensure cache is used
+                t[k]  # get item to ensure cache is used
                 del t[k]
                 assert k not in t
-                assert len(t) == len(expect_keys)-1
+                assert len(t) == len(expect_keys) - 1
                 assert sorted(t.keys()) == sorted(expect_keys - set(k))
                 err_test(t, '__getitem__', k, err_type=KeyError)
 
@@ -271,7 +311,7 @@ class TestCaching:
     @pytest.mark.parametrize('ST', SINGLEVAL_STS - NO_CACHE - NO_DELETE)
     def test_delete_cache(self, st):
         for k in st.keys():
-            st[k]       # __getitem__ to set the cache
+            st[k]  # __getitem__ to set the cache
             del st[k]
             assert st._cache is None
             assert k not in st
@@ -280,13 +320,13 @@ class TestCaching:
 # Tests specific to a single data type
 class TestSelfOrg:
     def test_selforg_nocache(self):
-        """Test self-organizing search (Exercise 3.1.22)"""
+        """Test self-organizing search (Exercise 3.1.22)."""
         st = ArrayST(ITEMS, selforg=True, cache=False)
         rand_keys = rng.choice(st.keys(), size=st.size())
         for k in rand_keys:
-            st[k]                       # search for the key
+            st[k]  # search for the key
             assert st.keys()[0] == k
-            st[k]                       # search again
+            st[k]  # search again
             assert st._cost == 1
 
     def test_selforg_cache(self):
@@ -294,7 +334,7 @@ class TestSelfOrg:
         st = ArrayST(ITEMS, selforg=True, cache=True)
         rand_keys = rng.choice(st.keys(), size=st.size())
         for k in rand_keys:
-            v = st[k]                   # search for the key to set cache
+            v = st[k]  # search for the key to set cache
             assert st._keys[0] == k
             assert st._keys[st._cache] == k
             assert st._vals[st._cache] == v
@@ -310,7 +350,7 @@ def test_binary_integrity():
 
 @pytest.mark.parametrize('cache', [False, True])
 class TestOrderedOps:
-    @pytest.mark.parametrize('ST', ORDERED_STS - set([ArrayBST]))
+    @pytest.mark.parametrize('ST', ORDERED_STS - {ArrayBST})
     class TestPut:
         def test_empty_table(self, empty_st):
             assert empty_st.floor('A') is None
@@ -334,7 +374,7 @@ class TestOrderedOps:
             assert st.floor('Q') == 'P'
             assert st.ceil('Q') == 'R'
             assert st.floor(chr(ord('A') - 1)) is None  # char < st.min()
-            assert st.ceil('Z') is None                 # char > st.max()
+            assert st.ceil('Z') is None  # char > st.max()
 
         def test_range_search(self, st, expect_keys):
             # In-order traversal + range search
@@ -365,15 +405,13 @@ class TestOrderedOps:
         def test_rankselect_inverse(self, st, expect_ranks, expect_keys):
             for k in st.keys():
                 assert st.select(st.rank(k)) == k
-            for i, c in zip(expect_ranks, sorted(expect_keys)):
+            for i in expect_ranks:
                 assert st.rank(st.select(i)) == i
 
-    @pytest.mark.parametrize('ST', ((ORDERED_STS & SINGLEVAL_STS)
-                                    - set([ArrayBST])))
+    @pytest.mark.parametrize('ST', ((ORDERED_STS & SINGLEVAL_STS) - {ArrayBST}))
     def test_vals_items(self, st, expect_items):
         assert st.values() == [v for k, v in sorted(expect_items)]
-        assert (st.values('F', 'P') ==
-                [v for k, v in sorted(expect_items)[3:7]])
+        assert st.values('F', 'P') == [v for k, v in sorted(expect_items)[3:7]]
         assert st.items() == sorted(expect_items)
         assert st.items('F', 'P') == sorted(expect_items)[3:7]
 
@@ -415,17 +453,18 @@ def test_comparisons():
 # -----------------------------------------------------------------------------
 @pytest.fixture
 def expect_multi():
-    return [('A', [2, 8]),
-            ('C', [4]),
-            ('E', [1, 6, 12]),
-            ('H', [5]),
-            ('L', [11]),
-            ('M', [9]),
-            ('P', [10]),
-            ('R', [3]),
-            ('S', [0]),
-            ('X', [7])
-            ]
+    return [
+        ('A', [2, 8]),
+        ('C', [4]),
+        ('E', [1, 6, 12]),
+        ('H', [5]),
+        ('L', [11]),
+        ('M', [9]),
+        ('P', [10]),
+        ('R', [3]),
+        ('S', [0]),
+        ('X', [7]),
+    ]
 
 
 @pytest.mark.parametrize('ST', MULTIVAL_STS)

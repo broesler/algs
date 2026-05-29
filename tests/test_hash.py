@@ -3,19 +3,23 @@
 #     File: test_hash.py
 #  Created: 2022-06-30 12:35
 #   Author: Bernie Roesler
-#
-"""
-  Description: Unit tests for hash table operations not covered by test_search.
-"""
 # =============================================================================
+
+"""Unit tests for hash table operations not covered by test_search."""
 
 import numpy as np
 import pytest
 
-from algs.search.hash import (SeparateChainingHashST,
-                              SeparateChainingLiteHashST, LinearProbingHashST,
-                              LazyLinearProbingHashST, DoubleProbingHashST,
-                              DoubleHashingHashST, CuckooHashST, LIFOHashST)
+from algs.search.hash import (
+    CuckooHashST,
+    DoubleHashingHashST,
+    DoubleProbingHashST,
+    LazyLinearProbingHashST,
+    LIFOHashST,
+    LinearProbingHashST,
+    SeparateChainingHashST,
+    SeparateChainingLiteHashST,
+)
 
 # Exercise 3.4.1
 KEYS = 'EASYQUTION'
@@ -25,7 +29,7 @@ ITEMS = tuple((c, i) for i, c in enumerate(KEYS))
 # Define custom has functions
 def _hash_code(k, R=11):
     """Return the hash code for the `k`th letter of the alphabet."""
-    return R*(ord(k) - ord('A'))
+    return R * (ord(k) - ord('A'))
 
 
 def _hash(self, k, **kwargs):
@@ -110,8 +114,8 @@ def test_scl_keys(scl):
 # Exercise 3.4.3
 def test_scl_delete_later_than(scl):
     scl.delete_later_than(5)  # corresponds to 'U'
-    assert all([x.N_before <= 5 for x in scl._nodes()])
-    assert all([k in list('EASYQU') for k in scl.keys()])
+    assert all(x.N_before <= 5 for x in scl._nodes())
+    assert all(k in list('EASYQU') for k in scl.keys())
 
 
 def test_lph():
@@ -137,18 +141,19 @@ def test_lazy_delete():
     st = LazyLinearProbingHashST(ITEMS)
     M = st.M
     thresh = M // 8  # N value for resize
-    for i, k in zip(range(len(KEYS) - thresh - 1), KEYS):
-        del st[k]                # lazy delete by setting val to None
+    n = len(KEYS) - thresh - 1
+    for k in KEYS[:n]:
+        del st[k]  # lazy delete by setting val to None
         idx = st._keys.index(k)  # linear search for internal index
         assert st._vals[idx] is None
         assert st.M == M
-        assert k not in st       # test `__getitem__`
+        assert k not in st  # test `__getitem__`
 
-    del st[KEYS[i+1]]  # force a resize
+    del st[KEYS[n]]  # force a resize
     assert st.M == M // 2
 
     # Test actual deletion of keys
-    for i, k in zip(range(len(KEYS) - thresh - 1), KEYS):
+    for k in KEYS[:n]:
         assert k not in st._keys
 
 
@@ -181,6 +186,7 @@ def test_cht_resize():
 def test_lifo():
     st = MyLIFOHashST(ITEMS, M=16, resize=False)
     assert st.keys() == list('QTASIYOUEN')
+
 
 # =============================================================================
 # =============================================================================

@@ -3,19 +3,25 @@
 #     File: test_basics.py
 #  Created: 2021-03-02 09:02
 #   Author: Bernie Roesler
-#
-"""
-  Description: Unit tests for algs.basics.
-"""
 # =============================================================================
+
+"""Unit tests for algs.basics."""
+
+import string
+from random import shuffle
 
 import numpy as np
 import pytest
-from random import shuffle
-import string
 
-from algs.basics import (Bag, Stack, Queue, PriorityQueue, IndexPQ,
-                         RandomBag, RandomQueue)
+from algs.basics import (
+    Bag,
+    IndexPQ,
+    PriorityQueue,
+    Queue,
+    RandomBag,
+    RandomQueue,
+    Stack,
+)
 
 
 def err_test(container, op, *args, err_type=IndexError):
@@ -65,7 +71,7 @@ class TestBag:
         for x in b:
             mean += x / N
         for x in b:
-            std += (x - mean)*(x - mean) / (N - 1)
+            std += (x - mean) * (x - mean) / (N - 1)
         assert np.isclose(mean, 100.6)
         assert np.isclose(std, 110.489)
 
@@ -80,8 +86,8 @@ class TestBag:
     def test_random_bag_order(self):
         # Test random bag in order twice
         r = RandomBag(range(10))
-        order_1 = [x for x in r]
-        order_2 = [x for x in r]
+        order_1 = list(r)
+        order_2 = list(r)
         assert order_1 != order_2
 
 
@@ -117,7 +123,7 @@ class TestQueue:
         vals = list(range(10))
         q = RandomQueue(vals)
         assert q.sample() in vals
-        out = list()
+        out = []
         for _ in vals:
             out.append(q.dequeue())
         assert q.is_empty
@@ -127,14 +133,14 @@ class TestQueue:
     def test_random_queue_iterator(self):
         vals = list(range(10))
         q = RandomQueue(vals)
-        out = [x for x in q]
+        out = list(q)
         assert out != vals
         assert sorted(out) == vals
 
 
 @pytest.fixture
 def idx_s():
-    """Shuffled alphabet data with indices"""
+    """Shuffled alphabet data with indices."""
     return list(range(len(string.ascii_uppercase)))
 
 
@@ -147,7 +153,7 @@ def idx(idx_s):
 
 @pytest.fixture
 def data(idx):
-    return list(string.ascii_uppercase[i] for i in idx)
+    return [string.ascii_uppercase[i] for i in idx]
 
 
 class TestPQ:
@@ -212,13 +218,14 @@ class TestIndexPQ:
         del pq[i]
         assert i not in pq
         assert list(pq.keys()) == idx_s[:i] + idx_s[i+1:]
-        assert ''.join(pq.values()) == (string.ascii_uppercase[:i]
-                                        + string.ascii_uppercase[i+1:])
+        assert ''.join(pq.values()) == (
+            string.ascii_uppercase[:i] + string.ascii_uppercase[i+1:]
+        )
         # Re-add item for completeness
         pq[i] = item
 
     def test_indexpq_internals(self, pq):
-        for i in range(len(pq._pq)-1):
+        for i in range(len(pq._pq) - 1):
             assert pq._pq[pq._qp[i]] == i
 
     def test_indexpq_equality(self, idx, data):
@@ -234,6 +241,7 @@ class TestIndexPQ:
     def test_indexpq_fromkeys(self, idx, pq):
         pq_fromkeys = pq.fromkeys(idx)
         assert pq_fromkeys.keys() == pq.keys()
+
 
 # =============================================================================
 # =============================================================================

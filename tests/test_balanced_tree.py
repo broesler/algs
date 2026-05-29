@@ -3,15 +3,14 @@
 #     File: test_balanced_tree.py
 #  Created: 2021-03-09 18:47
 #   Author: Bernie Roesler
-#
-"""
-Tests specific to balanced trees.
-"""
 # =============================================================================
+
+"""Tests specific to balanced trees."""
 
 import pytest
 
 from algs.search.balanced_tree import RedBlackBST
+
 # from algs.search.balanced_tree import (RedBlackBST, TopDown234, TopDown234_nr,
 #                                        BottomUp234, TopDown234bothways,
 #                                        Unbalanced23, AVLTree)
@@ -20,9 +19,11 @@ from tests.test_search import ITEMS
 # BALANCED_TREES = set([RedBlackBST, TopDown234, TopDown234_nr, BottomUp234,
 #                       TopDown234bothways, Unbalanced23, AVLTree])
 
+
 @pytest.fixture(params=[RedBlackBST])
 def t(request):
     return request.param(ITEMS)
+
 
 class Test23Rotations:
     # NOTE keys must be in special order, expected outputs are in *level* order
@@ -63,11 +64,10 @@ class Test23Rotations:
         Nred = [3, 2, 1, 1, 1, 0, 1, 1, 1, 1]
         return keys, Ns, hs, ipls, Nred
 
-    @pytest.mark.parametrize('the_input',
-                             ['insert_no_rotate',
-                              'left_rotate',
-                              'right_rotate',
-                              'search_example'])
+    @pytest.mark.parametrize(
+        'the_input',
+        ['insert_no_rotate', 'left_rotate', 'right_rotate', 'search_example'],
+    )
     def test_node_update(self, the_input, request):
         keys, Ns, hs, ipls, Nred = request.getfixturevalue(the_input)
         t = RedBlackBST.fromkeys(keys)
