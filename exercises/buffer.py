@@ -3,11 +3,9 @@
 #     File: buffer.py
 #  Created: 2022-05-27 16:10
 #   Author: Bernie Roesler
-#
-"""
-Exercise 1.3.44 text editor buffer data type.
-"""
 # =============================================================================
+
+"""Exercise 1.3.44 text editor buffer data type."""
 
 from algs.basics import Collection, Stack
 
@@ -31,14 +29,17 @@ class Buffer(Collection):
 
     @property
     def size(self):
+        """Number of characters in the buffer."""
         return self.sL.size + self.sR.size
 
     @property
     def cursor(self):
+        """The character under the cursor."""
         return self.sR.peek()
-    
+
     @property
     def cursor_pos(self):
+        """The position of the cursor from the left."""
         return self.sL.size
 
     def insert(self, c):
@@ -63,14 +64,14 @@ class Buffer(Collection):
     def _items(self):
         """Get a list of every in the buffer for iteration."""
         return self.sL._items + list(reversed(self.sR._items))
-    
+
     def __str__(self):
         return ''.join(self._items)
 
     def print(self, with_cursor=True):
         """Print out text in buffer with cursor on another line."""
         print(self.__str__())
-        print(self.sL.size*' ' + '^')
+        print(self.sL.size * ' ' + '^')
 
 
 if __name__ == '__main__':
@@ -90,7 +91,6 @@ if __name__ == '__main__':
     for c in 'brand ':
         b.insert(c)
     b.print()
-
 
 
 # =============================================================================
