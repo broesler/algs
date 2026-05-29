@@ -3,13 +3,11 @@
 #     File: evaluate.py
 #  Created: 2022-05-27 13:55
 #   Author: Bernie Roesler
-#
-"""
-Functions to evaluate infix and postfix expressions.
-"""
 # =============================================================================
 
-from algs.basics import Stack, Queue
+"""Functions to evaluate infix and postfix expressions."""
+
+from algs.basics import Queue, Stack
 
 
 def evaluate_infix(a):
