@@ -1,30 +1,37 @@
 #!/usr/bin/env python3
 # =============================================================================
-#     File: lookupcsv.py
+#     File: lookup.py
 #  Created: 2022-06-01 22:31
 #   Author: Bernie Roesler
-#
-"""
-A symbol table dicionary client for reading CSV files.
-"""
 # =============================================================================
 
+"""A symbol table dicionary client for reading CSV files."""
+
 from pathlib import Path
+
 from tqdm import tqdm
 
 from algs.basics import Bag
-from algs.search import ST, MultiST, HashST, MultiHashST, invert
+from algs.search import ST, HashST, MultiHashST, MultiST
 
-# TODO 
+# TODO
 # * add `header=True` to parse header line
 # * pass data types to use instead of strings
 
 
-class LookupCSV():
+class LookupCSV:
     """A symbol table dicionary client for reading CSV files."""
 
-    def __init__(self, filename, key_col=0, val_col=1, delim=',', header=None,
-                 multival=False, verbose=True):
+    def __init__(
+        self,
+        filename,
+        key_col=0,
+        val_col=1,
+        delim=',',
+        header=None,
+        multival=False,
+        verbose=True,
+    ):
         """
         Parameters
         ----------
@@ -48,7 +55,7 @@ class LookupCSV():
         if header is None:
             header = 0
         # Build the dictionary from the file
-        with open(Path(filename), 'r') as fp:
+        with Path(filename).open() as fp:
             iters = fp.readlines()[header:]
         if verbose:
             iters = tqdm(iters)
@@ -67,7 +74,7 @@ class LookupCSV():
         return self.st.values(lo, hi)
 
 
-class LookupIndex():
+class LookupIndex:
     """A symbol table indexing client for reading CSV files."""
 
     def __init__(self, filename, delim=',', header=None):
@@ -86,13 +93,15 @@ class LookupIndex():
         if header is None:
             header = 0
         # Build the dictionary from the file
-        with open(Path(filename), 'r') as fp:
+        with Path(filename).open() as fp:
             for line in fp.readlines()[header:]:
                 items = line.strip().split(delim)
                 k = items[0]
                 for v in items[1:]:
-                    if k not in self.st: self.st[k] = Bag()
-                    if v not in self.ts: self.ts[v] = Bag()
+                    if k not in self.st:
+                        self.st[k] = Bag()
+                    if v not in self.ts:
+                        self.ts[v] = Bag()
                     self.st[k].add(v)
                     self.ts[v].add(k)
 
@@ -104,12 +113,13 @@ class LookupIndex():
             return self.ts[k]
 
     def print_query(self, k):
+        """Print the value associated with `k`."""
         v = self.query(k)
         print(str(k) + '\n  ' + '\n  '.join(v))
 
 
 # Exercise 3.5.22
-class FullLookupCSV():
+class FullLookupCSV:
     """A symbol table dicionary client for reading CSV files."""
 
     def __init__(self, filename, delim=',', header=0, verbose=False):
@@ -126,20 +136,20 @@ class FullLookupCSV():
         self._col_names = None
 
         # Build the dictionary from the file
-        with open(Path(filename), 'r') as fp:
+        with Path(filename).open() as fp:
             lines = fp.readlines()
 
         # Build list of symbol tables
         words = lines[header or 0].strip().split(delim)
         if header is None:
             self._col_names = range(len(words))
-            self.sts = len(words)*[None]
+            self.sts = len(words) * [None]
         else:
             self._col_names = words
             self.sts = HashST.fromkeys(self._col_names)
 
         # Scan the file line-by-line
-        iters = lines[header+1:]
+        iters = lines[header + 1 :]
         if verbose:
             iters = tqdm(iters)
 
@@ -177,7 +187,8 @@ class FullLookupCSV():
 
 
 if __name__ == "__main__":
-    filename = Path('../data/airports.csv')
+    DATA_PATH = Path(__file__).parent.parent / 'data'
+    filename = DATA_PATH / 'airports.csv'
     print(f"---{filename}---")
     st = LookupCSV(filename, header=1)
     qs = ['EWR', 'BOS', 'MHT']
@@ -185,7 +196,7 @@ if __name__ == "__main__":
         print(f"{q}: {st.query(q)}")
 
     # Unique codons, multiple amino acids
-    filename = Path('../data/amino.csv')
+    filename = DATA_PATH / 'amino.csv'
     print(f"---{filename}---")
     st = LookupCSV(filename, key_col=0, val_col=3)
     q = 'TCC'
@@ -202,7 +213,7 @@ if __name__ == "__main__":
     st.print_query('TCC')
 
     # Unique movie titles, multiple actor names
-    filename = Path('../data/movies-top-grossing.txt')
+    filename = DATA_PATH / 'movies-top-grossing.txt'
     print(f"---{filename} - indexed ---")
     st = LookupIndex(filename, delim='/')
     st.print_query('Bacon, Kevin')
@@ -212,7 +223,7 @@ if __name__ == "__main__":
     # assert st.ts == invert(st.st)
 
     # unique ranks and words with repeated frequencies and/or part of speech
-    filename = Path('../data/bnc-wordfreq.csv')
+    filename = DATA_PATH / 'bnc-wordfreq.csv'
     print(f"---{filename}---")
     st = FullLookupCSV(filename, verbose=True)
     q = 'about'
@@ -226,7 +237,7 @@ if __name__ == "__main__":
     print(f"{q}: {st.query(q, key_col='PART OF SPEECH', val_col='WORD')}")
 
     # unique dates with floats
-    filename = Path('../data/DJIA.csv')
+    filename = DATA_PATH / 'DJIA.csv'
     print(f"---{filename}---")
     st = LookupCSV(filename, key_col=0, val_col=3, verbose=True)
     lo = '29-Oct-29'
