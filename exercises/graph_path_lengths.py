@@ -3,10 +3,12 @@
 #     File: graph_path_lengths.py
 #  Created: 2022-06-22 21:30
 #   Author: Bernie Roesler
-#
-"""
-Exercise 4.1.47: Test probability of finding a path between two random vertices
-and length of path when found.
+# =============================================================================
+
+"""Exercise 4.1.47: Find a path between two random vertices.
+
+Test probability of finding a path between two random vertices and length of
+path when found.
 
 Inputs:
 * N graphs generated
@@ -27,17 +29,17 @@ Aggregate over N graphs:
 * fraction of trials that resulted in a path
 * average path length
 """
-# =============================================================================
+
+import pickle
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import pickle
-from pathlib import Path
 from tqdm import tqdm
 
-from algs.graph import DepthFirstPaths_nr, BreadthFirstPaths, CC_nr, Bipartite
-from algs.graph.random import erdos_renyi, random_simple_graph
+from algs.graph import Bipartite, BreadthFirstPaths, CC_nr, DepthFirstPaths_nr
+from algs.graph.random import random_simple_graph
 
 rng = np.random.default_rng(seed=565656)
 
@@ -52,21 +54,23 @@ tag = 'simple'
 
 V = 100
 
-pkl_file = Path(f"./pkl/graph_path_lengths_{tag}_V{V}.pkl")
+PKL_PATH = Path(__file__).parent / 'pkl'
+pkl_file = PKL_PATH / f"graph_path_lengths_{tag}_V{V}.pkl"
 
 if FORCE_UPDATE or not pkl_file.exists():
-    N = 30   # graphs to generate
+    N = 30  # graphs to generate
     T = 10  # trials per graph
-    Es = np.geomspace(V**0.5, V*(V-1)//2, num=20).astype(int)
+    Es = np.geomspace(V**0.5, V * (V - 1) // 2, num=20).astype(int)
 
-    index = pd.MultiIndex.from_product((Es, range(N), range(T)),
-                                       names=['E', 'N', 'T'])
-    data = np.full((len(Es)*N*T, 3), np.nan)
+    index = pd.MultiIndex.from_product((Es, range(N), range(T)), names=['E', 'N', 'T'])
+    data = np.full((len(Es) * N * T, 3), np.nan)
     df = pd.DataFrame(index=index, columns=['depth', 'breadth', 'comps'], data=data)
-    cf = pd.Series(index=index.droplevel(-1).drop_duplicates(), 
-                   data=np.full(len(Es)*N, np.nan))
-    bf = pd.Series(index=index.droplevel(-1).drop_duplicates(), 
-                   data=np.full(len(Es)*N, np.nan))
+    cf = pd.Series(
+        index=index.droplevel(-1).drop_duplicates(), data=np.full(len(Es) * N, np.nan)
+    )
+    bf = pd.Series(
+        index=index.droplevel(-1).drop_duplicates(), data=np.full(len(Es) * N, np.nan)
+    )
 
     for E in tqdm(Es):
         for i in range(N):
@@ -89,20 +93,21 @@ if FORCE_UPDATE or not pkl_file.exists():
     bf = bf.groupby('E').mean()
 
     # Average path lengths over trials
-    tf = (df.reset_index()
-            .assign(count=lambda x: ~np.isnan(x['depth']) / (N*T))
-            .groupby('E')
-            .agg({'depth': np.nanmean, 'breadth': np.nanmean, 'count': np.sum})
-            .assign(VoE=V/Es)
-            .assign(EoV=Es/V)
-            .assign(components=cf)
-            .assign(bipartite_depth=bf)
-          )
+    tf = (
+        df.reset_index()
+        .assign(count=lambda x: ~np.isnan(x['depth']) / (N * T))
+        .groupby('E')
+        .agg({'depth': np.nanmean, 'breadth': np.nanmean, 'count': np.sum})
+        .assign(VoE=V / Es)
+        .assign(EoV=Es / V)
+        .assign(components=cf)
+        .assign(bipartite_depth=bf)
+    )
 
-    with open(pkl_file, 'wb') as fp:
+    with pkl_file.open('wb') as fp:
         pickle.dump((tf, cf, bf), fp)
 else:
-    with open(pkl_file, 'rb') as fp:
+    with pkl_file.open('rb') as fp:
         tf, cf, bf = pickle.load(fp)
 
 
@@ -118,21 +123,19 @@ ax.scatter(tf['EoV'], tf['breadth'], c='C3', zorder=3, label='BFS')
 ax.scatter(tf['EoV'], cf.values, c='C2', zorder=3, label='CC')
 ax.scatter(tf['EoV'], bf.values, c='C4', zorder=3, label='BP')
 # ax.axvline(1/2 * np.log(V), c='k', ls='--', alpha=0.5)
-ax.axhline(V/2, c='k', ls='--', alpha=0.5)
+ax.axhline(V / 2, c='k', ls='--', alpha=0.5)
 
-ax.set(xlabel='density (E/V)', xscale='log',
-       ylabel='path length, # components')
-ax.set_xticks([V**-0.5, 1, V**0.5, (V-1)/2])
-ax.set_xticklabels([r'$\frac{\sqrt{V}}{V}$',
-                    '1',
-                    r'$\sqrt{V}$',
-                    r'$\frac{V-1}{2}$'])
-ax.set_yticks(V*np.arange(0, 1.2, 0.2))
+ax.set(xlabel='density (E/V)', xscale='log', ylabel='path length, # components')
+ax.set_xticks([V**-0.5, 1, V**0.5, (V - 1) / 2])
+ax.set_xticklabels([r'$\frac{\sqrt{V}}{V}$', '1', r'$\sqrt{V}$', r'$\frac{V-1}{2}$'])
+ax.set_yticks(V * np.arange(0, 1.2, 0.2))
 ax.set_yticklabels(['0'] + [f"{x:.1f}V" for x in np.arange(0.2, 1, 0.2)] + ['V'])
 # ax.set_yticks([0, V//4, V//2, 3*V//4, V])
-# ax.set_yticklabels(['0', r'$\frac{V}{4}$', r'$\frac{V}{2}$', r'$\frac{3V}{4}$', r'$V$'])
+# ax.set_yticklabels(
+#     ['0', r'$\frac{V}{4}$', r'$\frac{V}{2}$', r'$\frac{3V}{4}$', r'$V$']
+# )
 ax.legend()
-ax.set_ylim(top=1.03*V)
+ax.set_ylim(top=1.03 * V)
 ax.grid(which='both')
 
 # Plot the count fraction on the other axis
