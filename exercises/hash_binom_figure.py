@@ -3,25 +3,25 @@
 #     File: hash_list_lengths.py
 #  Created: 2022-04-26 22:55
 #   Author: Bernie Roesler
-#
-"""
-Plot the frequency distribution of list lengths to match figure at
-top of page 468 in Sedgewick and Wayne, Algorithms, 4 ed.
-"""
 # =============================================================================
+
+"""Plot the frequency distribution of list lengths to match figure at top of
+page 468 in Sedgewick and Wayne, Algorithms, 4 ed.
+"""
+
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-
-from pathlib import Path
+from frequency_counter import FrequencyCounter
 from scipy.special import loggamma  # , factorial
 from scipy.stats import chi2, chisquare  # , binom, poisson
 
 from algs.search import SeparateChainingHashST
-from frequency_counter import FrequencyCounter
 
 MINLEN = 1  # 1, 8, 10
-filename = Path('../data/tale.txt')  # 779K
+DATA_PATH = Path(__file__).parent.parent / 'data'
+filename = DATA_PATH / 'tale.txt'  # 779K
 
 # Add each of the unique words in Tale of Two Cities to the hash table.
 fc = FrequencyCounter(SeparateChainingHashST, M=997, resize=False)
@@ -31,7 +31,7 @@ st = fc.t
 Ls = st._list_lengths()  # empirical list lengths
 
 # Theoretical distribution of list lengths is binomial -> Poisson as N -> ∞.
-α = st.N / st.M              # mean list length
+α = st.N / st.M  # mean list length
 k = np.linspace(0, 30, 100)  # number of keys per list
 # k = np.arange(30)
 
@@ -45,7 +45,7 @@ def P(k):
     """Poisson distribution with parameter `k`."""
     # The definition is numerically unstable because λ^k and k! may overflow:
     # return α**k * np.exp(-α) / factorial(k)
-    return np.exp(k*np.log(α) - α - loggamma(k + 1))
+    return np.exp(k * np.log(α) - α - loggamma(k + 1))
 
 
 Pk = P(k)
@@ -59,8 +59,8 @@ the_test = chisquare(Ls, ddof=1)
 # Manually calculate the test statistic and compare to the distribution
 Tn = st.chi_square()  # compute the test statistic
 a = 0.05
-q = chi2(st.M-2).ppf(1-a)
-pvalue = 1 - chi2(st.M-2).cdf(Tn)
+q = chi2(st.M - 2).ppf(1 - a)
+pvalue = 1 - chi2(st.M - 2).cdf(Tn)
 
 assert np.isclose(the_test.statistic, Tn)
 assert np.isclose(the_test.pvalue, pvalue)
@@ -81,7 +81,7 @@ fig.set_size_inches((12, 3), forward=True)
 ax = fig.add_subplot()
 
 # Plot the histogram of list lengths
-ax.hist(Ls, bins=np.arange(31)+0.5, density=True, rwidth=0.9, color='k')
+ax.hist(Ls, bins=np.arange(31) + 0.5, density=True, rwidth=0.9, color='k')
 
 # Plot the theoretical distribution
 ax.plot(k, Pk, 'C3')
@@ -89,18 +89,29 @@ ax.plot(k, Pk, 'C3')
 
 ax.axvline(α, c='C3', lw=1)
 
-ax.annotate(f"{α = :.4f}...", xy=(α, 1.1*Pk.max()), xycoords='data',
-            xytext=(α+2, 1.2*Pk.max()), textcoords='data',
-            va='top', ha='left', color='C3',
-            arrowprops=dict(arrowstyle='->', color='C3')
-            )
+ax.annotate(
+    f"{α = :.4f}...",
+    xy=(α, 1.1 * Pk.max()),
+    xycoords='data',
+    xytext=(α + 2, 1.2 * Pk.max()),
+    textcoords='data',
+    va='top',
+    ha='left',
+    color='C3',
+    arrowprops={'arrowstyle': '->', 'color': 'C3'},
+)
 
-ax.annotate(r"$\dfrac{\alpha^k e^{-\alpha}}{k!}$",
-            xy=(15, P(15)), xycoords='data',
-            xytext=(18, 0.6*Pk.max()), textcoords='data',
-            va='top', ha='left', color='C3',
-            arrowprops=dict(arrowstyle='->', color='C3')
-            )
+ax.annotate(
+    r"$\dfrac{\alpha^k e^{-\alpha}}{k!}$",
+    xy=(15, P(15)),
+    xycoords='data',
+    xytext=(18, 0.6 * Pk.max()),
+    textcoords='data',
+    va='top',
+    ha='left',
+    color='C3',
+    arrowprops={'arrowstyle': '->', 'color': 'C3'},
+)
 
 ax.set_xlabel(rf"list length ({st.N:,d} keys, $M$ = {st.M})", color='C3')
 ax.set_ylabel('frequency', color='C3', labelpad=-25)
