@@ -3,64 +3,76 @@
 #     File: bst_study.py
 #  Created: 2021-02-22 15:13
 #   Author: Bernie Roesler
-#
-r"""
-  Description: Ex 3.2.39 and 3.2.40. Tests of number of compares for search
-    hits and search misses in a BST, as compared to the theoretical value::
-
-        2 \lg N + 2 \gamma = 3 \approx 1.39 \lg N - 1.85
-
-    where $\gamma = 0.57721...$ is *Euler's constant*.
-
-    Estimates the average BST height for multiple values of N, as compared to
-    the theoretical value::
-
-        2.99 \lg N.
-
-    This study also incorporates Ex 3.3.43, 3.3.44, and 3.3.46 to compare BSTs
-    with RedBlackBSTs. In a 2-3 tree, the expected average search time is::
-
-        \lg N - 0.5
-
-    and the expected height is::
-
-        ~ 1.0 \lg N.
-"""
 # =============================================================================
+
+r"""
+Ex 3.2.39 and 3.2.40. Tests of number of compares for search
+hits and search misses in a BST, as compared to the theoretical value.
+
+.. math::
+
+    2 \lg N + 2 \gamma = 3 \approx 1.39 \lg N - 1.85
+
+where :math:`\gamma = 0.57721...` is *Euler's constant*.
+
+Estimates the average BST height for multiple values of N, as compared to
+the theoretical value
+
+.. math::
+
+    2.99 \lg N.
+
+This study also incorporates Ex 3.3.43, 3.3.44, and 3.3.46 to compare BSTs
+with RedBlackBSTs. In a 2-3 tree, the expected average search time is
+
+.. math::
+
+    \lg N - 0.5
+
+and the expected height is
+
+.. math::
+
+    ~ 1.0 \lg N.
+"""
+
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-
-from pathlib import Path
 from scipy.optimize import curve_fit
 from tqdm import tqdm
 
 from algs.search import BST, RedBlackBST
 
 FORCE_UPDATE = False
-SAVE_FIGS = False
+SAVE_FIGS = True
 
-pickle_file = Path('./pkl/bst_compares_tiny.pkl')
+PKL_PATH = Path(__file__).parent / 'pkl'
+
+size_name = 'tiny'
 N_trials = 30
 ops = [int(x) for x in [1e2, 1e3, 1e4]]
 
-# pickle_file = Path('./pkl/bst_compares_1e4.pkl')
+# size_name = '1e4'
 # N_trials = 1000
 # ops = [int(x) for x in np.logspace(2, 4)]
+
+pickle_file = PKL_PATH / f"bst_compares_{size_name}.pkl"
 
 M = len(ops)
 
 idx = pd.MultiIndex.from_product([list(range(N_trials)), ops])
 cols = ['comps', 'heights', 'ipls']
-dfs = list()
+dfs = []
 
 if FORCE_UPDATE or not pickle_file.exists():
+    print(f"'{pickle_file}' not found, running experiments...")
     for ST, tag in zip([BST, RedBlackBST], ['bst', 'rbst']):
         # Store all data in one frame
-        df = pd.DataFrame(index=idx, columns=cols,
-                          data=np.zeros((len(idx), len(cols))))
+        df = pd.DataFrame(index=idx, columns=cols, data=np.zeros((len(idx), len(cols))))
         df.index.names = ['trial', 'N']
 
         print(f"Running {ST.__name__}...")
@@ -80,51 +92,55 @@ if FORCE_UPDATE or not pickle_file.exists():
                 assert st.size() == N
 
                 # Store stats for averages
-                df.loc[i, N]['comps'] = tot_comp / N
-                df.loc[i, N]['heights'] = st.height
-                df.loc[i, N]['ipls'] = st.internal_path_length / N + 1
+                df.loc[(i, N), 'comps'] = tot_comp / N
+                df.loc[(i, N), 'heights'] = st.height
+                df.loc[(i, N), 'ipls'] = st.internal_path_length / N + 1
 
         df['tag'] = tag
         dfs.append(df)
 
     print(f"Writing to '{pickle_file}'...")
-    df = (pd.concat(dfs)
-            .pivot(columns='tag')
-            .swaplevel(axis=1)
-            .sort_index(axis=1)
-          )
+    df = (
+        pd.concat(dfs)
+        .pivot_table(index=['trial', 'N'], columns='tag')
+        .swaplevel(axis=1)
+        .sort_index(axis=1)
+    )
     df.to_pickle(pickle_file)
+
+# Read the data from the pickle file
+df = pd.read_pickle(pickle_file)
 
 # -----------------------------------------------------------------------------
 #         Plots
 # -----------------------------------------------------------------------------
-theory_dict = dict(# bst_avg_comps=dict(eqn=lambda N: 2*np.log2(N) + 2*np.euler_gamma - 3,
-                   #                   label=r'$2 \lg N + 2\gamma - 3$'),
-                   bst_avg_comps=dict(eqn=lambda N: 1.39 * np.log2(N) - 1.85,
-                                      label=r'$1.39 \lg N - 1.85$'),
-                   bst_avg_ipls=dict(eqn=lambda N: 1.39 * np.log2(N) - 1.85,
-                                     label=r'$1.39 \lg N - 1.85$'),
-                   bst_avg_heights=dict(eqn=lambda N: 2.99 * np.log2(N),
-                                        label=r'$2.99 \lg N$'),
-                   rbst_avg_comps=dict(eqn=lambda N: np.log2(N) - 0.5,
-                                       label=r'$\lg N - 0.5$'),
-                   rbst_avg_ipls=dict(eqn=lambda N: np.log2(N) - 0.5,
-                                      label=r'$\lg N - 0.5$'),
-                   rbst_avg_heights=dict(eqn=lambda N: np.log2(N),
-                                         label=r'$\lg N$'),
-                   )
+theory_dict = {  # bst_avg_comps=dict(eqn=lambda N: 2*np.log2(N) + 2*np.euler_gamma - 3,
+    #                   label=r'$2 \lg N + 2\gamma - 3$'),
+    'bst_avg_comps': {
+        'eqn': lambda N: 1.39 * np.log2(N) - 1.85,
+        'label': r'$1.39 \lg N - 1.85$',
+    },
+    'bst_avg_ipls': {
+        'eqn': lambda N: 1.39 * np.log2(N) - 1.85,
+        'label': r'$1.39 \lg N - 1.85$',
+    },
+    'bst_avg_heights': {'eqn': lambda N: 2.99 * np.log2(N), 'label': r'$2.99 \lg N$'},
+    'rbst_avg_comps': {'eqn': lambda N: np.log2(N) - 0.5, 'label': r'$\lg N - 0.5$'},
+    'rbst_avg_ipls': {'eqn': lambda N: np.log2(N) - 0.5, 'label': r'$\lg N - 0.5$'},
+    'rbst_avg_heights': {'eqn': np.log2, 'label': r'$\lg N$'},
+}
 
-titles = dict(bst='BST', rbst='Red-Black BST')
-opts = dict(comps=dict(ylim=20, ylabel='compares'),
-            heights=dict(ylim=40, ylabel='height'),
-            ipls=dict(ylim=20, ylabel='internal path length'))
+titles = {'bst': 'BST', 'rbst': 'Red-Black BST'}
+opts = {
+    'comps': {'ylim': 20, 'ylabel': 'compares'},
+    'heights': {'ylim': 40, 'ylabel': 'height'},
+    'ipls': {'ylim': 20, 'ylabel': 'internal path length'},
+}
 
 fig = plt.figure(1, clear=True)
 fig.set_size_inches((8, 8), forward=True)
 gs = fig.add_gridspec(nrows=3, ncols=2)
-plt.rc('font', **{'size': 8})
-
-df = pd.read_pickle(pickle_file)
+plt.rc('font', size=8)
 
 for j, tag in enumerate(['bst', 'rbst']):
     for i, col_name in enumerate(cols):
@@ -140,6 +156,7 @@ for j, tag in enumerate(['bst', 'rbst']):
 
         # Fit curve to data
         def func(x, a, b):
+            """Model function for curve fitting."""
             return a * np.log2(x) + b
 
         popt, pcov = curve_fit(func, g.index, g[col_name, 'mean'])
@@ -153,31 +170,65 @@ for j, tag in enumerate(['bst', 'rbst']):
             ax.set_title(titles[tag])
 
         # Plot the theoretical curves, and the curve fit to the data
-        ax.plot(x, func(x, *popt), color='k', ls='-',
-                label=fr"${popt[0]:.2f} \lg N {popt[1]:+.2f}$")
-        ax.annotate(rf"$\leftarrow$ {func(x, *popt)[-1]:.0f}",
-                    xy=(max(ops) + 100, func(x, *popt)[-1]),
-                    ha='left', va='center', color='k')
+        ax.plot(
+            x,
+            func(x, *popt),
+            color='k',
+            ls='-',
+            label=rf"${popt[0]:.2f} \lg N {popt[1]:+.2f}$",
+        )
+        ax.annotate(
+            rf"$\leftarrow$ {func(x, *popt)[-1]:.0f}",
+            xy=(max(ops) + 100, func(x, *popt)[-1]),
+            ha='left',
+            va='center',
+            color='k',
+        )
 
         y_theory = theory_dict[f"{tag}_avg_{col_name}"]['eqn'](x)
         label = theory_dict[f"{tag}_avg_{col_name}"]['label']
 
         ax.plot(x, y_theory, color='C3', ls='-', label=label)
-        ax.annotate(rf"$\leftarrow$ {y_theory[-1]:.0f}",
-                    xy=(max(ops) + 100, y_theory[-1]),
-                    ha='left', va='center', color='C3')
+        ax.annotate(
+            rf"$\leftarrow$ {y_theory[-1]:.0f}",
+            xy=(max(ops) + 100, y_theory[-1]),
+            ha='left',
+            va='center',
+            color='C3',
+        )
 
         # Plot the runtime distributions
-        sns.scatterplot(ax=ax, data=df[tag].reset_index(), x='N', y=col_name,
-                        color=0.5*np.ones(3), s=10, alpha=0.10)
+        sns.scatterplot(
+            ax=ax,
+            data=df[tag].reset_index(),
+            x='N',
+            y=col_name,
+            color=0.5 * np.ones(3),
+            s=10,
+            alpha=0.10,
+        )
 
         # Plot the means and stds of each group
-        sns.scatterplot(ax=ax, data=g[col_name], x='N', y='mean',
-                        color='k', marker='d', s=30, zorder=3)
+        sns.scatterplot(
+            ax=ax,
+            data=g[col_name],
+            x='N',
+            y='mean',
+            color='k',
+            marker='d',
+            s=30,
+            zorder=3,
+        )
 
         for N, m in g[col_name].iterrows():
-            ax.plot((N, N), (m['mean'] - m['std'], m['mean'] + m['std']),
-                    c='k', ls='-', lw=2, alpha=1.0)
+            ax.plot(
+                (N, N),
+                (m['mean'] - m['std'], m['mean'] + m['std']),
+                c='k',
+                ls='-',
+                lw=2,
+                alpha=1.0,
+            )
 
         ax.legend(loc='lower right')
 
@@ -193,12 +244,14 @@ for j, tag in enumerate(['bst', 'rbst']):
 
         # Place labels on axis (like ticklabels)
         ax.set_xlabel('operations')
-        ax.xaxis.set_label_coords(np.mean(xlim), 0,
-                        transform=ax.xaxis.get_ticklabels()[0].get_transform())
+        ax.xaxis.set_label_coords(
+            np.mean(xlim), 0, transform=ax.xaxis.get_ticklabels()[0].get_transform()
+        )
 
         ax.set_ylabel(opts[col_name]['ylabel'])
-        ax.yaxis.set_label_coords(0, ylim[1] / 2,
-                        transform=ax.yaxis.get_ticklabels()[0].get_transform())
+        ax.yaxis.set_label_coords(
+            0, ylim[1] / 2, transform=ax.yaxis.get_ticklabels()[0].get_transform()
+        )
 
         # Hide x-labels except for bottom
         if i < 2:
@@ -216,13 +269,14 @@ for j, tag in enumerate(['bst', 'rbst']):
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
 
-        gs.tight_layout(fig)
+gs.tight_layout(fig)
 
-        if SAVE_FIGS:
-            figname = Path(f"./figures/{tag}_avg_{col_name}.pdf")
-            fig.savefig(figname)
+if SAVE_FIGS:
+    FIG_PATH = Path(__file__).parent / 'figures'
+    figname = FIG_PATH / 'bst_study.pdf'
+    fig.savefig(figname)
 
-        plt.show()
+plt.show()
 
 # =============================================================================
 # =============================================================================
