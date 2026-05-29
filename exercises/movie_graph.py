@@ -3,25 +3,26 @@
 #     File: movie_graph.py
 #  Created: 2022-06-16 00:04
 #   Author: Bernie Roesler
-#
-"""
-Exercise 4.1.24 Connected components in the movies.txt graph.
-"""
 # =============================================================================
+
+"""Exercise 4.1.24: Connected components in the movies.txt graph."""
 
 import pickle
 from pathlib import Path
 
-from algs.graph import SymbolGraph, GraphProperties, CC_nr
+from algs.graph import CC_nr, GraphProperties, SymbolGraph
 
-FORCE_UPDATE = False
+FORCE_UPDATE = True
 
-# datafile = Path('../data/movies.txt')             # large
-# datafile = Path('../data/movies-top-grossing.txt')  # medium
-datafile = Path('../data/movies-hero.txt')        # small
+DATA_PATH = Path(__file__).parent.parent / 'data'
+PKL_PATH = Path(__file__).parent / 'pkl'
 
-pkl_file = Path(f"./pkl/{datafile.stem}.pkl")
-gp_file = Path(f"./pkl/{datafile.stem}_gp.pkl")
+# datafile = DATA_PATH / 'movies-hero.txt'  # small (~ 10 s)
+datafile = DATA_PATH / 'movies-top-grossing.txt'  # medium (~ 2 min)
+# datafile = DATA_PATH / 'movies.txt'               # large
+
+pkl_file = PKL_PATH / f"{datafile.stem}.pkl"
+gp_file = PKL_PATH / f"{datafile.stem}_gp.pkl"
 
 # -----------------------------------------------------------------------------
 #         Load the data
@@ -29,10 +30,10 @@ gp_file = Path(f"./pkl/{datafile.stem}_gp.pkl")
 if FORCE_UPDATE or not pkl_file.exists():
     sg = SymbolGraph.fromfile(datafile, delim='/', verbose=True)
     # sg = STGraph.fromadjfile(datafile, delim='/', verbose=True)
-    with open(pkl_file, 'wb') as fp:
+    with pkl_file.open('wb') as fp:
         pickle.dump(sg, fp)
 else:
-    with open(pkl_file, 'rb') as fp:
+    with pkl_file.open('rb') as fp:
         sg = pickle.load(fp)
 
 # -----------------------------------------------------------------------------
@@ -74,7 +75,7 @@ comp = components[i]
 if FORCE_UPDATE or not gp_file.exists():
     gp = GraphProperties(G, vertices=comp, verbose=True)
 else:
-    with open(gp_file, 'rb') as fp:
+    with gp_file.open('rb') as fp:
         gp = pickle.load(fp)
 
 c = gp.center()
@@ -92,7 +93,7 @@ print('       girth:', gp.girth())
 
 # Store expensive properties computations
 if FORCE_UPDATE or not gp_file.exists():
-    with open(gp_file, 'wb') as fp:
+    with gp_file.open('wb') as fp:
         pickle.dump(gp, fp)
 
 # -----------------------------------------------------------------------------
