@@ -40,10 +40,10 @@ def _parse_bostonmetro(fname):
             #   (38, 'St.PaulStreet') --> 'StPaulStreetB'
             #   (61, 'St.PaulStreet') --> 'StPaulStreetC'
             # both exist in names.
-            if station_id == 38:
-                station_name += 'B'
-            elif station_id == 61:
-                station_name += 'C'
+            # if station_id == 38:
+            #     station_name += 'B'
+            # elif station_id == 61:
+            #     station_name += 'C'
 
             if station_name == 'ChesnutHill':
                 station_name = 'ChestnutHill'
