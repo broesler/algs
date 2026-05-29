@@ -66,25 +66,15 @@ if __name__ == '__main__':
     Ns = np.r_[[10**e for e in range(3, 6)]]  # number of integers
     alphas = np.r_[2.0, 1.0, 0.5]  # fractions of N
 
-    cols = pd.MultiIndex.from_product(
-        (Ns, alphas, ['duplicate', 'distinct'], ['actual', 'expect'])
-    )
-    cols.names = ['N', 'α', 'status', 'metric']
-    data = np.zeros((T, len(cols)), dtype=int)
-    df = pd.DataFrame(index=range(T), columns=cols, data=data)
-    df.index.name = 'T'
-
-    cols = pd.MultiIndex.from_product((Ns, alphas, ['sort', 'dict']))
-    cols.names = ['N', 'α', 'method']
-    data = np.zeros((T, len(cols)), dtype=int)
-    tf = pd.DataFrame(index=range(T), columns=cols, data=data)
-    tf.index.name = 'T'
+    results_data = []
+    timing_data = []
 
     for N in Ns:
         for α in alphas:
-            M = N / α  # number of integers
+            M = int(N / α)  # number of integers
             ints = rng.integers(M, size=(T, N))
             # ints = np.sort(ints, axis=1)
+
             for t in range(T):
                 tic = time.perf_counter_ns()
                 dups_sort, dist_sort = count_both_sort(ints[t])
@@ -100,33 +90,38 @@ if __name__ == '__main__':
                 assert dups_sort == dups_dict
                 assert dist_sort == dist_dict
 
-                df.loc[t, (N, α, 'duplicate', 'actual')] = dups_sort
-                df.loc[t, (N, α, 'distinct', 'actual')] = dist_sort
-                tf.loc[t, (N, α, 'sort')] = dt_sort
-                tf.loc[t, (N, α, 'dict')] = dt_dict
+                results_data.append({
+                    'N': N,
+                    'α': α,
+                    ('duplicate', 'actual'): dups_dict,
+                    ('distinct', 'actual'): dist_dict,
+                })
+
+                timing_data.append({
+                    'N': N,
+                    'α': α,
+                    'sort': dt_sort,
+                    'dict': dt_dict,
+                })
 
     # Average over the trials
-    df = (
-        df.mean()
-        .reset_index(name="values")
-        .pivot_table(index=['N', 'α'], columns=['status', 'metric'], values="values")
-    )
+    df = pd.DataFrame(results_data).groupby(['N', 'α']).mean()
+    tf = pd.DataFrame(timing_data).groupby(['N', 'α']).mean()
 
-    tf = (
-        tf.mean()
-        .reset_index(name="values")
-        .pivot_table(index=['N', 'α'], columns='method', values="values")
-    )
-
-    tf['ratio'] = tf['sort'] / tf['dict']
+    df.columns = pd.MultiIndex.from_tuples(df.columns)
 
     # Compute expected values
     N = df.index.get_level_values('N')
     α = df.index.get_level_values('α')
     M = N // α
+
     df[('distinct', 'expect')] = M * (1 - np.exp(-α))  # theory
     df[('duplicate', 'expect')] = N - df[('distinct', 'expect')]
-    assert np.allclose((df['distinct'] + df['duplicate']).T - N, 0)
+    df = df.sort_index(axis=1)
+
+    tf['ratio'] = tf['sort'] / tf['dict']
+
+    assert np.allclose((df['distinct'] + df['duplicate']).sub(N, axis=0), 0)
 
     # TODO plot timing on log scale
     print(df.round().astype(int))
