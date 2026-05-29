@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
-#==============================================================================
+# ==============================================================================
 #     File: indexpq_merge.py
 #  Created: 2019-05-22 23:07
 #   Author: Bernie Roesler
-#
-"""
-  Description: Test for merging streams via an indexed priority queue.
-"""
-#==============================================================================
+# ==============================================================================
+
+"""Test for merging streams via an indexed priority queue."""
 
 import sys
-import glob
 from contextlib import ExitStack
+from pathlib import Path
 
 from algs.basics import IndexPQ
 
@@ -41,13 +39,14 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         files = sys.argv[1:]
     else:
-        files = sorted(glob.glob(f"../data/m?.txt"))
+        DATA_PATH = Path(__file__).parent.parent / 'data'
+        files = sorted(DATA_PATH.glob("m?.txt"))
 
     with ExitStack() as stack:  # turn into stream read from file
-        streams = [stack.enter_context(open(f, 'r')) for f in files]
+        streams = [stack.enter_context(f.open()) for f in files]
         m = merge(streams)
         print(' '.join(m))
 
 
-#==============================================================================
-#==============================================================================
+# ==============================================================================
+# ==============================================================================
