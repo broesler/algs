@@ -3,21 +3,19 @@
 #     File: frequency_counter.py
 #  Created: 2019-11-06 21:53
 #   Author: Bernie Roesler
-#
-"""
-  Description: Create FrequencyCounter driver to test search classes.
-"""
 # =============================================================================
+
+"""FrequencyCounter driver to test search classes."""
 
 import re
 import time
+from pathlib import Path
 
 from tqdm import tqdm
-
 from util import count_lines
 
 
-class FrequencyCounter():
+class FrequencyCounter:
     """Class to count the frequencies of word occurrences in a given input.
 
     Parameters
@@ -40,20 +38,21 @@ class FrequencyCounter():
         A cumulative list of the number of compares/array accesses per `put`
         operation in `t`.
     """
+
     # split on non-alphabet chars and underscores
     pat = re.compile(r"[a-zA-Z']+")
 
     def __init__(self, ST, **kwargs):
         self.t = ST(**kwargs)
-        self.N = 0              # number of words in the input
+        self.N = 0  # number of words in the input
         self.max_word = ''
-        self.cost = list()  # count compares for each `put` operation
-        self.time = list()  # track actual timing of each `put` operation
+        self.cost = []  # count compares for each `put` operation
+        self.time = []  # track actual timing of each `put` operation
 
     def count_frequencies(self, filename, minlen=1):
         """Build symbol table of word counts, and find the max."""
         # Compute the frequency counts
-        with open(filename, 'r') as fp:
+        with Path(filename).open() as fp:
             for line in tqdm(fp, total=count_lines(fp)):
                 for word in self.pat.findall(line.lower()):
                     if len(word) >= minlen:
