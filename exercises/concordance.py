@@ -3,22 +3,20 @@
 #     File: concordance.py
 #  Created: 2022-06-07 11:10
 #   Author: Bernie Roesler
-#
-"""
-Create a concordance of a text using a symbol table.
-"""
 # =============================================================================
 
+"""Create a concordance of a text using a symbol table."""
+
 import re
-
 from pathlib import Path
-from tqdm import tqdm
 
+from tqdm import tqdm
 from util import count_lines
+
 from algs.search import MultiST, RedBlackBST
 
 
-class Concordance():
+class Concordance:
     """Class to index words and their locations in a text.
 
     Attributes
@@ -31,15 +29,16 @@ class Concordance():
     pat = re.compile(r"[a-zA-Z']+")
     offset = 3
 
-    class _Node():
+    class _Node:
         """Data class to store the locations of words in the concordance."""
+
         def __init__(self, i, j, context=None):
             self.i = int(i)
             self.j = int(j)
             self.context = context
 
         def __str__(self):
-            return (f"({self.i}, {self.j}): {self.context}\n")
+            return f"({self.i}, {self.j}): {self.context}\n"
 
         def __repr__(self):
             return f"<{self.__class__.__name__}>: {self.__str__()}"
@@ -57,7 +56,7 @@ class Concordance():
         """
         self.st = MultiST()
         self.verbose = bool(verbose)
-        with open(filename, 'r') as fp:
+        with Path(filename).open() as fp:
             iters = enumerate(fp)
             if self.verbose:
                 iters = tqdm(iters, total=count_lines(fp))
@@ -68,9 +67,11 @@ class Concordance():
                         lo = max([0, j - self.offset])
                         hi = min([j + self.offset, len(words)])
                         # Add a node to the multi-valued index
-                        context = ' '.join(words[lo:j]
-                                           + [f"*{words[j]}*"]  # highlight!
-                                           + words[j+1:hi+1])
+                        context = ' '.join(
+                            words[lo:j]
+                            + [f"*{word}*"]  # highlight!
+                            + words[j + 1 : hi + 1]
+                        )
                         self.st[word] = self._Node(i, j, context)
 
     def query(self, k):
@@ -84,9 +85,10 @@ class Concordance():
             print(' ', p.context)
 
 
-class InvertedConcordance():
+class InvertedConcordance:
     """Invert a concordance by placing words at their line and index
-    locations."""
+    locations.
+    """
 
     def __init__(self, c, verbose=True):
         self.lines = RedBlackBST()  # ordered index of line numbers
@@ -111,8 +113,10 @@ class InvertedConcordance():
 if __name__ == "__main__":
     import pydoc
 
-    # file = Path('../data/tiny_tale.txt')
-    file = Path('../data/tale.txt')
+    DATA_PATH = Path(__file__).parent.parent / 'data'
+
+    # file = DATA_PATH / 'tiny_tale.txt'
+    file = DATA_PATH / 'tale.txt'
 
     c = Concordance(file, verbose=True)
     q = 'times'
