@@ -3,18 +3,15 @@
 #     File: random_redblacks.py
 #  Created: 2021-03-19 22:36
 #   Author: Bernie Roesler
-#
-"""
-  Description: Exercise 3.3.17 Generate 2 random RedBlackBSTs and compare them
-  with standard BSTs.
-"""
 # =============================================================================
 
-import numpy as np
+"""Exercise 3.3.17: Compare 2 random RedBlackBSTs with standard BSTs."""
+
 import matplotlib.pyplot as plt
+import numpy as np
+from draw_tree import TreeArtist
 
 from algs.search import BST, RedBlackBST
-from algs.exercises.draw_tree import TreeArtist
 
 rng = np.random.default_rng(seed=565656)
 N = 16  # number of nodes
@@ -35,7 +32,7 @@ for i in range(2):
     drbst = TreeArtist(RedBlackBST.fromkeys(keys))
     dbst = TreeArtist(BST.fromkeys(keys))
     drbst.draw(ax=ax1, label_keys=False)
-    dbst.draw(ax=ax2,  label_keys=False)
+    dbst.draw(ax=ax2, label_keys=False)
 
 gs.tight_layout(fig)
 plt.show()
