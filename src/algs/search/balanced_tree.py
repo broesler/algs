@@ -3,20 +3,25 @@
 #     File: balanced_tree.py
 #  Created: 2021-03-05 23:21
 #   Author: Bernie Roesler
-#
-"""
-  Description: Balanced Search Trees.
-"""
 # =============================================================================
+
+"""Balanced Search Trees."""
 
 import random
 
-from algs.search.table import OrderedSymbolTable
 from algs.basics import Stack
 from algs.search.tree import BST
 
-__all__ = ['ST', 'RedBlackBST', 'TopDown234', 'TopDown234_nr', 
-           'TopDown234bothways', 'BottomUp234', 'Unbalanced23', 'AVLTree']
+__all__ = [
+    'ST',
+    'RedBlackBST',
+    'TopDown234',
+    'TopDown234_nr',
+    'TopDown234bothways',
+    'BottomUp234',
+    'Unbalanced23',
+    'AVLTree',
+]
 
 
 class KeyChanged(Exception):
@@ -38,6 +43,7 @@ class RedBlackBST(BST):
 
     class _Node(BST._Node):
         """Internal RedBlack Node. Same as BST node but add color."""
+
         def __init__(self, *args, color=None, **kwargs):
             super().__init__(*args, **kwargs)
             self.color = color
@@ -52,24 +58,30 @@ class RedBlackBST(BST):
             # Avoid recursion through entire tree!! Just print each child
             if self.left:
                 COLOR_LEFT = COLOR_RED if self.left.color else COLOR_END
-                left_str = (COLOR_LEFT
-                            + f"{{{repr(self.left.key)}: {repr(self.left.val)}}}"
-                            + COLOR_END)
+                left_str = (
+                    COLOR_LEFT
+                    + f"{{{repr(self.left.key)}: {repr(self.left.val)}}}"
+                    + COLOR_END
+                )
             else:
                 left_str = 'None'
 
             if self.right:
                 COLOR_RIGHT = COLOR_RED if self.right.color else COLOR_END
-                right_str = (COLOR_RIGHT
-                             + f"{{{repr(self.right.key)}: {repr(self.right.val)}}}"
-                             + COLOR_END)
+                right_str = (
+                    COLOR_RIGHT
+                    + f"{{{repr(self.right.key)}: {repr(self.right.val)}}}"
+                    + COLOR_END
+                )
             else:
                 right_str = 'None'
 
-            return (COLOR_SELF
-                    + f"{{{repr(self.key)}: {repr(self.val)}}}"
-                    + COLOR_END
-                    + f", L:{left_str}, R:{right_str}")
+            return (
+                COLOR_SELF
+                + f"{{{repr(self.key)}: {repr(self.val)}}}"
+                + COLOR_END
+                + f", L:{left_str}, R:{right_str}"
+            )
 
     # -------------------------------------------------------------------------
     #         Public API
@@ -102,18 +114,17 @@ class RedBlackBST(BST):
         if not self.__contains__(k):
             raise KeyError(k)
         # If root is a 2-node, make it a 3-node
-        if (not self._is_red(self._root.left) and
-              not self._is_red(self._root.right)):
+        if not self._is_red(self._root.left) and not self._is_red(self._root.right):
             self._root.color = self._RED
         self._root = self._delete(k, self._root)
         if self._CACHE_FLAG and self._cache and k == self._cache.key:
             self._cache = None
 
     def delete_min(self):
+        """Delete the minimum key and associated value from the tree."""
         self._empty_check()
         # If root is a 2-node, make it a 3-node
-        if (not self._is_red(self._root.left) and
-              not self._is_red(self._root.right)):
+        if not self._is_red(self._root.left) and not self._is_red(self._root.right):
             self._root.color = self._RED
         self._root = self._delete_min(self._root)
         if not self.is_empty:
@@ -122,10 +133,10 @@ class RedBlackBST(BST):
             self._cache = None
 
     def delete_max(self):
+        """Delete the maximum key and associated value from the tree."""
         self._empty_check()
         # If root is a 2-node, make it a 3-node
-        if (not self._is_red(self._root.right) and
-              not self._is_red(self._root.left)):
+        if not self._is_red(self._root.right) and not self._is_red(self._root.left):
             self._root.color = self._RED
         self._root = self._delete_max(self._root)
         if not self.is_empty:
@@ -251,12 +262,12 @@ class RedBlackBST(BST):
         x.left.color = not x.left.color
         x.right.color = not x.right.color
         # Update children before parent
-        x.left.Nred = (int(x.left.color) +
-                       self._Nred(x.left.left) +
-                       self._Nred(x.left.right))
-        x.right.Nred = (int(x.right.color) +
-                        self._Nred(x.right.left) +
-                        self._Nred(x.right.right))
+        x.left.Nred = (
+            int(x.left.color) + self._Nred(x.left.left) + self._Nred(x.left.right)
+        )
+        x.right.Nred = (
+            int(x.right.color) + self._Nred(x.right.left) + self._Nred(x.right.right)
+        )
         x.Nred = int(x.color) + self._Nred(x.left) + self._Nred(x.right)
         self.Nsplits += 1
 
@@ -331,21 +342,24 @@ class RedBlackBST(BST):
 
     def is23(self):
         """Return True if no node is connected to two red links, and there are
-        no right-leaning red links."""
+        no right-leaning red links.
+        """
         return self._is23(self._root)
 
     def _is23(self, h=None):
         if h is None:
             return True
-        if (self._is_red(h.right) or
-              (self._is_red(h.left) and self._is_red(h.left.left))):
+        if self._is_red(h.right) or (
+            self._is_red(h.left) and self._is_red(h.left.left)
+        ):
             return False
         else:
             return self._is23(h.left) and self._is23(h.right)
 
     def is_balanced(self):
         """Return True if all paths from the root to a null link have the same
-        number of *black* links."""
+        number of *black* links.
+        """
         # Count black links to the minimum node
         black = 0
         x = self._root
@@ -357,14 +371,14 @@ class RedBlackBST(BST):
 
     def _is_balanced(self, h=None, black=0):
         """Return True if all paths from `h` to a null link have the same
-        number of *black* links."""
+        number of *black* links.
+        """
         if h is None:
             return black == 0
         # Do not count red links
         if not self._is_red(h):
             black -= 1
-        return (self._is_balanced(h.left, black) and
-                self._is_balanced(h.right, black))
+        return self._is_balanced(h.left, black) and self._is_balanced(h.right, black)
 
 
 # Ex 3.3.23: 2-3 tree *without* balance restriction
@@ -385,9 +399,9 @@ class Unbalanced23(RedBlackBST):
                 self._cache = x
             return x
 
-        parent_is_3node = (self._is_red(h) or
-                           self._is_red(h.left) or
-                           self._is_red(h.right))
+        parent_is_3node = (
+            self._is_red(h) or self._is_red(h.left) or self._is_red(h.right)
+        )
 
         # create a child, or update the value
         if k < h.key:
@@ -404,10 +418,12 @@ class Unbalanced23(RedBlackBST):
         self._update_node(h)
         return h
 
-    _set.__doc__ = (RedBlackBST._set.__doc__ +
-        """parent_is_3node : bool, optional
+    _set.__doc__ = (
+        RedBlackBST._set.__doc__
+        + """parent_is_3node : bool, optional
             True if the parent of the current node is a 3-node
-        """)
+        """
+    )
 
 
 # Ex 3.3.25 Top-down 2-3-4 Trees
@@ -521,46 +537,42 @@ class TopDown234_nr(RedBlackBST):
                             # Update the parent
                             if pp is None:
                                 self._root = h
+                            elif h.key < pp.key:
+                                pp.left = h
                             else:
-                                if h.key < pp.key:
-                                    pp.left = h
-                                else:
-                                    pp.right = h
+                                pp.right = h
                         break
                     else:
                         # Move down the tree
                         pp, p, h = self._balance_nr(pp, p, h, h.left)
-                else:  # k > h.key
-                    if h.right is None:
-                        # Make a 3-node or 4-node
-                        h.right = self._Node(k, v, color=self._RED)
-                        if self._CACHE_FLAG:
-                            self._cache = h.right
-                        # Balance the tree (red links left-leaning)
-                        if self._is_red(h.right) and not self._is_red(h.left):
-                            h = self._rotate_left(h)
-                            # Update the parent
-                            if p is None:
-                                self._root = h
-                            else:
-                                if h.key < p.key:
-                                    p.left = h
-                                else:
-                                    p.right = h
-                        if self._is_red(h) and self._is_red(h.left):
-                            h = self._rotate_right(p)
-                            # Update the parent
-                            if pp is None:
-                                self._root = h
-                            else:
-                                if h.key < pp.key:
-                                    pp.left = h
-                                else:
-                                    pp.right = h
-                        break
-                    else:
-                        # Move down the tree
-                        pp, p, h = self._balance_nr(pp, p, h, h.right)
+                elif h.right is None:
+                    # Make a 3-node or 4-node
+                    h.right = self._Node(k, v, color=self._RED)
+                    if self._CACHE_FLAG:
+                        self._cache = h.right
+                    # Balance the tree (red links left-leaning)
+                    if self._is_red(h.right) and not self._is_red(h.left):
+                        h = self._rotate_left(h)
+                        # Update the parent
+                        if p is None:
+                            self._root = h
+                        elif h.key < p.key:
+                            p.left = h
+                        else:
+                            p.right = h
+                    if self._is_red(h) and self._is_red(h.left):
+                        h = self._rotate_right(p)
+                        # Update the parent
+                        if pp is None:
+                            self._root = h
+                        elif h.key < pp.key:
+                            pp.left = h
+                        else:
+                            pp.right = h
+                    break
+                else:
+                    # Move down the tree
+                    pp, p, h = self._balance_nr(pp, p, h, h.right)
 
         # Update node counts and heights on path traveled back up the tree
         while s:
@@ -571,7 +583,8 @@ class TopDown234_nr(RedBlackBST):
 
     def _balance_nr(self, pp, p, h, x):
         """Balanced the tree given `h`, one of its children `x`, parent `p`,
-        and grandparent `pp`."""
+        and grandparent `pp`.
+        """
         # Split a 4-node into 3 2-nodes before moving into the node
         if self._is_red(x.left) and self._is_red(x.right):
             self._flip_colors(x)
@@ -581,23 +594,20 @@ class TopDown234_nr(RedBlackBST):
             # Update the parent
             if p is None:
                 self._root = h
+            elif h.key < p.key:
+                p.left = h
             else:
-                if h.key < p.key:
-                    p.left = h
-                else:
-                    p.right = h
-        if (p is not None and
-                self._is_red(p.left) and self._is_red(p.left.left)):
+                p.right = h
+        if p is not None and self._is_red(p.left) and self._is_red(p.left.left):
             h = self._rotate_right(p)
             # Update the parent
             if pp is None:
                 self._root = h
                 p = None
+            elif h.key < pp.key:
+                pp.left = h
             else:
-                if h.key < pp.key:
-                    pp.left = h
-                else:
-                    pp.right = h
+                pp.right = h
         # Move down the tree
         pp = p
         p = h
@@ -612,6 +622,7 @@ class TopDown234bothways(RedBlackBST):
         representation, but allows right-leaning links.
         {BST._attribs_doc}
         """
+
     def _set(self, k, v, h=None):
         # Note: `h` will always be `self._root` from the parent class.
         # subtree is empty, create a new node with a red link to parent
@@ -698,12 +709,16 @@ class BottomUp234(RedBlackBST):
         return h
 
     def _is_4node_leaf(self, h=None):
-        if (self._is_red(h.left) and
-            self._is_red(h.right) and
-            (h.left.left is None and
-                h.left.right is None and
-                h.right.left is None and
-                h.right.right is None)):
+        if (
+            self._is_red(h.left)
+            and self._is_red(h.right)
+            and (
+                h.left.left is None
+                and h.left.right is None
+                and h.right.left is None
+                and h.right.right is None
+            )
+        ):
             return True
         return False
 
@@ -737,15 +752,15 @@ class AVLTree(BST):
         # Balance the tree based on height of children
         bal = self._height(h.left) - self._height(h.right)
         if bal < -1:  # right-heavy
-            if k < h.right.key:   # new key was added to the left
+            if k < h.right.key:  # new key was added to the left
                 h.right = self._rotate_right(h.right)
                 h = self._rotate_left(h)
-            else:                 # new key was added to the right
+            else:  # new key was added to the right
                 h = self._rotate_left(h)
         elif bal > 1:  # left-heavy
-            if k < h.left.key:    # new key was added to the left
+            if k < h.left.key:  # new key was added to the left
                 h = self._rotate_right(h)
-            else:                 # new key was added to the right
+            else:  # new key was added to the right
                 h.left = self._rotate_left(h.left)
                 h = self._rotate_right(h)
 
@@ -773,7 +788,8 @@ class AVLTree(BST):
 
     def is_height_balanced(self):
         """Return True if the heights of the subtrees rooted at each child
-        differ by 1 or 0."""
+        differ by 1 or 0.
+        """
         return self._is_height_balanced(self._root)
 
     def _is_height_balanced(self, x=None):
@@ -782,8 +798,9 @@ class AVLTree(BST):
         elif abs(self._height(x.left) - self._height(x.right)) > 1:
             return False
         else:
-            return (self._is_height_balanced(x.left) and
-                    self._is_height_balanced(x.right))
+            return self._is_height_balanced(x.left) and self._is_height_balanced(
+                x.right
+            )
 
 
 # Web Exercise: implement a Randomized Binary Search Tree
@@ -835,7 +852,8 @@ class RandomizedBST(BST):
 
     def _split(self, k, t=None, s=None, g=None):
         """Split the subtree rooted at `t` into `s` and `g`, where `s` contains
-        all keys less than `k`, and `g` contains all keys greater than `k`."""
+        all keys less than `k`, and `g` contains all keys greater than `k`.
+        """
         if t is None:
             return None, None
 
@@ -855,8 +873,7 @@ ST = RedBlackBST
 #         Interactive test setup
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
-    import matplotlib.pyplot as plt
-    from algs.exercises.draw_tree import TreeArtist
+    from exercises.draw_tree import TreeArtist
 
     EXPECT_STR = 'SEARCHEXAMPLE'
     # EXPECT_STR = 'SEARCHXMPLJ'
@@ -868,7 +885,7 @@ if __name__ == '__main__':
     # st = Unbalanced23.fromkeys(keys)
     st = TopDown234.fromkeys(keys)
     # FIXME differs from recursive for 'SEARCHXMPL'. Root should be 4-node
-    # st = TopDown234_nr.fromkeys(keys)  
+    # st = TopDown234_nr.fromkeys(keys)
     # st = TopDown234bothways.fromkeys(keys)
     # st = BottomUp234.fromkeys(keys)
     # st = AVLTree.fromkeys(keys)
