@@ -3,22 +3,21 @@
 #     File: special.py
 #  Created: 2022-06-07 17:04
 #   Author: Bernie Roesler
-#
-"""
-Menagerie of classes that use symbol tables, but don't quite fit in elsewhere.
-"""
 # =============================================================================
+
+"""Menagerie of classes that use symbol tables, but don't quite fit in elsewhere."""
 
 import numpy as np
 
-from algs.basics import Collection, Queue, RandomQueue, DoubleList
-from algs.search import Set, HashSet, ST, HashST
+from algs.basics import Collection, DoubleList, Queue, RandomQueue
+from algs.search import ST, HashSet, HashST, Set
 
 
 # Exercise 3.5.26
 class LRUCache(Collection):
     """An implementation of a cache using the least-recently-used (LRU)
-    replacement policy."""
+    replacement policy.
+    """
 
     def __init__(self, items=None):
         self._items = DoubleList()
@@ -51,7 +50,9 @@ class LRUCache(Collection):
 # Exercise 3.5.27
 class List(Collection):
     """A data type similar to a deque, but using symbol tables to support
-    efficient operations. Duplicate elements are allowed."""
+    efficient operations. Duplicate elements are allowed.
+    """
+
     _LO = 0.0
     _HI = 1.0
     _BASE = 0.1  # bias towards front since constructor adds to back
@@ -59,13 +60,14 @@ class List(Collection):
     def __init__(self, items=None):
         self._N = 0
         self._locs = HashST()  # store index locations by key, _locs[k] = i
-        self._keys = ST()      # store keys by index location, _keys[i] = k
+        self._keys = ST()  # store keys by index location, _keys[i] = k
         items = items or []
         for item in items:
             self.add_back(item)
 
     @property
     def size(self):
+        """Return the number of items in the List."""
         return self._N
 
     @property
@@ -147,7 +149,7 @@ class List(Collection):
         if self.is_empty:
             f = self._BASE
         else:
-            f = (self._keys.select(i) + self._keys.select(i-1)) / 2
+            f = (self._keys.select(i) + self._keys.select(i - 1)) / 2
         if item not in self._locs:
             self._locs[item] = Set()
         self._locs[item].add(f)
@@ -190,6 +192,7 @@ class Uniqueue(Queue):
             self.enqueue(item)
 
     def enqueue(self, item):
+        """Add `item` to the back of the queue if it is not already in the queue."""
         if item not in self._st:
             self._st.add(item)
             super().enqueue(item)
@@ -223,11 +226,15 @@ class RandomST(HashST):
 
 # Web Exercise 9
 class IndirectPQ(Collection):
-    """Implements an indirect priority queue. This class is similar to
-    a priority queue, but allows deletion of any element by name"""
+    """Implement an indirect priority queue.
 
-    class _Item:
+    This class is similar to a priority queue, but allows deletion of any
+    element by name
+    """
+
+    class _Item:  # noqa: PLW1641
         """An internal class to hold a key and its priority."""
+
         def __init__(self, key, priority=0):
             self.key = key
             self.priority = priority
@@ -311,14 +318,16 @@ class IndirectPQ(Collection):
 
     # aliases
     def put(self, k, p):
+        """Add an item `k` to the queue with priority `p`."""
         return self.__setitem__(k, p)
 
     def get(self, k):
+        """Return the priority of a key."""
         return self.__getitem__(k)
 
 
 # Web Exercise 9
-class BloomFilter():
+class BloomFilter:
     r"""Implements a hash table with only `add` and `exists` operations.
     Determines if an element is definitively *not* in the set, or *may* be in
     the set with probability << 1.
@@ -373,14 +382,15 @@ class BloomFilter():
             for key in keys:
                 self.add(key)
         except ValueError:
-            raise ValueError(f"{self.__class__.__name__} "
-                             'expects an iterable input.')
+            raise ValueError(f"{self.__class__.__name__} expects an iterable input.")
 
     def size(self):
+        """Return the number of elements in the set."""
         return self.N
 
     @property
     def is_empty(self):
+        """Return True if the set is empty."""
         return self.size() == 0
 
     @property
@@ -390,7 +400,8 @@ class BloomFilter():
 
     @property
     def prob(self):
-        return (1 - np.exp(-self.k*self.N/self.M))**self.k
+        """Return the probability of a false positive `exists` operation."""
+        return (1 - np.exp(-self.k * self.N / self.M)) ** self.k
 
     def _hash0(self, k):
         """Take the upper 32 bits of a 64-bit hash function."""
@@ -406,13 +417,13 @@ class BloomFilter():
 
         .. [0]:: <https://www.eecs.harvard.edu/~michaelm/postscripts/tr-02-05.pdf>
         """
-        return (self._hash0(k) + i*self._hash1(k)) % self.M
+        return (self._hash0(k) + i * self._hash1(k)) % self.M
 
     def _hashes(self, key):
         """Return all `k` hashes for `key`."""
         h0 = self._hash0(key)
         h1 = self._hash1(key)
-        return [(h0 + i*h1) % self.M for i in range(self.k)]
+        return [(h0 + i * h1) % self.M for i in range(self.k)]
 
     def add(self, key):
         """Add an element to the set by setting corresponding bits to True."""
@@ -422,13 +433,15 @@ class BloomFilter():
 
     def __contains__(self, key):
         """Return False if an element is not in the set. If True, the element
-        *may* not be in the set with small probability."""
+        *may* not be in the set with small probability.
+        """
         return all(self._bits[self._hashes(key)])
 
 
 # TODO move to unit tests
 if __name__ == '__main__':
     import string
+
     keys = list('SEARCHEXAMPLE')
 
     print('----- LRUCache -----')
@@ -437,7 +450,7 @@ if __name__ == '__main__':
     assert list(c._items) == list('ELPMAXHCRS')
     assert len(c) == len(set(keys))
     assert c.remove() == 'S'
-    assert len(c) == len(set(keys))-1
+    assert len(c) == len(set(keys)) - 1
 
     print('----- List -----')
     a = List(keys)
@@ -447,24 +460,24 @@ if __name__ == '__main__':
         assert a[i] == c
         # assert a.index(c) == i
     a.delete_back()
-    assert a.size == len(keys)-1
+    assert a.size == len(keys) - 1
     print(a)
     a.add_front('X')
     assert a.size == len(keys)
     print(a)
     a.delete_front()
-    assert a.size == len(keys)-1
+    assert a.size == len(keys) - 1
     print(a)
     a.add_back('E')
     a.add(6, 'Z')
     print(a)
-    assert a.size == len(keys)+1
+    assert a.size == len(keys) + 1
     a.remove('A')
     print(a)
     assert a.size == len(keys)
     del a[5]
     print(a)
-    assert a.size == len(keys)-1
+    assert a.size == len(keys) - 1
 
     print('----- Uniqueue -----')
     q = Uniqueue(keys)
@@ -498,7 +511,7 @@ if __name__ == '__main__':
         assert k in bf
     for k in string.ascii_uppercase:
         print(f"{k}: {k in bf}")
-    print(10*'-')
+    print(10 * '-')
     print(f"{bf.N = }")
     print(f"{bf.M = }")
     print(f"{bf.k = }")
