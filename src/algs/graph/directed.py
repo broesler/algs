@@ -3,16 +3,17 @@
 #     File: directed.py
 #  Created: 2022-06-28 21:49
 #   Author: Bernie Roesler
-#
-"""
-Implementations of undirected graph representations and associated algorithms.
+# =============================================================================
+
+"""Implementations of undirected graph representations and associated algorithms.
 
 See Sedgewick and Wayne, §4.2.
 """
-# =============================================================================
 
-from algs.basics import Stack, Queue
-from algs.graph.undirected import UndirectedGraph, Graph, SymbolGraph, CC
+from pathlib import Path
+
+from algs.basics import Queue, Stack
+from algs.graph.undirected import CC, Graph, SymbolGraph, UndirectedGraph
 
 
 # -----------------------------------------------------------------------------
@@ -41,6 +42,7 @@ class Digraph(DirectedGraph, Graph):
         super().__init__(V, *args, **kwargs)
 
     def add_edge(self, v, w):
+        """Add a directed edge from `v` to `w`."""
         self._validate_vertex(v)
         self._validate_vertex(w)
         # Exercise 4.2.5 no self-loops
@@ -114,6 +116,7 @@ class DirectedCycle:
 
     @property
     def has_cycle(self):
+        """Return True if a directed cycle exists in the graph."""
         return bool(self.cycle)
 
     def _dfs(self, G, v):
@@ -139,7 +142,8 @@ class DirectedCycle:
 
 class DepthFirstOrder:
     """Compute the pre-, post-, and reverse post-order traversals of the
-    digraph."""
+    digraph.
+    """
 
     def __init__(self, G):
         self.pre = Queue()
@@ -174,6 +178,7 @@ class Topological:
 
     @property
     def is_DAG(self):
+        """Return True if the graph is a DAG."""
         return self.order is not None
 
 
@@ -186,6 +191,7 @@ class KosarajuSCC(CC):
         super().__init__(G, vertices=order)
 
     def strongly_connected(self, v, w):
+        """Return True if `v` and `w` are strongly connected."""
         return self.connected(v, w)  # semantic distinction
 
 
@@ -234,14 +240,14 @@ class Euler:
 
     @property
     def has_cycle(self):
+        """Return True if an Eulerian cycle exists in the graph."""
         return bool(self.cycle)
 
     def _non_isolated_vertex(self, G):
         for v in G.vertices():
             if G.outdegree(v) > 0:
                 return v
-        else:
-            raise ValueError('No vertices have outward edges!')
+        raise ValueError('No vertices have outward edges!')
 
     def _dfs(self, G, v):
         self._on_stack[v] = True
@@ -267,9 +273,11 @@ class Euler:
         self._on_stack[v] = False
 
     def _certify(self, G):
-        if (self.cycle.size != G.E + 1
-                or any([x != 0 for x in self._indegree])
-                or any([x != 0 for x in self._outdegree])):
+        if (
+            self.cycle.size != G.E + 1
+            or any(x != 0 for x in self._indegree)
+            or any(x != 0 for x in self._outdegree)
+        ):
             self.cycle = None
 
 
@@ -310,8 +318,9 @@ class Degrees:
     @property
     def is_map(self):
         """Return True if `G` is a map from the set of integers [0, V-1] onto
-        itself."""
-        return G._SELF_LOOPS and all([x == 1 for x in self._outdegree])
+        itself.
+        """
+        return G._SELF_LOOPS and all(x == 1 for x in self._outdegree)
 
 
 # Exercise 4.2.9
@@ -323,7 +332,7 @@ def check_topological(G, order):
         raise ValueError("order is not a permutation of G's vertices!")
     # Check if each vertex in the given order has all of its adjacent vertices
     # *later* in the order.
-    index = dict({v: i for i, v in enumerate(order)})
+    index = {v: i for i, v in enumerate(order)}
     for v in order:
         for w in G.adj(v):
             if index[w] < index[v]:
@@ -337,11 +346,13 @@ def check_topological(G, order):
 # -----------------------------------------------------------------------------
 if __name__ == "__main__":
     from random import shuffle
-    from algs.graph.undirected import (DepthFirstPaths, BreadthFirstPaths,
-                                       print_paths)
+
+    from algs.graph.undirected import BreadthFirstPaths, DepthFirstPaths, print_paths
+
+    DATA_PATH = Path(__file__).parents[3] / 'data'
 
     print('----- Digraph -----')
-    G = Digraph.fromfile('../data/tinyDG.txt')
+    G = Digraph.fromfile(DATA_PATH / 'tinyDG.txt')
     print(G)
     print('----- Reverse -----')
     R = G.reverse()
@@ -373,7 +384,7 @@ if __name__ == "__main__":
     t = Topological(G)
     assert not t.is_DAG
 
-    sg = SymbolDigraph.fromfile('../data/jobs.txt', delim='/')
+    sg = SymbolDigraph.fromfile(DATA_PATH / 'jobs.txt', delim='/')
     t = Topological(sg.G)
     assert t.is_DAG
     print('\n'.join(sg.name(v) for v in t.order))
@@ -383,7 +394,7 @@ if __name__ == "__main__":
     print(cc.get_components())
 
     # Web Exercise 17
-    Gm = Digraph.fromfile('../data/mediumDG.txt')
+    Gm = Digraph.fromfile(DATA_PATH / 'mediumDG.txt')
     cc = KosarajuSCC(Gm)
     assert cc.count() == 10
 
@@ -393,7 +404,7 @@ if __name__ == "__main__":
     assert d.sources() == []
     assert d.sinks() == [1]
 
-    G2 = Digraph.fromfile('../data/tinyDG2.txt')
+    G2 = Digraph.fromfile(DATA_PATH / 'tinyDG2.txt')
     print(G2)
     d = Degrees(G2)
     assert d._indegree == [1, 2, 2, 2, 1, 0, 2, 0, 2, 0, 2, 2]
@@ -402,7 +413,7 @@ if __name__ == "__main__":
     assert d.sinks() == [9]
 
     # Create a circular graph
-    edges = list()
+    edges = []
     N = 5
     Gcyc = Digraph(N)
     for i in range(N):
@@ -411,7 +422,7 @@ if __name__ == "__main__":
     print(e.cycle)
 
     print('----- DAGs -----')
-    D = Digraph.fromfile('../data/tinyDAG.txt')
+    D = Digraph.fromfile(DATA_PATH / 'tinyDAG.txt')
     print(D)
     orders = DepthFirstOrder(D)
     print('   pre:', orders.pre)
