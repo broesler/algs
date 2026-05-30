@@ -3,28 +3,34 @@
 #     File: frequency_count_data.py
 #  Created: 2019-11-16 18:03
 #   Author: Bernie Roesler
-#
-"""
-  Description: Run FrequencyCounter to collect data on various symbol tables.
-"""
 # =============================================================================
 
-import os
-import pandas as pd
-import pickle
+"""Run FrequencyCounter to collect data on various symbol tables."""
 
-from algs.search import (ArrayST, BinarySearchST, BST, ArrayBST, RedBlackBST,
-                         SeparateChainingHashST, LinearProbingHashST)
+import pickle
+from pathlib import Path
+
+import pandas as pd
 from frequency_counter import FrequencyCounter
 
-filenames = ['../data/tiny_tale.txt',  # 292
-             '../data/tale.txt']       # 779K
-             # '../data/leipzig1m.txt']  # 124M
+from algs.search import (
+    ArrayST,
+    LinearProbingHashST,
+    SeparateChainingHashST,
+)
 
-tags = [os.path.splitext(os.path.basename(x))[0] for x in filenames]
-cols = pd.MultiIndex.from_product([tags, ['words', 'distinct', 'max_word', 'max_freq']])
-kind = 'app'  # 'ins', 'app', 'selforg', 'LL', 'resize'
-             #  for `.insert(0, item)` vs. `.append(item)`
+DATA_PATH = Path(__file__).parent.parent / 'data'
+PKL_PATH = Path(__file__).parent / 'pkl'
+
+filenames = [
+    DATA_PATH / 'tiny_tale.txt',  # 292
+    # DATA_PATH / 'tale.txt',  # 779K
+    # DATA_PATH / 'leipzig1m.txt',  # 124M
+]
+
+# TODO document each of these options
+kind = 'resize'  # 'ins', 'app', 'selforg', 'LL', 'resize'
+#  for `.insert(0, item)` vs. `.append(item)`
 
 selforg = True if kind == 'selforg' else False
 resize = True if kind == 'resize' else False
@@ -32,9 +38,9 @@ M = 997 if not resize else 4
 
 # for ST in [ArrayST, BinarySearchST, BST, ArrayBST, RedBlackBST]:
 for ST in [SeparateChainingHashST, LinearProbingHashST]:
-    df = pd.DataFrame(columns=cols)
-    for i, f in enumerate(filenames):
-        tag = tags[i]
+    for f in filenames:
+        data = []
+        tag = f.stem
         for minlen in [1, 8, 10]:
             if ST is ArrayST:
                 fc = FrequencyCounter(ST, selforg=selforg)
@@ -42,13 +48,34 @@ for ST in [SeparateChainingHashST, LinearProbingHashST]:
                 fc = FrequencyCounter(ST, M=M, resize=resize)
             else:
                 fc = FrequencyCounter(ST)
+
             fc.count_frequencies(f, minlen)
             fc.find_max_word()
-            df.loc[minlen, (tag, 'words')] = fc.N
-            df.loc[minlen, (tag, 'distinct')] = fc.t.size
-            df.loc[minlen, (tag, 'max_word')] = fc.max_word
-            df.loc[minlen, (tag, 'max_freq')] = fc.t[fc.max_word]
-            with open(f"./pkl/{tag}_{ST.__name__}_m{minlen:02d}_{kind}.pkl", 'wb') as fp:
+
+            data.append(
+                {
+                    'minlen': minlen,
+                    'tag': tag,
+                    'words': fc.N,
+                    'distinct': fc.t.size(),
+                    'max_word': fc.max_word,
+                    'max_freq': fc.t[fc.max_word],
+                }
+            )
+
+            df = (
+                pd.DataFrame(data)  # noqa
+                .pivot(
+                    index="minlen",
+                    columns="tag",
+                    values=["words", "distinct", "max_word", "max_freq"],
+                )
+                .swaplevel(axis=1)
+                .sort_index(axis=1)
+            )
+
+            pkl_file = PKL_PATH / f"{tag}_{ST.__name__}_m{minlen:02d}_{kind}.pkl"
+            with pkl_file.open('wb') as fp:
                 pickle.dump(fc, fp)
 
     print(df)
