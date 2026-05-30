@@ -3,16 +3,14 @@
 #     File: word_ladder.py
 #  Created: 2022-07-18 21:21
 #   Author: Bernie Roesler
-#
-"""
-Find the word ladder between two inputs.
-"""
 # =============================================================================
+
+"""Find the word ladder between two inputs."""
 
 from pathlib import Path
 
+from algs.graph import BreadthFirstPaths, Graph
 from algs.search import IndexSet
-from algs.graph import Graph, BreadthFirstPaths
 
 
 def is_neighbor(a, b):
@@ -54,11 +52,11 @@ def build_word_graph(words, method='fast'):
         # list. Then, we only have to check N-1 pairs.
         for n in range(N):
             sorted_words = sorted(words, key=lambda x: rotate(x, n))
-            for i in range(V-1):
+            for i in range(V - 1):
                 # Check if last letters match
-                if is_neighbor(sorted_words[i], sorted_words[i+1]):
+                if is_neighbor(sorted_words[i], sorted_words[i + 1]):
                     v = words.index(sorted_words[i])
-                    w = words.index(sorted_words[i+1])
+                    w = words.index(sorted_words[i + 1])
                     G.add_edge(v, w)
     else:
         raise ValueError(f"{method=} not recognized!")
@@ -69,9 +67,10 @@ def build_word_graph(words, method='fast'):
 if __name__ == "__main__":
     N = 5  # word length
 
-    wordfile = Path(f"../data/words{N}.txt")
+    DATA_PATH = Path(__file__).parent.parent / 'data'
+    wordfile = DATA_PATH / f"words{N}.txt"
     words = IndexSet()
-    with open(wordfile, 'r') as fp:
+    with wordfile.open() as fp:
         for line in fp.readlines():
             words.add(line.strip())
 
