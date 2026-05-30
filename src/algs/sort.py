@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
-#==============================================================================
+# ==============================================================================
 #     File: sort.py
 #  Created: 2019-03-14 14:22
 #   Author: Bernie Roesler
-#
-"""
-  Description: Sorting algorithms
-"""
-#==============================================================================
+# ==============================================================================
+
+"""Sorting algorithms."""
 
 from random import randrange
 
@@ -16,10 +14,18 @@ from random import randrange
 # and use the decorator @functools.total_ordering (or define the other rich
 # comparison operations)
 
-__all__ = ['is_sorted', 'bubble_sort', 'insertion_sort', 'mergesort',
-           'mergesort_BU', 'qsort', 'heap_sort']
+__all__ = [
+    'is_sorted',
+    'bubble_sort',
+    'insertion_sort',
+    'mergesort',
+    'mergesort_BU',
+    'qsort',
+    'heap_sort',
+]
 
-# ----------------------------------------------------------------------------- 
+
+# -----------------------------------------------------------------------------
 #         Utilities
 # -----------------------------------------------------------------------------
 def _swap(a, i, j):
@@ -29,20 +35,24 @@ def _swap(a, i, j):
 
 def _med3(a, i, j, k):
     """Return the index of the median of the elements a[i], a[j], a[k]."""
-    return (j if a[j] < a[k] else (k if a[i] < a[k] else i)) if a[i] < a[j] else\
-           (j if a[k] < a[j] else (k if a[k] < a[i] else i))
+    return (
+        (j if a[j] < a[k] else (k if a[i] < a[k] else i))
+        if a[i] < a[j]
+        else (j if a[k] < a[j] else (k if a[k] < a[i] else i))
+    )
 
 
 def is_sorted(a):
-    """True if a list is sorted in ascending order."""
+    """Return True if a list is sorted in ascending order."""
     for i in range(1, len(a)):
-        if a[i-1] > a[i]:
+        if a[i - 1] > a[i]:
             return False
     return True
 
 
-class _SortNode():
+class _SortNode:  # noqa: PLW1641
     """Node for use when sorting with a key function."""
+
     def __init__(self, k, v=None):
         self.key = k
         self.value = v
@@ -63,7 +73,7 @@ class _SortNode():
         return self.key >= other.key
 
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 #         Sorts
 # -----------------------------------------------------------------------------
 def bubble_sort(s):
@@ -72,8 +82,8 @@ def bubble_sort(s):
     while True:
         no_swaps = True
         for i in range(1, len(a)):
-            if a[i] < a[i-1]:
-                _swap(a, i-1, i)
+            if a[i] < a[i - 1]:
+                _swap(a, i - 1, i)
                 no_swaps = False
         if no_swaps:
             break
@@ -88,7 +98,7 @@ def insertion_sort(s):
     Worst case: ~N^2/2 compares and exchanges.
     """
     a = list(s)  # make a copy
-    _insertion_sort(a, 0, len(a)-1)
+    _insertion_sort(a, 0, len(a) - 1)
     return a
 
 
@@ -97,8 +107,8 @@ def _insertion_sort(a, lo, hi):
     N = hi - lo + 1
     for i in range(1, N):
         j = i
-        while j > 0 and a[j] < a[j-1]:
-            _swap(a, j, j-1)
+        while j > 0 and a[j] < a[j - 1]:
+            _swap(a, j, j - 1)
             j -= 1
 
 
@@ -145,10 +155,10 @@ def mergesort_BU(a):
         lo = 0
         while lo < (N - slen):
             mid = lo + slen
-            hi = min(lo + 2*slen, N)
+            hi = min(lo + 2 * slen, N)
             # Place sorted pairs into output array
             out[lo:hi] = _merge(out[lo:mid], out[mid:hi])
-            lo += 2*slen
+            lo += 2 * slen
         slen *= 2
     return out
 
@@ -158,7 +168,7 @@ def _merge(a, b):
     assert is_sorted(a)
     assert is_sorted(b)
 
-    merged = list()
+    merged = []
     # Take lesser of two elements
     while a and b:
         if a[0] < b[0]:
@@ -173,7 +183,7 @@ def _merge(a, b):
     return merged
 
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 #         Bad Quicksorts
 # -----------------------------------------------------------------------------
 def quicksort0(s):
@@ -186,7 +196,7 @@ def quicksort0(s):
     WARNING: Goes O(N^2) for all equal keys
     """
     a = list(s)
-    _quicksort0(a, 0, len(a)-1)
+    _quicksort0(a, 0, len(a) - 1)
     return a
 
 
@@ -194,8 +204,8 @@ def _quicksort0(a, lo, hi):
     """The actual quicksort algorithm."""
     if lo < hi:
         p = _partition0(a, lo, hi)
-        _quicksort0(a, lo, p-1)
-        _quicksort0(a, p+1, hi)
+        _quicksort0(a, lo, p - 1)
+        _quicksort0(a, p + 1, hi)
 
 
 def _partition0(a, lo, hi):
@@ -206,8 +216,8 @@ def _partition0(a, lo, hi):
         if a[j] < piv:
             i += 1
             _swap(a, i, j)
-    _swap(a, i+1, hi)  # move pivot into position
-    return i+1
+    _swap(a, i + 1, hi)  # move pivot into position
+    return i + 1
 
 
 def quicksort0r(s):
@@ -219,7 +229,7 @@ def quicksort0r(s):
     WARNING: Goes O(N^2) for many equal keys.
     """
     a = list(s)
-    _quicksort0r(a, 0, len(a)-1)
+    _quicksort0r(a, 0, len(a) - 1)
     return a
 
 
@@ -227,15 +237,15 @@ def _quicksort0r(a, lo, hi):
     """Recursively move elements less than pivot to the left."""
     if lo < hi:
         p = _partition0r(a, lo, hi)
-        _quicksort0r(a, lo, p-1)
-        _quicksort0r(a, p+1, hi)
+        _quicksort0r(a, lo, p - 1)
+        _quicksort0r(a, p + 1, hi)
 
 
 def _partition0r(a, lo, hi):
     """Recursively move elements less than pivot to the left.
     Choose a random element as the pivot instead of shuffling the list.
     """
-    idx = randrange(lo, hi+1)
+    idx = randrange(lo, hi + 1)
     piv = a[idx]  # pivot value
     _swap(a, idx, hi)
     i = lo - 1
@@ -243,13 +253,13 @@ def _partition0r(a, lo, hi):
         if a[j] < piv:
             i += 1
             _swap(a, i, j)
-    _swap(a, i+1, hi)  # move pivot into position
-    return i+1
+    _swap(a, i + 1, hi)  # move pivot into position
+    return i + 1
 
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #        Engineering a Sorting Algorithm Examples
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 def qsort0(s):
     """Quicksort implementation.
 
@@ -260,23 +270,23 @@ def qsort0(s):
     WARNING: Goes O(N^2) for many repeated keys
     """
     a = list(s)
-    return _qsort0(a, 0, len(a)-1)
+    return _qsort0(a, 0, len(a) - 1)
 
 
 def _qsort0(a, lo, hi):
     """The actual quicksort algorithm."""
     if lo < hi:
         p = _part0(a, lo, hi)
-        _qsort0(a, lo, p-1)
-        _qsort0(a, p+1, hi)
+        _qsort0(a, lo, p - 1)
+        _qsort0(a, p + 1, hi)
     return a
 
 
 def _part0(a, lo, hi):
     """A toy partition, not useful in practice due to O(N^2) worst-case."""
     j = lo  # j is boundary pointer
-    for i in range(lo+1, hi+1):
-        if (a[i] < a[lo]):
+    for i in range(lo + 1, hi + 1):
+        if a[i] < a[lo]:
             j += 1
             _swap(a, i, j)
     _swap(a, lo, j)  # move pivot into position
@@ -291,15 +301,15 @@ def qsort1(s):
     WARNING: Goes O(N^2) for many repeated keys
     """
     a = list(s)
-    return _qsort1(a, 0, len(a)-1)
+    return _qsort1(a, 0, len(a) - 1)
 
 
 def _qsort1(a, lo, hi):
     """The actual quicksort algorithm."""
     if lo < hi:
         p = _part1(a, lo, hi)
-        _qsort1(a, lo, p-1)
-        _qsort1(a, p+1, hi)
+        _qsort1(a, lo, p - 1)
+        _qsort1(a, p + 1, hi)
     return a
 
 
@@ -307,14 +317,16 @@ def _part1(a, lo, hi):
     """Improved with randomization of the pivot."""
     i = lo
     j = hi
-    idx = randrange(lo, hi+1)
+    idx = randrange(lo, hi + 1)
     piv = a[idx]  # pivot value
     _swap(a, idx, lo)
     while True:
         i += 1
-        while i < hi and a[i] < piv: i += 1
-        while j > lo and a[j] > piv: j -= 1
-        if j < i: 
+        while i < hi and a[i] < piv:
+            i += 1
+        while j > lo and a[j] > piv:
+            j -= 1
+        if j < i:
             break
         _swap(a, i, j)
 
@@ -324,13 +336,13 @@ def _part1(a, lo, hi):
 
 def qsort2(s):
     """Standard sort interface. Return a sorted copy.
-    
+
     Notes
     -----
     Marginally slower than `qsort` for intermediate length lists (~20 -- ~100).
     """
     a = list(s)
-    _qsort2(a, 0, len(a)-1)
+    _qsort2(a, 0, len(a) - 1)
     return a
 
 
@@ -343,16 +355,16 @@ def _qsort2(a, lo, hi):
         _qsort2(a, q, hi)
 
 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
 #         The Proper Quicksort
 # -----------------------------------------------------------------------------
 def qsort(s):
     """Interface to the Bentley-McIlroy quicksort algorithm.
-    
+
     Average case: ~2 N log N compares and ~1/3 N log N exchanges.
     """
     a = list(s)
-    _qsort_bm(a, 0, len(a)-1)  # choose partition, then recurse
+    _qsort_bm(a, 0, len(a) - 1)  # choose partition, then recurse
     return a
 
 
@@ -369,11 +381,11 @@ def _qsort_bm(a, lo, hi):
         return
     elif N < _qsort.MEDIAN_CUTOFF:
         # Use median of array to select partition element
-        idx = _med3(a, lo, lo + N//2, hi)
+        idx = _med3(a, lo, lo + N // 2, hi)
     else:
         # Use Tukey ninther to select median of medians
-        d = N//8
-        mid = lo + N//2
+        d = N // 8
+        mid = lo + N // 2
         m1 = _med3(a, lo, lo + d, lo + d + d)
         m2 = _med3(a, mid - d, mid, mid + d)
         m3 = _med3(a, hi - d - d, hi - d, hi)
@@ -413,9 +425,9 @@ def _partition(a, lo, hi, idx=None):
         Move to center...
         3    9    3   11  ['B', 'A', 'D', 'C', 'P', 'P', 'P', 'P', 'P', 'W', 'Z', 'X', 'Y', 'V']
         (3, 9)
-    """
+    """  # noqa: E501
     if idx is None:
-        idx = randrange(lo, hi+1)
+        idx = randrange(lo, hi + 1)
     piv = a[idx]  # pivot value
     p = i = lo
     q = j = hi
@@ -435,7 +447,8 @@ def _partition(a, lo, hi, idx=None):
             j -= 1
 
         # Pointers cross
-        if j < i: break
+        if j < i:
+            break
 
         # Found out-of-order elements
         _swap(a, i, j)
@@ -459,15 +472,15 @@ def heap_sort(s):
     Uses ~ 2 N log N compares and exchanges.
     """
     a = list([None] + list(s))  # use 1-indexing for easier heap calcs
-    N = len(a)-1
+    N = len(a) - 1
 
     # Put array in max-heap order
-    for k in range(N//2, 0, -1):
+    for k in range(N // 2, 0, -1):
         _sink(a, k, N)
 
     while N > 1:
         _swap(a, 1, N)  # heap is max-oriented, so pop root to end of array
-        N -= 1          # update length of unsorted elements
+        N -= 1  # update length of unsorted elements
         _sink(a, 1, N)  # sink the new root to its proper position
 
     return a[1:]  # ignore empty element
@@ -475,15 +488,15 @@ def heap_sort(s):
 
 def _sink(a, k, N):
     """Sink the given node index down to its proper location in the heap."""
-    while 2*k <= N:
-        j = 2*k                      # check left child
-        if j < N and a[j] < a[j+1]:  # if left child < right child
-            j += 1                   # take right child
-        if not a[k] < a[j]:          # if child <= parent, done.
+    while 2 * k <= N:
+        j = 2 * k  # check left child
+        if j < N and a[j] < a[j + 1]:  # if left child < right child
+            j += 1  # take right child
+        if not a[k] < a[j]:  # if child <= parent, done.
             break
-        _swap(a, k, j)               # otherwise swap child/parent
-        k = j                        # move to child and repeat
+        _swap(a, k, j)  # otherwise swap child/parent
+        k = j  # move to child and repeat
 
 
-#==============================================================================
-#==============================================================================
+# ==============================================================================
+# ==============================================================================
