@@ -3,17 +3,17 @@
 #     File: point2d.py
 #  Created: 2022-06-09 23:21
 #   Author: Bernie Roesler
-#
-"""
-1.2.1 Point2D client to generate N random points and compute the distance
-between the *closest* pair.
+# =============================================================================
+
+"""Exercise 1.2.1: Point2D client.
+
+Generate N random points and compute the distance between the *closest* pair.
 
 See Also
 --------
 `Wikipedia <https://en.wikipedia.org/wiki/Closest_pair_of_points_problemite_ref-7>`_
 `Rabin Flips a Coin <https://rjlipton.wpcomstaging.com/2009/03/01/rabin-flips-a-coin/>`_
 """
-# =============================================================================
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -25,7 +25,7 @@ N = 100  # FIXME Rabin algorithm fails for N = 20 with seed=565656
 
 # Generate N random points in the unit square
 points = []
-for i in range(N):
+for _i in range(N):
     points.append(Point2D(*rng.random(2)))
 
 
@@ -95,11 +95,11 @@ def closest_pair_rabin(points, plot=False, ax=None):
     p0, p1 = round_to_grid(p0), round_to_grid(p1)
 
     # Round the points to their nearest grid point, storing in a hash table
-    grid = dict()
+    grid = {}
     for p in points:
         g = round_to_grid(p, d)
         if g not in grid:
-            grid[g] = list()
+            grid[g] = []
         grid[g].append(p)
 
     # For each input point, compute the distance to all other points at the
@@ -110,16 +110,17 @@ def closest_pair_rabin(points, plot=False, ax=None):
     d_min = float('inf')
     for i, p in enumerate(points):
         g = round_to_grid(p, d)
-        keys = [g,                      # center
-                Point2D(g.x-d, g.y),    # left
-                Point2D(g.x+d, g.y),    # right
-                Point2D(g.x, g.y-d),    # down
-                Point2D(g.x, g.y+d),    # up
-                Point2D(g.x-d, g.y-d),  # bottom left
-                Point2D(g.x-d, g.y+d),  # top left
-                Point2D(g.x+d, g.y-d),  # bottom right
-                Point2D(g.x+d, g.y+d),  # top right
-                ]
+        keys = [
+            g,  # center
+            Point2D(g.x - d, g.y),  # left
+            Point2D(g.x + d, g.y),  # right
+            Point2D(g.x, g.y - d),  # down
+            Point2D(g.x, g.y + d),  # up
+            Point2D(g.x - d, g.y - d),  # bottom left
+            Point2D(g.x - d, g.y + d),  # top left
+            Point2D(g.x + d, g.y - d),  # bottom right
+            Point2D(g.x + d, g.y + d),  # top right
+        ]
         for k in keys:
             try:
                 qs = grid[k]
@@ -149,7 +150,7 @@ def closest_pair_rabin(points, plot=False, ax=None):
         #     points[j].draw(marker=marker, c='k', s=50)
 
         # Plot the grid
-        yg, xg = np.mgrid[p0.x:p1.x+d:d, p0.y:p1.y+d:d]
+        yg, xg = np.mgrid[p0.x : p1.x + d : d, p0.y : p1.y + d : d]
         # ax.scatter(xg, yg, c='C2', s=20, alpha=0.5)
         ax.plot(xg, yg, c='C2', alpha=0.5)
         ax.plot(xg.T, yg.T, c='C2', alpha=0.5)
@@ -173,7 +174,7 @@ a, b = closest_pair_rabin(points, plot=True)
 # assert np.isclose(an.dist_to(bn), a.dist_to(b))
 
 for p in points:
-    p.draw(color=0.7*np.ones(3), s=20)
+    p.draw(color=0.7 * np.ones(3), s=20)
 
 # Highlight the closest pair(s)
 an.draw(c='C2')
@@ -183,9 +184,13 @@ a.draw(c='C3')
 b.draw(c='C3')
 a.draw_to(b, c='C3')
 
-ax.set(xlabel='x', xlim=(-0.02, 1.02),
-       ylabel='y', ylim=(-0.02, 1.02),
-       aspect='equal',)
+ax.set(
+    xlabel='x',
+    xlim=(-0.02, 1.02),
+    ylabel='y',
+    ylim=(-0.02, 1.02),
+    aspect='equal',
+)
 ax.grid(False)
 
 plt.show()
