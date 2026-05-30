@@ -3,24 +3,26 @@
 #     File: union_find_largecosts.py
 #  Created: 2022-05-26 16:00
 #   Author: Bernie Roesler
-#
-"""
-Amortized cost plots of the union-find datatypes.
-"""
 # =============================================================================
 
-import matplotlib.pyplot as plt
+"""Amortized cost plots of the union-find datatypes, with large input file."""
+
 from pathlib import Path
 
-from ufcounter import cost_plot, UFCounter
+import matplotlib.pyplot as plt
+from ufcounter import UFCounter, cost_plot
 
-from algs.unionfind import (QuickUnionUF, WeightedQuickUnionUF,
-                            HeightWeightedQuickUnionUF)
+from algs.unionfind import (
+    HeightWeightedQuickUnionUF,
+    QuickUnionUF,
+    WeightedQuickUnionUF,
+)
 
 # -----------------------------------------------------------------------------
 #         Compute the operation costs from the given input file
 # -----------------------------------------------------------------------------
-file = Path('../data/largeUF.txt')
+DATA_PATH = Path(__file__).parent.parent / 'data'
+file = DATA_PATH / 'largeUF.txt'
 verbose = True
 
 fig = plt.figure(1, clear=True, constrained_layout=True)
@@ -33,14 +35,16 @@ axd = fig.subplot_mosaic(
         ['weighted quick-union'],
         ['height-weighted quick-union'],
     ],
-    gridspec_kw=dict(height_ratios=[2, 1, 1], hspace=0.05)
+    gridspec_kw={'height_ratios': [2, 1, 1], 'hspace': 0.05},
 )
 
 # Match book figure
 ufs = [QuickUnionUF, WeightedQuickUnionUF, HeightWeightedQuickUnionUF]
-y_maxes = dict({'quick-union (path compression)': 20,
-                'weighted quick-union': 20,
-                'height-weighted quick-union': 20})
+y_maxes = {
+    'quick-union (path compression)': 20,
+    'weighted quick-union': 20,
+    'height-weighted quick-union': 20,
+}
 # ufs = [WeightedQuickUnionUF]
 # y_maxes = dict({'weighted quick-union': 20})
 titles = y_maxes.keys()

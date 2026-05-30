@@ -3,24 +3,27 @@
 #     File: union_find_costs.py
 #  Created: 2022-05-25 19:36
 #   Author: Bernie Roesler
-#
-"""
-Amortized cost plots of the union-find datatypes.
-"""
 # =============================================================================
 
-import matplotlib.pyplot as plt
+"""Amortized cost plots of the union-find datatypes."""
+
 from pathlib import Path
 
-from ufcounter import cost_plot, UFCounter
+import matplotlib.pyplot as plt
+from ufcounter import UFCounter, cost_plot
 
-from algs.unionfind import (QuickFindUF, QuickUnionUF,
-                            WeightedQuickUnionUF, WeightedQuickFindUF)
+from algs.unionfind import (
+    QuickFindUF,
+    QuickUnionUF,
+    WeightedQuickFindUF,
+    WeightedQuickUnionUF,
+)
 
 # -----------------------------------------------------------------------------
 #         Compute the operation costs from the given input file
 # -----------------------------------------------------------------------------
-file = Path('../data/mediumUF.txt')
+DATA_PATH = Path(__file__).parent.parent / 'data'
+file = DATA_PATH / 'mediumUF.txt'
 
 fig = plt.figure(1, clear=True, constrained_layout=True)
 fig.set_size_inches((8, 10), forward=True)
@@ -33,24 +36,27 @@ axd = fig.subplot_mosaic(
         ['weighted quick-union', 'weighted quick-union (path compression)'],
     ],
     empty_sentinel='X',
-    gridspec_kw=dict(height_ratios=[10, 2, 1], hspace=0.05)
+    gridspec_kw={'height_ratios': [10, 2, 1], 'hspace': 0.05},
 )
 
-ufs = [QuickFindUF,
-       QuickUnionUF,
-       WeightedQuickUnionUF,
-       WeightedQuickFindUF,
-       QuickUnionUF,          # slightly awkward to have to add 2x
-       WeightedQuickUnionUF]
+ufs = [
+    QuickFindUF,
+    QuickUnionUF,
+    WeightedQuickUnionUF,
+    WeightedQuickFindUF,
+    QuickUnionUF,  # slightly awkward to have to add 2x
+    WeightedQuickUnionUF,
+]
 
 # Match book figure
-y_maxes = dict({'quick-find': 1300,
-                'quick-union': 110,
-                'weighted quick-union': 20,
-                'weighted quick-find': 1300,
-                'quick-union (path compression)': 110,
-                'weighted quick-union (path compression)': 20,
-                })
+y_maxes = {
+    'quick-find': 1300,
+    'quick-union': 110,
+    'weighted quick-union': 20,
+    'weighted quick-find': 1300,
+    'quick-union (path compression)': 110,
+    'weighted quick-union (path compression)': 20,
+}
 
 titles = y_maxes.keys()
 
