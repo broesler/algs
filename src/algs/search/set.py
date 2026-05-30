@@ -3,27 +3,25 @@
 #     File: set.py
 #  Created: 2022-05-30 19:34
 #   Author: Bernie Roesler
-#
-"""
-Implements Set and HashSet APIs using symbol tables. See §3.5.
-"""
 # =============================================================================
 
-import numpy as np
+"""Set and HashSet APIs using symbol tables. See §3.5."""
 
 from abc import ABC, abstractmethod
 
+import numpy as np
+
 from algs.basics import Queue
-from algs.search.table import SymbolTable, OrderedMethods
-from algs.search.hash import LinearProbingHashST
-from algs.search.tree import BST
 from algs.search.balanced_tree import RedBlackBST
+from algs.search.hash import LinearProbingHashST
+from algs.search.table import OrderedMethods, SymbolTable
+from algs.search.tree import BST
 
 
 # -----------------------------------------------------------------------------
 #         Define Abstract Base Classes
 # -----------------------------------------------------------------------------
-class UnorderedSet(ABC):
+class UnorderedSet(ABC):  # noqa: PLW1641
     # An abstract base class for unordered sets of keys. Note that a set does
     # not contain a `__setitem__`  or `__getitem__` method, since we do not
     # associate values with the keys.
@@ -54,7 +52,7 @@ class UnorderedSet(ABC):
         pass
 
     def size(self):
-        """Number of elements in the table."""
+        """Return the number of elements in the table."""
         return self._N
 
     @property
@@ -250,9 +248,9 @@ class MultiHashSet(HashSet):
 
     def keys(self):
         """Return a list of keys repeated according to their multiplicity."""
-        b = list()
+        b = []
         for k, v in self._st.items():
-            b.extend(v*[k])
+            b.extend(v * [k])
         return b
 
     def __iter__(self):
@@ -276,7 +274,8 @@ class MultiSet(MultiHashSet, Set):
 
     def rank(self, k):
         """Return the number of keys strictly less than `k`, including multiple
-        equal keys."""
+        equal keys.
+        """
         r = self._st.rank(k)
         # Add the multiplicities of keys less than `k` in the set.
         v = 0
@@ -285,16 +284,17 @@ class MultiSet(MultiHashSet, Set):
         return v
 
     def select(self, r):
-        if r < 0 or self.size() < r+1:
+        if r < 0 or self.size() < r + 1:
             raise IndexError(r)
         return self.keys()[r]
 
     def keys(self, lo=None, hi=None):
         """Return a list of keys between `lo` and `hi` repeated according to
-           their multiplicity."""
-        b = list()
+        their multiplicity.
+        """
+        b = []
         for k, v in self._st.items(lo, hi):
-            b.extend(v*[k])
+            b.extend(v * [k])
         return b
 
 
@@ -377,8 +377,7 @@ class MathSet(HashSet):
         for k in a:
             if k not in self:
                 return False
-        else:
-            return True
+        return True
 
     def is_subset(self, a):
         """Return True if this set is a subset of `a`."""
@@ -387,16 +386,14 @@ class MathSet(HashSet):
         for k in self:
             if k not in a:
                 return False
-        else:
-            return True
+        return True
 
     def is_disjoint(self, a):
         """Return True if none of the elements in `a` are in this set."""
         for k in a:
             if k in self:
                 return False
-        else:
-            return True
+        return True
 
     # -------------------------------------------------------------------------
     #         Logical operators
@@ -484,8 +481,9 @@ class BoolMathSet(MathSet, HashSet):
             An iterable of the keys to add to the set.
         """
         self.U = U  # keep original iterable for new object creation
-        self._st = LinearProbingHashST.fromkeys(U, value=False,
-                                                M=len(U)+1, resize=False)
+        self._st = LinearProbingHashST.fromkeys(
+            U, value=False, M=len(U) + 1, resize=False
+        )
         self._st._vals = np.r_[self._st._vals].astype(bool)
         keys = keys or []
         for k in keys:
@@ -662,8 +660,7 @@ class MathMultiSet(MultiHashSet, MathSet):
         for k in a._st:
             if k not in self or self._st[k] < a._st[k]:
                 return False
-        else:
-            return True
+        return True
 
     def is_subset(self, a):
         """Return True if this set is a subset of `a`."""
@@ -672,16 +669,14 @@ class MathMultiSet(MultiHashSet, MathSet):
         for k in self._st:
             if k not in a or self._st[k] > a._st[k]:
                 return False
-        else:
-            return True
+        return True
 
     def is_disjoint(self, a):
         """Return True if none of the elements in `a` are in this set."""
         for k in a._st:
             if k in self:
                 return False
-        else:
-            return True
+        return True
 
     # -------------------------------------------------------------------------
     #         Logical operators
@@ -788,11 +783,10 @@ class MultiValHashST(LinearProbingHashST):
 
     def __setitem__(self, k, v):
         if not self._RESIZE_FLAG and self.N == self.M:
-            raise RuntimeError(("Trying to insert into a full table! "
-                                "Set `resize=True`."))
+            raise RuntimeError("Trying to insert into a full table! Set `resize=True`.")
 
         if self._RESIZE_FLAG and self.N >= self.M // 2:
-            self._resize(2*self.M)
+            self._resize(2 * self.M)
             self._lgM += 1
 
         i = self._hash(k)
@@ -805,12 +799,11 @@ class MultiValHashST(LinearProbingHashST):
             else:
                 i = (i + 1) % self.M
                 self._cost += 1
-        else:
-            # Put a new key in the table
-            self._keys[i] = k
-            self._vals[i] = Queue()  # keep a list of values for each key
-            self._vals[i].enqueue(v)
-            self.N += 1
+        # Put a new key in the table
+        self._keys[i] = k
+        self._vals[i] = Queue()  # keep a list of values for each key
+        self._vals[i].enqueue(v)
+        self.N += 1
 
     def __getitem__(self, k):
         return self._get(k).peek()
@@ -827,13 +820,13 @@ class MultiValHashST(LinearProbingHashST):
             else:
                 i = (i + 1) % self.M
                 self._cost += 1
-        else:
-            raise KeyError(k)
+        raise KeyError(k)
 
 
 class MultiValBST(BST):
     """Implements a binary search tree, but allows multiple values to be
-    associated with each key."""
+    associated with each key.
+    """
 
     class _Node(BST._Node):
         def __init__(self, key, value=None):
@@ -854,7 +847,8 @@ class MultiValBST(BST):
 
 class MultiValRedBlackBST(RedBlackBST, MultiValBST):
     """Implements a balanced binary search tree, but allows multiple values to
-    be associated with each key."""
+    be associated with each key.
+    """
 
     class _Node(RedBlackBST._Node):
         def __init__(self, key, value, *args, **kwargs):
@@ -868,8 +862,8 @@ class IndexSet(HashSet):
 
     def __init__(self, keys=None):
         self._n = 0
-        self._st = dict()
-        self._ts = dict()
+        self._st = {}
+        self._ts = {}
         super().__init__(keys)
 
     @property
@@ -916,7 +910,7 @@ if __name__ == '__main__':
     # from algs.exercises.draw_tree import TreeArtist
 
     keys = list('SEARCHEXAMPLE')
-    items = list((c, i) for i, c in enumerate(keys))
+    items = [(c, i) for i, c in enumerate(keys)]
 
     st = IndexSet(keys)
     print(st)
