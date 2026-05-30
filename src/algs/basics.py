@@ -3,31 +3,37 @@
 #     File: basics.py
 #  Created: 2019-02-08 17:23
 #   Author: Bernie Roesler
-#
-"""
-  Description: Basic container algorithms.
-"""
 # =============================================================================
+
+"""Basic container algorithms."""
 
 import operator as _operator
 import random
-
 from abc import ABC
 from collections import deque
 from collections.abc import MutableMapping
 from copy import deepcopy
 
-__all__ = ['Collection', 'Bag', 'Stack', 'Queue', 'PriorityQueue', 'IndexPQ',
-           'RandomBag', 'RandomQueue', 'DoubleList']
+__all__ = [
+    'Collection',
+    'Bag',
+    'Stack',
+    'Queue',
+    'PriorityQueue',
+    'IndexPQ',
+    'RandomBag',
+    'RandomQueue',
+    'DoubleList',
+]
 
 
-class Collection(ABC):
+class Collection(ABC):  # noqa: PLW1641, B024
     # An abstract base class implementing a collection class. The concrete data
     # types differ in the specification of which object is to be removed or
     # examined next.
     """
     Attributes
-    -------
+    ----------
     size : int
         Number of items on the stack.
     is_empty : bool
@@ -46,10 +52,12 @@ class Collection(ABC):
 
     @property
     def size(self):
+        """Return the number of items in the collection."""
         return len(self._items)
 
     @property
     def is_empty(self):
+        """Return True if the collection is empty."""
         return self.size == 0
 
     def _empty_check(self):
@@ -249,7 +257,7 @@ class PriorityQueue(Collection):
         self._op = _operator.gt if kind == 'min' else _operator.lt
         self._key = key or (lambda x: x)
         # Sink nodes from right-to-left
-        for k in range(self.size//2, 0, -1):
+        for k in range(self.size // 2, 0, -1):
             self._sink(k)
         assert self._is_heap()
 
@@ -262,6 +270,7 @@ class PriorityQueue(Collection):
 
     @property
     def size(self):
+        """Return the number of items in the queue."""
         return len(self._items) - 1  # ignore index 0
 
     def peek(self):
@@ -279,9 +288,9 @@ class PriorityQueue(Collection):
     def dequeue(self):
         """Remove and return item from the top of the heap."""
         self._empty_check()
-        self._swap(self.size, 1)     # swap root with bottom node
+        self._swap(self.size, 1)  # swap root with bottom node
         the_min = self._items.pop()  # remove the root
-        self._sink(1)                # sink the new root to reorder
+        self._sink(1)  # sink the new root to reorder
         assert self._is_heap()
         return the_min
 
@@ -290,20 +299,20 @@ class PriorityQueue(Collection):
     # -------------------------------------------------------------------------
     def _sink(self, k):
         """Sink the given node index down to its proper location in the heap."""
-        while 2*k <= self.size:
-            j = 2*k                                   # move to left child
-            if j < self.size and self._comp(j, j+1):
-                j += 1                                # move to right child
+        while 2 * k <= self.size:
+            j = 2 * k  # move to left child
+            if j < self.size and self._comp(j, j + 1):
+                j += 1  # move to right child
             if not self._comp(k, j):
                 break
-            self._swap(k, j)                          # sink the node one level
+            self._swap(k, j)  # sink the node one level
             k = j
 
     def _swim(self, k):
         """Swim the given node index up to its proper location in the heap."""
-        while k > 1 and self._comp(k//2, k):
-            self._swap(k, k//2)
-            k = k//2
+        while k > 1 and self._comp(k // 2, k):
+            self._swap(k, k // 2)
+            k = k // 2
 
     def _comp(self, ind_a, ind_b):
         """Compare two items in the heap via their indices.
@@ -312,8 +321,7 @@ class PriorityQueue(Collection):
             If      kind == 'min', True if self._items[a] > self._items[b],
             else if kind == 'max', True if self._items[a] < self._items[b].
         """
-        return self._op(self._key(self._items[ind_a]),
-                        self._key(self._items[ind_b]))
+        return self._op(self._key(self._items[ind_a]), self._key(self._items[ind_b]))
 
     def _swap(self, a, b):
         """Swap the location of two items in the heap."""
@@ -335,10 +343,12 @@ class PriorityQueue(Collection):
         if k > self.size:
             return True
         # Check the children of k
-        left = 2*k
-        right = 2*k + 1
-        if (left  <= self.size and self._comp(k, left)):  return False
-        if (right <= self.size and self._comp(k, right)): return False
+        left = 2 * k
+        right = 2 * k + 1
+        if left <= self.size and self._comp(k, left):
+            return False
+        if right <= self.size and self._comp(k, right):
+            return False
         return self._is_heap(left) and self._is_heap(right)
 
     def __str__(self):
@@ -406,9 +416,9 @@ class IndexPQ(Collection, MutableMapping):
         self.kind = kind
         self._op = _operator.gt if self.kind == 'min' else _operator.lt
         self.key = key or (lambda x: x)  # identity if not given
-        self._pq = list([None])
-        self._qp = dict()
-        self._items = dict()
+        self._pq = [None]
+        self._qp = {}
+        self._items = {}
         if items is not None:
             self.update(items)  # __setitem__ takes care of enqueuing
 
@@ -417,10 +427,12 @@ class IndexPQ(Collection, MutableMapping):
     # -------------------------------------------------------------------------
     @property
     def size(self):
+        """Return the number of items in the queue."""
         return len(self._pq) - 1  # ignore index 0
 
     @property
     def is_empty(self):
+        """Return True if the queue is empty."""
         return self.size == 0
 
     def peek(self):
@@ -459,12 +471,12 @@ class IndexPQ(Collection, MutableMapping):
             The key associated with the extremum item, and the item itself.
         """
         self._empty_check()
-        self._swap(self.size, 1)       # swap root with bottom node
+        self._swap(self.size, 1)  # swap root with bottom node
         idx = self._pq.pop()
         item = self._items.pop(idx)
         if idx in self._qp:
             del self._qp[idx]
-        self._sink(1)                  # sink the new root to reorder
+        self._sink(1)  # sink the new root to reorder
         assert self._is_heap()
         return idx, item
 
@@ -475,7 +487,8 @@ class IndexPQ(Collection, MutableMapping):
         .. note:
             Because the shallow copy iterates over the current object, the keys
             in the copy will be in *sorted* order, so self.copy()._pq will
-            *not* match self._pq."""
+            *not* match self._pq.
+        """
         return self.__class__(self, kind=self.kind, key=self.key)
 
     @classmethod
@@ -494,9 +507,9 @@ class IndexPQ(Collection, MutableMapping):
 
     def _sink(self, k):
         """Sink the given node index down to its proper location in the heap."""
-        while 2*k <= self.size:
-            j = 2*k
-            if j < self.size and self._comp(j, j+1):
+        while 2 * k <= self.size:
+            j = 2 * k
+            if j < self.size and self._comp(j, j + 1):
                 j += 1
             if not self._comp(k, j):
                 break
@@ -505,9 +518,9 @@ class IndexPQ(Collection, MutableMapping):
 
     def _swim(self, k):
         """Swim the given node index up to its proper location in the heap."""
-        while k > 1 and self._comp(k//2, k):
-            self._swap(k, k//2)
-            k = k//2
+        while k > 1 and self._comp(k // 2, k):
+            self._swap(k, k // 2)
+            k = k // 2
 
     def _comp(self, ind_a, ind_b):
         """Compare two items in the heap.
@@ -517,8 +530,10 @@ class IndexPQ(Collection, MutableMapping):
             else if kind == 'max', True if self._pq[a] > self._pq[b].
         """
         try:
-            return self._op(self.key(self._items[self._pq[ind_a]]),
-                            self.key(self._items[self._pq[ind_b]]))
+            return self._op(
+                self.key(self._items[self._pq[ind_a]]),
+                self.key(self._items[self._pq[ind_b]]),
+            )
         except TypeError:  # `<` and `>` don't like `None` values
             return False
 
@@ -544,10 +559,12 @@ class IndexPQ(Collection, MutableMapping):
         if k > self.size:
             return True
         # Check the children of k
-        left = 2*k
-        right = 2*k + 1
-        if (left  <= self.size and self._comp(k, left)):  return False
-        if (right <= self.size and self._comp(k, right)): return False
+        left = 2 * k
+        right = 2 * k + 1
+        if left <= self.size and self._comp(k, left):
+            return False
+        if right <= self.size and self._comp(k, right):
+            return False
         return self._is_heap(left) and self._is_heap(right)
 
     # -------------------------------------------------------------------------
@@ -555,7 +572,7 @@ class IndexPQ(Collection, MutableMapping):
     # -------------------------------------------------------------------------
     def __str__(self):
         # show list of (key, value) pairs in heap-order
-        return str(dict([(x, self._items[x]) for x in self._pq[1:]]))
+        return str({x: self._items[x] for x in self._pq[1:]})
 
     def __contains__(self, k):
         """Return True if index `k` is in the queue."""
@@ -590,10 +607,10 @@ class IndexPQ(Collection, MutableMapping):
         idx = self._qp[k]
         self._swap(idx, self.size)  # swap item to end
         to_del = self._pq.pop()
-        self._swim(idx)             # reorganize the heap
+        self._swim(idx)  # reorganize the heap
         self._sink(idx)
         if to_del in self._qp:
-            del self._qp[to_del]    # remove the item
+            del self._qp[to_del]  # remove the item
         if to_del in self._items:
             del self._items[to_del]
 
@@ -602,8 +619,9 @@ class IndexPQ(Collection, MutableMapping):
 class DoubleList(Collection):
     """Implements a doubly-linked list."""
 
-    class _DoubleNode():
+    class _DoubleNode:
         """A node in a doubly-linked list."""
+
         def __init__(self, data, prev=None, next=None):
             self.data = data
             self.next = next
@@ -628,7 +646,7 @@ class DoubleList(Collection):
     @property
     def _items(self):
         """Return a list of the items in order."""
-        out = list()
+        out = []
         x = self._first
         while x:
             out.append(x.data)
