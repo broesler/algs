@@ -3,29 +3,33 @@
 #     File: basics.py
 #  Created: 2021-03-02 09:57
 #   Author: Bernie Roesler
-#
-"""
-  Description: Elementary Symbol Tables
-"""
 # =============================================================================
+
+"""Elementary Symbol Tables."""
 
 from abc import ABC, abstractmethod
 
 from algs.basics import Queue
 from algs.sort import mergesort
 
-__all__ = ['SymbolTable', 'OrderedSymbolTable',
-           'SequentialSearchST', 'BinarySearchST', 'ArrayST']
+__all__ = [
+    'SymbolTable',
+    'OrderedSymbolTable',
+    'SequentialSearchST',
+    'BinarySearchST',
+    'ArrayST',
+]
 
 
 # TODO refactor ArrayST and BinarySearchST to use parallel "arrays" instead of
 # a list of Item objects to be true to the book implementations, as well as
 # more space efficient.
 
+
 # -----------------------------------------------------------------------------
 #         Define Abstract Base Classes
 # -----------------------------------------------------------------------------
-class SymbolTable(ABC):
+class SymbolTable(ABC):  # noqa: PLW1641
     # An abstract base class implementing an unordered symbol table.
     # NOTE `SymbolTable` lacks methods like `min`/`max`,
     # `floor`/`ceil`, etc. that the ordered symbol tables (`BinarySearchST`,
@@ -58,17 +62,18 @@ class SymbolTable(ABC):
         cache : bool, optional
             If True, cache the most recent search result.
         """
-        self._cost = 0            # cost of previous get/put/delete
+        self._cost = 0  # cost of previous get/put/delete
         self._CACHE_FLAG = cache  # to cache or not to cache
-        self._cache = None        # store latest search hit
+        self._cache = None  # store latest search hit
         # Initialize the symbol table
         items = items or []
         try:
             for k, v in items:
                 self.__setitem__(k, v)
         except ValueError:
-            raise ValueError(f"{self.__class__.__name__} "
-                             'expects an iterable mapping input.')
+            raise ValueError(
+                f"{self.__class__.__name__} expects an iterable mapping input."
+            )
 
     # Additional constructor
     @classmethod
@@ -87,11 +92,12 @@ class SymbolTable(ABC):
         pass
 
     def size(self):
-        """Number of elements in the table."""
+        """Return the number of elements in the table."""
         return self._N
 
     @property
     def is_empty(self):
+        """Return True if the table is empty."""
         return self.size() == 0
 
     def _empty_check(self):
@@ -116,6 +122,7 @@ class SymbolTable(ABC):
 
     def __str__(self):
         """Return the string representation of the symbol table."""
+
         # Define a helper function
         def kv_list(a):
             """Return a comma-separated list of key-value pairs."""
@@ -136,25 +143,30 @@ class SymbolTable(ABC):
     # -------------------------------------------------------------------------
     # Aliased methods to match with Algorithms book API
     def put(self, k, v):
+        """Insert a new value `v` associated with key `k`."""
         return self.__setitem__(k, v)
 
     def get(self, k):
+        """Return the value associated with the given key `k`."""
         return self.__getitem__(k)
 
     def delete(self, k):
+        """Delete the item associated with `k`."""
         return self.__delitem__(k)
 
     def contains(self, k):
+        """Return True if `k` is present in the table."""
         return self.__contains__(k)
 
     @abstractmethod
     def __setitem__(self, k, v):
         """Insert a new value `v` associated with key `k`.
-        If `k` is in the table, change its value to `v`."""
+        If `k` is in the table, change its value to `v`.
+        """
         pass
 
     @abstractmethod
-    def __getitem__(self, k, v):
+    def __getitem__(self, k, v):  # noqa: PLE0302
         """Return the value associated with the given key `k`."""
         pass
 
@@ -184,12 +196,15 @@ class SymbolTable(ABC):
     """
 
     def keys(self):
+        """Return an iterator of all of the keys in the table."""
         return self._make_iterator(rtype='keys')(self)
 
     def values(self):
+        """Return an iterator of all of the values in the table."""
         return self._make_iterator(rtype='values')(self)
 
     def items(self):
+        """Return an iterator of all of the items in the table."""
         return self._make_iterator(rtype='items')(self)
 
     keys.__doc__ = _docstring.format(rtype='keys')
@@ -206,7 +221,7 @@ class OrderedMethods(ABC):
     # This class may not be subclassed without providing an __init__ method.
 
     def size(self, lo=None, hi=None):
-        """Number of keys in the table between `lo` and `hi`, inclusive."""
+        """Return the number of keys in the table between `lo` and `hi`, inclusive."""
         if lo is None and hi is None:
             return self._N
 
@@ -327,6 +342,7 @@ class SequentialSearchST(SymbolTable):
 
     class _Item:
         """Internal item object to hold key, value, and next pointer."""
+
         def __init__(self, key, value, next=None):
             self.key = key
             self.val = value
@@ -362,20 +378,19 @@ class SequentialSearchST(SymbolTable):
         while x:
             if k == x.key:
                 self._cost = i + 1
-                x.val = v              # key exists, so update value
+                x.val = v  # key exists, so update value
                 if self._CACHE_FLAG:
                     self._cache = x
                 return
             else:
                 i += 1
                 x = x.next
-        else:
-            self._cost = self.size()   # tested all the keys!
-            item = self._Item(k, v, self._first)  # add new key to beginning
-            self._first = item
-            self._size += 1
-            if self._CACHE_FLAG:
-                self._cache = self._first  # update the cache
+        self._cost = self.size()  # tested all the keys!
+        item = self._Item(k, v, self._first)  # add new key to beginning
+        self._first = item
+        self._size += 1
+        if self._CACHE_FLAG:
+            self._cache = self._first  # update the cache
 
     def __getitem__(self, k):
         # Check the cache
@@ -394,9 +409,8 @@ class SequentialSearchST(SymbolTable):
             else:
                 i += 1
                 x = x.next
-        else:
-            self._cost = self.size()  # tested all the keys!
-            raise KeyError(k)
+        self._cost = self.size()  # tested all the keys!
+        raise KeyError(k)
 
     # Exercise 3.1.5
     def __delitem__(self, k):
@@ -428,24 +442,28 @@ class SequentialSearchST(SymbolTable):
             else:
                 i += 1
                 x = x.next
-        else:
-            self._cost = self.size()
-            raise KeyError(k)
+        self._cost = self.size()
+        raise KeyError(k)
 
     # -------------------------------------------------------------------------
     #         Iteration
     # -------------------------------------------------------------------------
     def _make_iterator(self, rtype):
         """Return an iterator over all of the items in the table."""
+
         def iterator(self):
             """Iterate over items."""
             q = Queue()
             x = self._first
             while x:
-                q.enqueue(x.key if rtype == 'keys' else
-                          (x.val if rtype == 'values' else (x.key, x.val)))
+                q.enqueue(
+                    x.key
+                    if rtype == 'keys'
+                    else (x.val if rtype == 'values' else (x.key, x.val))
+                )
                 x = x.next
             return list(q)
+
         return iterator
 
 
@@ -455,16 +473,18 @@ class ArrayST(SymbolTable):
               {SymbolTable.__doc__}"""
 
     def __init__(self, items=None, cache=True, selforg=False):
-        self._keys = list()           # Ex 3.1.2 (ArrayST)
-        self._vals = list()
+        self._keys = []  # Ex 3.1.2 (ArrayST)
+        self._vals = []
         self._SELF_ORG_FLAG = selforg  # reorganize most recent results
         super().__init__(items, cache)
 
-    __init__.__doc__ = (SymbolTable.__init__.__doc__ +
-        """selforg : bool, optional
+    __init__.__doc__ = (
+        SymbolTable.__init__.__doc__
+        + """selforg : bool, optional
             If True, move each search hit to the front of the array to improve
             search times for commonly-searched keys.
-        """)
+        """
+    )
 
     @property
     def _N(self):
@@ -475,8 +495,11 @@ class ArrayST(SymbolTable):
     # -------------------------------------------------------------------------
     def __setitem__(self, k, v):
         # Check the cache (Ex 3.1.25)
-        if (self._CACHE_FLAG and self._cache is not None
-                and k == self._keys[self._cache]):
+        if (
+            self._CACHE_FLAG
+            and self._cache is not None
+            and k == self._keys[self._cache]
+        ):
             self._vals[self._cache] = v
             return
 
@@ -484,7 +507,7 @@ class ArrayST(SymbolTable):
         for i, key in enumerate(self._keys):
             if k == key:
                 self._cost = i + 1
-                self._vals[i] = v              # key exists, so update value
+                self._vals[i] = v  # key exists, so update value
                 if self._CACHE_FLAG:
                     self._cache = i
                 # Ex 3.1.22
@@ -494,21 +517,23 @@ class ArrayST(SymbolTable):
                     if i > 0:
                         # Move search hit to front of the list: O(n)
                         # Cost of pop (n - (i+1)) + cost of insert(0) (n - 1)
-                        self._cost += 2*self.size() - i - 2
+                        self._cost += 2 * self.size() - i - 2
                         self._keys.insert(0, self._keys.pop(i))
                         self._vals.insert(0, self._vals.pop(i))
                 return
-        else:
-            self._cost = self.size()  # tested all the keys!
-            self._keys.append(k)      # add new key to end of list: O(1)
-            self._vals.append(v)      # add new key to end of list: O(1)
-            if self._CACHE_FLAG:
-                self._cache = self.size() - 1  # update the cache
+        self._cost = self.size()  # tested all the keys!
+        self._keys.append(k)  # add new key to end of list: O(1)
+        self._vals.append(v)  # add new key to end of list: O(1)
+        if self._CACHE_FLAG:
+            self._cache = self.size() - 1  # update the cache
 
     def __getitem__(self, k):
         # Check the cache
-        if (self._CACHE_FLAG and self._cache is not None
-                and k == self._keys[self._cache]):
+        if (
+            self._CACHE_FLAG
+            and self._cache is not None
+            and k == self._keys[self._cache]
+        ):
             return self._vals[self._cache]
 
         # Perform sequential search
@@ -522,14 +547,13 @@ class ArrayST(SymbolTable):
                         self._cache = 0
                     if i > 0:
                         # Move search hit to front of the list: O(n)
-                        self._cost += 2*self.size() - i - 2
+                        self._cost += 2 * self.size() - i - 2
                         self._keys.insert(0, self._keys.pop(i))
                         self._vals.insert(0, self._vals.pop(i))
                     return self._vals[0]
                 return self._vals[i]
-        else:
-            self._cost = self.size()  # tested all the keys!
-            raise KeyError(k)
+        self._cost = self.size()  # tested all the keys!
+        raise KeyError(k)
 
     # Exercise 3.1.5
     def __delitem__(self, k):
@@ -546,9 +570,8 @@ class ArrayST(SymbolTable):
                 del self._keys[i]
                 del self._vals[i]
                 return
-        else:
-            self._cost = self.size()
-            raise KeyError(k)
+        self._cost = self.size()
+        raise KeyError(k)
 
     # -------------------------------------------------------------------------
     #         Iterator methods
@@ -573,8 +596,8 @@ class BinarySearchST(OrderedSymbolTable):
               {OrderedSymbolTable.__doc__}"""
 
     def __init__(self, items=None, cache=True, **kwargs):
-        self._keys = list()  # internal arrays of keys and values
-        self._vals = list()
+        self._keys = []  # internal arrays of keys and values
+        self._vals = []
         # Ex 3.1.12(b) sort by keys for O(N log N) construction vs. O(N^2)
         items = mergesort(items or [])
         super().__init__(items, cache, **kwargs)
@@ -589,8 +612,11 @@ class BinarySearchST(OrderedSymbolTable):
     # -------------------------------------------------------------------------
     def __setitem__(self, k, v):
         # Ex 3.1.25 Check the cache
-        if (self._CACHE_FLAG and self._cache is not None
-                and k == self._keys[self._cache]):
+        if (
+            self._CACHE_FLAG
+            and self._cache is not None
+            and k == self._keys[self._cache]
+        ):
             self._vals[self._cache] = v
             return
 
@@ -618,8 +644,11 @@ class BinarySearchST(OrderedSymbolTable):
 
     def __getitem__(self, k):
         # See if we have cached the key
-        if (self._CACHE_FLAG and self._cache is not None
-                and k == self._keys[self._cache]):
+        if (
+            self._CACHE_FLAG
+            and self._cache is not None
+            and k == self._keys[self._cache]
+        ):
             return self._vals[self._cache]
 
         i = self.rank(k)
@@ -663,7 +692,7 @@ class BinarySearchST(OrderedSymbolTable):
         if i < self.size() and self._keys[i] == k:
             return self._keys[i]
         elif i > 0:
-            return self._keys[i-1]
+            return self._keys[i - 1]
         else:
             return None
 
@@ -717,6 +746,7 @@ class BinarySearchST(OrderedSymbolTable):
     # -------------------------------------------------------------------------
     def _make_range_iterator(self, rtype):
         """Return an iterator over all of the items in the table."""
+
         def iterator(self, lo=None, hi=None):
             """Iterate over items with keys between `lo` and `hi`."""
             if lo is None:
@@ -738,6 +768,7 @@ class BinarySearchST(OrderedSymbolTable):
                 return list(self._vals[lv:hv])
             else:
                 return list(zip(self._keys[lv:hv], self._vals[lv:hv]))
+
         return iterator
 
     # -------------------------------------------------------------------------
@@ -756,14 +787,14 @@ class BinarySearchST(OrderedSymbolTable):
 
     def _is_sorted(self):
         for i in range(1, self.size()):
-            if self._keys[i-1] > self._keys[i]:
+            if self._keys[i - 1] > self._keys[i]:
                 return False
         return True
 
 
 if __name__ == "__main__":
     keys = 'SEARCHEXAMPLE'
-    items = list((c, i) for i, c in enumerate(keys))
+    items = [(c, i) for i, c in enumerate(keys)]
     st = ArrayST(items, selforg=True, cache=True)
     v = st['R']
 
