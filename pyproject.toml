@@ -33,9 +33,16 @@ test = [
 dev = [
     "ipython",
     "pre-commit",
+    "pyarrow",
     "pyqt5",
     "ruff",
 ]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.pytest.ini_options]
 env = [
@@ -45,6 +52,9 @@ env = [
 [tool.ruff]
 line-length = 88
 target-version = "py311"
+
+[tool.ruff.format]
+quote-style = "preserve"
 
 [tool.ruff.lint]
 extend-select = [
@@ -68,6 +78,7 @@ ignore = [
     'B028',     # No explicit `stacklevel` keyword argument found
     'B904',     # Within an `except` clause distinguish raised exceptions from errors in exception handling
     'B905',     # `zip()` without an explicit `strict=` parameter
+    'D101',     # Missing docstring in public class (we use __doc__ a lot)
     'D104',     # Missing docstring in __init__
     'D105',     # Missing docstring in magic method
     'D205',     # 1 blank line required between summary line and description
@@ -82,7 +93,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ['D', 'I001', 'F403', 'F405']  # ignore import sorting, wildcard imports, and undefined names
-"test_*.py" = ['D101', 'D102', 'D103', 'E501']  # ignore docstring checks in test files
+"test_*.py" = ['D101', 'D102', 'D103', 'D106', 'E501']  # ignore docstring checks in test files
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
