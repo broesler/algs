@@ -3,11 +3,9 @@
 #     File: parenthesis.py
 #  Created: 2022-05-27 13:42
 #   Author: Bernie Roesler
-#
-"""
-Exercise 1.3.4 Determine if a series of parentheses are in order.
-"""
 # =============================================================================
+
+"""Exercise 1.3.4 Determine if a series of parentheses are in order."""
 
 from algs.basics import Stack
 
@@ -17,7 +15,7 @@ b = list('[(])')              # False
 
 def parentheses(a):
     """Return True if the parentheses in `a` are properly paired."""
-    pairs = dict({'[': ']', '(': ')', '{': '}'})
+    pairs = {'[': ']', '(': ')', '{': '}'}
     opens = pairs.keys()
     closes = pairs.values()
     s = Stack()
