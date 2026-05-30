@@ -4,18 +4,17 @@
 #  Created: 2022-06-10 20:24
 #   Author: Bernie Roesler
 #
-"""
-Sparse vector and matrix classes using symbol tables.
-"""
 # =============================================================================
+"""Sparse vector and matrix classes using symbol tables."""
+
+from operator import add, mul, sub, truediv
 
 import numpy as np
-from operator import add, sub, mul, truediv
 
 from algs.search.hash import HashST
 
 
-class SparseVector:
+class SparseVector:  # noqa: PLW1641
     """Implements a sparse vector.
 
     Attributes
@@ -25,6 +24,7 @@ class SparseVector:
     size : int
         The number of elements in the array.
     """
+
     EPS = 1e-16  # tolerance of numbers close to 0.0
 
     def __init__(self, N=1):
@@ -144,6 +144,7 @@ class SparseVector:
         return A
 
     def todense(self):
+        """Return a dense representation of the vector."""
         A = np.zeros((self.N,))
         for k, v in self:
             A[k] = v
@@ -151,7 +152,7 @@ class SparseVector:
 
     def magnitude(self):
         """Return the magnitude of the vector."""
-        return self.dot(self)**0.5
+        return self.dot(self) ** 0.5
 
     def direction(self):
         """Return a unit vector in the direction of the vector."""
@@ -159,20 +160,25 @@ class SparseVector:
 
     # aliases
     def put(self, i, v):
+        """Put value `v` at integer index `i`."""
         self.__setitem__(i, v)
 
     def get(self, i):
+        """Get the value from index `i`."""
         return self.__getitem__(i)
 
     def __str__(self):
         return '\n'.join([f"({i},)\t{v}" for i, v in self])
 
     def __repr__(self):
-        return f"<({self.N},) {self.__class__.__name__} with {self.size} stored elements."""
+        return (
+            f"<({self.N},) {self.__class__.__name__} with {self.size} stored elements."
+        )
 
     # Iterate over coordinates and values
     def __iter__(self):
         yield from self._st.items()
+
 
 # Exercise 3.5.23
 # TODO constructors for row/column vectors
@@ -193,6 +199,7 @@ class SparseMatrix:
 
     @property
     def size(self):
+        """Return the number of non-zero elements in the vector."""
         return self._size
 
     @property
@@ -207,7 +214,9 @@ class SparseMatrix:
         except TypeError:
             i, j = k, None
         if not (0 <= i < self.M):
-            raise IndexError(f"Cannot index row {i} in matrix of size ({self.M}, {self.N})!")
+            raise IndexError(
+                f"Cannot index row {i} in matrix of size ({self.M}, {self.N})!"
+            )
         if i not in self._rows:
             self._rows[i] = SparseVector(self.N)
         if j is not None:
@@ -233,6 +242,7 @@ class SparseMatrix:
             return 0
 
     def transpose(self):
+        """Return the transpose of the matrix."""
         A = SparseMatrix((self.M, self.N))
         for (i, j), v in self:
             A[j, i] = v
@@ -240,6 +250,7 @@ class SparseMatrix:
 
     @property
     def T(self):
+        """Return the transpose of the matrix."""
         return self.transpose()
 
     def __add__(self, other):
@@ -255,8 +266,7 @@ class SparseMatrix:
 
     def dot(self, x):
         """Return the matrix multiplication of this matrix with another."""
-        if not (isinstance(x, SparseVector)
-                or isinstance(x, SparseMatrix)):
+        if not (isinstance(x, SparseVector) or isinstance(x, SparseMatrix)):
             return NotImplemented
         if self.shape[1] != x.shape[0]:
             raise ValueError(f"Cannot multiply {self.shape} to {x.shape}")
@@ -275,10 +285,12 @@ class SparseMatrix:
         return '\n'.join([f"({i}, {j})\t{v}" for (i, j), v in self])
 
     def __repr__(self):
-        return f"<{self.shape} {self.__class__.__name__} with {self.size} stored elements."""
+        return (
+            f"<{self.shape} {self.__class__.__name__} with {self.size} stored elements."
+        )
 
     def _items(self):
-        items = list()
+        items = []
         for i, row in self._rows.items():
             for j, v in row:
                 items.append(((i, j), v))
@@ -288,6 +300,7 @@ class SparseMatrix:
         yield from self._items()
 
     def todense(self):
+        """Return a dense representation of the matrix."""
         A = np.zeros((self.M, self.N))
         for (i, j), v in self:
             A[i, j] = v
@@ -309,7 +322,7 @@ if __name__ == "__main__":
     assert a.nnz == 4
     assert a.size == 4
     assert a.shape == (N,)
-    assert np.allclose((3*a).todense(), np.r_[0, 6, 0, 12, 0, 0, 18, 21, 0, 0])
+    assert np.allclose((3 * a).todense(), np.r_[0, 6, 0, 12, 0, 0, 18, 21, 0, 0])
     assert np.allclose((3 + a).todense(), np.r_[0, 5, 0, 7, 0, 0, 9, 10, 0, 0])
     print(f"{a @ b = }")
     print(f"{a.dot(b) = }")
@@ -323,7 +336,7 @@ if __name__ == "__main__":
     # Test close to 0
     c = SparseVector(N)
     d = SparseVector(N)
-    c[[1, 3, 5]] = [1,  3, 5]
+    c[[1, 3, 5]] = [1, 3, 5]
     d[[1, 3, 5]] = [1, -3, 5]
     assert np.allclose((c + d).todense(), np.r_[0, 2, 0, 0, 0, 10, 0, 0, 0, 0])
     assert np.allclose((c - d).todense(), np.r_[0, 0, 0, 6, 0, 0, 0, 0, 0, 0])
@@ -335,7 +348,7 @@ if __name__ == "__main__":
     for i in range(N):
         I[i, i] = 1
         if i > 0:
-            A[i, i-1] = -1
+            A[i, i - 1] = -1
         A[i, i] = 1
     print('----- Matrices -----')
     print(I.todense())
@@ -378,11 +391,7 @@ if __name__ == "__main__":
         i, j = np.unravel_index(k, D.shape)
         D[i, j] = k
     print((C @ D).todense())
-    assert np.allclose((C @ D).todense(),
-                       np.array([[ 60,  70],
-                                 [160, 195],
-                                 [260, 320]])
-                       )
+    assert np.allclose((C @ D).todense(), np.array([[60, 70], [160, 195], [260, 320]]))
 
 
 # =============================================================================
