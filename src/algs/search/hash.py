@@ -3,25 +3,31 @@
 #     File: hash.py
 #  Created: 2022-04-21 17:48
 #   Author: Bernie Roesler
-#
-"""
-  Description: Hash Tables.
-"""
 # =============================================================================
+
+"""Hash Tables."""
 
 import numpy as np
 
-from algs.search.table import SymbolTable, SequentialSearchST
+from algs.search.table import SequentialSearchST, SymbolTable
 
-__all__ = ['HashTable', 'HashST', 'SeparateChainingHashST',
-           'SeparateChainingLiteHashST', 'LinearProbingHashST',
-           'LazyLinearProbingHashST', 'DoubleProbingHashST',
-           'DoubleHashingHashST', 'CuckooHashST', 'LIFOHashST',
-           'RobinHoodHashST']
+__all__ = [
+    'HashTable',
+    'HashST',
+    'SeparateChainingHashST',
+    'SeparateChainingLiteHashST',
+    'LinearProbingHashST',
+    'LazyLinearProbingHashST',
+    'DoubleProbingHashST',
+    'DoubleHashingHashST',
+    'CuckooHashST',
+    'LIFOHashST',
+    'RobinHoodHashST',
+]
 
 # Table of primes less than the nearest power of 2
 # Mersenne primes like 31 are nice because 31 = 2**5 - 1 == (1 << 5) - 1.
-MIN_PRIMES = dict({
+MIN_PRIMES = {
     2: 3,
     3: 7,
     4: 13,
@@ -51,13 +57,13 @@ MIN_PRIMES = dict({
     28: 268435399,
     29: 536870909,
     30: 1073741789,
-    31: 2147483647
-})
+    31: 2147483647,
+}
 
 
 # Define next prime after each power of 2
 # MAX_PRIMES = dict({i: next_prime(2**i) for i in range(32)})
-MAX_PRIMES = dict({
+MAX_PRIMES = {
     0: 2,
     1: 3,
     2: 5,
@@ -89,8 +95,8 @@ MAX_PRIMES = dict({
     28: 268435459,
     29: 536870923,
     30: 1073741827,
-    31: 2147483659
-})
+    31: 2147483659,
+}
 
 MIN_CAPACITY = 5  # minimum number of hash slots
 
@@ -116,7 +122,7 @@ def java_hash(k, R=31):
 
 
 def is_prime(n):
-    """Returns True if `n` is prime."""
+    """Return True if `n` is prime."""
     # 0 and 1 are not prime, 2 is prime.
     if n <= 3:
         return n > 1
@@ -139,14 +145,13 @@ def next_prime(n):
     if n < 2:
         return 2
     # Start with the next odd number
-    if (n+1) % 2 == 0:
+    if (n + 1) % 2 == 0:
         n += 1
     # Follow Bertrand's postulate for n > 1
-    for i in range(n+1, 2*n+1, 2):
+    for i in range(n + 1, 2 * n + 1, 2):
         if is_prime(i):
             return i
-    else:
-        return None
+    return None
 
 
 def prev_prime(n):
@@ -156,13 +161,12 @@ def prev_prime(n):
     if n < 2:
         return None
     # Start with the next odd number
-    if (n-1) % 2 == 0:
+    if (n - 1) % 2 == 0:
         n -= 1
-    for i in range(n-1, 2, -2):
+    for i in range(n - 1, 2, -2):
         if is_prime(i):
             return i
-    else:
-        return None
+    return None
 
 
 # -----------------------------------------------------------------------------
@@ -177,15 +181,17 @@ class HashTable(SymbolTable):
         self._lgM = int(np.log2(self.M))
         super().__init__(items)
 
-    __init__.__doc__ = (SymbolTable.__init__.__doc__ +
-        """M : int, optional
+    __init__.__doc__ = (
+        SymbolTable.__init__.__doc__
+        + """M : int, optional
             Minimum number of slots in the hash table.
         resize : bool, optional
             If True, resize the table by powers of 2 to maintain an average
             list length of `avg_probes`. Note that resizing changes the basic
             hash function to more evenly distribute the keys with a non-prime
             `M`.
-        """)
+        """
+    )
 
     @property
     def _N(self):
@@ -219,20 +225,23 @@ class SeparateChainingHashST(HashTable):
     __doc__ = f"""Implements a hash table with separate chaining.
                {SymbolTable.__doc__}"""
 
-    def __init__(self, items=None, M=MIN_CAPACITY, resize=False,
-                 avg_probes=10, cache=False):
+    def __init__(
+        self, items=None, M=MIN_CAPACITY, resize=False, avg_probes=10, cache=False
+    ):
         self._AVG_PROBES = avg_probes  # maximum average list size
         assert self._AVG_PROBES > 0
         # Initialize the actual symbol table
         self._st = [SequentialSearchST() for _ in range(M)]
         super().__init__(items=items, M=M, resize=resize)
 
-    __init__.__doc__ = (HashTable.__init__.__doc__ +
-        """avg_probes : int > 0, optional
+    __init__.__doc__ = (
+        HashTable.__init__.__doc__
+        + """avg_probes : int > 0, optional
             Desired average table size. If `resize` is True, the table size `M`
             will be adjusted such that `N/M` ~ `avg_probes` as keys are added
             or deleted.
-        """)
+        """
+    )
 
     def _validate_size(self):
         assert self.size() == sum(self._list_lengths())
@@ -253,8 +262,8 @@ class SeparateChainingHashST(HashTable):
     # -------------------------------------------------------------------------
     def __setitem__(self, k, v):
         # Double table size if average list length >= AVG_PROBES (e.g. 10)
-        if self._RESIZE_FLAG and self.N >= self._AVG_PROBES*self.M:
-            self._resize(2*self.M)
+        if self._RESIZE_FLAG and self.N >= self._AVG_PROBES * self.M:
+            self._resize(2 * self.M)
             self._lgM += 1
         t = self._st[self._hash(k)]
         if k not in t:
@@ -283,8 +292,7 @@ class SeparateChainingHashST(HashTable):
             self._cost = 1 + t._cost
             raise KeyError(k)
         # Halve table size if average list length <= 2
-        if (self._RESIZE_FLAG
-                and self.M > MIN_CAPACITY and self.N <= 2*self.M):
+        if self._RESIZE_FLAG and self.M > MIN_CAPACITY and self.N <= 2 * self.M:
             self._resize(self.M // 2)
             self._lgM -= 1
 
@@ -293,13 +301,18 @@ class SeparateChainingHashST(HashTable):
     # -------------------------------------------------------------------------
     def _make_iterator(self, rtype):
         """Return an iterator over all of the items in the table."""
+
         def iterator(self):
             """Iterate over each symbol table."""
-            q = list()
+            q = []
             for t in self._st:
-                q.extend(t.keys() if rtype == 'keys' else
-                         (t.values() if rtype == 'values' else t.items()))
+                q.extend(
+                    t.keys()
+                    if rtype == 'keys'
+                    else (t.values() if rtype == 'values' else t.items())
+                )
             return q
+
         return iterator
 
     def __str__(self):
@@ -316,7 +329,7 @@ class SeparateChainingHashST(HashTable):
     # -------------------------------------------------------------------------
     # Exercise 3.4.30
     def chi_square(self):
-        r"""The χ² statistic for the hash table.
+        r"""Return the χ² statistic for the hash table.
 
         The statistic is defined by:
 
@@ -331,8 +344,8 @@ class SeparateChainingHashST(HashTable):
         The statistic will be distributed ~ χ² with *M-2* degrees of freedom.
         """
         alpha = self.N / self.M  # typically > 1
-        table_lens = np.r_[[t.size for t in self._st]]
-        return np.sum((table_lens - alpha)**2) / alpha
+        table_lens = np.r_[[t.size() for t in self._st]]
+        return np.sum((table_lens - alpha) ** 2) / alpha
 
 
 # Exercise 3.4.2
@@ -342,8 +355,9 @@ class SeparateChainingLiteHashST(HashTable):
         {SymbolTable.__doc__}"""
 
     # Private class of key/value pairs
-    class _Node():
+    class _Node:
         """Internal item object to hold key and value."""
+
         def __init__(self, key, value, next=None, N_before=0):
             self.key = key
             self.val = value
@@ -356,12 +370,13 @@ class SeparateChainingLiteHashST(HashTable):
         def __repr__(self):
             return f"<{self.__class__.__name__}: {self.__str__()}>"
 
-    def __init__(self, items=None, M=MIN_CAPACITY, resize=False,
-                 avg_probes=10, cache=False):
+    def __init__(
+        self, items=None, M=MIN_CAPACITY, resize=False, avg_probes=10, cache=False
+    ):
         self._AVG_PROBES = avg_probes  # desired average list size
         assert self._AVG_PROBES > 0
         # Initialize the symbol table
-        self._st = M*[None]   # Create M linked lists
+        self._st = M * [None]  # Create M linked lists
         super().__init__(items=items, M=M, resize=resize)
 
     __init__.__doc__ = SeparateChainingHashST.__init__.__doc__
@@ -373,8 +388,8 @@ class SeparateChainingLiteHashST(HashTable):
     # -------------------------------------------------------------------------
     def __setitem__(self, k, v):
         # Double table size if average list length >= 10
-        if self._RESIZE_FLAG and self.N >= self._AVG_PROBES*self.M:
-            self._resize(2*self.M)
+        if self._RESIZE_FLAG and self.N >= self._AVG_PROBES * self.M:
+            self._resize(2 * self.M)
             self._lgM += 1
 
         # Hash into table
@@ -396,10 +411,9 @@ class SeparateChainingLiteHashST(HashTable):
             else:
                 x = x.next
                 self._cost += 1
-        else:
-            # Insert new node at beginning of list
-            self._st[i] = self._Node(k, v, self._st[i], N_before=self.N)
-            self.N += 1
+        # Insert new node at beginning of list
+        self._st[i] = self._Node(k, v, self._st[i], N_before=self.N)
+        self.N += 1
 
     def __getitem__(self, k):
         x = self._st[self._hash(k)]
@@ -410,8 +424,7 @@ class SeparateChainingLiteHashST(HashTable):
             else:
                 x = x.next
                 self._cost += 1
-        else:
-            raise KeyError(k)
+        raise KeyError(k)
 
     def __delitem__(self, k):
         i = self._hash(k)
@@ -434,12 +447,10 @@ class SeparateChainingLiteHashST(HashTable):
             else:
                 x = x.next
                 self._cost += 1
-        else:
-            raise KeyError(k)
+        raise KeyError(k)
 
         # Halve table size if average list length <= 2
-        if (self._RESIZE_FLAG
-                and self.M > MIN_CAPACITY and self.N <= 2*self.M):
+        if self._RESIZE_FLAG and self.M > MIN_CAPACITY and self.N <= 2 * self.M:
             self._resize(self.M // 2)
             self._lgM -= 1
 
@@ -468,15 +479,24 @@ class SeparateChainingLiteHashST(HashTable):
     def _make_iterator(self, rtype):
         def iterator(self):
             """Iterate over each symbol table."""
-            q = list()
+            q = []
             for t in self._st:
                 x = t
                 while x:
-                    q.append(x.key if rtype == 'keys' else
-                             (x.val if rtype == 'values' else
-                             (x.key, x.val) if rtype == 'items' else x))
+                    q.append(
+                        x.key
+                        if rtype == 'keys'
+                        else (
+                            x.val
+                            if rtype == 'values'
+                            else (x.key, x.val)
+                            if rtype == 'items'
+                            else x
+                        )
+                    )
                     x = x.next
             return q
+
         return iterator
 
     def __str__(self):
@@ -567,8 +587,8 @@ class LinearProbingHashST(HashTable):
 
     def __init__(self, items=None, M=MIN_CAPACITY, resize=True, cache=False):
         # Initialize the symbol table
-        self._keys = M*[None]
-        self._vals = M*[None]
+        self._keys = M * [None]
+        self._vals = M * [None]
         super().__init__(items=items, M=M, resize=resize)
 
     def _resize(self, M):
@@ -588,11 +608,10 @@ class LinearProbingHashST(HashTable):
     # -------------------------------------------------------------------------
     def __setitem__(self, k, v):
         if not self._RESIZE_FLAG and self.N == self.M:
-            raise RuntimeError(("Trying to insert into a full table! "
-                                "Set `resize=True`."))
+            raise RuntimeError("Trying to insert into a full table! Set `resize=True`.")
 
         if self._RESIZE_FLAG and self.N >= self.M // 2:
-            self._resize(2*self.M)
+            self._resize(2 * self.M)
             self._lgM += 1
 
         i = self._hash(k)
@@ -604,10 +623,9 @@ class LinearProbingHashST(HashTable):
             else:
                 i = (i + 1) % self.M
                 self._cost += 1
-        else:
-            self._keys[i] = k
-            self._vals[i] = v
-            self.N += 1
+        self._keys[i] = k
+        self._vals[i] = v
+        self.N += 1
 
     def __getitem__(self, k):
         i = self._hash(k)
@@ -618,8 +636,7 @@ class LinearProbingHashST(HashTable):
             else:
                 i = (i + 1) % self.M
                 self._cost += 1
-        else:
-            raise KeyError(k)
+        raise KeyError(k)
 
     def __delitem__(self, k):
         if k not in self:
@@ -660,8 +677,7 @@ class LinearProbingHashST(HashTable):
         return [v for (k, v) in zip(self._keys, self._vals) if k is not None]
 
     def items(self):
-        return [(k, v) for (k, v) in zip(self._keys, self._vals)
-                if k is not None]
+        return [(k, v) for (k, v) in zip(self._keys, self._vals) if k is not None]
 
     # -------------------------------------------------------------------------
     #         Exercises
@@ -693,12 +709,11 @@ class LinearProbingHashST(HashTable):
                 return i
             else:
                 i = (i + 1) % self.M
-        else:
-            raise KeyError(k)
+        raise KeyError(k)
 
     # Exercise 3.4.21
     def cost_of_miss(self):
-        r"""Average cost of a search *miss* in the table.[0]
+        r"""Average cost of a search *miss* in the table.[0].
 
         .. note::
             Probability theory gives :math:`1/2 (1 + 1/(1 - \alpha)^2)`.[0]
@@ -706,8 +721,9 @@ class LinearProbingHashST(HashTable):
 
         .. [0]:: Sedgewick, p 473.
         """
-        return 1 + ((self.N + np.sum(np.r_[self._cluster_lengths()]**2))
-                    / (2*self.M))
+        return 1 + (
+            (self.N + np.sum(np.r_[self._cluster_lengths()] ** 2)) / (2 * self.M)
+        )
 
     def _cluster_lengths(self):
         """Compute the lengths of each cluster of keys in the table."""
@@ -723,7 +739,7 @@ class LinearProbingHashST(HashTable):
             lo += 1
 
         # Count the cluster lengths
-        clusters = list()
+        clusters = []
         i = lo + 1
         t = 0
         while True:
@@ -775,8 +791,7 @@ class LazyLinearProbingHashST(LinearProbingHashST):
             else:
                 i = (i + 1) % self.M
                 self._cost += 1
-        else:
-            raise KeyError(k)
+        raise KeyError(k)
 
     def __delitem__(self, k):
         if k not in self:
@@ -799,16 +814,25 @@ class LazyLinearProbingHashST(LinearProbingHashST):
     #         Iterators
     # -------------------------------------------------------------------------
     def keys(self):
-        return [k for (k, v) in zip(self._keys, self._vals)
-                if k is not None and v is not None]
+        return [
+            k
+            for (k, v) in zip(self._keys, self._vals)
+            if k is not None and v is not None
+        ]
 
     def values(self):
-        return [v for (k, v) in zip(self._keys, self._vals)
-                if k is not None and v is not None]
+        return [
+            v
+            for (k, v) in zip(self._keys, self._vals)
+            if k is not None and v is not None
+        ]
 
     def items(self):
-        return [(k, v) for (k, v) in zip(self._keys, self._vals)
-                if k is not None and v is not None]
+        return [
+            (k, v)
+            for (k, v) in zip(self._keys, self._vals)
+            if k is not None and v is not None
+        ]
 
 
 # Exercise 3.4.28
@@ -826,7 +850,8 @@ class DoubleHashingHashST(LinearProbingHashST):
 
     def _hash_b(self, k):
         """Return a key-dependent, non-zero integer to define the probe
-        sequence."""
+        sequence.
+        """
         R = MIN_PRIMES[self._lgM]  # NOTE `R` must be prime < self.M
         return R - (hash(k) % R)
 
@@ -835,8 +860,7 @@ class DoubleHashingHashST(LinearProbingHashST):
     # -------------------------------------------------------------------------
     def __setitem__(self, k, v):
         if not self._RESIZE_FLAG and self.N == self.M:
-            raise RuntimeError(("Trying to insert into a full table! "
-                                "Set `resize=True`."))
+            raise RuntimeError("Trying to insert into a full table! Set `resize=True`.")
 
         if self._RESIZE_FLAG and self.N >= self.M // 2:
             # "double" the table size to the prime > the next power of 2
@@ -853,10 +877,9 @@ class DoubleHashingHashST(LinearProbingHashST):
             else:
                 i = (i + x) % self.M
                 self._cost += 1
-        else:
-            self._keys[i] = k
-            self._vals[i] = v
-            self.N += 1
+        self._keys[i] = k
+        self._vals[i] = v
+        self.N += 1
 
     def __getitem__(self, k):
         i = self._hash(k)
@@ -868,8 +891,7 @@ class DoubleHashingHashST(LinearProbingHashST):
             else:
                 i = (i + x) % self.M
                 self._cost += 1
-        else:
-            raise KeyError(k)
+        raise KeyError(k)
 
     def __delitem__(self, k):
         if k not in self:
@@ -912,11 +934,12 @@ class CuckooHashST(HashTable):
     # -------------------------------------------------------------------------
     #         Internal tables
     # -------------------------------------------------------------------------
-    class HashArrayA():
+    class HashArrayA:
         """A local container class."""
+
         def __init__(self, M):
-            self.keys = M*[None]
-            self.vals = M*[None]
+            self.keys = M * [None]
+            self.vals = M * [None]
             self.M = M
             self.N = 0
 
@@ -933,6 +956,7 @@ class CuckooHashST(HashTable):
 
     class HashArrayB(HashArrayA):
         """A local container class with a distinct hash function."""
+
         def hash(self, k):
             # return (31 * hash(k)) % self.M
             return (hash(k) // self.M) % self.M
@@ -985,21 +1009,22 @@ class CuckooHashST(HashTable):
 
     def _set_value(self, k, v):
         """Set the value of a key that is already in the table."""
+
         def func(self, t, i, v):
             t.vals[i] = v
+
         self._double_hash(func, k, v)
 
     def _set(self, k, v, depth=0):
         """Put a new key into the table, rehashing if necessary."""
-        if (not self._RESIZE_FLAG
-            and ((self._ta.N == self._ta.M)
-                 or (self._tb.N == self._tb.M))):
-            raise RuntimeError(("Trying to insert into a full table! "
-                                "Set `resize=True`."))
+        if not self._RESIZE_FLAG and (
+            (self._ta.N == self._ta.M) or (self._tb.N == self._tb.M)
+        ):
+            raise RuntimeError("Trying to insert into a full table! Set `resize=True`.")
 
-        if (self._RESIZE_FLAG
-            and ((self._ta.N >= self._ta.M // 2)
-                 or (self._tb.N >= self._tb.M // 2))):
+        if self._RESIZE_FLAG and (
+            (self._ta.N >= self._ta.M // 2) or (self._tb.N >= self._tb.M // 2)
+        ):
             self._lgM += 1
             self._resize(MAX_PRIMES[self._lgM])
 
@@ -1033,8 +1058,7 @@ class CuckooHashST(HashTable):
             yk, yv = self._tb.keys[i], self._tb.vals[i]
             self._cost += 1
             if xk == yk:
-                raise RuntimeError(("Table is inconsistent! "
-                                    f"Two instances of k = {xk}"))
+                raise RuntimeError(f"Table is inconsistent! Two instances of k = {xk}")
             else:
                 # move the existing key `xk` into the table B
                 self._tb.keys[i] = xk
@@ -1048,17 +1072,19 @@ class CuckooHashST(HashTable):
                 # repeat cycle with the next key/value pair
                 k, v = yk, yv
                 c += 1
-        else:
-            raise RuntimeError(("Cycle occurred! "
-                                f"({k=}, {self._ta.hash(k)}, {self._tb.hash(k)}), "
-                                f"({xk=}, {self._ta.hash(xk)}, {self._tb.hash(xk)}), "
-                                f"({yk=}, {self._ta.hash(yk)}, {self._tb.hash(yk)})"))
-            # self._rehash()
-            # self._set(k, v, depth=depth+1)
+        raise RuntimeError(
+            "Cycle occurred! "
+            f"({k=}, {self._ta.hash(k)}, {self._tb.hash(k)}), "
+            f"({xk=}, {self._ta.hash(xk)}, {self._tb.hash(xk)}), "
+            f"({yk=}, {self._ta.hash(yk)}, {self._tb.hash(yk)})"
+        )
+        # self._rehash()
+        # self._set(k, v, depth=depth+1)
 
     def __getitem__(self, k):
         def func(self, t, i, v):
             return t.vals[i]
+
         return self._double_hash(func, k)
 
     def __delitem__(self, k):
@@ -1067,15 +1093,15 @@ class CuckooHashST(HashTable):
             t.vals[i] = None
             t.N -= 1
             self.N -= 1
-            return
 
         # Apply the deletion function to the table containing the key
         self._double_hash(func, k)
 
         # Check for a resize if table is small enough
-        if (self._RESIZE_FLAG
-            and ((self._ta.N > 0 and self._ta.N <= self._ta.M // 8)
-                 or (self._tb.N > 0 and self._tb.N <= self._tb.M // 8))):
+        if self._RESIZE_FLAG and (
+            (self._ta.N > 0 and self._ta.N <= self._ta.M // 8)
+            or (self._tb.N > 0 and self._tb.N <= self._tb.M // 8)
+        ):
             self._lgM -= 1
             self._resize(MAX_PRIMES[self._lgM])
 
@@ -1122,8 +1148,7 @@ class CuckooHashST(HashTable):
         return [v for (k, v) in zip(self._keys, self._vals) if k is not None]
 
     def items(self):
-        return [(k, v) for (k, v) in zip(self._keys, self._vals)
-                if k is not None]
+        return [(k, v) for (k, v) in zip(self._keys, self._vals) if k is not None]
 
 
 # Web Exercise 16
@@ -1135,11 +1160,10 @@ class LIFOHashST(LinearProbingHashST):
 
     def __setitem__(self, k, v):
         if not self._RESIZE_FLAG and self.N == self.M:
-            raise RuntimeError(("Trying to insert into a full table! "
-                                "Set `resize=True`."))
+            raise RuntimeError("Trying to insert into a full table! Set `resize=True`.")
 
         if self._RESIZE_FLAG and self.N >= self.M // 2:
-            self._resize(2*self.M)
+            self._resize(2 * self.M)
             self._lgM += 1
 
         i = self._hash(k)
@@ -1174,11 +1198,10 @@ class RobinHoodHashST(LinearProbingHashST):
 
     def __setitem__(self, k, v):
         if not self._RESIZE_FLAG and self.N == self.M:
-            raise RuntimeError(("Trying to insert into a full table! "
-                                "Set `resize=True`."))
+            raise RuntimeError("Trying to insert into a full table! Set `resize=True`.")
 
         if self._RESIZE_FLAG and self.N >= self.M // 2:
-            self._resize(2*self.M)
+            self._resize(2 * self.M)
             self._lgM += 1
 
         i = self._hash(k)
@@ -1203,10 +1226,9 @@ class RobinHoodHashST(LinearProbingHashST):
                 i = (i + 1) % self.M
                 self._cost += 1
                 d += 1
-            else:
-                self._keys[i] = xk
-                self._vals[i] = xv
-                self.N += 1
+            self._keys[i] = xk
+            self._vals[i] = xv
+            self.N += 1
 
 
 # Alias for convenience
@@ -1222,6 +1244,7 @@ if __name__ == "__main__":
             def wrapper(self, *args, **kwargs):
                 print(f"M = {self.M:2d}: {self._keys}")
                 func(self, *args, **kwargs)
+
             return wrapper
 
         @_print_keys
