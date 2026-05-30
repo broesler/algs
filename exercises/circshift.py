@@ -3,11 +3,9 @@
 #     File: circshift.py
 #  Created: 2022-06-08 12:38
 #   Author: Bernie Roesler
-#
-"""
-Exercise 1.2.6: Detect a circular shift in a string.
-"""
 # =============================================================================
+
+"""Exercise 1.2.6: Detect a circular shift in a string."""
 
 def is_circshift(a, b):
     """Return True if `a` and `b` are circularly shifted from each other."""
