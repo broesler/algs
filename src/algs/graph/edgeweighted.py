@@ -3,21 +3,20 @@
 #     File: graph.py
 #  Created: 2019-02-20 22:40
 #   Author: Bernie Roesler
-#
-"""
-  Description: Edge-weighted Directed Graphs and supporting classes
-"""
 # =============================================================================
+
+"""Edge-weighted Directed Graphs and supporting classes."""
 
 import operator
 from abc import ABC, abstractmethod
-from algs.basics import Stack, Queue, PriorityQueue
+
+from algs.basics import PriorityQueue, Queue, Stack
 
 INF = float('inf')
 M_INF = float('-inf')
 
 
-class DirectedEdge():
+class DirectedEdge:  # noqa: PLW1641
     """Implements a weighted directed edge from one vertex key to another.
 
     Parameters
@@ -29,20 +28,23 @@ class DirectedEdge():
     weight : float, weight >= 0.0
         Positive weight of the edge
     """
+
     def __init__(self, v, w, weight=0.0):
         self.v = v
         self.w = w
         self.weight = float(weight)
 
     def __eq__(self, other):
-        return ((self.v == other.v) and
-                (self.w == other.w) and
-                (self.weight == other.weight))
+        return (
+            (self.v == other.v)
+            and (self.w == other.w)
+            and (self.weight == other.weight)
+        )
 
     def __lt__(self, other):
-        return ((self.v < other.v) and
-                (self.w < other.w) and
-                (self.weight < other.weight))
+        return (
+            (self.v < other.v) and (self.w < other.w) and (self.weight < other.weight)
+        )
 
     def __repr__(self):
         return '<DirectedEdge: ' + self.__str__() + '>'
@@ -51,7 +53,7 @@ class DirectedEdge():
         return f"{self.v}->{self.w} ({self.weight:3.2g})"
 
 
-class Digraph():
+class Digraph:
     """Edge-weighted directed graph represented as a dictionary of vertices.
 
     Parameters
@@ -75,11 +77,12 @@ class Digraph():
     outdegree : dict of int
         `outdegree[v]` is number of vertices that have edges from `v`.
     """
+
     def __init__(self, vertices=None):
         self.E = 0
         self.V = 0
-        self.adj = dict()       # vertex-keyed adjacency list of edges
-        self.indegree = dict()  # list of vertex indegrees
+        self.adj = {}  # vertex-keyed adjacency list of edges
+        self.indegree = {}  # list of vertex indegrees
         if vertices:
             for v in vertices:
                 self._init_vertex(v)
@@ -94,10 +97,9 @@ class Digraph():
         """
         if v not in self.adj:
             self.V += 1
-        self.adj[v] = list()
+        self.adj[v] = []
         self.indegree[v] = 0
 
-    @property
     def outdegree(self, v):
         return len(self.adj[v])
 
@@ -107,7 +109,7 @@ class Digraph():
 
     def edges(self):
         """Iterable of all the edges in the digraph."""
-        the_edges = list()
+        the_edges = []
         for v in self.adj:
             the_edges.extend(self.adj[v])
         return the_edges
@@ -188,12 +190,13 @@ class GraphSearch(ABC):
     sources : iterable
         Iterable of given sources, or vertices with indegree 0.
     """
+
     def __init__(self, G, sources=None, *args, **kwargs):
         self.G = G
         self.sources = sources or self.G.roots()
         # Properties common to all digraph searches
-        self._edge_to = dict()  # v -> w : edge_to[w] = v
-        self._visited = dict()
+        self._edge_to = {}  # v -> w : edge_to[w] = v
+        self._visited = {}
         for v in G:
             self._visited[v] = False
         self.search(*args, **kwargs)
@@ -273,6 +276,7 @@ class DepthFirstSearch(GraphSearch):
     sources : iterable of vertex ids, optional
         Iterable of vertex ids from which to begin the search.
     """
+
     def __init__(self, G, sources=None):
         super().__init__(G, sources)
 
@@ -330,9 +334,10 @@ class DirectedCycle(GraphSearch):
 
     .. note:: DirectedCycle does not care *which* cycle it finds.
     """
+
     def __init__(self, G):
         self.cycle = Stack()
-        self._on_stack = dict()
+        self._on_stack = {}
         super().__init__(G)
 
     def search(self):
@@ -421,9 +426,10 @@ class DepthFirstOrder(GraphSearch):
     reverse_post : iterable of keys
         Reversed order of node traversal *after* recursion
     """
+
     def __init__(self, G):
         # Track the graph orders
-        self.preorder = Queue()   # graph order before recursion
+        self.preorder = Queue()  # graph order before recursion
         self.postorder = Queue()  # graph order after recursion
         super().__init__(G)
 
@@ -487,7 +493,7 @@ def TopologicalOrder(G):
         The directed graph object.
 
     Returns
-    ----------
+    -------
     order : iterable of keys
         The topological order of the graph, if it exists. None otherwise.
     """
@@ -522,8 +528,9 @@ class BreadthFirstSearch(GraphSearch):
     all_paths : list
         List of all vertices touched during BFS.
     """
+
     def __init__(self, G, sources=None, ordered=False, kind='min'):
-        self.all_paths = list()
+        self.all_paths = []
         super().__init__(G, sources, ordered=ordered, kind=kind)
 
     def search(self, ordered=False, kind='min'):
@@ -590,10 +597,11 @@ class AcyclicPath(GraphSearch):
     kind : str in {'min', 'max'}, optional, default='min'
         Choose whether to find the minimum path, or the maximum
     """
+
     def __init__(self, G, s, kind='min'):
         init_val = INF if kind == 'min' else M_INF
         self._op = operator.gt if kind == 'min' else operator.lt
-        self._dist_to = dict()
+        self._dist_to = {}
         for v in G:
             self._dist_to[v] = init_val
         self._dist_to[s] = 0.0
@@ -616,6 +624,7 @@ class AcyclicPath(GraphSearch):
         if self._op(self._dist_to[e.w], self._dist_to[e.v] + e.weight):
             self._dist_to[e.w] = self._dist_to[e.v] + e.weight
             self._edge_to[e.w] = e
+
 
 # =============================================================================
 # =============================================================================
