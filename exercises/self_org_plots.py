@@ -3,30 +3,25 @@
 #     File: self_org_plots.py
 #  Created: 2019-11-17 11:28
 #   Author: Bernie Roesler
-#
-"""
-    Description: Plots for Ex 3.1.33 (self-organizing search)
-"""
 # =============================================================================
+
+"""Plots for Exercise 3.1.33 (self-organizing search)."""
 
 import gzip
 import pickle
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-
-from matplotlib.gridspec import GridSpec
-from pathlib import Path
-
 from self_org_driver import SelfOrganizingDriver
 
-SAVE_FIGS = True
+SAVE_FIGS = False
 
 if SAVE_FIGS:
     plt.close('all')
-    fig_dir = Path('./figures/')
+    fig_dir = Path(__file__).parent / 'figures'
 
 tag = ''
 # tag = '_randinit'
@@ -34,7 +29,8 @@ tag = ''
 # TODO
 #   * add `_randinit` to df, plots as well for comparison
 # Load the data
-filename = Path(f"./pkl/self_org_drivers{tag}.pkl.gz")
+PKL_DIR = Path(__file__).parent / 'pkl'
+filename = PKL_DIR / f"self_org_drivers{tag}.pkl.gz"
 
 with gzip.open(filename, 'rb') as f:
     drivers = pickle.load(f)
@@ -52,12 +48,14 @@ Ns = np.unique([v.t.size() for v in drivers.values()])
 N_s = drivers[(dists[0], ST_names[0], Ns[0])].runtimes.size
 
 # Store the individual search runtimes
-cols = pd.MultiIndex.from_product([dists, ST_names, ops, Ns],
-                                  names=['dist', 'ST', 'op', 'N'])
-data = np.empty((N_s, len(dists)*len(ST_names)*len(Ns)*2))
+cols = pd.MultiIndex.from_product(
+    [dists, ST_names, ops, Ns], names=['dist', 'ST', 'op', 'N']
+)
+data = np.empty((N_s, len(dists) * len(ST_names) * len(Ns) * 2))
 
-df = pd.DataFrame(columns=cols.droplevel('op').unique(),
-                  data=data[:, :data.shape[1]//len(dists)])
+df = pd.DataFrame(
+    columns=cols.droplevel('op').unique(), data=data[:, : data.shape[1] // len(dists)]
+)
 tots = pd.Series(index=cols, name='runtime [s]', dtype=float)
 
 # Times are in nanoseconds
@@ -71,76 +69,86 @@ for (d, ST_name, N), driver in drivers.items():
 # -----------------------------------------------------------------------------
 tf = df.melt(value_name='runtime')
 
-fig = plt.figure(1, clear=True, constrained_layout=True)
+fig = plt.figure(1, clear=True)
 ax = fig.add_subplot()
 
 # Plot the runtime distributions
-sns.stripplot(data=tf, x='N', y='runtime', hue='ST',
-              dodge=True, jitter=True, alpha=0.25, zorder=1)
+sns.stripplot(
+    data=tf, x='N', y='runtime', hue='ST', dodge=True, jitter=True, alpha=0.25, zorder=1
+)
 
 # PLot the means of each group
-sns.pointplot(data=tf, x='N', y='runtime', hue='ST',
-              dodge=0.5, join=False, markers='d',
-              palette='dark')
+sns.pointplot(
+    data=tf,
+    x='N',
+    y='runtime',
+    hue='ST',
+    dodge=0.5,
+    linestyle='none',
+    markers='d',
+    palette='dark',
+)
 
 # Nice legend
 handles, labels = ax.get_legend_handles_labels()
-ax.legend(handles[3:], labels[3:], title='Symbol Table',
-          handletextpad=0, labelspacing=1,
-          loc='upper left', frameon=True)
+ax.legend(
+    handles[3:],
+    labels[3:],
+    title='Symbol Table',
+    handletextpad=0,
+    labelspacing=1,
+    loc='upper left',
+    frameon=True,
+)
 
 # Tidy up axes limits and labels
 ax.ticklabel_format(axis='y', style='sci', scilimits=(-3, 3))
 # ax.set_ylim([0.5*tf['runtime'].min(), 5*tf['runtime'].max()])
-ax.set(ylabel='time per search [s]',
-       yscale='log')
+ax.set(ylabel='time per search [s]', yscale='log')
 ax.grid('on')
 
 if SAVE_FIGS:
-    fig.savefig(fig_dir.joinpath(f"self_org_timedists{tag}.pdf"))
+    fig.savefig(fig_dir / f"self_org_timedists{tag}.pdf")
 
 # -----------------------------------------------------------------------------
 #         Plot total runtimes
 # -----------------------------------------------------------------------------
-g = sns.FacetGrid(tots.reset_index(), row='op', col='dist', hue='ST',
-                  margin_titles=True, height=4)
-g.set(xscale='log',
-      yscale='log')
+g = sns.FacetGrid(
+    tots.reset_index(), row='op', col='dist', hue='ST', margin_titles=True, height=4
+)
+g.set(xscale='log', yscale='log')
 g.map(plt.plot, 'N', 'runtime [s]', marker='o')
 g.add_legend()
-g.tight_layout()
 
 if SAVE_FIGS:
-    g.savefig(fig_dir.joinpath(f"self_org_tots{tag}.pdf"))
+    g.savefig(fig_dir / f"self_org_tots{tag}.pdf")
 
 # -----------------------------------------------------------------------------
 #         Plot keys vs. index
 # -----------------------------------------------------------------------------
-fig = plt.figure(3, clear=True, figsize=(12, 6))
+fig = plt.figure(3, clear=True)
+fig.set_size_inches((12, 6), forward=True)
 N = 1000
-gs = GridSpec(nrows=1, ncols=2)
+gs = fig.add_gridspec(nrows=1, ncols=2)
 for i, dist in enumerate(['p', 'zipf']):
     ax = fig.add_subplot(gs[i])
     for name in ST_names:
-        ax.scatter(np.arange(N), drivers[(dist, name, N)].t.keys(),
-                   alpha=0.5,
-                   label=name)
-    ax.set(title='Zipf' if dist == 'zipf' else '$1/2^i$',
-           xlabel='index',
-           ylabel='key')
+        ax.scatter(
+            np.arange(N), drivers[(dist, name, N)].t.keys(), alpha=0.5, label=name
+        )
+    ax.set(title='Zipf' if dist == 'zipf' else '$1/2^i$', xlabel='index', ylabel='key')
     ax.grid('on')
     ax.legend(loc='lower right')
 
-gs.tight_layout(fig)
 if SAVE_FIGS:
-    fig.savefig(fig_dir.joinpath(f"self_org_keys{tag}.pdf"))
+    fig.savefig(fig_dir / f"self_org_keys{tag}.pdf")
 
 # -----------------------------------------------------------------------------
 #         Plot the probability distributions
 # -----------------------------------------------------------------------------
 # TODO count inversions in each array to determine "sortedness"
 N = 1000
-keys = np.arange(1, N+1)  # function of N alone
+keys = np.arange(1, N + 1)  # function of N alone
 
 p = 1 / (2.0**keys)
 zipf = 1 / (keys * SelfOrganizingDriver.H_N(keys))
@@ -149,17 +157,14 @@ fig = plt.figure(4, clear=True)
 ax = fig.add_subplot()
 ax.plot(keys, p, label=r'$\frac{1}{2^i}$')
 ax.plot(keys, zipf, label=r'$\frac{1}{i H_N}$')
-ax.set(xlabel=r'$i^{th}$ key',
-       ylabel='P(i)',
-       xscale='log',
-       yscale='log',
-       ylim=(1e-12, 1))
+ax.set(
+    xlabel=r'$i^{th}$ key', ylabel='P(i)', xscale='log', yscale='log', ylim=(1e-12, 1)
+)
 ax.legend(fontsize=16)
 ax.grid(True, which='both')
-fig.tight_layout()
 
 if SAVE_FIGS:
-    fig.savefig(fig_dir.joinpath(f"self_org_dists{tag}.pdf"))
+    fig.savefig(fig_dir / f"self_org_dists{tag}.pdf")
 
 
 plt.show()

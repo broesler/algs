@@ -3,27 +3,24 @@
 #     File: self_org_driver.py
 #  Created: 2019-11-17 11:28
 #   Author: Bernie Roesler
-#
-"""
-    Description: Ex 3.1.33 Driver for self-organizing search.
-
-    Write a driver program for self-organizing search implementations (see
-    Exercise 3.1.22) that uses `get()` to fill a symbol table with N keys, then
-    does 10 N successful searches according to a predefined probability
-    distribution. Use this driver to compare the running time of your
-    implementation from Exercise 3.1.22 with BinarySearchST for N = 1e3, 1e4,
-    1e5, and 1e6 using the probability distribution where search hits the ith
-    smallest key with probability 1/2^i.
-"""
 # =============================================================================
+
+"""Exercise 3.1.33: Driver for self-organizing search.
+
+Write a driver program for self-organizing search implementations (see Exercise
+3.1.22) that uses `get()` to fill a symbol table with N keys, then does 10
+N successful searches according to a predefined probability distribution. Use
+this driver to compare the running time of your implementation from Exercise
+3.1.22 with BinarySearchST for N = 1e3, 1e4, 1e5, and 1e6 using the probability
+distribution where search hits the ith smallest key with probability 1/2^i.
+"""
 
 import gzip
 import pickle
 import time
+from pathlib import Path
 
 import numpy as np
-
-from pathlib import Path
 from tqdm import tqdm
 
 from algs.search import ArrayST, BinarySearchST
@@ -31,7 +28,7 @@ from algs.search import ArrayST, BinarySearchST
 rng = np.random.default_rng(seed=565656)
 
 
-class SelfOrganizingDriver():
+class SelfOrganizingDriver:
     """Class to test self-organizing ArrayST.
 
     Parameters
@@ -72,11 +69,12 @@ class SelfOrganizingDriver():
         The runtime of each `get` call performed during `run_test`. May be
         downsampled using the `samples` argument.
     """
+
     def __init__(self, ST, randinit=False, selforg=False, zipf=False):
         self.t = ST
         self._randinit = randinit
         self._selforg = selforg  # turn on caching in the symbol table.
-        self._zipf = zipf    # choose probability distribution
+        self._zipf = zipf  # choose probability distribution
         self.put_time = np.nan
         self.get_time = np.nan
         self.runtimes = np.empty((1,))
@@ -101,7 +99,7 @@ class SelfOrganizingDriver():
         """
         if N < 1:
             raise ValueError('H_N not defined for `N` < 1!')
-        return np.sum(1.0 / np.arange(1, N+1))
+        return np.sum(1.0 / np.arange(1, N + 1))
 
     def run_test(self, N, samples=None, verbose=False):
         """Run the actual test by inserting `N` keys into the table, then
@@ -126,7 +124,7 @@ class SelfOrganizingDriver():
         if verbose:
             print(f"Filling table with {N} keys...")
 
-        keys = np.arange(1, N+1)  # skip 0 for probability functions
+        keys = np.arange(1, N + 1)  # skip 0 for probability functions
 
         # Pre-determined probability of searching for key `i`
         if self._zipf:
@@ -137,11 +135,11 @@ class SelfOrganizingDriver():
         probs /= np.sum(probs)  # normalize to 1
 
         # Choose from keys in sorted order
-        M = 10*N
+        M = 10 * N
         ks = rng.choice(keys, p=probs, size=M)
 
         if self._randinit:
-            rng.shuffle(keys)     # insert in random order
+            rng.shuffle(keys)  # insert in random order
 
         put_tic = time.perf_counter_ns()  # time the insertions separately
 
@@ -188,7 +186,7 @@ if __name__ == '__main__':
     ST_names = ['SST', 'SST_selforg', 'BinarySearchST']
     selforgs = [False, True, False]
 
-    drivers = dict()
+    drivers = {}
 
     for N in Ns:
         for d in dists:
@@ -202,7 +200,8 @@ if __name__ == '__main__':
                 drivers[(d, ST_name, N)] = driver
 
         # Write data to file (overwrite each loop in case it breaks)
-        filename = Path('./pkl/self_org_drivers.pkl.gz')
+        PKL_PATH = Path(__file__).parent / 'pkl'
+        filename = PKL_PATH / 'self_org_drivers.pkl.gz'
         print(f"Writing to {filename}...", end='')
         with gzip.open(filename, 'wb') as f:
             pickle.dump(drivers, f)
