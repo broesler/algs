@@ -3,11 +3,9 @@
 #     File: perfect_balance.py
 #  Created: 2020-02-20 22:52
 #   Author: Bernie Roesler
-#
-"""
-  Description: Insert items into a BST with "perfect" balance. Exercise 3.2.25.
-"""
 # =============================================================================
+
+"""Exercise 3.2.25: Insert items into a BST with "perfect" balance."""
 
 from algs.search import BST
 from algs.sort import qsort
@@ -15,7 +13,7 @@ from algs.sort import qsort
 
 def make_balanced_tree(a):
     """Return a perfectly balanced BST of the items in `a`."""
-    return _make_balanced_tree(qsort(a), 0, len(a)-1)
+    return _make_balanced_tree(qsort(a), 0, len(a) - 1)
 
 
 def _make_balanced_tree(a, lo, hi, t=None):
@@ -48,11 +46,12 @@ def _make_balanced_tree(a, lo, hi, t=None):
     _make_balanced_tree(a, mid + 1, hi, t)
     return t
 
+
 if __name__ == '__main__':
     a = 'SEARCHX'
     t = make_balanced_tree(a)
-    assert(t.is_balanced())  # make sure the tree is balanced
-    assert(t.level_order() == list('HCSAERX'))  # See Algorithms text p. 403
+    assert t.is_balanced()  # make sure the tree is balanced
+    assert t.level_order() == list('HCSAERX')  # See Algorithms text p. 403
     # print(t.level_order())
 
 # =============================================================================
