@@ -3,13 +3,11 @@
 #     File: ringbuffer.py
 #  Created: 2022-05-27 16:52
 #   Author: Bernie Roesler
-#
-"""
-Exercise 1.3.39 Implement a ring buffer of fixed size N.
-"""
 # =============================================================================
 
-from algs.basics import Collection, Queue
+"""Exercise 1.3.39: Implement a ring buffer of fixed size N."""
+
+from algs.basics import Collection
 
 
 # Exercise 1.3.39
@@ -23,7 +21,7 @@ class RingBuffer(Collection):
         The number of slots in the buffer.
 
     Attributes
-    -------
+    ----------
     M : int
         The total number of slots in the buffer.
     size : int
@@ -33,20 +31,22 @@ class RingBuffer(Collection):
     def __init__(self, M, items=None):
         self.M = M
         self.N = 0
-        self._items = M*[None]
+        self._items = M * [None]
         self._first = 0  # pointers to the first and last elements
         self._last = 0
-        self._p = 0      # pointer for iteration
+        self._p = 0  # pointer for iteration
         items = items or []
         for x in items:
             self.enqueue(x)
 
     @property
     def size(self):
+        """Return the number of items currently stored in the buffer."""
         return self.N
 
     @property
     def is_full(self):
+        """Return True if the buffer is full."""
         return self.M == self.N
 
     def enqueue(self, k):
@@ -55,7 +55,7 @@ class RingBuffer(Collection):
             self._first = (self._first + 1) % self.M
         self._items[self._last] = k
         self._last = (self._last + 1) % self.M  # circular, feeling the flow
-        self.N = min(self.M, self.N + 1)        # allow for overwrites
+        self.N = min(self.M, self.N + 1)  # allow for overwrites
 
     def dequeue(self):
         """Remove the oldest item from the buffer."""
