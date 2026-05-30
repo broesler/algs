@@ -3,18 +3,13 @@
 #     File: perfect_maze.py
 #  Created: 2022-07-18 19:59
 #   Author: Bernie Roesler
-#
-"""
-Undirected Graphs, Web Exercise 5. Generate a perfect maze.
-"""
 # =============================================================================
 
-import numpy as np
+"""Undirected Graphs, Web Exercise 5. Generate a perfect maze."""
+
 import matplotlib.pyplot as plt
 
-from random import shuffle
-
-from algs.graph import EuclideanGraph, spanning_tree_dfs, DepthFirstPaths
+from algs.graph import DepthFirstPaths, EuclideanGraph, spanning_tree_dfs
 from algs.graph.random import full_grid_graph
 
 V = 25
@@ -36,12 +31,12 @@ fig, ax = plt.subplots(num=1, clear=True, constrained_layout=True)
 
 # TODO actually plot walls of maze between unconnected vertices
 # Use large linewidth to simulate "walls" of maze
-T.draw(ax=ax, ekws=dict(lw=10))
+T.draw(ax=ax, ekws={'lw': 10})
 
 # Plot the start, end, and solution!
-ax.scatter(G.x[START], G.y[START], marker='>', c='C2', s=50, zorder=10)
-ax.scatter(G.x[END], G.y[END], marker='x', c='C3', s=50, zorder=10)
-T.draw(ax=ax, p=P, c='C0', ekws=dict(lw=3))
+ax.scatter(G.x[START], G.y[START], marker='>', c='tab:green', s=50, zorder=10)
+ax.scatter(G.x[END], G.y[END], marker='x', c='tab:red', s=50, zorder=10)
+T.draw(ax=ax, p=P, c='tab:blue', ekws={'lw': 3})
 
 plt.show()
 
