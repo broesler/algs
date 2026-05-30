@@ -1,23 +1,16 @@
 #!/usr/bin/env python3
-#==============================================================================
+# ==============================================================================
 #     File: test_qsort.py
 #  Created: 2019-04-08 22:42
 #   Author: Bernie Roesler
-#
-"""
-  Description: A battery of tests for qsort certification.
-"""
-#==============================================================================
+# ==============================================================================
 
-import sys
-
-import matplotlib.pyplot as plt
-from matplotlib.gridspec import GridSpec
-import numpy as np
+"""A battery of tests for qsort certification."""
 
 from collections import defaultdict
 
-from algs.sort import qsort
+import matplotlib.pyplot as plt
+import numpy as np
 
 N = 100
 m = 2**5
@@ -25,17 +18,23 @@ m = 2**5
 dist_names = ['sawtooth', 'rand', 'stagger', 'plateau', 'shuffle']
 dists = defaultdict(lambda: np.zeros(N))
 
+rng = np.random.default_rng(seed=56)
+
 for name in dist_names:
     x = dists[name]  # pointer to dict
     j = 0
     k = 1
     for i in range(N):
-        if name == 'sawtooth':  x[i] = i % m
-        elif name == 'rand':    x[i] = np.random.randint(N)
-        elif name == 'stagger': x[i] = (i*m + i) % m
-        elif name == 'plateau': x[i] = min(i, m)
+        if name == 'sawtooth':
+            x[i] = i % m
+        elif name == 'rand':
+            x[i] = rng.integers(N)
+        elif name == 'stagger':
+            x[i] = (i * m + i) % m
+        elif name == 'plateau':
+            x[i] = min(i, m)
         elif name == 'shuffle':
-            if np.random.randint(2*N) % m:
+            if rng.integers(2 * N) % m:
                 x[i] = j
                 j += 2
             else:
@@ -43,7 +42,7 @@ for name in dist_names:
                 k += 2
 
 fig = plt.figure(1, clear=True)
-gs = GridSpec(1, len(dists))
+gs = fig.add_gridspec(1, len(dists))
 
 for i, name in enumerate(dists):
     x = dists[name]
@@ -54,5 +53,5 @@ for i, name in enumerate(dists):
 plt.suptitle(f"N = {N}, m = {m}")
 plt.show()
 
-#==============================================================================
-#==============================================================================
+# ==============================================================================
+# ==============================================================================
