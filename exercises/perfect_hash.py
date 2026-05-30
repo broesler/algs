@@ -3,11 +3,10 @@
 #     File: perfect_hash.py
 #  Created: 2022-05-25 13:51
 #   Author: Bernie Roesler
-#
-"""
-Exercise 3.4.4 Perfect Hashing.
-"""
 # =============================================================================
+
+"""Exercise 3.4.4 Perfect Hashing."""
+
 
 def _hash(k, a=1, M=1):
     """The hash function for the `k`th letter of the alphabet."""
@@ -16,7 +15,7 @@ def _hash(k, a=1, M=1):
 
 def perfect_hash(s):
     """Return the parameters for a perfect hash of string `s`."""
-    N = len(s)
+    len(s)
     for M in range(1, 1000):
         for a in range(1000):
             hashes = [_hash(k, a, M) for k in s]
