@@ -3,26 +3,26 @@
 #     File: undirected.py
 #  Created: 2022-06-14 21:05
 #   Author: Bernie Roesler
-#
+# =============================================================================
+
 """
 Implementations of undirected graph representations and associated algorithms.
 
 See Sedgewick and Wayne, §4.1.
 """
-# =============================================================================
-
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 
 from abc import ABC, abstractmethod
 from collections import deque
 from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib import patches
 from tqdm import tqdm
 
-from algs.basics import Bag, Stack, Queue
-from algs.search import HashST, MultiHashSet
 from algs import WeightedQuickUnionUF
+from algs.basics import Bag, Queue, Stack
+from algs.search import HashST, MultiHashSet
 
 
 # -----------------------------------------------------------------------------
@@ -50,13 +50,14 @@ class UndirectedGraph(ABC):
             for v, w in edges:
                 self.add_edge(v, w)
         except ValueError:
-            raise ValueError(f"{self.__class__.__name__} "
-                             'expects an iterable of tuples.')
+            raise ValueError(
+                f"{self.__class__.__name__} expects an iterable of tuples."
+            )
 
     @classmethod
     def fromfile(cls, filename, verbose=False, **kwargs):
         """Construct the graph structure from a file."""
-        with open(Path(filename), 'r') as fp:
+        with Path(filename).open() as fp:
             V = int(fp.readline())
             E = int(fp.readline())
             G = cls(V=V, **kwargs)
@@ -170,17 +171,19 @@ class Graph(UndirectedGraph):
 
     def _validate_vertex(self, v):
         if not (0 <= v < self.V):
-            raise IndexError((f"Vertex index {v=} must be "
-                              f"between 0 and {self.V=}!"))
+            raise IndexError(f"Vertex index {v=} must be between 0 and {self.V=}!")
 
     def vertices(self):
+        """Return an iterable over the vertices."""
         return range(self.V)
 
     def adj(self, v):
+        """Return an iterable of vertices adjacent to `v`."""
         self._validate_vertex(v)
         return self._adj[v]
 
     def add_edge(self, v, w):
+        """Add an edge from `v` to `w`."""
         self._validate_vertex(v)
         self._validate_vertex(w)
         # Exercise 4.1.5
@@ -260,7 +263,7 @@ class STGraph(UndirectedGraph):
         """
         g = cls(*args, **kwargs)
         # One pass to add all vertices and edges to the symbol table
-        with open(Path(filename), 'r') as fp:
+        with Path(filename).open() as fp:
             for line in tqdm(fp.readlines(), disable=not verbose):
                 words = line.strip().split(delim)
                 v = words[0]
@@ -278,12 +281,15 @@ class STGraph(UndirectedGraph):
             raise IndexError(f"Vertex {v=} does not exist!")
 
     def has_vertex(self, v):
+        """Return True if `v` is a vertex in the graph."""
         return v in self._adj
 
     def vertices(self):
+        """Return an iterable over the vertices."""
         return self._adj.keys()
 
     def adj(self, v):
+        """Return an iterable of vertices adjacent to `v`."""
         self._validate_vertex(v)
         return self._adj[v]
 
@@ -294,6 +300,7 @@ class STGraph(UndirectedGraph):
             self.V += 1
 
     def add_edge(self, v, w):
+        """Add an edge from `v` to `w`."""
         if v not in self._adj:
             self.add_vertex(v)
         if w not in self._adj:
@@ -325,11 +332,12 @@ class STGraph(UndirectedGraph):
 
 class SymbolGraph:
     """Implements a symbol graph."""
+
     # See p 552
 
     def __init__(self, keys=None, edges=None, kind=Graph):
         self._st = HashST()  # map : str -> int
-        self._keys = None    # map : int -> str
+        self._keys = None  # map : int -> str
         self._GraphClass = kind
         self.G = None
         if keys is not None:
@@ -359,7 +367,7 @@ class SymbolGraph:
         """
         sg = cls(*args, **kwargs)
         # First pass to add all vertices to the symbol table
-        with open(Path(filename), 'r') as fp:
+        with Path(filename).open() as fp:
             for line in tqdm(fp.readlines(), disable=not verbose):
                 words = line.strip().split(delim)
                 for word in words:
@@ -374,7 +382,7 @@ class SymbolGraph:
 
         # Second pass to build the graph
         sg.G = sg._GraphClass(V)
-        with open(Path(filename), 'r') as fp:
+        with Path(filename).open() as fp:
             for line in fp.readlines():
                 words = line.strip().split(delim)
                 v = sg._st[words[0]]
@@ -385,6 +393,7 @@ class SymbolGraph:
 
     @property
     def V(self):
+        """Return the number of vertices."""
         return self.G.V
 
     def __contains__(self, k):
@@ -401,19 +410,24 @@ class SymbolGraph:
 
     # aliases
     def contains(self, k):
+        """Return True if `k` is a vertex."""
         return self.__contains__(k)
 
     # Implement Graph methods with names as arguments
     def vertices(self):
+        """Return an iterable over the vertices."""
         return [self.name(v) for v in self.G.vertices()]
 
     def adj(self, v):
+        """Return an iterable of vertices adjacent to `v`."""
         return [self.name(w) for w in self.G.adj(self.index(v))]
 
     def has_edge(self, v, w):
+        """Return True if an edge from `v` to `w` exists."""
         return self.G.has_edge(self.index(v), self.index(w))
 
     def add_edge(self, v, w):
+        """Add an edge from `v` to `w`."""
         return self.G.add_edge(self.index(v), self.index(w))
 
 
@@ -423,8 +437,7 @@ class EuclideanGraph(Graph):
     the plane with coordinates.
     {UndirectedGraph.__doc__}"""
 
-    def __init__(self, G=None, x=None, y=None, two_color=False,
-                 *args, **kwargs):
+    def __init__(self, G=None, x=None, y=None, two_color=False, *args, **kwargs):
         if G is None:
             super().__init__(*args, **kwargs)
         else:
@@ -481,19 +494,33 @@ class EuclideanGraph(Graph):
         radius = vkws.get('radius', 0.02)
         # Create the node
         circ = patches.Circle(
-                (self.x[v], self.y[v]),
-                radius=radius,
-                edgecolor=edgecolor, facecolor='#EEE',
-                zorder=3  # place on top of lines
-                )
+            (self.x[v], self.y[v]),
+            radius=radius,
+            edgecolor=edgecolor,
+            facecolor='#EEE',
+            zorder=3,  # place on top of lines
+        )
         # Add it to the axes
         ax.add_patch(circ)
-        ax.annotate(label or v, xy=(self.x[v], self.y[v]),
-                    color=fontcolor, fontsize=fontsize,
-                    ha='center', va='center')
+        ax.annotate(
+            label or v,
+            xy=(self.x[v], self.y[v]),
+            color=fontcolor,
+            fontsize=fontsize,
+            ha='center',
+            va='center',
+        )
 
-    def draw(self, p=None, ax=None, label_nodes=False, labels=None, c=None,
-             vkws=None, ekws=None):
+    def draw(
+        self,
+        p=None,
+        ax=None,
+        label_nodes=False,
+        labels=None,
+        c=None,
+        vkws=None,
+        ekws=None,
+    ):
         """Plot the entire graph.
 
         Parameters
@@ -516,8 +543,8 @@ class EuclideanGraph(Graph):
         ax : :obj:`plt.axes`
             The axes on which the graph was plotted.
         """
-        _ekws = dict(ls='-', c='k', lw=1)
-        _vkws = dict(s=10, c='k')
+        _ekws = {"ls": '-', "c": 'k', "lw": 1}
+        _vkws = {"s": 10, "c": 'k'}
         if p is None:
             vs = self.vertices()
             es = self.edges()
@@ -525,7 +552,7 @@ class EuclideanGraph(Graph):
             _vkws['edgecolor'] = 'k'
             p = list(p)
             vs = p
-            es = [[p[i], p[i+1]] for i in range(len(p)-1)]
+            es = [[p[i], p[i + 1]] for i in range(len(p) - 1)]
 
         if ax is None:
             ax = plt.gca()
@@ -594,9 +621,11 @@ class DepthFirstSearch(GraphSearch):
         self._dfs(G, s)
 
     def marked(self, v):
+        """Return True if `v` is connected to `s`."""
         return self._marked[v]
 
     def count(self):
+        """Return the number of vertices connected to `s`."""
         return self._count
 
     def _dfs(self, G, v):
@@ -628,9 +657,11 @@ class DepthFirstPaths(Paths):
                 self._dfs(G, w)
 
     def has_path_to(self, v):
+        """Return True if there is a path from `s` to `v`."""
         return self._marked[v]
 
     def path_to(self, v):
+        """Return an iterable of the vertices on the path from `s` to `v`."""
         if not self.has_path_to(v):
             return None
         path = Stack()
@@ -740,9 +771,11 @@ class BreadthFirstPaths(Paths):
                     q.enqueue(w)
 
     def has_path_to(self, v):
+        """Return True if there is a path from `s` to `v`."""
         return self._marked[v]
 
     def path_to(self, v):
+        """Return an iterable of the vertices on the path from `s` to `v`."""
         # Same as DepthFirstPaths method
         if not self.has_path_to(v):
             return None
@@ -780,9 +813,16 @@ class UFSearch(GraphSearch):
                     self._uf.union(v, w)
 
     def marked(self, v):
+        """Return True if `v` is connected to `s`."""
         return self._uf.connected(self.s, v)
 
     def count(self):
+        """Return the number of vertices connected to `s`.
+
+        .. note::
+           This value is not the same as the size of the component, since `s`
+           may not be connected to all vertices in the component.
+        """
         # Return the size of the component to which the source belongs
         return self._uf._size[self._uf.find(self.s)]
 
@@ -800,9 +840,11 @@ class LeafDFS(GraphSearch):
         self._leaf = self._dfs(G, s)
 
     def marked(self, v):
+        """Return True if `v` is connected to `s`."""
         return self._marked[v]
 
     def count(self):
+        """Return the number of vertices connected to `s`."""
         return self._count
 
     def _dfs(self, G, v):
@@ -815,6 +857,7 @@ class LeafDFS(GraphSearch):
         return v  # return the leaf immediately when we find it
 
     def leaf(self):
+        """Return the leaf vertex found by the search."""
         return self._leaf
 
 
@@ -874,7 +917,7 @@ def spanning_tree_bfs(G, s):
 def spanning_forest_dfs(G):
     """Return a list of spanning trees for each connected component."""
     comps = CC(G).get_components()
-    trees = list()
+    trees = []
     for c in comps:
         trees.append(spanning_tree_dfs(G, c[0]))
     return trees
@@ -883,7 +926,7 @@ def spanning_forest_dfs(G):
 def spanning_forest_bfs(G):
     """Return a list of spanning trees for each connected component."""
     comps = CC(G).get_components()
-    trees = list()
+    trees = []
     for c in comps:
         trees.append(spanning_tree_bfs(G, c[0]))
     return trees
@@ -897,6 +940,7 @@ def complement_graph(G):
     for v in range(G.V):
         Gc._adj[v] = Bag(vs - set([v] + list(G.adj(v))))
     return Gc
+
 
 # See:
 # <https://stackoverflow.com/questions/24476027/shortest-path-in-a-complement-graph-algorithm>
@@ -923,7 +967,7 @@ class ComplementBFS(Paths):
         L1 = list(range(G.V))
         L1.remove(v)
         # L2 == all unmarked nodes *adjacent* to v in G
-        L2 = list()
+        L2 = []
         while not q.is_empty:
             v = q.dequeue()
             for w in G.adj(v):
@@ -936,12 +980,14 @@ class ComplementBFS(Paths):
                 self._dist_to[w] = self._dist_to[v] + 1
                 q.enqueue(w)
             L1 = L2
-            L2 = list()
+            L2 = []
 
     def has_path_to(self, v):
+        """Return True if there is a path from `s` to `v`."""
         return self._marked[v]
 
     def path_to(self, v):
+        """Return an iterable of the vertices on the path from `s` to `v`."""
         # Same as DepthFirstPaths method
         if not self.has_path_to(v):
             return None
@@ -996,8 +1042,10 @@ class GraphProperties:
         self._girth = None
 
     def eccentricity(self, v):
-        """The length of the shortest path from `v` to the furthest vertex from
-        `v`, *i.e.* the maximum length of the shortest path to any vertex."""
+        """Return the length of the shortest path from `v` to the furthest
+        vertex from `v`, *i.e.* the maximum length of the shortest path to any
+        vertex.
+        """
         e = self._eccs[v]
         if e is None:
             e = self._ecc(v)
@@ -1017,26 +1065,26 @@ class GraphProperties:
                 self._eccs[v] = self._ecc(v)
 
     def diameter(self):
-        """The maximum eccentricity of any vertex."""
+        """Return the maximum eccentricity of any vertex."""
         self._compute_missing_eccs()
         self._dia = max(self._eccs.values())
         return self._dia
 
     def radius(self):
-        """The smallest eccentricity of any vertex."""
+        """Return the smallest eccentricity of any vertex."""
         self._compute_missing_eccs()
         self._rad = min(self._eccs.values())
         return self._rad
 
     def center(self):
-        """The set of vertices whose eccentricity is the radius."""
+        """Return the set of vertices whose eccentricity is the radius."""
         self._compute_missing_eccs()
         if self._rad is None:
             self.radius()
         return [k for k, e in self._eccs.items() if e == self._rad]
 
     def periphery(self):
-        """The set of vertices whose eccentricity is the diameter."""
+        """Return the set of vertices whose eccentricity is the diameter."""
         self._compute_missing_eccs()
         if self._dia is None:
             self.diameter()
@@ -1052,7 +1100,7 @@ class GraphProperties:
 
         .. note:: Example of graph where BFS would *not* find the minimum cycle
             in a connected graph just by searching from one vertex:
-        >>> G = Graph.fromfile('../data/tinyG2.txt')
+        >>> G = Graph.fromfile(DATA_PATH / 'tinyG2.txt')
         >>> cc = CC(G).get_components()
         >>> print(cc[0])
         [0, 2, 3, 5, 6, 10]
@@ -1133,16 +1181,17 @@ class CC:
         return self._id[v]
 
     def count(self):
-        """The number of connected components."""
+        """Return the number of connected components."""
         return self._count
 
     @property
     def is_connected(self):
+        """Return True if the graph is connected."""
         return self._count == 1
 
     def get_components(self):
         """Return a list of lists of vertices in each component."""
-        components = [list() for _ in range(self._count)]
+        components = [[] for _ in range(self._count)]
         for v in self._vs:
             components[self._id[v]].append(v)
         return components
@@ -1198,8 +1247,7 @@ class Cycle:
             for w in G.adj(v):
                 if v == w:
                     return True
-        else:
-            return False
+        return False
 
     @staticmethod
     def has_parallel_edges(G):
@@ -1207,8 +1255,8 @@ class Cycle:
         # Only return True if G.adj(v) has duplicates
         for v in G.vertices():
             adj = sorted(G.adj(v))
-            for i in range(len(adj)-1):
-                if adj[i] == adj[i+1]:
+            for i in range(len(adj) - 1):
+                if adj[i] == adj[i + 1]:
                     return True
         return False
 
@@ -1391,9 +1439,9 @@ class MinCyclePath(BreadthFirstPaths):
         while len(p) > 2 and len(q) > 2 and p[0] == q[0] and p[1] == q[1]:
             p.popleft()
             q.popleft()
-        p.popleft()      # remove one of the dulicates
+        p.popleft()  # remove one of the dulicates
         p.extendleft(q)  # merge
-        p.append(p[0])   # complete the loop
+        p.append(p[0])  # complete the loop
         return list(p)
 
 
@@ -1466,7 +1514,7 @@ class Biconnected:
 
     def __init__(self, G):
         self.Nbridges = 0
-        self._count = 0           # depth counter
+        self._count = 0  # depth counter
         self._pre = G.V * [None]  # order in which DFS examines v
         self._low = G.V * [None]  # lowest preorder of any vertex adjacent to v
         self._art = G.V * [False]  # is the vertex an articulation point?
@@ -1476,6 +1524,7 @@ class Biconnected:
 
     @property
     def is_edge_connected(self):
+        """Return True if the graph is edge-connected."""
         return self.Nbridges == 0
 
     def _dfs(self, G, v, u):
@@ -1625,8 +1674,9 @@ def degrees_of_separation(sg, source, sink):
 
 
 if __name__ == "__main__":
-    G = Graph.fromfile('../data/tinyG.txt')
-    G2 = Graph.fromfile('../data/tinyG2.txt')
+    DATA_PATH = Path(__file__).parents[3] / 'data'
+    G = Graph.fromfile(DATA_PATH / 'tinyG.txt')
+    G2 = Graph.fromfile(DATA_PATH / 'tinyG2.txt')
 
     print('----- DFS -----')
     print_dfs(G, 0)
@@ -1634,7 +1684,7 @@ if __name__ == "__main__":
 
     # Test paths
     print('----- Connected Graph -----')
-    GC = Graph.fromfile('../data/tinyCG.txt')
+    GC = Graph.fromfile(DATA_PATH / 'tinyCG.txt')
     print(GC)
     print_dfs(GC, 0)
 
@@ -1651,7 +1701,7 @@ if __name__ == "__main__":
 
     # Test connected components
     print('----- SymbolGraph -----')
-    sg = SymbolGraph.fromfile('../data/routes.txt')
+    sg = SymbolGraph.fromfile(DATA_PATH / 'routes.txt')
     print('--- adjacency lists ---')
     print_adj(sg, 'JFK')
     print_adj(sg, 'LAX')
@@ -1659,17 +1709,17 @@ if __name__ == "__main__":
     degrees_of_separation(sg, 'JFK', 'LAS')
     degrees_of_separation(sg, 'JFK', 'DFW')
 
-    # sg = SymbolGraph.fromfile('../data/movies.txt', delim='/')
-    # print('--- adjacency lists ---')
-    # print_adj(sg, 'Top Gun (1986)')
-    # print('--- shortest paths ---')
-    # degrees_of_separation(sg, 'Animal House (1978)', 'Titanic (1997)')
-    # degrees_of_separation(sg, 'Bacon, Kevin', 'Cruise, Tom')
+    sg = SymbolGraph.fromfile(DATA_PATH / 'movies.txt', delim='/')
+    print('--- adjacency lists ---')
+    print_adj(sg, 'Top Gun (1986)')
+    print('--- shortest paths ---')
+    degrees_of_separation(sg, 'Animal House (1978)', 'Titanic (1997)')
+    degrees_of_separation(sg, 'Bacon, Kevin', 'Cruise, Tom')
 
     print('----- Graph Properties of mediumG -----')
-    Gm = Graph.fromfile('../data/mediumG.txt')
+    Gm = Graph.fromfile(DATA_PATH / 'mediumG.txt')
     # NOTE maximum recursion depth reached in largeG!
-    # gc = Graph.fromfile('../data/largeG.txt', verbose=True)
+    # gc = Graph.fromfile(DATA_PATH / 'largeG.txt', verbose=True)
 
     gp = GraphProperties(Gm)
     print('        ϵ:', gp.eccentricity(0))
@@ -1690,9 +1740,9 @@ if __name__ == "__main__":
     bfs_cx = BreadthFirstPaths(complement_graph(GC), 0)
     bfs_c = ComplementBFS(GC, 0)
     print(bfs_cx.path_to(4))  # [0, 4]
-    print(bfs_c.path_to(4))   # [0, 4]
+    print(bfs_c.path_to(4))  # [0, 4]
     print(bfs_cx.path_to(2))  # [0, 4, 5, 2]
-    print(bfs_c.path_to(2))   # [0, 4, 5, 2]
+    print(bfs_c.path_to(2))  # [0, 4, 5, 2]
 
 # =============================================================================
 # =============================================================================
