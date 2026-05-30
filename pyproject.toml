@@ -79,9 +79,11 @@ ignore = [
     'B904',     # Within an `except` clause distinguish raised exceptions from errors in exception handling
     'B905',     # `zip()` without an explicit `strict=` parameter
     'D101',     # Missing docstring in public class (we use __doc__ a lot)
+    'D102',     # TODO Missing docstring in public method (we use __doc__ a lot)
     'D104',     # Missing docstring in __init__
     'D105',     # Missing docstring in magic method
     'D205',     # 1 blank line required between summary line and description
+    'D401',     # TODO First line should be in imperative mood; try rephrasing
     'E741',     # ambiguous variable name (l, O, I)
     'PIE790',   # Unnecessary `pass` statement
     'PLC2401',  # non-ASCII characters
