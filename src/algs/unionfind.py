@@ -3,19 +3,17 @@
 #     File: unionfind.py
 #  Created: 2022-05-25 14:58
 #   Author: Bernie Roesler
-#
-"""
-Description: Implementations of the Union-Find algorithms in §1.5.
-"""
 # =============================================================================
 
-import re
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.transforms as mtransforms
+"""Implementations of the Union-Find algorithms in §1.5."""
 
+import re
 from abc import ABC, abstractmethod
 from pathlib import Path
+
+import matplotlib.pyplot as plt
+import matplotlib.transforms as mtransforms
+import numpy as np
 
 from algs.basics import RandomBag
 
@@ -36,9 +34,9 @@ def read_uf_file(filename):
         Pairs of site IDs defining connections.
     """
     pat = re.compile(r"(\d+)\s+(\d+)")
-    with open(Path(filename), 'r') as fp:
+    with Path(filename).open() as fp:
         N = int(fp.readline().strip())
-        items = list()
+        items = []
         for line in fp.readlines():
             p, q = pat.findall(line.strip())[0]
             items.append((int(p), int(q)))
@@ -79,7 +77,7 @@ class UF(ABC):
         self.E = 0
         self.edges = []
         self._id = list(range(N))
-        self._cost = 0   # cost of last operation
+        self._cost = 0  # cost of last operation
         self._total = 0  # total cost of all operations
         items = items or []
         try:
@@ -90,8 +88,9 @@ class UF(ABC):
                     if store:
                         self.edges.append((p, q))
         except ValueError:
-            raise ValueError(f"{self.__class__.__name__} "
-                             "expects an iterable mapping input.")
+            raise ValueError(
+                f"{self.__class__.__name__} expects an iterable mapping input."
+            )
 
     @classmethod
     def fromfile(cls, filename, **kwargs):
@@ -145,8 +144,10 @@ class UF(ABC):
             True if `p` and `q` are in the same component.
         """
         cost = 0
-        pid = self.find(p); cost += self._cost
-        qid = self.find(q); cost += self._cost
+        pid = self.find(p)
+        cost += self._cost
+        qid = self.find(q)
+        cost += self._cost
         self._cost = cost
         self._total += cost
         return pid == qid
@@ -156,8 +157,7 @@ class UF(ABC):
     # Would need to compare the components in each group.
     def compare(self, other):
         """Comparison for like inputs."""
-        return (self.count == other.count
-                and self.edges == other.edges)
+        return self.count == other.count and self.edges == other.edges
 
 
 # Exercise 1.5.7 (see p 222)
@@ -176,8 +176,10 @@ class QuickFindUF(UF):
     def union(self, p, q):
         # Put p and q into the same component
         cost = 0
-        pid = self.find(p); cost += self._cost
-        qid = self.find(q); cost += self._cost
+        pid = self.find(p)
+        cost += self._cost
+        qid = self.find(q)
+        cost += self._cost
 
         # Nothing to do if they're already connected
         if pid == qid:
@@ -207,14 +209,16 @@ class WeightedQuickFindUF(QuickFindUF):
                {UF.__doc__}."""
 
     def __init__(self, N, *args, **kwargs):
-        self._size = N*[1]  # track tree sizes
+        self._size = N * [1]  # track tree sizes
         super().__init__(N, *args, **kwargs)
 
     def union(self, p, q):
         # Put p and q into the same component
         cost = 0
-        pid = self.find(p); cost += self._cost
-        qid = self.find(q); cost += self._cost
+        pid = self.find(p)
+        cost += self._cost
+        qid = self.find(q)
+        cost += self._cost
 
         # Nothing to do if they're already connected
         if pid == qid:
@@ -268,15 +272,17 @@ class QuickUnionUF(UF):
             while p != r:
                 x = self._id[p]  # pointer to next node up
                 self._id[p] = r  # change the parent of the leaf to the root
-                p = x           # move the pointer up
+                p = x  # move the pointer up
                 self._cost += 1
         return r
 
     def union(self, p, q):
         # Compare the roots of each node's tree component
         cost = 0
-        p_root = self.find(p); cost += self._cost
-        q_root = self.find(q); cost += self._cost
+        p_root = self.find(p)
+        cost += self._cost
+        q_root = self.find(q)
+        cost += self._cost
 
         if p_root == q_root:
             self._cost = cost
@@ -302,14 +308,16 @@ class WeightedQuickUnionUF(QuickUnionUF):
                {UF.__doc__}."""
 
     def __init__(self, N, *args, **kwargs):
-        self._size = N*[1]  # track tree sizes
+        self._size = N * [1]  # track tree sizes
         super().__init__(N, *args, **kwargs)
 
     def union(self, p, q):
         # Compare the roots of each node's tree component
         cost = 0
-        i = self.find(p); cost += self._cost
-        j = self.find(q); cost += self._cost
+        i = self.find(p)
+        cost += self._cost
+        j = self.find(q)
+        cost += self._cost
 
         # Nothing to do if they're already connected
         if i == j:
@@ -340,14 +348,16 @@ class HeightWeightedQuickUnionUF(WeightedQuickUnionUF):
                {UF.__doc__}."""
 
     def __init__(self, N, *args, **kwargs):
-        self.height = N*[0]
+        self.height = N * [0]
         super().__init__(N, *args, **kwargs)
 
     def union(self, p, q):
         # Compare the roots of each node's tree component
         cost = 0
-        i = self.find(p); cost += self._cost
-        j = self.find(q); cost += self._cost
+        i = self.find(p)
+        cost += self._cost
+        j = self.find(q)
+        cost += self._cost
 
         # Nothing to do if they're already connected
         if i == j:
@@ -385,7 +395,7 @@ class DynamicWeightedQuickUnionUF(WeightedQuickUnionUF):
 
     def __init__(self, *args, **kwargs):
         N = self._MIN_SITES
-        self._size = N*[1]  # track tree sizes
+        self._size = N * [1]  # track tree sizes
         super().__init__(N, *args, **kwargs)
 
     def find(self, p):
@@ -396,17 +406,19 @@ class DynamicWeightedQuickUnionUF(WeightedQuickUnionUF):
     def _new_site(self, p):
         """Add new sites to accomodate up to an index of `p`."""
         # Resize the `id` and `sz` arrays to add new site(s)
-        new_N = p+1
+        new_N = p + 1
         self._id += list(range(self.N, new_N))
-        self._size += (new_N - self.N)*[1]
+        self._size += (new_N - self.N) * [1]
         self.count += new_N - self.N
         self.N = new_N
 
     def union(self, p, q):
         # Compare the roots of each node's tree component
         cost = 0
-        i = self.find(p); cost += self._cost
-        j = self.find(q); cost += self._cost
+        i = self.find(p)
+        cost += self._cost
+        j = self.find(q)
+        cost += self._cost
 
         # Nothing to do if they're already connected
         if i == j:
@@ -430,7 +442,7 @@ class DynamicWeightedQuickUnionUF(WeightedQuickUnionUF):
 
 
 # Exercise 1.5.17
-class ErdosRenyi():
+class ErdosRenyi:
     """Creates a random connected graph.
 
     Parameters
@@ -441,7 +453,7 @@ class ErdosRenyi():
         Class of union-find algorithm to compute the graph.
 
     Attributes
-    -------
+    ----------
     uf : UnionFind class
         The provided `UF` class with completed connections.
     E : int
@@ -455,16 +467,16 @@ class ErdosRenyi():
         A list of the cumulative average number of array accesses per operation
         in `uf`.
     """
+
     rng = np.random.default_rng()
 
-    def __init__(self, N, UF=WeightedQuickUnionUF, store=False, costs=False,
-                 **kwargs):
+    def __init__(self, N, UF=WeightedQuickUnionUF, store=False, costs=False, **kwargs):
         self.N = N
         self.uf = UF(N, store=store, **kwargs)
         self.E = 0
         self.ops = [0]
-        self.cost = list()
-        self.totals = list()
+        self.cost = []
+        self.totals = []
         # Generate random pairs of sites until all are connected
         while self.uf.count > 1:
             p, q = self.rng.integers(self.N, size=2)
@@ -489,7 +501,6 @@ class ErdosRenyi():
         return self.E
 
 
-
 # Exercise 1.5.18
 def full_grid(N):
     """Create a list of the connections in an `N`-by-`N` grid.
@@ -504,15 +515,15 @@ def full_grid(N):
     connections : list of (int, int)
         A list of every connection made in the graph.
     """
-    items = list()
+    items = []
     for i in range(N):
-        for j in range(i*N, (i+1)*N):
+        for j in range(i * N, (i + 1) * N):
             # Connect across a row
-            if j < (i+1)*N-1:
-                items.append((j, j+1))
+            if j < (i + 1) * N - 1:
+                items.append((j, j + 1))
             # Connect to next column
-            if i < N-1:
-                items.append((j, j+N))
+            if i < N - 1:
+                items.append((j, j + N))
     return items
 
 
@@ -533,21 +544,21 @@ def random_grid(N):
     rng = np.random.default_rng()
     items = RandomBag()
     for i in range(N):
-        for j in range(i*N, (i+1)*N):
+        for j in range(i * N, (i + 1) * N):
             r, s = rng.random(2)  # randomly order the pairs
             # Connect across a row
-            if j < (i+1)*N-1:
+            if j < (i + 1) * N - 1:
                 if r > 0.5:
-                    item = (j, j+1)
+                    item = (j, j + 1)
                 else:
-                    item = (j+1, j)
+                    item = (j + 1, j)
                 items.add(item)
             # Connect to next column
-            if i < N-1:
+            if i < N - 1:
                 if s > 0.5:
-                    item = (j, j+N)
+                    item = (j, j + N)
                 else:
-                    item = (j+N, j)
+                    item = (j + N, j)
                 items.add(item)
     return items
 
@@ -588,11 +599,11 @@ def plot_grid(N, g, label_nodes=False, fig=None, ax=None, **kwargs):
 
     if label_nodes:
         # Label the nodes
-        trans_offset = mtransforms.offset_copy(ax.transData, fig=fig,
-                                               x=-5, y=5, units='points')
+        trans_offset = mtransforms.offset_copy(
+            ax.transData, fig=fig, x=-5, y=5, units='points'
+        )
         for i, (xn, yn) in enumerate(zip(x, y)):
-            ax.text(xn, yn, f"{i}", ha='right', va='bottom',
-                    transform=trans_offset)
+            ax.text(xn, yn, f"{i}", ha='right', va='bottom', transform=trans_offset)
 
     ax.set_aspect('equal')
     ax.invert_yaxis()  # top-down as drawn by hand
@@ -612,14 +623,7 @@ if __name__ == "__main__":
 
     # Exercise 1.5.1, 1.5.2, 1.5.3, 1.5.11
     N = 10  # == 1 + max(max(items))  # number of sites
-    items = [(9, 0),
-             (3, 4),
-             (5, 8),
-             (7, 2),
-             (2, 1),
-             (5, 7),
-             (0, 3),
-             (4, 2)]
+    items = [(9, 0), (3, 4), (5, 8), (7, 2), (2, 1), (5, 7), (0, 3), (4, 2)]
 
     qf = QuickFindUF(N, items, store=True)
     qu = QuickUnionUF(N, items, store=True)
