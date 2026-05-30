@@ -3,16 +3,14 @@
 #     File: search.py
 #  Created: 2019-11-01 19:50
 #   Author: Bernie Roesler
-#
-"""
-  Description: Binary Search Trees.
-"""
 # =============================================================================
+
+"""Binary Search Trees."""
 
 import random  # only needed for Ex 3.2.42 (deletion methods)
 
-from algs.basics import Stack, Queue
-from algs.search.table import SymbolTable, OrderedSymbolTable
+from algs.basics import Queue, Stack
+from algs.search.table import OrderedSymbolTable, SymbolTable
 
 __all__ = ['BST', 'BST_nr', 'ThreadedST', 'ThreadedST_nr', 'ArrayBST']
 
@@ -30,27 +28,36 @@ class BST(OrderedSymbolTable):
     __doc__ = _descrip + _attribs_doc
 
     # Deletion method value is constant with the class
-    _THRESH = dict({'Hibbard': 1, 'Hibbard_p': 0, 'random': 0.5})
+    _THRESH = {'Hibbard': 1, 'Hibbard_p': 0, 'random': 0.5}
 
     # Private Node class
-    class _Node():
+    class _Node:
         """Internal node object to hold key, value, and two children."""
+
         def __init__(self, key, value=None):
             self.key = key
             self.val = value
             self.left = self.right = None
-            self.N = 1       # nodes in subtree rooted here
+            self.N = 1  # nodes in subtree rooted here
             self.height = 0  # Ex 3.2.6(b) height of the tree rooted at _Node
-            self.ipl = 0     # Ex 3.2.47 sum of depths of nodes in subtree
+            self.ipl = 0  # Ex 3.2.47 sum of depths of nodes in subtree
 
         def __str__(self):
             # Avoid recursion through entire tree!! Just print each child
-            left_str = f"{{{repr(self.left.key)}: {repr(self.left.val)}}}" \
-                        if self.left else 'None'
-            right_str = f"{{{repr(self.right.key)}: {repr(self.right.val)}}}" \
-                        if self.right else 'None'
-            return f"{{{repr(self.key)}: {repr(self.val)}}}, "\
-                   f"L:{left_str}, R:{right_str}, N={self.N}"
+            left_str = (
+                f"{{{repr(self.left.key)}: {repr(self.left.val)}}}"
+                if self.left
+                else 'None'
+            )
+            right_str = (
+                f"{{{repr(self.right.key)}: {repr(self.right.val)}}}"
+                if self.right
+                else 'None'
+            )
+            return (
+                f"{{{repr(self.key)}: {repr(self.val)}}}, "
+                f"L:{left_str}, R:{right_str}, N={self.N}"
+            )
 
         def __repr__(self):
             return f"<{self.__class__.__name__}: {self.__str__()}>"
@@ -67,14 +74,15 @@ class BST(OrderedSymbolTable):
         except KeyError:
             raise ValueError(f"Invalid delete_method '{delete_method}'!")
 
-    __init__.__doc__ = (OrderedSymbolTable.__init__.__doc__ +
-        """delete_method : str in {'Hibbard', 'random'}
+    __init__.__doc__ = (
+        OrderedSymbolTable.__init__.__doc__
+        + """delete_method : str in {'Hibbard', 'random'}
             Select method to use for deletion:
                 * 'Hibbard' will replace the requested node with its successor.
                 * 'random' will replace the requested node with a random choice
                 between its predecessor and its successor.
         """
-        )
+    )
 
     @property
     def _N(self):
@@ -182,7 +190,7 @@ class BST(OrderedSymbolTable):
         if x is None:
             x = self._root
         out = Queue()  # output queue (only grows)
-        q = Queue()     # queue of out to visit
+        q = Queue()  # queue of out to visit
         q.enqueue(x)
         while q:
             x = q.dequeue()
@@ -302,24 +310,23 @@ class BST(OrderedSymbolTable):
             x.left = self._delete(k, x.left)
         elif k > x.key:
             x.right = self._delete(k, x.right)
+        elif x.left is None:
+            return x.right
+        elif x.right is None:
+            return x.left
         else:
-            if x.left is None:
-                return x.right
-            elif x.right is None:
-                return x.left
+            # save pointer to Node to be deleted
+            t = x
+            if random.random() < self._RAND_THRESH:
+                # Get the successor to the node to be deleted
+                x = self._min(t.right)
+                x.right = self._delete_min(t.right)
+                x.left = t.left
             else:
-                # save pointer to Node to be deleted
-                t = x
-                if random.random() < self._RAND_THRESH:
-                    # Get the successor to the node to be deleted
-                    x = self._min(t.right)
-                    x.right = self._delete_min(t.right)
-                    x.left = t.left
-                else:
-                    # Get the predecessor to the node to be deleted
-                    x = self._max(t.left)
-                    x.left = self._delete_max(t.left)
-                    x.right = t.right
+                # Get the predecessor to the node to be deleted
+                x = self._max(t.left)
+                x.left = self._delete_max(t.left)
+                x.right = t.right
         self._update_node(x)
         return x
 
@@ -339,10 +346,10 @@ class BST(OrderedSymbolTable):
         if x is None:
             return
         if k == x.key:
-            return x                       # floor may be exactly k
+            return x  # floor may be exactly k
         if k < x.key:
             return self._floor(k, x.left)  # floor must be in left subtree
-        t = self._floor(k, x.right)        # floor might be in right subtree
+        t = self._floor(k, x.right)  # floor might be in right subtree
         return t if t else x
 
     def _ceil(self, k, x=None):
@@ -354,10 +361,10 @@ class BST(OrderedSymbolTable):
         if x is None:
             return
         if k == x.key:
-            return x                       # ceil may be exactly k
+            return x  # ceil may be exactly k
         if k > x.key:
             return self._ceil(k, x.right)  # ceil must be in right subtree
-        t = self._ceil(k, x.left)          # ceil might be in left subtree
+        t = self._ceil(k, x.left)  # ceil might be in left subtree
         return t if t else x
 
     def _rank(self, k, x=None):
@@ -391,7 +398,7 @@ class BST(OrderedSymbolTable):
         if t > r:
             return self._select(r, x.left)
         elif t < r:
-            return self._select(r-t-1, x.right)
+            return self._select(r - t - 1, x.right)
         else:
             return x
 
@@ -441,7 +448,7 @@ class BST(OrderedSymbolTable):
         """Return the sum of the depths of all nodes in the subtree."""
         if x is None:
             return 0
-        lpath = self._internal_path_length_r(x.left,  depth + 1)
+        lpath = self._internal_path_length_r(x.left, depth + 1)
         rpath = self._internal_path_length_r(x.right, depth + 1)
         return depth + lpath + rpath
 
@@ -464,17 +471,19 @@ class BST(OrderedSymbolTable):
             return 0
         L = 0 if x.left is None else x.left.N
         R = 0 if x.right is None else x.right.N
-        return (R - L
-                + self._center_of_mass(x.left)
-                + self._center_of_mass(x.right))
+        return R - L + self._center_of_mass(x.left) + self._center_of_mass(x.right)
 
     # Convenience functions
     def _update_node(self, x):
         """Update the parameters of the node based on its subtree."""
         x.N = 1 + self._size(x.left) + self._size(x.right)
         x.height = 1 + max(self._height(x.left), self._height(x.right))
-        x.ipl = (self._internal_path_length(x.left) + self._size(x.left)
-                 + self._internal_path_length(x.right) + self._size(x.right))
+        x.ipl = (
+            self._internal_path_length(x.left)
+            + self._size(x.left)
+            + self._internal_path_length(x.right)
+            + self._size(x.right)
+        )
 
     # -------------------------------------------------------------------------
     #         Iterator functions (Tree traversals)
@@ -504,13 +513,13 @@ class BST(OrderedSymbolTable):
     def items(self, lo=None, hi=None):
         return self.in_order(lo, hi, op=lambda x: (x.key, x.val))
 
-    keys.__doc__ = _docstring.format(rtype='keys',     oplang='')
+    keys.__doc__ = _docstring.format(rtype='keys', oplang='')
     values.__doc__ = _docstring.format(rtype='values', oplang='')
-    items.__doc__ = _docstring.format(rtype='items',   oplang='')
+    items.__doc__ = _docstring.format(rtype='items', oplang='')
 
     def in_order(self, lo=None, hi=None, op=None):
         if self._root is None:
-            return list()
+            return []
         if lo is None and hi is None:
             return self._in_order_all(x=self._root, op=op)
         else:
@@ -618,9 +627,9 @@ class BST(OrderedSymbolTable):
     # Ex 3.2.32
     def isBST(self):
         """Assert that all of the binary search tree properties hold."""
-        return (self._is_binary_tree() and
-                self._is_ordered() and
-                self._has_no_duplicates())
+        return (
+            self._is_binary_tree() and self._is_ordered() and self._has_no_duplicates()
+        )
 
     # Ex 3.2.29
     def _is_binary_tree(self):
@@ -636,8 +645,7 @@ class BST(OrderedSymbolTable):
         elif self._size(x) != 1 + self._size(x.left) + self._size(x.right):
             return False
         else:
-            return (self.__is_binary_tree(x.left) and
-                    self.__is_binary_tree(x.right))
+            return self.__is_binary_tree(x.left) and self.__is_binary_tree(x.right)
 
     # Ex 3.2.30
     def _is_ordered(self):
@@ -650,12 +658,14 @@ class BST(OrderedSymbolTable):
         """
         if x is None:
             return True
-        elif ((lo is not None and self._min(x).key < lo) or
-              (hi is not None and self._max(x).key > hi)):
+        elif (lo is not None and self._min(x).key < lo) or (
+            hi is not None and self._max(x).key > hi
+        ):
             return False
         else:
-            return (self.__is_ordered(lo, x.key, x.left) and
-                    self.__is_ordered(x.key, hi, x.right))
+            return self.__is_ordered(lo, x.key, x.left) and self.__is_ordered(
+                x.key, hi, x.right
+            )
 
     # Ex 3.2.31
     def _has_no_duplicates(self):
@@ -696,9 +706,10 @@ class ThreadedST(BST):
         """Print the next/prev nodes for each key in the tree."""
         print("k  {:40}    {:40}".format('prev', 'next'))
         for k in self.keys():
-            print("{}: {:40} || {:40}"
-                  .format(k, str(self._get(k, self._root).prev),
-                             str(self._get(k, self._root).next)))
+            print(
+                f"{k}: {str(self._get(k, self._root).prev):40}"
+                f"|| {str(self._get(k, self._root).next):40}"
+            )
 
     # -------------------------------------------------------------------------
     #         Private API
@@ -747,43 +758,42 @@ class ThreadedST(BST):
             x.left = self._delete(k, x.left)
         elif k > x.key:
             x.right = self._delete(k, x.right)
+        elif x.left is None:
+            # Update threads
+            if x.next:
+                x.next.prev = x.prev
+            if x.prev:
+                x.prev.next = x.next
+            return x.right
+        elif x.right is None:
+            # Update threads
+            if x.next:
+                x.next.prev = x.prev
+            if x.prev:
+                x.prev.next = x.next
+            return x.left
         else:
-            if x.left is None:
-                # Update threads
-                if x.next:
-                    x.next.prev = x.prev
-                if x.prev:
-                    x.prev.next = x.next
-                return x.right
-            elif x.right is None:
-                # Update threads
-                if x.next:
-                    x.next.prev = x.prev
-                if x.prev:
-                    x.prev.next = x.next
-                return x.left
+            # save pointer to Node to be deleted
+            t = x
+
+            if random.random() < self._RAND_THRESH:
+                # Get successor to the node to be deleted
+                x = t.next
+                x.right = self._delete_min(t.right)
+                x.left = t.left
             else:
-                # save pointer to Node to be deleted
-                t = x
+                # take predecessor
+                x = t.prev
+                x.left = self._delete_max(t.left)
+                x.right = t.right
 
-                if random.random() < self._RAND_THRESH:
-                    # Get successor to the node to be deleted
-                    x = t.next
-                    x.right = self._delete_min(t.right)
-                    x.left = t.left
-                else:
-                    # take predecessor
-                    x = t.prev
-                    x.left = self._delete_max(t.left)
-                    x.right = t.right
-
-                # Update Threads: _delete_min frees x, so reattach it
-                x.next = t.next
-                x.prev = t.prev
-                if t.next:
-                    t.next.prev = x
-                if t.prev:
-                    t.prev.next = x
+            # Update Threads: _delete_min frees x, so reattach it
+            x.next = t.next
+            x.prev = t.prev
+            if t.next:
+                t.next.prev = x
+            if t.prev:
+                t.prev.next = x
 
         self._update_node(x)  # update N, height, internal path length
         return x
@@ -935,8 +945,7 @@ class BST_nr(BST):
                 x = x.left
             else:
                 x = x.right
-        else:
-            raise KeyError(k)
+        raise KeyError(k)
 
     def _set(self, k, v, x):
         """Add a new node to subtree at `x`, associating `k` with `v`.
@@ -1020,19 +1029,18 @@ class BST_nr(BST):
             x = t.right
         elif t.right is None:
             x = t.left
+        elif random.random() < self._RAND_THRESH:
+            # take successor
+            x = self._min(t.right)
+            s.push(x)
+            x.right = self._delete_min(t.right)
+            x.left = t.left
         else:
-            if random.random() < self._RAND_THRESH:
-                # take successor
-                x = self._min(t.right)
-                s.push(x)
-                x.right = self._delete_min(t.right)
-                x.left = t.left
-            else:
-                # take predecessor
-                x = self._max(t.left)
-                s.push(x)
-                x.left = self._delete_max(t.left)
-                x.right = t.right
+            # take predecessor
+            x = self._max(t.left)
+            s.push(x)
+            x.left = self._delete_max(t.left)
+            x.right = t.right
 
         # Update parent link
         if k == p.key:
@@ -1072,7 +1080,7 @@ class BST_nr(BST):
             elif k < x.key:
                 x = x.left  # floor must be in left subtree
             else:
-                p = x       # keep pointer to parent
+                p = x  # keep pointer to parent
                 x = x.right
         return p
 
@@ -1085,7 +1093,7 @@ class BST_nr(BST):
             elif k > x.key:
                 x = x.right  # ceil must be in right subtree
             else:
-                p = x        # keep pointer to parent
+                p = x  # keep pointer to parent
                 x = x.left
         return p
 
@@ -1093,10 +1101,10 @@ class BST_nr(BST):
         r = 0
         while x:
             if k == x.key:
-                r += self._size(x.left)      # count all left of this node
+                r += self._size(x.left)  # count all left of this node
                 break
             elif k < x.key:
-                x = x.left                   # no change to the count
+                x = x.left  # no change to the count
             else:
                 r += 1 + self._size(x.left)  # count this node + all left of it
                 x = x.right
@@ -1106,15 +1114,14 @@ class BST_nr(BST):
         rank = r  # track desired rank
         while x:
             t = self._size(x.left)
-            if t == rank:           # found the right number!
+            if t == rank:  # found the right number!
                 return x
-            elif t > rank:          # there are more nodes left than we want
+            elif t > rank:  # there are more nodes left than we want
                 x = x.left
-            else:                   # there are fewer nodes left than we want
-                rank -= (t + 1)     # reset desired rank in new subtree
+            else:  # there are fewer nodes left than we want
+                rank -= t + 1  # reset desired rank in new subtree
                 x = x.right
-        else:
-            raise IndexError(r)
+        raise IndexError(r)
 
     def _delete_min(self, x=None):
         if x is None:
@@ -1125,8 +1132,8 @@ class BST_nr(BST):
             # find the min
             r = x  # keep pointer to the root
             while x.left:
-                p = x         # pointer to the parent
-                p.N -= 1      # decrement node counts
+                p = x  # pointer to the parent
+                p.N -= 1  # decrement node counts
                 x = x.left
             p.left = x.right  # delete the pointer to the min
             self._update_node(p)
@@ -1141,8 +1148,8 @@ class BST_nr(BST):
             # find the max
             r = x
             while x.right:
-                p = x         # pointer to the parent
-                p.N -= 1      # decrement node counts
+                p = x  # pointer to the parent
+                p.N -= 1  # decrement node counts
                 x = x.right
             p.right = x.left  # delete the pointer to it
             self._update_node(p)
@@ -1153,8 +1160,8 @@ class BST_nr(BST):
     # -------------------------------------------------------------------------
     # Exercise 3.2.36
     def _iterate_range(self, lo, hi, op=None, **kwargs):
-        q = Queue()    # the output queue
-        s = Stack()    # visited nodes so we can pop back up the tree
+        q = Queue()  # the output queue
+        s = Stack()  # visited nodes so we can pop back up the tree
         x = self._root
         while s or x:
             # Move left until `lo` is found
@@ -1175,8 +1182,8 @@ class BST_nr(BST):
 
     # Overwrite BST._iterate_all recursive function
     def _iterate_all(self, op=None, **kwargs):
-        q = Queue()    # the output queue
-        s = Stack()    # visited nodes so we can pop back up the tree
+        q = Queue()  # the output queue
+        s = Stack()  # visited nodes so we can pop back up the tree
         x = self._root
         while s or x:
             # Move left until `lo` is found
@@ -1336,10 +1343,10 @@ class ThreadedST_nr(BST_nr):
             # find the min
             r = x  # keep pointer to the root
             while x.left:
-                p = x           # pointer to the parent
-                p.N -= 1        # decrement node counts
+                p = x  # pointer to the parent
+                p.N -= 1  # decrement node counts
                 x = x.left
-            p.left = x.right    # delete the pointer to the min
+            p.left = x.right  # delete the pointer to the min
             self._update_node(p)
         # Update threads
         if x.next:
@@ -1357,10 +1364,10 @@ class ThreadedST_nr(BST_nr):
             # find the max
             r = x  # keep pointer to the root
             while x.right:
-                p = x               # pointer to the parent
-                p.N -= 1            # decrement node counts
+                p = x  # pointer to the parent
+                p.N -= 1  # decrement node counts
                 x = x.right
-            p.right = x.left        # delete the pointer to it
+            p.right = x.left  # delete the pointer to it
             self._update_node(p)
         # Update threads
         if x.next:
@@ -1426,7 +1433,7 @@ class ThreadedST_nr(BST_nr):
     # -------------------------------------------------------------------------
     def _iterate_range(self, lo, hi, op=None, **kwargs):
         """Add items to a Queue, in key-order from `lo` to `hi`."""
-        q = Queue()               # the output queue
+        q = Queue()  # the output queue
         x = self._min(self._root)  # get the minimum Node
         while x:
             if lo > x.key:
@@ -1440,7 +1447,7 @@ class ThreadedST_nr(BST_nr):
 
     def _iterate_all(self, op=None, **kwargs):
         """Add all items to a Queue, in key-order."""
-        q = Queue()               # the output queue
+        q = Queue()  # the output queue
         x = self._min(self._root)  # get the minimum Node
         while x:
             q.enqueue(op(x) if op else x.key)
@@ -1456,11 +1463,11 @@ class ArrayBST(SymbolTable):
                """
 
     def __init__(self, items=None, cache=True):
-        self._root = None      # index of the information on the root
-        self._keys = list()
-        self._vals = list()
-        self._lefts = list()   # indices of left-links
-        self._rights = list()  # indices of right-links
+        self._root = None  # index of the information on the root
+        self._keys = []
+        self._vals = []
+        self._lefts = []  # indices of left-links
+        self._rights = []  # indices of right-links
         super().__init__(items, cache)
 
     @property
@@ -1481,8 +1488,7 @@ class ArrayBST(SymbolTable):
                 if self._CACHE_FLAG:
                     self._cache = x
                 return self._vals[x]
-        else:
-            raise KeyError(k)
+        raise KeyError(k)
 
     def __setitem__(self, k, v):
         self._root = self._set(k, v)
@@ -1544,8 +1550,9 @@ class ArrayBST(SymbolTable):
 
 if __name__ == '__main__':
     from algs.exercises.draw_tree import TreeArtist
+
     keys = list('SEARCHEXAMPLE')
-    items = list((c, i) for i, c in enumerate(keys))
+    items = [(c, i) for i, c in enumerate(keys)]
     st = BST(items)
     TreeArtist(st).draw()
 
