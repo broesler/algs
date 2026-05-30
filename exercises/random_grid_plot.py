@@ -3,26 +3,21 @@
 #     File: random_grid_plot.py
 #  Created: 2022-05-27 10:19
 #   Author: Bernie Roesler
-#
-"""
-Exercise 1.5.18-19. Generate a random grid and connect with UnionFind.
-"""
 # =============================================================================
 
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
+"""Exercise 1.5.18-19: Generate a random grid and connect with UnionFind."""
 
-from algs.unionfind import (full_grid, random_grid, plot_grid, 
-                            WeightedQuickUnionUF)
+import matplotlib.pyplot as plt
+
+from algs.unionfind import WeightedQuickUnionUF, full_grid, plot_grid, random_grid
 
 # Generate a random grid
-N = 25              # 625 sites
-f = full_grid(N)    # grid with all connections
+N = 25  # 625 sites
+f = full_grid(N)  # grid with all connections
 g = random_grid(N)  # grid with random connections but only one group
 
 # Connect components using UnionFind
-uf = WeightedQuickUnionUF(N*N, items=g, store=True)
+uf = WeightedQuickUnionUF(N * N, items=g, store=True)
 assert uf.count == 1
 
 # Plot the full grid with random connections overlaid
