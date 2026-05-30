@@ -3,22 +3,27 @@
 #     File: random.py
 #  Created: 2022-06-21 17:54
 #   Author: Bernie Roesler
-#
-"""
-Functions to generate random graphs.
-"""
 # =============================================================================
+
+"""Functions to generate random graphs."""
+
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from pathlib import Path
 
 from algs.adt import Interval1D
+from algs.graph.undirected import (
+    EuclideanGraph,
+    Graph,
+    SimpleGraph,
+    SymbolGraph,
+    TransportationGraph,
+)
 from algs.unionfind import full_grid, random_grid
-from algs.graph.undirected import (SimpleGraph, Graph, EuclideanGraph,
-                                   SymbolGraph, TransportationGraph)
 
+DATA_PATH = Path(__file__).resolve().parents[3] / 'data'
 π = np.pi
 rng = np.random.default_rng(seed=19900416)
 
@@ -44,10 +49,11 @@ def erdos_renyi(V, E):
     """
     if V < 1:
         raise ValueError(f"{V=} must be > 0")
-    maxE = V * (V-1) / 2
+    maxE = V * (V - 1) / 2
     if E < 1 or E > maxE:
-        raise ValueError(f"{E=} must be in [1, {maxE}] for an undirected"
-                         f"graph with {V=} vertices.")
+        raise ValueError(
+            f"{E=} must be in [1, {maxE}] for an undirectedgraph with {V=} vertices."
+        )
 
     G = Graph(V)
     for v, w in rng.integers(V, size=(E, 2)):
@@ -79,10 +85,11 @@ def random_simple_graph(V, E):
     """
     if V < 1:
         raise ValueError(f"{V=} must be > 0")
-    maxE = V * (V-1) / 2
+    maxE = V * (V - 1) / 2
     if E < 1 or E > maxE:
-        raise ValueError(f"{E=} must be in [1, {maxE}] for an undirected"
-                         f"graph with {V=} vertices.")
+        raise ValueError(
+            f"{E=} must be in [1, {maxE}] for an undirectedgraph with {V=} vertices."
+        )
 
     G = Graph(V)
     i = 0
@@ -101,7 +108,7 @@ def random_simple_graph(V, E):
 def random_sparse_graph(V):
     """Generate a random, sparse graph with `V` vertices."""
     # Choose E between [V-1, ~cV**(3/2)] for sparsity
-    E = rng.integers(V-1, V**1.4)
+    E = rng.integers(V - 1, V**1.4)
     return erdos_renyi(V, E)
 
 
@@ -134,7 +141,7 @@ def random_euclidean_graph(V, d=None, connected=None):
     if d is not None and not (0 <= d <= 1):
         raise ValueError(f"{d=} must be in [0, 1]")
     if d is None:
-        thresh = (np.log(V) / (π*V))**0.5
+        thresh = (np.log(V) / (π * V))**0.5
         if connected:
             d = 1.5 * thresh  # P ~ 1 that graph will be connected
         else:
@@ -145,10 +152,10 @@ def random_euclidean_graph(V, d=None, connected=None):
     # Compute the pair-wise distance matrix
     p = np.c_[x, y]
     D = p[:, None, :] - p[None, :, :]  # (V, V, 2)
-    D = np.sum(D**2, axis=-1)**0.5     # (V, V)
+    D = np.sum(D**2, axis=-1)**0.5  # (V, V)
     # Connect vertices within threshold
     for v in range(V):
-        for w in range(v+1, V):
+        for w in range(v + 1, V):
             if D[v, w] < d:
                 G.add_edge(v, w)
     return G
@@ -173,7 +180,7 @@ def full_grid_graph(V, random=False):
         with (x, y) coordinates.
     """
     Vsq = V**2  # total number of vertices
-    edges = full_grid(V)     # generate all neighbor edges
+    edges = full_grid(V)  # generate all neighbor edges
     if random:
         rng.shuffle(edges)
     y, x = np.mgrid[:V, :V]  # vertex coordinates are on the grid
@@ -229,7 +236,7 @@ def random_grid_graph(V, R=0, dist_edges=False):
 # Exercise 4.1.44
 def random_DQgraph(V, E):
     """Create a random graph from Dairy Queen locations in the U.S."""
-    df = pd.read_csv('../data/dairyqueen.csv', header=None)
+    df = pd.read_csv(DATA_PATH / 'dairyqueen.csv', header=None)
     df.columns = ['lat', 'lon', 'name', 'address']
     rows = rng.integers(df.shape[0], size=V)
     df = df.iloc[rows]
@@ -258,11 +265,13 @@ def random_interval_graph(V, d):
     """
     if not (0 <= d <= 1):
         raise ValueError(f"{d=} must be in [0, 1]!")
-    ints = sorted([Interval1D(lo, lo+d) for lo in rng.random(V)*(1-d)],
-                  key=Interval1D.MIN_ORDER)
-    edges = list()
+    ints = sorted(
+        [Interval1D(lo, lo + d) for lo in rng.random(V) * (1 - d)],
+        key=Interval1D.MIN_ORDER,
+    )
+    edges = []
     for i in range(V):
-        for j in range(i+1, V):
+        for j in range(i + 1, V):
             if ints[i].intersects(ints[j]):
                 edges.append((i, j))
             else:
@@ -295,23 +304,23 @@ def transport_graph(filename, key_file=None, loc_file=None):
         key1, x, y
         ...
     """
-    edges = list()
-    routes = dict()  # named (ordered) list of vertices in the system
-    with open(Path(filename), 'r') as fp:
+    edges = []
+    routes = {}  # named (ordered) list of vertices in the system
+    with Path(filename).open() as fp:
         for line in fp.readlines():
             words = line.strip().split(':')
             path = [int(w) for w in words[1].split('-')]
             routes[words[0]] = path[1:]  # FIXME HACK skip 0
-            for i in range(len(path)-1):
-                edges.append((path[i], path[i+1]))
+            for i in range(len(path) - 1):
+                edges.append((path[i], path[i + 1]))
     V = 1 + max(max(edges))
     TG = TransportationGraph(SimpleGraph(V=V, edges=edges), routes=routes)
     out = TG
 
     if key_file is not None:
-        keys = dict()
-        ids = dict()
-        with open(Path(key_file), 'r') as fp:
+        keys = {}
+        ids = {}
+        with Path(key_file).open() as fp:
             for line in fp.readlines():
                 words = line.strip().split()
                 idn = int(words[0])
@@ -326,7 +335,7 @@ def transport_graph(filename, key_file=None, loc_file=None):
 
         if loc_file is not None:
             # Read in coordinates mapping
-            with open(Path(loc_file), 'r') as fp:
+            with Path(loc_file).open() as fp:
                 for line in fp.readlines()[1:]:
                     words = line.strip().split(',')
                     name = words[0]
@@ -366,39 +375,46 @@ if __name__ == "__main__":
 
     sg = random_DQgraph(V=500, E=500)
     fig, ax = plt.subplots(num=3, clear=True, constrained_layout=True)
-    sg.G.draw(ax=ax,
-              vkws=dict(s=10, alpha=0.4),
-              ekws=dict(lw=1, alpha=0.2)
-              )
+    sg.G.draw(ax=ax, vkws={'s': 10, 'alpha': 0.4}, ekws={'lw': 1, 'alpha': 0.2})
 
     # ---------- Plot the Boston T ----------
     # TODO
     # * use geopandas(?) to get actual basemap
     # * run DFS/BFS to get routes between stations, noting line for each and
     #   where change-overs occur (ala MBTA website/app)
-    tg = transport_graph('../data/bostonT_lines.txt',
-                         key_file='../data/bostonT_stations.txt',
-                         loc_file='../data/bostonT_locs.txt')
+    tg = transport_graph(
+        DATA_PATH / 'bostonT_lines.txt',
+        key_file=DATA_PATH / 'bostonT_stations.txt',
+        loc_file=DATA_PATH / 'bostonT_locs.txt',
+    )
 
     fig, ax = plt.subplots(num=4, clear=True, constrained_layout=True)
-    tg.G.draw(ax=ax,
-              vkws=dict(s=10, alpha=0.4),
-              ekws=dict(lw=1, alpha=0.2)
-              )
+    tg.G.draw(ax=ax, vkws={'s': 10, 'alpha': 0.4}, ekws={'lw': 1, 'alpha': 0.2})
 
     # Plot the routes
     def line_colors(name):
-        colors = dict({'Blue': 'C0', 'Orange': 'C1', 'Green': 'C2',
-                       'Red': 'C3', 'Silver': '#CCC', 'Mattapan': 'C3'})
-        for k in colors.keys():
+        """Return a color for a given line name."""
+        colors = {
+            'Blue': 'C0',
+            'Orange': 'C1',
+            'Green': 'C2',
+            'Red': 'C3',
+            'Silver': '#CCC',
+            'Mattapan': 'C3',
+        }
+        for k, v in colors.items():
             if k in name:
-                return colors[k]
+                return v
 
     for name, route in tg.G.routes.items():
-        tg.G.draw(p=route, ax=ax, c=line_colors(name),
-                  # label_nodes=True, labels={i: tg.name(i) for i in route},
-                  # vkws=dict(s=50, alpha=1.0, radius=1e-4, fontsize=8))
-                  vkws=dict(s=20, alpha=1.0))
+        tg.G.draw(
+            p=route,
+            ax=ax,
+            c=line_colors(name),
+            # label_nodes=True, labels={i: tg.name(i) for i in route},
+            # vkws=dict(s=50, alpha=1.0, radius=1e-4, fontsize=8))
+            vkws={'s': 20, 'alpha': 1.0},
+        )
 
     # ax.axis('on')
 
