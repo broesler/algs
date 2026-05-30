@@ -3,13 +3,12 @@
 #     File: adt.py
 #  Created: 2022-06-08 09:10
 #   Author: Bernie Roesler
-#
-"""
-Abstract data types (ADTs) for use in exercises.
-"""
 # =============================================================================
 
+"""Abstract data types (ADTs) for use in exercises."""
+
 import re
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -35,7 +34,7 @@ class Point2D:
     @property
     def r(self):
         """The radius in polar coordinates."""
-        return (self.x*self.x + self.y*self.y)**0.5
+        return (self.x * self.x + self.y * self.y) ** 0.5
 
     @property
     def theta(self):
@@ -46,7 +45,7 @@ class Point2D:
         """Return the Euclidean distance from this point to `other`."""
         dx = self.x - other.x
         dy = self.y - other.y
-        return (dx*dx + dy*dy)**0.5
+        return (dx * dx + dy * dy) ** 0.5
 
     def angle_to(self, other):
         """Return the angle between this point and `other`."""
@@ -59,18 +58,22 @@ class Point2D:
     # in lieu of writing `sorted(points, key=lambda p: p.x)`)`.
     @staticmethod
     def X_ORDER(p):
+        """Compare points by their x-coordinate."""
         return p.x
 
     @staticmethod
     def Y_ORDER(p):
+        """Compare points by their y-coordinate."""
         return p.y
 
     @staticmethod
     def R_ORDER(p):
+        """Compare points by their r-coordinate."""
         return p.r
 
     @staticmethod
     def THETA_ORDER(p):
+        """Compare points by their θ-coordinate."""
         return p.theta
 
     def DIST_TO_ORDER(self, p):
@@ -101,7 +104,7 @@ class Point2D:
         return (self.x == other.x) and (self.y == other.y)
 
     def __hash__(self):
-        return 31*hash(self.x) + hash(self.y)
+        return 31 * hash(self.x) + hash(self.y)
 
     def __str__(self):
         return f"({self.x:.2f}, {self.y:.2f})"
@@ -121,6 +124,7 @@ class Interval1D:
 
     @property
     def length(self):
+        """The length of the interval."""
         return self.hi - self.lo
 
     def __len__(self):
@@ -131,6 +135,7 @@ class Interval1D:
         return self.lo <= x <= self.hi
 
     def contains(self, x):
+        """Return True if the interval contains the point `x`."""
         return self.__contains__(x)
 
     def intersects(self, other):
@@ -140,14 +145,17 @@ class Interval1D:
     # Comparators
     @staticmethod
     def MIN_ORDER(x):
+        """Compare intervals by their minimum endpoint."""
         return x.lo
 
     @staticmethod
     def MAX_ORDER(x):
+        """Compare intervals by their maximum endpoint."""
         return x.hi
 
     @staticmethod
     def LEN_ORDER(x):
+        """Compare intervals by their length."""
         return x.length
 
     # Plots
@@ -164,7 +172,7 @@ class Interval1D:
         return (self.lo == other.lo) and (self.hi == other.hi)
 
     def __hash__(self):
-        return 31*hash(self.lo) + hash(self.hi)
+        return 31 * hash(self.lo) + hash(self.hi)
 
     def __str__(self):
         return f"[{self.lo:.2f}, {self.hi:.2f}]"
@@ -205,6 +213,7 @@ class Interval2D:
         return (p.x in self.x) and (p.y in self.y)
 
     def contains(self, p):
+        """Return True if point `p` is inside the box."""
         return self.__contains__(p)
 
     def intersects(self, other):
@@ -216,20 +225,26 @@ class Interval2D:
         return self <= other
 
     def __le__(self, other):
-        return ((self.x.lo >= other.x.lo) and (self.x.hi <= other.x.hi)
-                and (self.y.lo >= other.y.lo) and (self.y.hi <= other.y.hi))
+        return (
+            (self.x.lo >= other.x.lo)
+            and (self.x.hi <= other.x.hi)
+            and (self.y.lo >= other.y.lo)
+            and (self.y.hi <= other.y.hi)
+        )
 
     # Plots
     def draw(self, ax=None, facecolor='none', **kwargs):
         """Plot the box in the specified axes."""
         if ax is None:
             ax = plt.gca()
-        rect = plt.Rectangle((self.x.lo, self.y.lo),
-                             width=self.x.length,
-                             height=self.y.length,
-                             zorder=3,  # plot above grid
-                             facecolor=facecolor,
-                             **kwargs)
+        rect = plt.Rectangle(
+            (self.x.lo, self.y.lo),
+            width=self.x.length,
+            height=self.y.length,
+            zorder=3,  # plot above grid
+            facecolor=facecolor,
+            **kwargs,
+        )
         ax.add_patch(rect)
 
     def __eq__(self, other):
@@ -238,7 +253,7 @@ class Interval2D:
         return (self.x == other.x) and (self.y == other.y)
 
     def __hash__(self):
-        return 31*hash(self.x) + hash(self.y)
+        return 31 * hash(self.x) + hash(self.y)
 
     def __str__(self):
         return str(self.x) + ' x ' + str(self.y)
@@ -252,6 +267,7 @@ class Interval2D:
 # -----------------------------------------------------------------------------
 class Date:
     """A data type to represent the day, month, and year."""
+
     DAYS = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
     pat = re.compile(r"(\d{1,2})/(\d{1,2})/(\d{4})")
 
@@ -268,16 +284,19 @@ class Date:
         self.validate(self.month, self.day, self.year)
 
     def validate(self, month, day, year):
+        """Validate the month, day, and year."""
         if not (1 <= month <= 12):
             raise ValueError(f"{month} must be between 1 and 12.")
-        if not (1 <= day <= self.DAYS[month-1]):
-            raise ValueError(day,
-                             f"There are only {self.DAYS[month-1]} days in {month=}!")
+        if not (1 <= day <= self.DAYS[month - 1]):
+            raise ValueError(
+                day, f"There are only {self.DAYS[month - 1]} days in {month=}!"
+            )
         if month == 2 and day == 29 and not self.is_leap_year(year):
             raise ValueError(f"{month}/{day}/{year} is not a leap year!")
 
     @staticmethod
     def is_leap_year(year):
+        """Return True if `year` is a leap year."""
         if year % 400 == 0:
             return True
         if year % 100 == 0:
@@ -287,27 +306,23 @@ class Date:
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return NotImplemented
-        return (self.month == other.month
-                and self.day == other.day
-                and self.year == other.year)
+        return (
+            self.month == other.month
+            and self.day == other.day
+            and self.year == other.year
+        )
 
     def _compare_to(self, other):
         """Use old-school compare function internally for less code."""
         if not isinstance(other, self.__class__):
             return NotImplemented
-        if self.year < other.year:
+
+        self_tuple = (self.year, self.month, self.day)
+        other_tuple = (other.year, other.month, other.day)
+
+        if self_tuple < other_tuple:
             return -1
-        elif self.year > other.year:
-            return 1
-        # years are equal
-        if self.month < other.month:
-            return -1
-        elif self.month > other.month:
-            return 1
-        # years and months are equal
-        if self.day < other.day:
-            return -1
-        elif self.day > other.day:
+        elif self_tuple > other_tuple:
             return 1
         else:
             return 0
@@ -325,7 +340,7 @@ class Date:
         return self._compare_to(other) >= 0
 
     def __hash__(self):
-        return self.day + 31*self.month + 31*12*self.year
+        return self.day + 31 * self.month + 31 * 12 * self.year
 
     def __str__(self):
         return f"{self.month}/{self.day}/{self.year}"
@@ -347,9 +362,11 @@ class Transaction:
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return NotImplemented
-        return (self.who == self.who
-                and self.when == self.when
-                and self.amount == self.amount)
+        return (
+            self.who == self.who
+            and self.when == self.when
+            and self.amount == self.amount
+        )
 
     def __lt__(self, other):
         return self.amount < other.amount
@@ -366,21 +383,24 @@ class Transaction:
     # Comparators
     @staticmethod
     def WHO_ORDER(t):
+        """Compare transactions by client name."""
         return t.who
 
     @staticmethod
     def WHEN_ORDER(t):
+        """Compare transactions by date."""
         return t.when
 
     @staticmethod
     def AMOUNT_ORDER(t):
+        """Compare transactions by amount."""
         return t.amount
 
     def __hash__(self):
         h = 1
-        h = 31*h + hash(self.who)
-        h = 31*h + hash(self.when)
-        h = 31*h + hash(self.amount)
+        h = 31 * h + hash(self.who)
+        h = 31 * h + hash(self.when)
+        h = 31 * h + hash(self.amount)
         return h
 
     def __str__(self):
@@ -403,14 +423,14 @@ if __name__ == "__main__":
     t1 = Transaction('Knuth', Date('6/14/1999'), 288.34)
     print(t0)
     print(t1)
-    assert t0 == t0
+    assert t0 == t0  # noqa: PLR0124
     assert t0 > t1
 
     # Generate N random points in the unit square
     rng = np.random.default_rng(seed=565656)
     N = 5
     points = []
-    for i in range(N):
+    for _ in range(N):
         points.append(Point2D(*rng.random(2)))
 
     x0, y0 = 0.1, 0.2
@@ -433,7 +453,7 @@ if __name__ == "__main__":
     i4 = Interval2D(0.65, 0.55, 0.75, 0.75)
     assert i4 <= i3
 
-    fig = plt.figure(1, clear=True, tight_layout=True)
+    fig = plt.figure(1, clear=True)
     ax = fig.add_subplot()
     p0.draw(ax, c='C3')
     for i, p in enumerate(points):
@@ -448,8 +468,10 @@ if __name__ == "__main__":
     i4.draw(edgecolor='C5', lw=2)
     a.draw(c='C3')
 
-    ax.set(xlabel='x',
-           ylabel='y',)
+    ax.set(
+        xlabel='x',
+        ylabel='y',
+    )
     ax.set_xlim(right=1)
     ax.set_ylim(top=1)
     ax.grid(True)
