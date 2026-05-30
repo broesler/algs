@@ -3,21 +3,22 @@
 #     File: reconstruct_bst.py
 #  Created: 2021-03-01 17:17
 #   Author: Bernie Roesler
-#
-"""
-  Description: Given a traversal of a BST, reconstruct the tree.
-    See: <https://algs4.cs.princeton.edu/32bst/> for more info.
-"""
 # =============================================================================
 
-from algs.basics import Stack, Queue
+"""Given a traversal of a BST, reconstruct the tree.
+See: <https://algs4.cs.princeton.edu/32bst/> for more info.
+"""
+
+from algs.basics import Queue, Stack
 from algs.search import BST
 
 
 class BST(BST):
     """BST with classmethods to reconstruct the BST from traversal list."""
-    class _NodeLimits():
+
+    class _NodeLimits:
         """Class to store the min/max allowable values of a given key."""
+
         def __init__(self, key, min=None, max=None):
             self.key = key
             self.min = min
@@ -83,7 +84,7 @@ class BST(BST):
         r = Queue()  # queue of _Nodes to visit, parallel with q
         st._root = st._Node(lev.dequeue())  # root is first
         x = st._NodeLimits(st._root.key)  # pointer to _NodeLimits
-        t = st._root                      # pointer to _Nodes in actual tree
+        t = st._root  # pointer to _Nodes in actual tree
         q.enqueue(x)
         r.enqueue(t)
         while lev and q:
@@ -129,7 +130,7 @@ def is_pre_order(pre_order):
             return False
         while s and s.peek() < k:
             min_key = s.pop()  # move right (increase minimum)
-        s.push(k)              # move left
+        s.push(k)  # move left
     return True
 
 
@@ -141,7 +142,7 @@ def is_level_order(level_order):
     q.enqueue(x)
     while pre and q:
         x = q.dequeue()  # parent node
-        k = pre.peek()   # key in question
+        k = pre.peek()  # key in question
         # Check if next node can be left of x or not
         if k < x.key and (x.min is None or k > x.min):
             q.enqueue(BST._NodeLimits(pre.dequeue(), x.min, x.key))
