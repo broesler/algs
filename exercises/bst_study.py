@@ -48,7 +48,7 @@ from tqdm import tqdm
 from algs.search import BST, RedBlackBST
 
 FORCE_UPDATE = False
-SAVE_FIGS = True
+SAVE_FIGS = False
 
 PKL_PATH = Path(__file__).parent / 'pkl'
 
@@ -60,7 +60,7 @@ ops = [int(x) for x in [1e2, 1e3, 1e4]]
 # N_trials = 1000
 # ops = [int(x) for x in np.logspace(2, 4)]
 
-pickle_file = PKL_PATH / f"bst_compares_{size_name}.pkl"
+parquet_file = PKL_PATH / f"bst_compares_{size_name}.parquet"
 
 M = len(ops)
 
@@ -68,19 +68,18 @@ idx = pd.MultiIndex.from_product([list(range(N_trials)), ops])
 cols = ['comps', 'heights', 'ipls']
 dfs = []
 
-if FORCE_UPDATE or not pickle_file.exists():
-    print(f"'{pickle_file}' not found, running experiments...")
-    for ST, tag in zip([BST, RedBlackBST], ['bst', 'rbst']):
-        # Store all data in one frame
-        df = pd.DataFrame(index=idx, columns=cols, data=np.zeros((len(idx), len(cols))))
-        df.index.names = ['trial', 'N']
+if FORCE_UPDATE or not parquet_file.exists():
+    print(f"'{parquet_file}' not found, running experiments...")
 
+    for ST, tag in zip([BST, RedBlackBST], ['bst', 'rbst']):
         print(f"Running {ST.__name__}...")
 
         # Seed the rng for consistency
         rng = np.random.default_rng(seed=565656)
 
         # Run the experiments
+        data = []
+
         for N in ops:
             print(f"N = {N}...")
             for i in tqdm(range(N_trials)):
@@ -92,42 +91,55 @@ if FORCE_UPDATE or not pickle_file.exists():
                 assert st.size() == N
 
                 # Store stats for averages
-                df.loc[(i, N), 'comps'] = tot_comp / N
-                df.loc[(i, N), 'heights'] = st.height
-                df.loc[(i, N), 'ipls'] = st.internal_path_length / N + 1
+                data.append(
+                    {
+                        'trial': i,
+                        'N': N,
+                        'comps': tot_comp / N,
+                        'heights': st.height,
+                        'ipls': st.internal_path_length / N + 1,
+                    }
+                )
 
-        df['tag'] = tag
-        dfs.append(df)
+        tf = pd.DataFrame(data)
+        tf['tag'] = tag
+        dfs.append(tf)
 
-    print(f"Writing to '{pickle_file}'...")
     df = (
         pd.concat(dfs)
         .pivot_table(index=['trial', 'N'], columns='tag')
         .swaplevel(axis=1)
         .sort_index(axis=1)
     )
-    df.to_pickle(pickle_file)
 
-# Read the data from the pickle file
-df = pd.read_pickle(pickle_file)
+    print(f"Writing to '{parquet_file}'...")
+    df.to_parquet(parquet_file)
+else:
+    # Read the data from the pickle file
+    df = pd.read_parquet(parquet_file)
 
 # -----------------------------------------------------------------------------
 #         Plots
 # -----------------------------------------------------------------------------
-theory_dict = {  # bst_avg_comps=dict(eqn=lambda N: 2*np.log2(N) + 2*np.euler_gamma - 3,
+theory_dict = {
+    # bst_avg_comps=dict(eqn=lambda N: 2*np.log2(N) + 2*np.euler_gamma - 3,
     #                   label=r'$2 \lg N + 2\gamma - 3$'),
-    'bst_avg_comps': {
-        'eqn': lambda N: 1.39 * np.log2(N) - 1.85,
-        'label': r'$1.39 \lg N - 1.85$',
+    'bst': {
+        'comps': {
+            'eqn': lambda N: 1.39 * np.log2(N) - 1.85,
+            'label': r'$1.39 \lg N - 1.85$',
+        },
+        'ipls': {
+            'eqn': lambda N: 1.39 * np.log2(N) - 1.85,
+            'label': r'$1.39 \lg N - 1.85$',
+        },
+        'heights': {'eqn': lambda N: 2.99 * np.log2(N), 'label': r'$2.99 \lg N$'},
     },
-    'bst_avg_ipls': {
-        'eqn': lambda N: 1.39 * np.log2(N) - 1.85,
-        'label': r'$1.39 \lg N - 1.85$',
-    },
-    'bst_avg_heights': {'eqn': lambda N: 2.99 * np.log2(N), 'label': r'$2.99 \lg N$'},
-    'rbst_avg_comps': {'eqn': lambda N: np.log2(N) - 0.5, 'label': r'$\lg N - 0.5$'},
-    'rbst_avg_ipls': {'eqn': lambda N: np.log2(N) - 0.5, 'label': r'$\lg N - 0.5$'},
-    'rbst_avg_heights': {'eqn': np.log2, 'label': r'$\lg N$'},
+    'rbst': {
+        'comps': {'eqn': lambda N: np.log2(N) - 0.5, 'label': r'$\lg N - 0.5$'},
+        'ipls': {'eqn': lambda N: np.log2(N) - 0.5, 'label': r'$\lg N - 0.5$'},
+        'heights': {'eqn': np.log2, 'label': r'$\lg N$'},
+    }
 }
 
 titles = {'bst': 'BST', 'rbst': 'Red-Black BST'}
@@ -185,8 +197,8 @@ for j, tag in enumerate(['bst', 'rbst']):
             color='k',
         )
 
-        y_theory = theory_dict[f"{tag}_avg_{col_name}"]['eqn'](x)
-        label = theory_dict[f"{tag}_avg_{col_name}"]['label']
+        y_theory = theory_dict[tag][col_name]['eqn'](x)
+        label = theory_dict[tag][col_name]['label']
 
         ax.plot(x, y_theory, color='C3', ls='-', label=label)
         ax.annotate(
@@ -209,26 +221,19 @@ for j, tag in enumerate(['bst', 'rbst']):
         )
 
         # Plot the means and stds of each group
-        sns.scatterplot(
-            ax=ax,
-            data=g[col_name],
-            x='N',
-            y='mean',
+        ax.errorbar(
+            x=g.index,
+            y=g[(col_name, 'mean')],
+            yerr=g[(col_name, 'std')],
+            fmt='d',
             color='k',
-            marker='d',
-            s=30,
+            markersize=5,
+            markeredgecolor='w',
+            markeredgewidth=0.5,
+            elinewidth=2,
+            capsize=0,
             zorder=3,
         )
-
-        for N, m in g[col_name].iterrows():
-            ax.plot(
-                (N, N),
-                (m['mean'] - m['std'], m['mean'] + m['std']),
-                c='k',
-                ls='-',
-                lw=2,
-                alpha=1.0,
-            )
 
         ax.legend(loc='lower right')
 

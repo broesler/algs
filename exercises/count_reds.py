@@ -127,6 +127,8 @@ for i, col_name in enumerate(['reds', 'rotations', 'splits']):
         fmt='d',
         color='k',
         markersize=5,
+        markeredgecolor='w',
+        markeredgewidth=0.5,
         elinewidth=2,
         capsize=0,
         zorder=3,
