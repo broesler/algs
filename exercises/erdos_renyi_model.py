@@ -18,12 +18,12 @@ from algs.unionfind import ErdosRenyi
 
 FORCE_UPDATE = False
 PKL_PATH = Path(__file__).parent / 'pkl'
-pkl_file = PKL_PATH / 'erdos_renyi.pkl'
+parquet_file = PKL_PATH / 'erdos_renyi.parquet'
 
 T = 10  # trials
 
-if not FORCE_UPDATE and pkl_file.exists():
-    df = pd.read_pickle(pkl_file)
+if not FORCE_UPDATE and parquet_file.exists():
+    df = pd.read_parquet(parquet_file)
 else:
     Ns = [100 * (2**i) for i in range(13)]
 
@@ -39,7 +39,7 @@ else:
 
     df = pd.DataFrame(data).set_index('N')
     df['theory'] = 1 / 2 * df.index * np.log(df.index)
-    df.to_pickle(pkl_file)
+    df.to_parquet(parquet_file)
 
 # -----------------------------------------------------------------------------
 #         Plot

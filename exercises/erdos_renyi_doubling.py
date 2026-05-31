@@ -19,13 +19,13 @@ from algs.unionfind import ErdosRenyi, QuickFindUF, QuickUnionUF, WeightedQuickU
 
 FORCE_UPDATE = False
 PKL_PATH = Path(__file__).parent / 'pkl'
-pkl_file = PKL_PATH / 'erdos_renyi_doubling.pkl'
+parquet_file = PKL_PATH / 'erdos_renyi_doubling.parquet'
 
 UFs = [QuickFindUF, QuickUnionUF, WeightedQuickUnionUF]
 names = ['quick-find', 'quick-union', 'weighted quick-union']
 
-if not FORCE_UPDATE and pkl_file.exists():
-    df = pd.read_pickle(pkl_file)
+if not FORCE_UPDATE and parquet_file.exists():
+    df = pd.read_parquet(parquet_file)
 else:
     T = 10  # trials
     Ns = [250 * (2**i) for i in range(7)]
@@ -54,7 +54,7 @@ else:
         values=['edges', 'time'],
     )
 
-    df.to_pickle(pkl_file)
+    df.to_parquet(parquet_file)
 
 # Compute time ratio
 ratios = df['time'] / df['time'].shift(1)
