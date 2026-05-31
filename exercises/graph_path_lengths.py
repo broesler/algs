@@ -39,24 +39,18 @@ import seaborn as sns
 from tqdm import tqdm
 
 from algs.graph import Bipartite, BreadthFirstPaths, CC_nr, DepthFirstPaths_nr
-from algs.graph.random import random_simple_graph
+from algs.graph.random import erdos_renyi, random_simple_graph  # noqa: F401
 
 FORCE_UPDATE = False
 SAVE_FIGS = False
 
-generate_graph = random_simple_graph
-tag = 'simple'
-
-# generate_graph = erdos_renyi
-# tag = 'erdos'
-
 V = 100  # number of vertices in each graph
 
 PKL_PATH = Path(__file__).parent / 'pkl'
-pkl_file = PKL_PATH / f"graph_path_lengths_{tag}_V{V}.parquet"
+pkl_file = PKL_PATH / f"graph_path_lengths_V{V}.parquet"
 
 
-def simulate_graphs(V, Es, N, T):
+def simulate_graphs(V, Es, N, T, generate_graph=None):
     """Yield a list of dicts of trial results, for use in a DataFrame.
 
     Parameters
@@ -80,6 +74,9 @@ def simulate_graphs(V, Es, N, T):
         - 'depth': Length of path found by DFS (or NaN if no path).
         - 'breadth': Length of path found by BFS (or NaN if no path).
     """
+    if generate_graph is None:
+        generate_graph = random_simple_graph
+
     rng = np.random.default_rng(seed=565656)
 
     for E in tqdm(Es):
@@ -108,22 +105,37 @@ if FORCE_UPDATE or not pkl_file.exists():
     Es = np.geomspace(V**0.5, V * (V - 1) // 2, num=20).astype(int)
 
     # Build the DataFrame
+    dfs = {
+        graph_func.__name__: (
+            pd.DataFrame(simulate_graphs(V, Es, N, T, generate_graph=graph_func))
+            .groupby('E')
+            # Average path lengths over trials
+            .agg(
+                depth=('depth', 'mean'),
+                breadth=('breadth', 'mean'),
+                components=('components', 'mean'),
+                bipartite_depth=('bipartite_depth', 'mean'),
+                valid_paths=('depth', 'count'),
+            )
+            .assign(
+                count=lambda df_: df_['valid_paths'] / (N * T),
+                EoV=lambda df_: df_.index / V,  # E is index
+            )
+            .drop(columns='valid_paths')
+        )
+        for graph_func in [random_simple_graph, erdos_renyi]
+    }
+
+    # Change names for plotting
+    name_map = {'random_simple_graph': 'Simple', 'erdos_renyi': 'Erdős-Rényi'}
+    graph_cat = pd.CategoricalDtype(name_map.values(), ordered=True)
+
     df = (
-        pd.DataFrame(simulate_graphs(V, Es, N, T))
-        .groupby('E')
-        # Average path lengths over trials
-        .agg(
-            depth=('depth', 'mean'),
-            breadth=('breadth', 'mean'),
-            components=('components', 'mean'),
-            bipartite_depth=('bipartite_depth', 'mean'),
-            valid_paths=('depth', 'count'),
-        )
+        pd.concat(dfs, names=['graph_type'])
+        .reset_index(level='graph_type')
         .assign(
-            count=lambda df_: df_['valid_paths'] / (N * T),
-            EoV=lambda df_: df_.index / V,  # E is index
+            graph_type=lambda df_: df_['graph_type'].map(name_map).astype(graph_cat)
         )
-        .drop(columns='valid_paths')
     )
 
     df.to_parquet(pkl_file)
@@ -144,23 +156,21 @@ rename_map = {
 }
 
 color_map = {
-    'DFS':'tab:blue',
-    'BFS':'tab:red',
+    'DFS': 'tab:blue',
+    'BFS': 'tab:red',
     'CC': 'tab:green',
     'BP': 'tab:purple',
 }
 
-df_tidy = (
-    df.rename(columns=rename_map)
-    .melt(
-        id_vars=['EoV'],
-        value_vars=list(rename_map.values()),
-        var_name='metric',
-        value_name='value',
-    )
+df_tidy = df.rename(columns=rename_map).melt(
+    id_vars=['graph_type', 'EoV'],
+    value_vars=list(rename_map.values()),
+    var_name='metric',
+    value_name='value',
 )
 
-fig, ax = plt.subplots(1, clear=True)
+fig, ax = plt.subplots(num=1, clear=True)
+fig.set_size_inches((8, 6), forward=True)
 ax_twin = ax.twinx()
 
 sns.scatterplot(
@@ -168,14 +178,30 @@ sns.scatterplot(
     x='EoV',
     y='value',
     hue='metric',
+    style='graph_type',
     palette=color_map,
     ax=ax,
 )
 
-ax_twin.plot(df['EoV'], df['count'], color='k', alpha=0.5)
+# ax_twin.plot(df['EoV'], df['count'], color='k', alpha=0.5)
+sns.lineplot(
+    data=df,
+    x='EoV',
+    y='count',
+    color='k',
+    style='graph_type',
+    alpha=0.5,
+    ax=ax_twin,
+)
 
 # ax.axvline(1/2 * np.log(V), c='k', ls='--', alpha=0.5)
 ax.axhline(V / 2, c='k', ls='--', alpha=0.5)
+
+# Combine the legends
+handles, labels = ax.get_legend_handles_labels()
+handles_twin, labels_twin = ax_twin.get_legend_handles_labels()
+ax.legend(handles + handles_twin, labels + labels_twin)
+ax_twin.get_legend().remove()
 
 ax.set(
     xlabel='density (E/V)',
@@ -205,7 +231,7 @@ ax_twin.grid(visible=False)
 
 if SAVE_FIGS:
     FIG_PATH = Path(__file__).parent / 'figures'
-    fig.savefig(FIG_PATH / f"graph_path_lengths_{tag}_V{V}.pdf")
+    fig.savefig(FIG_PATH / f"graph_path_lengths_V{V}.pdf")
 
 plt.show()
 
