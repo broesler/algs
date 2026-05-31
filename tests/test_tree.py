@@ -3,18 +3,26 @@
 #     File: test_tree.py
 #  Created: 2021-04-15 14:00
 #   Author: Bernie Roesler
-#
-"""
-Tests specific to BST data types, not including balanced trees.
-"""
 # =============================================================================
+
+"""Tests specific to BST data types, not including balanced trees."""
 
 import pytest
 
 from algs.search.tree import BST, BST_nr, ThreadedST, ThreadedST_nr
-from tests.test_search import ITEMS, st, expect_keys
+from tests.test_search import ITEMS
 
-TREES = set([BST, BST_nr, ThreadedST, ThreadedST_nr])
+# NOTE These are fixtures, so import them with aliases for ruff
+# TODO move to tests/conftest.py
+from tests.test_search import expect_keys as _expect_keys
+from tests.test_search import st as _st
+
+# Rename back to original names for use in tests
+st = _st
+expect_keys = _expect_keys
+
+TREES = {BST, BST_nr, ThreadedST, ThreadedST_nr}
+
 
 # -----------------------------------------------------------------------------
 #         Test BST structure
@@ -45,9 +53,9 @@ class TestBST:
         # TODO test for each failure mode
 
     def test_orders(self, st):
-        assert st.pre_order() ==   list('SEACRHMLPX')
-        assert st.in_order() ==    list('ACEHLMPRSX')
-        assert st.post_order() ==  list('CALPMHREXS')
+        assert st.pre_order() == list('SEACRHMLPX')
+        assert st.in_order() == list('ACEHLMPRSX')
+        assert st.post_order() == list('CALPMHREXS')
         assert st.level_order() == list('SEXARCHMLP')
 
     def test_height(self, st, heights):
@@ -111,12 +119,12 @@ class TestThreadedSTs:
         """Test that the next/prev attributes are set properly."""
         keys = sorted(expect_keys)
         for i, k in enumerate(keys[:-1]):
-            assert st.next(k) == keys[i+1]
+            assert st.next(k) == keys[i + 1]
         assert st.next(keys[-1]) is None
 
         keys = sorted(expect_keys, reverse=True)
         for i, k in enumerate(keys[:-1]):
-            assert st.prev(k) == keys[i+1]
+            assert st.prev(k) == keys[i + 1]
         assert st.prev(keys[-1]) is None
 
     def test_threads(self, st, expect_keys):
@@ -140,6 +148,7 @@ class TestThreadedSTs:
             st = ST(ITEMS)
             del st[k]
             self.run_threads(st, sorted(expect_keys - set(k)))
+
 
 # =============================================================================
 # =============================================================================
