@@ -43,7 +43,7 @@ x, y = (
     / 10
 )  # scale down
 
-# G = EuclideanGraph.fromfile('../data/tinyCG.txt')
+# G = EuclideanGraph.fromfile(DATA_PATH / 'tinyCG.txt')
 # # See p 522
 # x, y = np.array([[0,  3],
 #                  [1,  1.6],
@@ -52,8 +52,8 @@ x, y = (
 #                  [5,  0],
 #                  [0,  0]]).T / 16  # scale down
 
-# G = EuclideanGraph.fromfile('../data/tinyG2.txt')
-# See p 558
+# G = EuclideanGraph.fromfile(DATA_PATH / 'tinyG2.txt')
+# # See p 558
 # x, y = np.array([[0,  5],
 #                  [1,  1],
 #                  [1,  4],

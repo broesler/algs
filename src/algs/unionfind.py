@@ -615,7 +615,8 @@ def plot_grid(N, g, label_nodes=False, fig=None, ax=None, **kwargs):
 
 if __name__ == "__main__":
     # Test reading from a file
-    filename = './data/tinyUF.txt'
+    DATA_PATH = Path(__file__).parents[2] / 'data'
+    filename = DATA_PATH / 'tinyUF.txt'
     uf = QuickFindUF.fromfile(filename, store=True)
     for p, q in uf.edges:
         print(f"{p} {q}")
