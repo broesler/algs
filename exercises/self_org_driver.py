@@ -15,12 +15,11 @@ this driver to compare the running time of your implementation from Exercise
 distribution where search hits the ith smallest key with probability 1/2^i.
 """
 
-import gzip
-import pickle
 import time
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 from tqdm import tqdm
 
 from algs.search import ArrayST, BinarySearchST
@@ -80,13 +79,12 @@ class SelfOrganizingDriver:
         self.runtimes = np.empty((1,))
 
     @staticmethod
-    @np.vectorize
     def H_N(N):
         r"""Harmonic number `N`.
 
         Parameters
         ----------
-        N : array-like
+        N : array-like of int
             `N`th harmonic(s) desired.
 
         .. math::
@@ -97,9 +95,15 @@ class SelfOrganizingDriver:
         result : np.ndarray(float)
             `N`th harmonic numbers.
         """
-        if N < 1:
+        N = np.asarray(N, dtype=int)
+
+        if np.any(N < 1):
             raise ValueError('H_N not defined for `N` < 1!')
-        return np.sum(1.0 / np.arange(1, N + 1))
+
+        # Compute all harmonic numbers up to max(N)
+        cumsum = np.cumsum(1.0 / np.arange(1, N.max() + 1))
+
+        return cumsum[N - 1]  # return only the requested values
 
     def run_test(self, N, samples=None, verbose=False):
         """Run the actual test by inserting `N` keys into the table, then
@@ -178,7 +182,8 @@ if __name__ == '__main__':
     # Define sequence of N to test
     # NOTE anything over ~1e4 takes almost untenably long. 1e5 takes 1.5 hrs.
     # Ns = [int(x) for x in [1e3, 1e4, 1e5, 1e6]]  # book values
-    Ns = [int(x) for x in [1e2, 3e2, 1e3, 3e3, 1e4, 3e4, 1e5]]
+    Ns = [int(x) for x in [1e2, 3e2, 1e3, 3e3, 1e4, 3e4, 1e5]]  # actual runs
+    # Ns = [int(x) for x in [1e2, 3e2, 1e3]]  # code testing values
     N_s = 100  # number of search times to sample for statistics
 
     dists = ['p', 'zipf']
@@ -186,26 +191,62 @@ if __name__ == '__main__':
     ST_names = ['SST', 'SST_selforg', 'BinarySearchST']
     selforgs = [False, True, False]
 
-    drivers = {}
+    plot_N = 1000  # N for which to store the keys and indices for plotting
+    data = []
+    keys = []
 
     for N in Ns:
         for d in dists:
             for ST, ST_name, selforg in zip(STs, ST_names, selforgs):
                 print(f"{ST_name=}, {selforg=}, {d=}")
-                zipf = True if d == 'zipf' else 'p'
+                zipf = d == 'zipf'
                 driver = SelfOrganizingDriver(ST, zipf=zipf, selforg=selforg)
                 driver.run_test(N, samples=N_s, verbose=True)
 
                 # Store data
-                drivers[(d, ST_name, N)] = driver
+                data.append(
+                    {
+                        'dist': d,
+                        'ST': ST_name,
+                        'N': N,
+                        'put': driver.put_time * 1e-9,
+                        'get': driver.get_time * 1e-9,
+                        'runtime': driver.runtimes * 1e-9,
+                    }
+                )
 
-        # Write data to file (overwrite each loop in case it breaks)
-        PKL_PATH = Path(__file__).parent / 'pkl'
-        filename = PKL_PATH / 'self_org_drivers.pkl.gz'
-        print(f"Writing to {filename}...", end='')
-        with gzip.open(filename, 'wb') as f:
-            pickle.dump(drivers, f)
-        print('done.')
+                if N == plot_N:
+                    keys.append(
+                        {'dist': d, 'ST': ST_name, 'keys': list(driver.t.keys())}
+                    )
+
+    # Build the DataFrame and explode the runtimes so that each row is a single
+    # search runtime, instead of an array.
+    df = (
+        pd.DataFrame(data)
+        .explode('runtime', ignore_index=True)
+        .astype({'dist': 'category', 'ST': 'category'})
+    )
+
+    kf = (
+        pd.DataFrame(keys)
+        .assign(idx=lambda df_: df_['keys'].apply(lambda x: list(range(len(x)))))
+        .explode(['keys', 'idx'], ignore_index=True)
+        .astype({'dist': 'category', 'ST': 'category', 'keys': int, 'idx': int})
+    )
+
+    # Write it to a file
+    PKL_PATH = Path(__file__).parent / 'pkl'
+
+    df_file = PKL_PATH / 'self_org_data.parquet'
+    print(f"Writing to {df_file}...", end='')
+    df.to_parquet(df_file)
+    print('done.')
+
+    kf_file = PKL_PATH / 'self_org_keys.parquet'
+    print(f"Writing to {kf_file}...", end='')
+    kf.to_parquet(kf_file)
+    print('done.')
 
 # =============================================================================
 # =============================================================================

@@ -7,105 +7,67 @@
 
 """Plots for Exercise 3.1.33 (self-organizing search)."""
 
-import gzip
-import pickle
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import seaborn.objects as so
 from self_org_driver import SelfOrganizingDriver
 
 SAVE_FIGS = False
+sns.reset_defaults()
 
 if SAVE_FIGS:
-    plt.close('all')
+    plt.close('all')  # FacetGrid does not have a `clear` option.
     fig_dir = Path(__file__).parent / 'figures'
 
 tag = ''
 # tag = '_randinit'
 
-# TODO
-#   * add `_randinit` to df, plots as well for comparison
+# TODO add `_randinit` to df, plots as well for comparison
+
 # Load the data
 PKL_DIR = Path(__file__).parent / 'pkl'
-filename = PKL_DIR / f"self_org_drivers{tag}.pkl.gz"
 
-with gzip.open(filename, 'rb') as f:
-    drivers = pickle.load(f)
+# Load the parquet files
+df_file = PKL_DIR / f"self_org_data{tag}.parquet"
+df = pd.read_parquet(df_file)
 
-# Reorganize data to plot
-dists, ST_names = set(), set()
-for k in drivers:
-    dists.add(k[0])
-    ST_names.add(k[1])
+kf_file = PKL_DIR / f"self_org_keys{tag}.parquet"
+kf = pd.read_parquet(kf_file)
 
-dists, ST_names = sorted(dists), sorted(ST_names)
-ops = ['put', 'get']
-Ns = np.unique([v.t.size() for v in drivers.values()])
-
-N_s = drivers[(dists[0], ST_names[0], Ns[0])].runtimes.size
-
-# Store the individual search runtimes
-cols = pd.MultiIndex.from_product(
-    [dists, ST_names, ops, Ns], names=['dist', 'ST', 'op', 'N']
+tots = df.melt(
+    id_vars=['dist', 'ST', 'N'],
+    value_vars=['put', 'get'],
+    var_name='op',
+    value_name='runtime [s]',
 )
-data = np.empty((N_s, len(dists) * len(ST_names) * len(Ns) * 2))
-
-df = pd.DataFrame(
-    columns=cols.droplevel('op').unique(), data=data[:, : data.shape[1] // len(dists)]
-)
-tots = pd.Series(index=cols, name='runtime [s]', dtype=float)
-
-# Times are in nanoseconds
-for (d, ST_name, N), driver in drivers.items():
-    tots[(d, ST_name, 'put', N)] = driver.put_time / 1e9
-    tots[(d, ST_name, 'get', N)] = driver.get_time / 1e9
-    df[(d, ST_name, N)] = driver.runtimes / 1e9
 
 # -----------------------------------------------------------------------------
 #         Plot distributions of runtimes
 # -----------------------------------------------------------------------------
-tf = df.melt(value_name='runtime')
+fig, ax = plt.subplots(num=1, clear=True)
 
-fig = plt.figure(1, clear=True)
-ax = fig.add_subplot()
+st_order = df["ST"].cat.categories.array
 
-# Plot the runtime distributions
-sns.stripplot(
-    data=tf, x='N', y='runtime', hue='ST', dodge=True, jitter=True, alpha=0.25, zorder=1
+sp = (
+    so.Plot(df, x="N", y="runtime", color="ST")
+    .add(so.Dots(alpha=0.25), so.Jitter(0.1), so.Dodge(), legend=False)
+    # TODO how to get Dot/Range as "palette='dark'" like in pointplot?
+    .add(so.Dot(marker="d", pointsize=9, edgecolor="w"), so.Agg("mean"), so.Dodge())
+    .add(so.Range(), so.Est(errorbar=("ci", 95)), so.Dodge())
+    .scale(x=so.Nominal(), y="log", color=so.Nominal(order=st_order))
+    .theme(plt.rcParams | {"axes.grid.which": "both"})
+    .on(ax)
+    .plot(pyplot=True)
 )
 
-# PLot the means of each group
-sns.pointplot(
-    data=tf,
-    x='N',
-    y='runtime',
-    hue='ST',
-    dodge=0.5,
-    linestyle='none',
-    markers='d',
-    palette='dark',
-)
-
-# Nice legend
-handles, labels = ax.get_legend_handles_labels()
-ax.legend(
-    handles[3:],
-    labels[3:],
-    title='Symbol Table',
-    handletextpad=0,
-    labelspacing=1,
-    loc='upper left',
-    frameon=True,
-)
-
-# Tidy up axes limits and labels
-ax.ticklabel_format(axis='y', style='sci', scilimits=(-3, 3))
-# ax.set_ylim([0.5*tf['runtime'].min(), 5*tf['runtime'].max()])
-ax.set(ylabel='time per search [s]', yscale='log')
-ax.grid('on')
+leg = sp._figure.legends[0]
+handles, labels = leg.legend_handles, [x.get_text() for x in leg.texts]
+del sp._figure.legends[0]
+ax.legend(handles, labels, title='Symbol Table', loc='upper left')
 
 if SAVE_FIGS:
     fig.savefig(fig_dir / f"self_org_timedists{tag}.pdf")
@@ -113,32 +75,66 @@ if SAVE_FIGS:
 # -----------------------------------------------------------------------------
 #         Plot total runtimes
 # -----------------------------------------------------------------------------
-g = sns.FacetGrid(
-    tots.reset_index(), row='op', col='dist', hue='ST', margin_titles=True, height=4
+fig = plt.figure(2, clear=True)
+fig.set_size_inches((8, 6.4), forward=True)
+
+sp = (
+    so.Plot(tots, x='N', y='runtime [s]', color='ST')
+    .facet(row='op', col='dist')
+    .add(so.Line(marker='o'))
+    .scale(x='log', y='log')
+    .layout(engine="constrained")
+    .theme(plt.rcParams | {"axes.spines.top": False, "axes.spines.right": False})
+    .on(fig)
+    .plot()
+    # .plot(pyplot=True)
+    # NOTE need .plot(pyplot=True) to place legend inside the figure. See:
+    # <https://github.com/mwaskom/seaborn/blob/32088bbc3adc611b7118e57fce6d4ed096a76a29/seaborn/_core/plot.py#L1750-L1754>  # noqa: E501
 )
-g.set(xscale='log', yscale='log')
-g.map(plt.plot, 'N', 'runtime [s]', marker='o')
-g.add_legend()
+
+# sp._figure.get_layout_engine().set(rect=(0, 0, 0.8, 1))
+
+# Move the legend into the axes
+leg = sp._figure.legends[0]
+handles, labels = leg.legend_handles, [x.get_text() for x in leg.texts]
+del sp._figure.legends[0]
+ax = sp._figure.axes[-1]
+ax.legend(handles, labels, loc='lower right')
 
 if SAVE_FIGS:
-    g.savefig(fig_dir / f"self_org_tots{tag}.pdf")
+    fig.savefig(fig_dir / f"self_org_tots{tag}.pdf")
 
 # -----------------------------------------------------------------------------
 #         Plot keys vs. index
 # -----------------------------------------------------------------------------
 fig = plt.figure(3, clear=True)
-fig.set_size_inches((12, 6), forward=True)
-N = 1000
-gs = fig.add_gridspec(nrows=1, ncols=2)
-for i, dist in enumerate(['p', 'zipf']):
-    ax = fig.add_subplot(gs[i])
-    for name in ST_names:
-        ax.scatter(
-            np.arange(N), drivers[(dist, name, N)].t.keys(), alpha=0.5, label=name
-        )
-    ax.set(title='Zipf' if dist == 'zipf' else '$1/2^i$', xlabel='index', ylabel='key')
-    ax.grid('on')
-    ax.legend(loc='lower right')
+fig.suptitle('Keys vs. Index')
+fig.set_size_inches((9, 5.4), forward=True)
+
+kf['title'] = kf['dist'].map({'p': r'$1 / 2^i$', 'zipf': 'Zipf: $1 / (i H_N)$'})
+
+sp = (
+    so.Plot(kf, x='idx', y='keys', color='ST')
+    .facet(col='title')
+    .add(so.Dot(alpha=0.5))
+    .label(x="index", title=lambda x: rf"{x}")
+    .layout(engine="constrained")
+    .theme(plt.rcParams | {"axes.grid": True})
+    .on(fig)
+    .plot()
+)
+
+for ax in sp._figure.axes:
+    ax.set_aspect("equal")
+
+# sp._figure.get_layout_engine().set(rect=(0, 0, 0.8, 1))
+
+# Move the legend into the axes
+leg = sp._figure.legends[0]
+handles, labels = leg.legend_handles, [x.get_text() for x in leg.texts]
+del sp._figure.legends[0]
+ax = sp._figure.axes[0]
+ax.legend(handles, labels, loc='lower right')
 
 if SAVE_FIGS:
     fig.savefig(fig_dir / f"self_org_keys{tag}.pdf")
@@ -147,7 +143,7 @@ if SAVE_FIGS:
 #         Plot the probability distributions
 # -----------------------------------------------------------------------------
 # TODO count inversions in each array to determine "sortedness"
-N = 1000
+N = kf['keys'].max()  # max key value, which is N for the p and zipf dists
 keys = np.arange(1, N + 1)  # function of N alone
 
 p = 1 / (2.0**keys)
