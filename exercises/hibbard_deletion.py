@@ -46,34 +46,31 @@ def theory_avg_ipl(N):
 
 
 # Define constant inputs
-FORCE_UPDATE = False
+FORCE_UPDATE = True
 SAVE_FIGS = False
-TINY = True
+TINY = False
 
 PKL_PATH = Path(__file__).parent / 'pkl'
+FIG_PATH = Path(__file__).parent / 'figures'
 
-tag = '_tiny' if TINY else ''
+tag = '_tiny' if TINY else '_large'
 DF_FILE = PKL_PATH / f"hibbard_delete{tag}.parquet"
 IPL_FILE = PKL_PATH / f"hibbard_delete{tag}_ipls.pkl"
 
 # Input variables
 N_TRIALS = 30  # run the entire experiment and ensemble average
 dms = ['Hibbard', 'random']  # delete methods
-# Ns = [2**x for x in range(6, 12)]  # [64, 128, 256, 512, 1024, 2048]
-Ns = [64, 128]
+
+if TINY:
+    Ns = [16, 32, 64]
+else:
+    # Ns = [8, 16, 32]  # for testing
+    Ns = [2**x for x in range(6, 12)]  # [64, 128, 256, 512, 1024, 2048]
 
 # Output variables
 if FORCE_UPDATE or not IPL_FILE.exists():
-    # Create summary DataFrame from the ipl data
-    df = pd.DataFrame(
-        index=pd.MultiIndex.from_product([dms, Ns]),
-        columns=['samples', 'mean_IPL', 'var_IPL', 'mean_IPL_norm', 'var_IPL_norm'],
-    )
-    df.index.names = ['dm', 'N']
-
-    # Store the ipls vs operations
-    results = []
-    ipls = {}
+    results = []  # create summary DataFrame from the ipl data
+    ipls = {}  # store the ipls vs operations
 
     for N in Ns:
         print(f"---------- {N} keys...")
@@ -83,7 +80,13 @@ if FORCE_UPDATE or not IPL_FILE.exists():
             print(f"{dm} deletion...")
             # Re-seed the rng for each variable to compare
             rng = np.random.default_rng(seed=565656)
-            avg_ipl = np.empty((N_TRIALS, M))  # track IPL vs. operations
+
+            if TINY:
+                # track each IPL vs. operations
+                avg_ipl = np.empty((N_TRIALS, M), dtype=np.float32)
+            else:
+                # Accumulate the average of IPLs over all trials
+                ensemble_sum = np.zeros(M)
 
             for trial in tqdm(range(N_TRIALS), desc='trials'):
                 # Generate random numbers
@@ -93,18 +96,37 @@ if FORCE_UPDATE or not IPL_FILE.exists():
 
                 # Create a symbol table with N keys
                 st = BST.fromkeys(rand_keys, delete_method=dm)
-                avg_ipl[trial, 0] = 1 + st.internal_path_length / st.size()
+
+                init_ipl = 1 + st.internal_path_length / st.size()
+                if TINY:
+                    avg_ipl[trial, 0] = init_ipl
+                else:
+                    trial_sum = np.empty(M)
+                    trial_sum[0] = init_ipl
 
                 # delete and insert random keys N^2 times.
                 for i in tqdm(range(1, M), leave=False):
                     del st[st.select(rand_deletes[i])]
                     st[rand_inserts[i]] = None
-                    avg_ipl[trial, i] = 1 + st.internal_path_length / st.size()
+                    ipl = 1 + st.internal_path_length / st.size()
+
+                    if TINY:
+                        avg_ipl[trial, i] = ipl
+                    else:
+                        trial_sum[i] = ipl
 
                 assert N == st.size()
 
+                if not TINY:
+                    ensemble_sum += trial_sum
+
             # Process the stats of the data for summarization
-            data = avg_ipl[:, N * N :]
+            if TINY:
+                data = avg_ipl[:, N * N :]
+            else:
+                ensemble_avg = ensemble_sum / N_TRIALS
+                data = ensemble_avg[N * N :]
+
             theory_val = theory_avg_ipl(N)
             norm_data = data / theory_val
 
@@ -120,12 +142,12 @@ if FORCE_UPDATE or not IPL_FILE.exists():
                 }
             )
 
-            df = pd.DataFrame(results).set_index(['dm', 'N'])
+            if TINY:
+                ipls[dm, N] = avg_ipl.copy()
+            else:
+                ipls[dm, N] = ensemble_avg.copy()
 
-            # TODO convert 'pkl/hibbard_delete.pkl' to downsampled version
-            # Store downsampled ipls vs operations
-            ipls[dm, N] = resample(avg_ipl, num=min(Ns) ** 2, axis=1)
-
+    df = pd.DataFrame(results).set_index(['dm', 'N'])
     df.to_parquet(DF_FILE)
 
     with IPL_FILE.open('wb') as fp:
@@ -162,34 +184,55 @@ sns.pointplot(ax=ax, data=df, x='N', y='sqrtN', color='k')
 ax.set_ylabel('Average Path Length')
 
 if SAVE_FIGS:
-    figname = Path(f"./figures/hibbard_points{'_tiny' if TINY else ''}.pdf")
+    figname = FIG_PATH / f"hibbard_points{'_tiny' if TINY else ''}.pdf"
     fig.savefig(figname)
 
 ENSEMBLE = True
 
+if not TINY:
+    ENSEMBLE = True  # we only store the averages
+
 fig = plt.figure(2, clear=True)
-fig.suptitle(f"Ensemble Average Over {N_TRIALS} Trials")
+
+if ENSEMBLE:
+    fig.suptitle(f"Ensemble Average Over {N_TRIALS} Trials")
+else:
+    fig.suptitle(f"All {N_TRIALS} Trials")
+
 gs = fig.add_gridspec(nrows=len(Ns), ncols=1)
 
 for i, N in enumerate(Ns):
     ax = fig.add_subplot(gs[i])
     ax.axhline(1, color='k', lw=1)
 
-    for c, dm in zip(['C0', 'C3'], dms):
-        if ENSEMBLE:
-            ensemble_avg = np.mean(ipls[dm, N], axis=0)  # avg over trials
-            M = len(ensemble_avg)
-            ax.plot(range(M), ensemble_avg / theory_avg_ipl(N), color=c, label=f"{dm}")
-        else:
-            # Plot all trials separately
-            for t in range(N_TRIALS):
-                M = ipls[dm, N].shape[1]
+    for c, dm in zip(['tab:blue', 'tab:red'], dms):
+        data = ipls[dm, N]
+        data = resample(data, num=min(Ns) ** 2, axis=1)
+
+        if TINY:
+            if ENSEMBLE:
+                ensemble_avg = np.mean(data, axis=0)  # avg over trials
+                M = len(ensemble_avg)
                 ax.plot(
-                    range(M),
-                    ipls[dm, N][t, :] / theory_avg_ipl(N),
+                    np.arange(M),
+                    ensemble_avg / theory_avg_ipl(N),
                     color=c,
-                    label=f"{dm}, N = {N}",
+                    label=f"{dm}",
                 )
+            else:
+                # Plot all trials separately
+                for t in range(N_TRIALS):
+                    M = data.shape[1]
+                    ax.plot(
+                        range(M),
+                        data[t, :] / theory_avg_ipl(N),
+                        color=c,
+                        alpha=0.2,
+                        # label=f"{dm}, N = {N}",
+                    )
+        else:
+            M = len(data)
+            ax.plot(np.arange(M), data / theory_avg_ipl(N), color=c, label=f"{dm}")
 
         ax.annotate(
             rf"$N$ = {N}",
@@ -205,13 +248,11 @@ for i, N in enumerate(Ns):
     ax.set_xticklabels([])
 
 ax.set_xticklabels(['0', '$N^2$', '$2N^2$'])
+# TODO dummy lines for legend
 ax.legend(fontsize=8)
 ax.set(xlabel='Operations', ylabel='IPL vs. Theory')
 
-gs.tight_layout(fig)
-
 if SAVE_FIGS:
-    FIG_PATH = Path(__file__).parent / 'figures'
     figname = FIG_PATH / (
         f"hibbard{'_ensemble' if ENSEMBLE else ''}{'_tiny' if TINY else ''}.pdf"
     )
