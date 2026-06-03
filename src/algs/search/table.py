@@ -512,14 +512,7 @@ class ArrayST(SymbolTable):
                     self._cache = i
                 # Ex 3.1.22
                 if self._SELF_ORG_FLAG:
-                    if self._CACHE_FLAG:
-                        self._cache = 0
-                    if i > 0:
-                        # Move search hit to front of the list: O(n)
-                        # Cost of pop (n - (i+1)) + cost of insert(0) (n - 1)
-                        self._cost += 2 * self.size() - i - 2
-                        self._keys.insert(0, self._keys.pop(i))
-                        self._vals.insert(0, self._vals.pop(i))
+                    self._self_org(i)
                 return
         self._cost = self.size()  # tested all the keys!
         self._keys.append(k)  # add new key to end of list: O(1)
@@ -543,17 +536,23 @@ class ArrayST(SymbolTable):
                 if self._CACHE_FLAG:
                     self._cache = i
                 if self._SELF_ORG_FLAG:
-                    if self._CACHE_FLAG:
-                        self._cache = 0
-                    if i > 0:
-                        # Move search hit to front of the list: O(n)
-                        self._cost += 2 * self.size() - i - 2
-                        self._keys.insert(0, self._keys.pop(i))
-                        self._vals.insert(0, self._vals.pop(i))
+                    self._self_org(i)
                     return self._vals[0]
                 return self._vals[i]
         self._cost = self.size()  # tested all the keys!
         raise KeyError(k)
+
+    # Exercise 3.1.22
+    def _self_org(self, i):
+        """Move the item at index `i` to the front of the list."""
+        if self._CACHE_FLAG:
+            self._cache = 0
+        if i > 0:
+            # Move search hit to front of the list: O(n)
+            # Cost of pop (n - (i+1)) + cost of insert(0) (n - 1)
+            self._cost += 2 * self.size() - i - 2
+            self._keys.insert(0, self._keys.pop(i))
+            self._vals.insert(0, self._vals.pop(i))
 
     # Exercise 3.1.5
     def __delitem__(self, k):
