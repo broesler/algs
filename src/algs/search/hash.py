@@ -9,7 +9,7 @@
 
 import numpy as np
 
-from algs.search.table import SequentialSearchST, SymbolTable
+from algs.search.table import ArrayST, SequentialSearchST, SymbolTable
 
 __all__ = [
     'HashTable',
@@ -226,12 +226,19 @@ class SeparateChainingHashST(HashTable):
                {SymbolTable.__doc__}"""
 
     def __init__(
-        self, items=None, M=MIN_CAPACITY, resize=False, avg_probes=10, cache=False
+        self,
+        items=None,
+        M=MIN_CAPACITY,
+        resize=False,
+        avg_probes=10,
+        cache=False,
+        LL=True,
     ):
         self._AVG_PROBES = avg_probes  # maximum average list size
         assert self._AVG_PROBES > 0
         # Initialize the actual symbol table
-        self._st = [SequentialSearchST() for _ in range(M)]
+        ChainST = SequentialSearchST if LL else ArrayST
+        self._st = [ChainST() for _ in range(M)]
         super().__init__(items=items, M=M, resize=resize)
 
     __init__.__doc__ = (
@@ -240,6 +247,9 @@ class SeparateChainingHashST(HashTable):
             Desired average table size. If `resize` is True, the table size `M`
             will be adjusted such that `N/M` ~ `avg_probes` as keys are added
             or deleted.
+        LL : bool, optional
+            If True, use :class:`SequentialSearchST` for the buckets, otherwise
+            use :class:`ArrayST`. The book uses :class:`SequentialSearchST`.
         """
     )
 
@@ -351,7 +361,8 @@ class SeparateChainingHashST(HashTable):
 # Exercise 3.4.2
 class SeparateChainingLiteHashST(HashTable):
     __doc__ = f"""Implements a hash table with separate chaining, but uses
-        a nested linked list insteady of `ArrayST` dependency.
+        a nested linked list insteady of `SequentialSearchST` or `ArrayST`
+        dependency.
         {SymbolTable.__doc__}"""
 
     # Private class of key/value pairs
