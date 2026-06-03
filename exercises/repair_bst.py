@@ -25,11 +25,8 @@ class SelfHealingBST(BST):
             Ranks of the keys that are out of order.
         """
         p = q = None
-        # FIXME original line works, but updated self.keys() does not?
-        # See commit: 8836d2^, where change was made.
-        # keys = list(self._iterate_keys())  # does not rely on self.min()
         keys = self.keys()  # does not rely on self.min()
-        for i in range(self.size - 1):
+        for i in range(self.size() - 1):
             if keys[i] > keys[i+1]:
                 if p is None:
                     p = i
@@ -53,9 +50,7 @@ class SelfHealingBST(BST):
         """
         x = self._select(p, self._root)  # return BST._Node, not the key!
         t = self._select(q, self._root)
-        temp_key, temp_val = x.key, x.val
-        x.key, x.val = t.key, t.val
-        t.key, t.val = temp_key, temp_val
+        (x.key, x.val), (t.key, t.val) = (t.key, t.val), (x.key, x.val)
 
     def repair(self):
         """Repair the tree by swapping pairs of reversed keys."""
@@ -73,7 +68,7 @@ assert st._is_ordered()
 st._swap_keys(st.rank('E'), st.rank('M'))  # must use rank
 assert not st._is_ordered()
 st.repair()
-assert st._is_ordered()  # FIXME
+assert st._is_ordered()
 
 # Test multiple swaps
 st = SelfHealingBST.fromkeys(list('SEARCHEXAMPLE'))
@@ -81,7 +76,7 @@ st._swap_keys(st.rank('E'), st.rank('M'))  # must use rank
 st._swap_keys(2, st.size() - 1)  # must use rank indices, since swaps break BST
 assert not st._is_ordered()
 st.repair()
-assert st._is_ordered()  # FIXME
+assert st._is_ordered()
 
 # =============================================================================
 # =============================================================================
