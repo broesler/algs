@@ -13,6 +13,9 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
+
+# import seaborn.objects as so
 
 DATA_PATH = Path(__file__).parent.parent / 'data'
 PKL_PATH = Path(__file__).parent / 'pkl' / 'frequency_count'
@@ -29,12 +32,12 @@ filestem = 'tale'  # 779K
 params = [
     ('ArrayST', 'append'),
     # ('ArrayST', 'append_selforg'),
-    ('ArrayST', 'insert'),
+    # ('ArrayST', 'insert'),
     # ('ArrayST', 'insert_selforg'),
-    # ('BinarySearchST', ''),
+    ('BinarySearchST', ''),
     # ('BST', ''),
-    # ('RedBlackBST', ''),
-    # ('LinearProbingHashST', ''),
+    ('RedBlackBST', ''),
+    ('LinearProbingHashST', ''),
     # ('SeparateChainingHashST', 'Seq'),
     # ('SeparateChainingHashST', 'resize_Seq'),
 ]
@@ -139,8 +142,7 @@ params = [
 ]
 
 
-fig, ax = plt.subplots(num=1, clear=True)
-fig.suptitle(f"{filestem}.txt, min. length = {MINLEN}")
+records = []
 
 for ST_name, kind in params:
     # Get the individual row for this (minlen, filestem, ST_name)
@@ -153,20 +155,38 @@ for ST_name, kind in params:
 
     # Load the data
     data = np.load(tf['trace_file'])
-    cost, time = data['cost'], data['time']
-
     ops = np.arange(tf['words'])  # one operation per word in input
-    mean_cmp = np.cumsum(time)[1:]  # cumulative average cost
+    mean_cmp = np.cumsum(data['time'])[1:]  # cumulative runtime
 
-    # Plot the cumulative runtime vs. number of `put` operations
-    ax.plot(ops[1:], mean_cmp, label=make_label(tf))
+    temp_df = pd.DataFrame(
+        {
+            'alg': ST_name,
+            'kind': kind,
+            'label': make_label(tf),
+            'ops': ops[1:],
+            'mean_time': mean_cmp,
+        }
+    )
 
-# Format the axes
-ax.legend()
-ax.set(xscale='log', yscale='log')
-ax.set_xlabel('operations', c='tab:red')
-ax.set_ylabel('time [s]', c='tab:red')
-ax.spines[['top', 'right']].set_visible(False)
+    records.append(temp_df)
+
+tf = pd.concat(records, ignore_index=True)
+
+# Plot the cumulative runtime vs. number of `put` operations
+fig, ax = plt.subplots(num=1, clear=True)
+fig.suptitle(f"{filestem}.txt, min. length = {MINLEN}")
+
+# Seaborn lineplot
+sns.lineplot(
+    data=tf,
+    x='ops',
+    y='mean_time',
+    hue='alg',
+    style='kind',
+    ax=ax,
+)
+
+ax.set(xlabel='operations', ylabel='runtime [s]', xscale='log', yscale='log')
 
 if SAVE_FIGS:
     figname = FIG_PATH / f"{fig_stem}_runtime.pdf"
