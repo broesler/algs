@@ -83,7 +83,7 @@ ax.plot(ms, fit_costs(ms, *popt), 'C0-', label=rf"${popt[0]:.2g} M^{{{popt[1]:.3
 # Error bounds
 p0 = fit_costs(ms, *(popt + perr))
 p1 = fit_costs(ms, *(popt - perr))
-ax.fill_between(ms, p0, p1, color='C0', alpha=0.2)
+ax.fill_between(ms, p0, p1, color='tab:blue', alpha=0.2)
 
 # Data
 ax.scatter(Ms, costs, c='k')

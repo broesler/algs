@@ -200,13 +200,13 @@ for j, tag in enumerate(['bst', 'rbst']):
         y_theory = theory_dict[tag][col_name]['eqn'](x)
         label = theory_dict[tag][col_name]['label']
 
-        ax.plot(x, y_theory, color='C3', ls='-', label=label)
+        ax.plot(x, y_theory, color='tab:red', ls='-', label=label)
         ax.annotate(
             rf"$\leftarrow$ {y_theory[-1]:.0f}",
             xy=(max(ops) + 100, y_theory[-1]),
             ha='left',
             va='center',
-            color='C3',
+            color='tab:red',
         )
 
         # Plot the runtime distributions
@@ -242,8 +242,8 @@ for j, tag in enumerate(['bst', 'rbst']):
         # ylim = ax.get_ylim()  # [0, 20]
         ylim = [0, opts[col_name]['ylim']]
 
-        ax.xaxis.label.set(color='C3')
-        ax.yaxis.label.set(color='C3')
+        ax.xaxis.label.set(color='tab:red')
+        ax.yaxis.label.set(color='tab:red')
         ax.set_xticks([min(ops), max(ops)])
         ax.set_yticks([0, round(ylim[1])])
 

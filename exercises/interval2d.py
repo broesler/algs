@@ -52,7 +52,7 @@ fig = plt.figure(1, clear=True, constrained_layout=True)
 ax = fig.add_subplot()
 
 for b in boxes:
-    b.draw(edgecolor='C0', facecolor='C0', alpha=0.2)
+    b.draw(edgecolor='tab:blue', facecolor='tab:blue', alpha=0.2)
 
 ax.set(
     xlabel='x',

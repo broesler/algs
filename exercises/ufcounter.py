@@ -31,7 +31,7 @@ def cost_plot(oc, ax=None, title='', y_max=0):
         The axes in which the plot was made.
     """
     ax.scatter(oc.ops, oc.cost, color=0.7 * np.r_[1, 1, 1], s=1, alpha=0.8)
-    ax.scatter(oc.ops, oc.tots, c='C3', s=1, alpha=0.8)
+    ax.scatter(oc.ops, oc.tots, c='tab:red', s=1, alpha=0.8)
 
     # Label the final average total cost value
     ax.annotate(
@@ -42,13 +42,13 @@ def cost_plot(oc, ax=None, title='', y_max=0):
         textcoords='data',
         ha='center',
         va='bottom',
-        color='C3',
+        color='tab:red',
         arrowprops={'arrowstyle': "-|>", 'color': "C3"},
     )
 
     ax.set_title(
         title,
-        color='C3',
+        color='tab:red',
         fontweight='bold',
         fontsize=9,
         x=0,
@@ -64,8 +64,8 @@ def cost_plot(oc, ax=None, title='', y_max=0):
         ax.set_yticks((0, y_max))
 
     # Only label the first axes
-    ax.set_xlabel('number of connections', color='C3', labelpad=-10)
-    ax.set_ylabel('number of array references', color='C3', labelpad=-10)
+    ax.set_xlabel('number of connections', color='tab:red', labelpad=-10)
+    ax.set_ylabel('number of array references', color='tab:red', labelpad=-10)
     ax.set_xticks((0, oc.M))
 
     ax.grid(False)

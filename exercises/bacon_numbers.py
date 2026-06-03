@@ -39,7 +39,7 @@ print(f"{len(nonames)} actors not connected!")
 
 fig = plt.figure(1, clear=True, constrained_layout=True)
 ax = fig.add_subplot()
-ax.hist(dists, bins=bins, density=True, rwidth=0.9, color='C0', alpha=0.8)
+ax.hist(dists, bins=bins, density=True, rwidth=0.9, color='tab:blue', alpha=0.8)
 ax.set(xlabel='x', ylabel='y')
 
 plt.show()

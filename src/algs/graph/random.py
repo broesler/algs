@@ -366,7 +366,7 @@ if __name__ == "__main__":
     Gb = random_euclidean_graph(V, connected=True)
     fig, ax = plt.subplots(num=1, clear=True, constrained_layout=True)
     Ge.draw(ax=ax, label_nodes=True)
-    Gb.draw(ax=ax, label_nodes=True, c='C0')
+    Gb.draw(ax=ax, label_nodes=True, c='tab:blue')
     plt.show()
 
     Gg = random_grid_graph(V, R=20, dist_edges=True)

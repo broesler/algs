@@ -87,7 +87,7 @@ ax.hist(Ls, bins=np.arange(31) + 0.5, density=True, rwidth=0.9, color='k')
 ax.plot(k, Pk, 'C3')
 # ax.stem(k, Pk, linefmt='C3-', markerfmt='C3o')
 
-ax.axvline(α, c='C3', lw=1)
+ax.axvline(α, c='tab:red', lw=1)
 
 ax.annotate(
     f"{α = :.4f}...",
@@ -97,7 +97,7 @@ ax.annotate(
     textcoords='data',
     va='top',
     ha='left',
-    color='C3',
+    color='tab:red',
     arrowprops={'arrowstyle': '->', 'color': 'C3'},
 )
 
@@ -109,12 +109,12 @@ ax.annotate(
     textcoords='data',
     va='top',
     ha='left',
-    color='C3',
+    color='tab:red',
     arrowprops={'arrowstyle': '->', 'color': 'C3'},
 )
 
-ax.set_xlabel(rf"list length ({st.N:,d} keys, $M$ = {st.M})", color='C3')
-ax.set_ylabel('frequency', color='C3', labelpad=-25)
+ax.set_xlabel(rf"list length ({st.N:,d} keys, $M$ = {st.M})", color='tab:red')
+ax.set_ylabel('frequency', color='tab:red', labelpad=-25)
 ax.set_yticks([0, 0.125])
 
 ax.spines['top'].set_visible(False)

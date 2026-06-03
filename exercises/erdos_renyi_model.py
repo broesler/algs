@@ -47,7 +47,7 @@ else:
 fig = plt.figure(1, clear=True, constrained_layout=True)
 ax = fig.add_subplot()
 ax.plot(df.index, df['theory'], c='k', label=r'$\frac{1}{2} N \log N$')
-ax.scatter(df.index, df['mean'], c='C3', label=f"data ({T=} trials)")
+ax.scatter(df.index, df['mean'], c='tab:red', label=f"data ({T=} trials)")
 ax.set(xlabel='N', xscale='log', ylabel='# edges', yscale='log')
 ax.legend()
 

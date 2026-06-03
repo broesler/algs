@@ -60,8 +60,8 @@ ax.annotate(
     arrowprops={'arrowstyle': '->'},
 )
 
-ax.set_xlabel(rf"cluster length ({fc.t.N:,d} keys, $M$ = {fc.t.M})", color='C3')
-ax.set_ylabel('frequency', color='C3', labelpad=-15)
+ax.set_xlabel(rf"cluster length ({fc.t.N:,d} keys, $M$ = {fc.t.M})", color='tab:red')
+ax.set_ylabel('frequency', color='tab:red', labelpad=-15)
 ax.set_ylim(top=1.1 * freqs.max())
 ax.set_yticks((0, round(1.1 * freqs.max(), 1)))
 

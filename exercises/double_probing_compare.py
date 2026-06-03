@@ -97,7 +97,7 @@ for opt in opts:
 ax.axvline(α, c='k', lw=1)
 
 # expected Poisson distribution
-ax.plot(x, P(x, α), color='C0', label=f"Pois(k; μ={α=:.2f})")
+ax.plot(x, P(x, α), color='tab:blue', label=f"Pois(k; μ={α=:.2f})")
 
 ax.annotate(
     f"{α = :.2f}",
@@ -106,12 +106,12 @@ ax.annotate(
     xytext=(α + 2, 1.1 * freqs.max()),
     textcoords='data',
     va='center',
-    color='C3',
+    color='tab:red',
     arrowprops={'arrowstyle': '->', 'color': 'C3'},
 )
 
-ax.set_xlabel(rf"list length ({fc.t.N:,d} keys, $M$ = {fc.t.M})", color='C3')
-ax.set_ylabel('frequency', color='C3', labelpad=-15)
+ax.set_xlabel(rf"list length ({fc.t.N:,d} keys, $M$ = {fc.t.M})", color='tab:red')
+ax.set_ylabel('frequency', color='tab:red', labelpad=-15)
 ax.set_yticks([0, max(ax.get_yticks())])
 
 ax.spines['top'].set_visible(False)

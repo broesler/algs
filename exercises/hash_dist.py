@@ -49,11 +49,11 @@ rand_ints = rng.integers(M, size=len(hashes))
 fig = plt.figure(1, clear=True, constrained_layout=True)
 fig.set_size_inches((8, 2), forward=True)
 ax = fig.add_subplot()
-ax.hist(rand_ints, bins=M, rwidth=0.9, color='C0', alpha=0.4)
+ax.hist(rand_ints, bins=M, rwidth=0.9, color='tab:blue', alpha=0.4)
 
 lengths, _, _ = ax.hist(hashes, bins=M, rwidth=0.9, color='k')
 m = int(np.mean(lengths))  # bar height == list lengths in hash table
-ax.axhline(m, lw=1, color='C3')
+ax.axhline(m, lw=1, color='tab:red')
 ax.annotate(
     rf"${m} \approx {len(hashes)}~/~{M}$",
     xy=(5, m),
@@ -62,7 +62,7 @@ ax.annotate(
     textcoords='axes fraction',
     ha='left',
     va='top',
-    color='C3',
+    color='tab:red',
     arrowprops={
         'edgecolor': 'none',
         'facecolor': 'C3',

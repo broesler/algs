@@ -61,7 +61,13 @@ for i, p in enumerate(ps):
     G.draw(ax=ax, c='#EEE', vkws={'s': 20, 'alpha': 0.8}, ekws={'alpha': 0.8})
     # T.draw(ax=ax, vkws={'s': 20, 'alpha': 0.8}, ekws={'alpha': 0.8})
     ax.set_title(
-        f"{100 * p:.0f}%", color='C3', fontsize=9, x=0, ha='left', pad=0, va='bottom'
+        f"{100 * p:.0f}%",
+        color='tab:red',
+        fontsize=9,
+        x=0,
+        ha='left',
+        pad=0,
+        va='bottom',
     )
 
     # Plot BFS
@@ -69,7 +75,7 @@ for i, p in enumerate(ps):
     # G.draw(ax=ax, c='#EEE', vkws=dict(s=20, alpha=0.8), ekws=dict(alpha=0.8))
     # N = int(p*len(dpath))
     # G.draw(ax=ax, p=dpath[:N], vkws=dict(s=20, alpha=0.8), ekws=dict(alpha=0.8))
-    # ax.set_title(f"{100*p:.0f}%", color='C3', fontsize=9,
+    # ax.set_title(f"{100*p:.0f}%", color='tab:red', fontsize=9,
     #              x=0, ha='left', pad=0, va='bottom')
 
 plt.show()

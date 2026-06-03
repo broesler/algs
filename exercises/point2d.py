@@ -151,9 +151,9 @@ def closest_pair_rabin(points, plot=False, ax=None):
 
         # Plot the grid
         yg, xg = np.mgrid[p0.x : p1.x + d : d, p0.y : p1.y + d : d]
-        # ax.scatter(xg, yg, c='C2', s=20, alpha=0.5)
-        ax.plot(xg, yg, c='C2', alpha=0.5)
-        ax.plot(xg.T, yg.T, c='C2', alpha=0.5)
+        # ax.scatter(xg, yg, c='tab:green', s=20, alpha=0.5)
+        ax.plot(xg, yg, c='tab:green', alpha=0.5)
+        ax.plot(xg.T, yg.T, c='tab:green', alpha=0.5)
 
         # Plot the closest grid points
         for g, ps in grid.items():
@@ -177,12 +177,12 @@ for p in points:
     p.draw(color=0.7 * np.ones(3), s=20)
 
 # Highlight the closest pair(s)
-an.draw(c='C2')
-bn.draw(c='C2')
-an.draw_to(bn, c='C2')
-a.draw(c='C3')
-b.draw(c='C3')
-a.draw_to(b, c='C3')
+an.draw(c='tab:green')
+bn.draw(c='tab:green')
+an.draw_to(bn, c='tab:green')
+a.draw(c='tab:red')
+b.draw(c='tab:red')
+a.draw_to(b, c='tab:red')
 
 ax.set(
     xlabel='x',

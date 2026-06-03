@@ -455,18 +455,18 @@ if __name__ == "__main__":
 
     fig = plt.figure(1, clear=True)
     ax = fig.add_subplot()
-    p0.draw(ax, c='C3')
+    p0.draw(ax, c='tab:red')
     for i, p in enumerate(points):
         # p.draw(ax, c='k')
         ax.text(p.x, p.y, f"{i}", ha='left', va='bottom')
         p0.draw_to(p, ax=ax)
         fig.canvas.draw()
-    i0.draw(c='C0')
-    i1.draw(c='C2')
-    i2.draw(edgecolor='C3', lw=2)
-    i3.draw(edgecolor='C4', lw=2)
-    i4.draw(edgecolor='C5', lw=2)
-    a.draw(c='C3')
+    i0.draw(c='tab:blue')
+    i1.draw(c='tab:green')
+    i2.draw(edgecolor='tab:red', lw=2)
+    i3.draw(edgecolor='tab:purple', lw=2)
+    i4.draw(edgecolor='tab:brown', lw=2)
+    a.draw(c='tab:red')
 
     ax.set(
         xlabel='x',

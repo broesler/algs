@@ -79,12 +79,12 @@ pb = bfs.path_to(i)
 
 fig, ax = plt.subplots(num=1, clear=True, constrained_layout=True)
 G.draw(ax=ax, label_nodes=True)
-# G.draw(p=pd, ax=ax, label_nodes=True, c='C3',  ekws=dict(lw=3))
-# G.draw(p=pb, ax=ax, label_nodes=True, c='C0')
+# G.draw(p=pd, ax=ax, label_nodes=True, c='tab:red',  ekws=dict(lw=3))
+# G.draw(p=pb, ax=ax, label_nodes=True, c='tab:blue')
 
 # Label the paths
-dl = Line2D([0, 1], [0, 1], c='C3')
-bl = Line2D([0, 1], [0, 1], c='C0')
+dl = Line2D([0, 1], [0, 1], c='tab:red')
+bl = Line2D([0, 1], [0, 1], c='tab:blue')
 ax.legend(
     [dl, bl],
     [f"DFS({s}, {i})", f"BFS({s}, {i})"],

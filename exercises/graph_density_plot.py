@@ -30,7 +30,7 @@ for g, E, tag in zip(gs, Es, tags):
     G.draw()
     ax.set_title(
         rf"{tag} ($E$ = {E})",
-        color='C3',
+        color='tab:red',
         fontsize=9,
         x=0,
         ha='left',
