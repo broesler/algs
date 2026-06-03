@@ -76,7 +76,10 @@ class FrequencyCounter:
         for word in self.t:
             if self.t[word] > self.t[max_word]:
                 max_word = word
-        del self.t['']  # remove placeholder
+        try:
+            del self.t['']  # remove placeholder
+        except NotImplementedError:
+            pass
         self.max_word = max_word  # store the result
         return max_word
 
