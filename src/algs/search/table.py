@@ -472,10 +472,11 @@ class ArrayST(SymbolTable):
     __doc__ = f"""Implements an unordered symbol table with an array.
               {SymbolTable.__doc__}"""
 
-    def __init__(self, items=None, cache=True, selforg=False):
+    def __init__(self, items=None, cache=True, selforg=False, append=True):
         self._keys = []  # Ex 3.1.2 (ArrayST)
         self._vals = []
         self._SELF_ORG_FLAG = selforg  # reorganize most recent results
+        self._APPEND_FLAG = append
         super().__init__(items, cache)
 
     __init__.__doc__ = (
@@ -483,6 +484,9 @@ class ArrayST(SymbolTable):
         + """selforg : bool, optional
             If True, move each search hit to the front of the array to improve
             search times for commonly-searched keys.
+        append : bool, optional
+            If True, add new keys to the end of the array. If False, add new
+            keys to the front of the array.
         """
     )
 
@@ -514,11 +518,19 @@ class ArrayST(SymbolTable):
                 if self._SELF_ORG_FLAG:
                     self._self_org(i)
                 return
+
         self._cost = self.size()  # tested all the keys!
-        self._keys.append(k)  # add new key to end of list: O(1)
-        self._vals.append(v)  # add new key to end of list: O(1)
+
+        if self._APPEND_FLAG:
+            self._keys.append(k)  # add new key to end of list: O(1)
+            self._vals.append(v)
+        else:
+            self._keys.insert(0, k)  # add new key to front of list: O(n)
+            self._vals.insert(0, v)
+
+        # Update the cache
         if self._CACHE_FLAG:
-            self._cache = self.size() - 1  # update the cache
+            self._cache = self.size() - 1 if self._APPEND_FLAG else 0
 
     def __getitem__(self, k):
         # Check the cache
