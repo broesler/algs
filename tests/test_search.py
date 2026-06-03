@@ -68,9 +68,20 @@ def err_test(container, op, *args, err_type=IndexError):
 
 
 # ---------- Test All STs ----------
+class ArraySTAppend(ArrayST):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, append=True, **kwargs)
+
+
+class ArraySTInsert(ArrayST):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, append=False, **kwargs)
+
+
 UNORDERED_STS = {
     SequentialSearchST,
-    ArrayST,
+    ArraySTAppend,
+    ArraySTInsert,
     SeparateChainingHashST,
     SeparateChainingLiteHashST,
     LinearProbingHashST,
@@ -126,6 +137,7 @@ NO_CACHE = {
     RobinHoodHashST,
 }
 
+ARRAY_STS = [ArraySTAppend, ArraySTInsert, BinarySearchST]
 
 # -----------------------------------------------------------------------------
 #         Define fixtures common to each test
@@ -281,7 +293,7 @@ class TestCaching:
             st = empty_st
             for k, v in ITEMS:
                 st[k] = v
-                if st.__class__ in [ArrayST, BinarySearchST]:
+                if st.__class__ in ARRAY_STS:
                     assert st._keys[st._cache] == k
                     assert st._vals[st._cache] == v
                 else:
@@ -291,7 +303,7 @@ class TestCaching:
         def test_put_cache_existing(self, st):
             for k in st:
                 st[k] = 56
-                if st.__class__ in [ArrayST, BinarySearchST]:
+                if st.__class__ in ARRAY_STS:
                     assert st._keys[st._cache] == k
                     assert st._vals[st._cache] == 56
                 else:
@@ -301,7 +313,7 @@ class TestCaching:
         def test_get_cache_existing(self, st):
             for k in st:
                 v = st[k]
-                if st.__class__ in [ArrayST, BinarySearchST]:
+                if st.__class__ in ARRAY_STS:
                     assert st._keys[st._cache] == k
                     assert st._vals[st._cache] == v
                 else:
