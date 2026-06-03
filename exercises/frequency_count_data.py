@@ -7,6 +7,8 @@
 
 """Run FrequencyCounter to collect data on various symbol tables."""
 
+import json
+from itertools import product
 from pathlib import Path
 
 import numpy as np
@@ -18,19 +20,21 @@ from algs.search import (
     ArrayBST,
     ArrayST,
     BinarySearchST,
+    LinearProbingHashST,
     RedBlackBST,
-    # LinearProbingHashST,
     SeparateChainingHashST,
+    SequentialSearchST,
 )
 
-FORCE_UPDATE = False
+FORCE_UPDATE = True
 
 DATA_PATH = Path(__file__).parent.parent / 'data'
-PKL_PATH = Path(__file__).parent / 'pkl'
+PKL_PATH = Path(__file__).parent / 'pkl' / 'frequency_count'
+PKL_PATH.mkdir(parents=True, exist_ok=True)
 
 filenames = [
     DATA_PATH / 'tiny_tale.txt',  # 292
-    # DATA_PATH / 'tale.txt',  # 779K
+    DATA_PATH / 'tale.txt',  # 779K
     # DATA_PATH / 'leipzig1m.txt',  # 124M
 ]
 
@@ -44,10 +48,10 @@ filenames = [
 # (SeparateChainingHashST, resize=True, LL=False)
 # (SeparateChainingHashST, resize=False, LL=True)
 # (SeparateChainingHashST, resize=True, LL=True)
-# (ArrayST, ins, selforg=False)
-# (ArrayST, app, selforg=False)
-# (ArrayST, ins, selforg=True)
-# (ArrayST, app, selforg=True)
+# (ArrayST, append=False, selforg=False)
+# (ArrayST, append=True, selforg=False)
+# (ArrayST, append=False, selforg=True)
+# (ArrayST, append=True, selforg=True)
 
 # NOTE ins/app relies on a source code change, not a dynamic argument,
 # so maybe we should add that into ArrayST.
@@ -63,58 +67,92 @@ filenames = [
 #   * LL: use linked list (SequentialSearchST) instead of ArrayST for
 #     SeparateChainingHashST
 
-kind = 'app'  # 'ins', 'app', 'selforg', 'LL', 'resize'
+# All parameter combinations
+params = {
+    SequentialSearchST: [],
+    ArrayST: ['append', 'selforg'],
+    BinarySearchST: [],
+    BST: [],
+    ArrayBST: [],
+    RedBlackBST: [],
+    LinearProbingHashST: [],
+    SeparateChainingHashST: ['resize', 'LL'],
+}
 
-selforg = kind == 'selforg'
-resize = kind == 'resize'
-M = 997 if not resize else 4
+# String map for the "kind" run_id
+kind_map = {
+    ('append', True): 'append',
+    ('append', False): 'insert',
+    ('selforg', True): 'selforg',
+    ('selforg', False): '',
+    ('resize', True): 'resize',
+    ('resize', False): '',
+    ('LL', True): 'Seq',
+    ('LL', False): 'Arr',
+}
 
 data = []
 
-# for ST in [SequentialSearchST]:
-for ST in [ArrayST, BinarySearchST, BST, ArrayBST, RedBlackBST]:
-    # for ST in [SeparateChainingHashST, LinearProbingHashST]:
+for ST, kwarg_names in params.items():
     print(f"Running {ST.__name__}...")
+
     for filename in filenames:
         filestem = filename.stem
 
         for minlen in [1, 8, 10]:
-            if ST is ArrayST:
-                fc = FrequencyCounter(ST, selforg=selforg)
-            elif ST is SeparateChainingHashST:
-                fc = FrequencyCounter(ST, M=M, resize=resize)
+            # Build kwargs for each ST
+            if len(kwarg_names) == 0:
+                all_kwarg_sets = [{}]  # just one set of kwargs (empty)
             else:
-                fc = FrequencyCounter(ST)
+                # Generate all combinations of True/False for the given kwarg names
+                all_kwarg_sets = []
 
-            fc.count_frequencies(filename, minlen)
-            fc.find_max_word()
+                for combination in product([False, True], repeat=len(kwarg_names)):
+                    kwargs = dict(zip(kwarg_names, combination))
 
-            # Store summary data
-            run_id = f"{filestem}_{ST.__name__}_m{minlen:02d}_{kind}"
-            trace_file = PKL_PATH / f"{run_id}.npz"
+                    if ST is SeparateChainingHashST:
+                        kwargs['M'] = 4 if kwargs.get('resize', False) else 997
 
-            data.append(
-                {
-                    'run_id': run_id,
-                    'trace_file': str(trace_file),
-                    'alg': ST.__name__,
-                    'kind': kind,
-                    'minlen': minlen,
-                    'filestem': filestem,
-                    'words': fc.N,
-                    'distinct': fc.t.size(),
-                    'max_word': fc.max_word,
-                    'max_freq': fc.t[fc.max_word],
-                    'M': getattr(fc.t, 'M', None),  # for SeparateChainingHashST
-                }
-            )
+                    all_kwarg_sets.append(kwargs)
 
-            np.savez_compressed(
-                trace_file,
-                cost=np.asarray(fc.cost),
-                time=np.asarray(fc.time),
-                allow_pickle=False,
-            )
+            for kwargs in all_kwarg_sets:
+                # Build the "kind" string based on the kwargs
+                kind = '_'.join(
+                    kind_map.get((k, v), '') for k, v in kwargs.items() if k != 'M'
+                ).strip('_')  # remove extraneous underscores
+                kind = f"_{kind}" if kind else ''
+                run_id = f"{filestem}_{ST.__name__}_m{minlen:02d}{kind}"
+                trace_file = PKL_PATH / f"{run_id}.npz"
+
+                # Run the frequency counter
+                fc = FrequencyCounter(ST, **kwargs)
+                fc.count_frequencies(filename, minlen)
+                fc.find_max_word()
+
+                # Store summary data
+                data.append(
+                    {
+                        'run_id': run_id,
+                        'trace_file': str(trace_file),
+                        'alg': ST.__name__,
+                        'kind': kind.lstrip('_'),
+                        'kwargs': json.dumps(kwargs),
+                        'minlen': minlen,
+                        'filestem': filestem,
+                        'words': fc.N,
+                        'distinct': fc.t.size(),
+                        'max_word': fc.max_word,
+                        'max_freq': fc.t[fc.max_word],
+                        'M': getattr(fc.t, 'M', None),  # for SeparateChainingHashST
+                    }
+                )
+
+                np.savez_compressed(
+                    trace_file,
+                    cost=np.asarray(fc.cost),
+                    time=np.asarray(fc.time),
+                    allow_pickle=False,
+                )
 
 
 # Update existing summary file
@@ -125,7 +163,6 @@ if FORCE_UPDATE or not summary_file.exists():
 else:
     existing_df = pd.read_parquet(summary_file)
     new_df = pd.DataFrame(data)
-
     df = (
         pd.concat([existing_df, new_df], ignore_index=True)
         .drop_duplicates(subset=['run_id'], keep='last')
@@ -138,7 +175,7 @@ df.to_parquet(summary_file)
 # For display only
 print_df = pd.DataFrame(data).pivot(  # noqa: PD010
     index=["filestem", "minlen"],
-    columns=["alg"],
+    columns=["alg", "kind"],
     values=["words", "distinct", "max_word", "max_freq"],
 )
 

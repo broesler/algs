@@ -7,6 +7,7 @@
 
 """Plot amortized cost of various types of searches."""
 
+import json
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -14,40 +15,52 @@ import numpy as np
 import pandas as pd
 
 DATA_PATH = Path(__file__).parent.parent / 'data'
-PKL_PATH = Path(__file__).parent / 'pkl'
+PKL_PATH = Path(__file__).parent / 'pkl' / 'frequency_count'
 
 SAVE_FIGS = False
 
 MINLEN = 8  # 1, 8, 10
-kind = 'resize'  # 'ins', 'app', 'selforg', 'cache', 'resize'
 
 # filestem = 'tiny_tale'  # 292
-filestem = 'tale'       # 779K
+filestem = 'tale'  # 779K
 # filestem = 'leipzig1m'  # 124M
 
-ST_names = ['ArrayST', 'BinarySearchST', 'BST', 'RedBlackBST']
+# ST_names = ['ArrayST', 'BinarySearchST', 'BST', 'RedBlackBST']
 # ST_names = ['ArrayST', 'RedBlackBST', 'SeparateChainingHashST']
 # ST_names = ['SeparateChainingHashST', 'LinearProbingHashST']
 
+# Choose which parameter sets to plot: {ST_name: kind}
+# ST_names = ['ArrayST', 'RedBlackBST', 'SeparateChainingHashST']
+params = [
+    ('LinearProbingHashST', ''),
+    ('SeparateChainingHashST', 'Seq'),
+    ('SeparateChainingHashST', 'resize_Seq'),
+]
+
 # Load the summary data
-df = pd.read_parquet(PKL_PATH / f"frequency_count_summary_{kind}.parquet")
-df = df.rename({'file': 'filestem'}, axis=1)
+df = pd.read_parquet(PKL_PATH / "frequency_count_summary.parquet")
+df['kwargs'] = df['kwargs'].map(json.loads)
 
 # Filter for these particular (minlen, filestem, ST_names) combinations
-df = df.loc[
-    (df['minlen'] == MINLEN) & (df['filestem'] == filestem) & (df['alg'].isin(ST_names))
-]
+pf = df.loc[(df['minlen'] == MINLEN) & (df['filestem'] == filestem)]
+
+
+def make_label(tf):
+    """Make a label for the plot like "Array(append=True, reorg=False)"."""
+    kw_str = ', '.join(f"{k}={v}" for k, v in tf['kwargs'].items())
+    return f"{ST_name}({kw_str})" if kw_str else ST_name
+
 
 # -----------------------------------------------------------------------------
 #         Plot amortized cost of each search type
 # -----------------------------------------------------------------------------
-fig, axs = plt.subplots(num=0, nrows=len(ST_names), sharex=True, clear=True)
-fig.set_size_inches((6.4, min(8, max(4.8, 3 * len(ST_names)))), forward=True)
+fig, axs = plt.subplots(num=0, nrows=len(params), sharex=True, clear=True)
+fig.set_size_inches((6.4, min(8, max(4.8, 3 * len(params)))), forward=True)
 fig.suptitle(f"{filestem}.txt, min. length = {MINLEN}")
 
-for ax, ST_name in zip(axs.flat, ST_names):
-    # Get the individual row for this (minlen, filestem, ST_name)
-    tf = df.loc[df['alg'] == ST_name]
+for ax, (ST_name, kind) in zip(axs.flat, params):
+    # Get the individual row for this (minlen, filestem, ST_name, kind)
+    tf = pf.loc[(pf['alg'] == ST_name) & (pf['kind'] == kind)]
 
     if len(tf) != 1:
         raise ValueError(f"Expected exactly one row for {ST_name}, got {len(tf)}")
@@ -62,10 +75,7 @@ for ax, ST_name in zip(axs.flat, ST_names):
     mean_cmp = np.cumsum(cost)[1:] / ops[1:]  # cumulative average cost
 
     # Plot the amortized cost (# cost) vs. number of `put` operations
-    note = ST_name
-
-    if ST_name == 'SeparateChainingHashST':
-        note += f" (M = {tf['M']})"
+    note = make_label(tf)
 
     ax.annotate(
         note, xy=(0.01, 0.97), xycoords='axes fraction', ha='left', va='top', color='k'
@@ -110,6 +120,7 @@ if SAVE_FIGS:
 #         Plot actual timings
 # -----------------------------------------------------------------------------
 # ST_names = [
+#     'SequentialSearchST',
 #     'ArrayST',
 #     'BinarySearchST',
 #     'BST',
@@ -122,11 +133,9 @@ if SAVE_FIGS:
 fig, ax = plt.subplots(num=1, clear=True)
 fig.suptitle(f"{filestem}.txt, min. length = {MINLEN}")
 
-for ST_name in ST_names:
-    kind = 'resize' if 'hash' in ST_name.lower() else 'app'
-
+for ST_name, kind in params:
     # Get the individual row for this (minlen, filestem, ST_name)
-    tf = df.loc[df['alg'] == ST_name]
+    tf = pf.loc[(pf['alg'] == ST_name) & (pf['kind'] == kind)]
 
     if len(tf) != 1:
         raise ValueError(f"Expected exactly one row for {ST_name}, got {len(tf)}")
@@ -141,7 +150,7 @@ for ST_name in ST_names:
     mean_cmp = np.cumsum(time)[1:]  # cumulative average cost
 
     # Plot the cumulative runtime vs. number of `put` operations
-    ax.plot(ops[1:], mean_cmp, label=ST_name)
+    ax.plot(ops[1:], mean_cmp, label=make_label(tf))
 
 # Format the axes
 ax.legend()
