@@ -103,7 +103,7 @@ def insertion_sort(s):
 
 
 def _insertion_sort(a, lo, hi):
-    """Implementation of insertion sort for arbitrary slices of an array."""
+    """Run insertion sort for arbitrary slices of an array."""
     N = hi - lo + 1
     for i in range(1, N):
         j = i
@@ -187,7 +187,7 @@ def _merge(a, b):
 #         Bad Quicksorts
 # -----------------------------------------------------------------------------
 def quicksort0(s):
-    """A simple quicksort implementation. See K&R.
+    """Sort a list using a simple quicksort implementation. See K&R.
 
     Average case: ~ 2 N log N compares and ~ 1/3 N log N exchanges.
     Worst case: ~ N^2 / 2 compares if not randomized.
@@ -201,7 +201,7 @@ def quicksort0(s):
 
 
 def _quicksort0(a, lo, hi):
-    """The actual quicksort algorithm."""
+    """Run the actual quicksort algorithm."""
     if lo < hi:
         p = _partition0(a, lo, hi)
         _quicksort0(a, lo, p - 1)
@@ -221,7 +221,7 @@ def _partition0(a, lo, hi):
 
 
 def quicksort0r(s):
-    """A randomized pivot quicksort implementation.
+    """Sort a list using a randomized pivot quicksort implementation.
 
     Randomization fixes O(N^2) behavior when sorting an already-sorted list.
 
@@ -274,7 +274,7 @@ def qsort0(s):
 
 
 def _qsort0(a, lo, hi):
-    """The actual quicksort algorithm."""
+    """Run the actual quicksort algorithm."""
     if lo < hi:
         p = _part0(a, lo, hi)
         _qsort0(a, lo, p - 1)
@@ -283,7 +283,11 @@ def _qsort0(a, lo, hi):
 
 
 def _part0(a, lo, hi):
-    """A toy partition, not useful in practice due to O(N^2) worst-case."""
+    """Partition the array.
+
+    .. note::
+        A toy partition, not useful in practice due to O(N^2) worst-case.
+    """
     j = lo  # j is boundary pointer
     for i in range(lo + 1, hi + 1):
         if a[i] < a[lo]:
@@ -305,7 +309,7 @@ def qsort1(s):
 
 
 def _qsort1(a, lo, hi):
-    """The actual quicksort algorithm."""
+    """Run the actual quicksort algorithm."""
     if lo < hi:
         p = _part1(a, lo, hi)
         _qsort1(a, lo, p - 1)
@@ -335,7 +339,7 @@ def _part1(a, lo, hi):
 
 
 def qsort2(s):
-    """Standard sort interface. Return a sorted copy.
+    """Return a sorted copy of the list.
 
     Notes
     -----
@@ -369,7 +373,7 @@ def qsort(s):
 
 
 def _qsort_bm(a, lo, hi):
-    """The complete Bentley-McIlroy qsort algorithm."""
+    """Run the complete Bentley-McIlroy qsort algorithm."""
     # Define function parameters, experimentally determined
     _qsort.INSERTION_CUTOFF = 20
     _qsort.MEDIAN_CUTOFF = 100

@@ -21,7 +21,7 @@ test_str = 'SEARCHEXAMPLE'
 ords = [ord(c) for c in test_str]
 
 def bad_hash(k):
-    """The hash function."""
+    """Hash the key."""
     R = 56
     M = 55
     return java_hash(test_str, R=R) % M

@@ -108,18 +108,18 @@ class Digraph:
         return [v for v in self.adj if self.indegree[v] == 0]
 
     def edges(self):
-        """Iterable of all the edges in the digraph."""
+        """Iterate through all the edges in the digraph."""
         the_edges = []
         for v in self.adj:
             the_edges.extend(self.adj[v])
         return the_edges
 
     def vertices(self):
-        """Iterable of all the vertex keys in the Digraph."""
+        """Iterate through all the vertex keys in the Digraph."""
         return self.adj.keys()
 
     def iter_adjs(self):
-        """Iterators of the adjacent nodes to all vertices."""
+        """Return a dict of iterators of the adjacent nodes to all vertices."""
         return {v: iter(self.adj[v]) for v in self.adj}
 
     def add_edge(self, a, b, w=0.0):
@@ -216,7 +216,7 @@ class GraphSearch(ABC):
         return self._visited[v]
 
     def path_to(self, v):
-        """Returns path from source vertex to v.
+        """Return a path from source vertex to v.
 
         Parameters
         ----------

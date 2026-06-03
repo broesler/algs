@@ -9,7 +9,7 @@
 
 
 def _hash(k, a=1, M=1):
-    """The hash function for the `k`th letter of the alphabet."""
+    """Hash the `k`th letter of the alphabet."""
     return (a * (ord(k) - ord('A'))) % M
 
 
