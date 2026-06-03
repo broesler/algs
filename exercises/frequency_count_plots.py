@@ -25,16 +25,18 @@ MINLEN = 8  # 1, 8, 10
 filestem = 'tale'  # 779K
 # filestem = 'leipzig1m'  # 124M
 
-# ST_names = ['ArrayST', 'BinarySearchST', 'BST', 'RedBlackBST']
-# ST_names = ['ArrayST', 'RedBlackBST', 'SeparateChainingHashST']
-# ST_names = ['SeparateChainingHashST', 'LinearProbingHashST']
-
-# Choose which parameter sets to plot: {ST_name: kind}
-# ST_names = ['ArrayST', 'RedBlackBST', 'SeparateChainingHashST']
+# Choose which parameter sets to plot: (ST_name, kind)
 params = [
-    ('LinearProbingHashST', ''),
-    ('SeparateChainingHashST', 'Seq'),
-    ('SeparateChainingHashST', 'resize_Seq'),
+    ('ArrayST', 'append'),
+    # ('ArrayST', 'append_selforg'),
+    ('ArrayST', 'insert'),
+    # ('ArrayST', 'insert_selforg'),
+    # ('BinarySearchST', ''),
+    # ('BST', ''),
+    # ('RedBlackBST', ''),
+    # ('LinearProbingHashST', ''),
+    # ('SeparateChainingHashST', 'Seq'),
+    # ('SeparateChainingHashST', 'resize_Seq'),
 ]
 
 # Load the summary data
@@ -46,7 +48,7 @@ pf = df.loc[(df['minlen'] == MINLEN) & (df['filestem'] == filestem)]
 
 
 def make_label(tf):
-    """Make a label for the plot like "Array(append=True, reorg=False)"."""
+    """Make a label for the plot like "Array(append=True, selforg=False)"."""
     kw_str = ', '.join(f"{k}={v}" for k, v in tf['kwargs'].items())
     return f"{ST_name}({kw_str})" if kw_str else ST_name
 
@@ -119,16 +121,23 @@ if SAVE_FIGS:
 # -----------------------------------------------------------------------------
 #         Plot actual timings
 # -----------------------------------------------------------------------------
-# ST_names = [
-#     'SequentialSearchST',
-#     'ArrayST',
-#     'BinarySearchST',
-#     'BST',
-#     'ArrayBST',
-#     'RedBlackBST',
-#     'SeparateChainingHashST',
-#     'LinearProbingHashST',
-# ]
+# Choose which parameter sets to plot: (ST_name, kind)
+params = [
+    ('SequentialSearchST', ''),
+    ('ArrayST', 'append'),
+    ('ArrayST', 'append_selforg'),
+    ('ArrayST', 'insert'),
+    ('ArrayST', 'insert_selforg'),
+    ('BinarySearchST', ''),
+    ('BST', ''),
+    ('RedBlackBST', ''),
+    ('LinearProbingHashST', ''),
+    ('SeparateChainingHashST', 'Seq'),
+    ('SeparateChainingHashST', 'resize_Seq'),
+    ('SeparateChainingHashST', 'Arr'),
+    ('SeparateChainingHashST', 'resize_Arr'),
+]
+
 
 fig, ax = plt.subplots(num=1, clear=True)
 fig.suptitle(f"{filestem}.txt, min. length = {MINLEN}")
