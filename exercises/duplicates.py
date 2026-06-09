@@ -5,12 +5,11 @@
 #   Author: Bernie Roesler
 # =============================================================================
 
-r"""
-Exercise 2.5.31: Duplicates.
+r"""Exercise 2.5.31: Duplicates.
 
-A client that computes the number of
-duplicates in *N* random integers on *[0, M-1]*, for *T* trials. Probability
-theory states the number of duplicates should be:
+A client that computes the number of duplicates in *N* random integers on *[0,
+M-1]*, for *T* trials. Probability theory states the number of duplicates
+should be:
 
 .. math::
     P(\alpha) = 1 - e^{-\alpha}
@@ -19,8 +18,10 @@ theory states the number of duplicates should be:
 
 import time
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 
 # NOTE our implementations show a similar ratio to np.sort() vs set(), but both
 # pale in comparison to the built-in python functions.
@@ -36,7 +37,7 @@ def count_both_sort(x):
     dups = 0
     uniques = 1
     for i in range(len(x) - 1):
-        if x[i+1] == x[i]:
+        if x[i + 1] == x[i]:
             dups += 1
         else:
             uniques += 1
@@ -123,9 +124,38 @@ if __name__ == '__main__':
 
     assert np.allclose((df['distinct'] + df['duplicate']).sub(N, axis=0), 0)
 
-    # TODO plot timing on log scale
     print(df.round().astype(int))
     print(tf)
+
+    tf_plot = pd.DataFrame(timing_data).melt(
+        id_vars=['N', 'α'],
+        value_vars=['sort', 'dict'],
+        var_name='alg',
+        value_name='time [ns]',
+    )
+    tf_plot['time [s]'] = tf_plot['time [ns]'] * 1e-9
+
+    fig, ax = plt.subplots(num=1, clear=True)
+
+    sns.lineplot(
+        data=tf_plot,
+        x='N',
+        y='time [s]',
+        hue='alg',
+        style='α',
+        markers=True,
+        dashes=False,
+        err_style='bars',
+        errorbar=('se', 3),
+        palette='mako',
+        ax=ax,
+    )
+
+    ax.grid(which='both')
+    ax.set(
+        xscale='log',
+        yscale='log',
+    )
 
 # =============================================================================
 # =============================================================================
