@@ -46,9 +46,9 @@ def theory_avg_ipl(N):
 
 
 # Define constant inputs
-FORCE_UPDATE = True
+FORCE_UPDATE = False
 SAVE_FIGS = False
-TINY = False
+TINY = True
 
 PKL_PATH = Path(__file__).parent / 'pkl'
 FIG_PATH = Path(__file__).parent / 'figures'
@@ -187,7 +187,7 @@ if SAVE_FIGS:
     figname = FIG_PATH / f"hibbard_points{'_tiny' if TINY else ''}.pdf"
     fig.savefig(figname)
 
-ENSEMBLE = True
+ENSEMBLE = False
 
 if not TINY:
     ENSEMBLE = True  # we only store the averages
@@ -228,7 +228,7 @@ for i, N in enumerate(Ns):
                         data[t, :] / theory_avg_ipl(N),
                         color=c,
                         alpha=0.2,
-                        # label=f"{dm}, N = {N}",
+                        label=f"{dm}" if TINY and t == 0 else None,
                     )
         else:
             M = len(data)
@@ -248,8 +248,7 @@ for i, N in enumerate(Ns):
     ax.set_xticklabels([])
 
 ax.set_xticklabels(['0', '$N^2$', '$2N^2$'])
-# TODO dummy lines for legend
-ax.legend(fontsize=8)
+ax.legend(fontsize=8, loc='lower right')
 ax.set(xlabel='Operations', ylabel='IPL vs. Theory')
 
 if SAVE_FIGS:
