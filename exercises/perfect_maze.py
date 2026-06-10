@@ -29,7 +29,6 @@ P = dfs.path_to(END)
 fig, ax = plt.subplots(num=1, clear=True, constrained_layout=True)
 # G.draw(ax=ax, c='k', vkws=dict(s=1), ekws=dict(alpha=0.1))
 
-# TODO actually plot walls of maze between unconnected vertices
 # Use large linewidth to simulate "walls" of maze
 T.draw(ax=ax, ekws={'lw': 10})
 

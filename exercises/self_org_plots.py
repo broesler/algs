@@ -144,7 +144,6 @@ if SAVE_FIGS:
 # -----------------------------------------------------------------------------
 #         Plot the probability distributions
 # -----------------------------------------------------------------------------
-# TODO count inversions in each array to determine "sortedness"
 N = kf['keys'].max()  # max key value, which is N for the p and zipf dists
 keys = np.arange(1, N + 1)  # function of N alone
 

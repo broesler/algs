@@ -18,9 +18,9 @@ from algs.search import ST
 
 DATA_PATH = Path(__file__).parent.parent / 'data'
 
+# TODO add Silver line branches
 
-# TODO
-# * add Silver line branches
+
 def _parse_bostonmetro(fname):
     """Parse the 'bostonmetro.txt' file."""
     names = {}   # map: id -> name
