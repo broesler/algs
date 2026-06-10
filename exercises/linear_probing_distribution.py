@@ -9,67 +9,84 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+import seaborn as sns
 from scipy.stats import expon
 
 from algs.search.hash import LinearProbingHashST
 
 rng = np.random.default_rng(seed=56)
 
-# TODO
-#   * look at longest cluster length vs. N
-
 # Insert N random non-negative integers into a table of size N/100.
-Ms = [10**x for x in range(1, 6)]
-costs = []
+Ms = np.array([10**x for x in range(3, 8)])
+data = []
 
 for M in Ms:
     N = M // 2
     keys = rng.integers(N, size=N)
     st = LinearProbingHashST.fromkeys(keys, M=M, resize=False)
-    costs.append(st.cost_of_miss())
+    clusters = np.array(st._cluster_lengths())
+    data.append(
+        {
+            'M': M,
+            'N': N,
+            'hit': st.cost_of_hit(),
+            'miss': st.cost_of_miss(),
+            'longest cluster': clusters.max(),
+            'mean cluster': clusters.mean(),
+        }
+    )
 
-costs = np.r_[costs]
+df = pd.DataFrame(data)
+clusters = np.r_[st._cluster_lengths()]
 
-# Discussion: costs are marginally lower for actual vs. theory, but approach
-# the theoretical value as N increases.
-# [5]>>> list(zip(Ms, costs))
-# [5]===
-# [(   10, 1.375),
-# (   100, 1.828125),
-# (  1000, 2.1669921875),
-# ( 10000, 2.0484619140625),
-# (100000, 2.2954559326171875)]
-
-
-a = np.r_[st._cluster_lengths()]
-
-α = N / M
-th_hit = 1 / 2 * (1 + 1 / (1 - α))
-th_miss = 1 / 2 * (1 + 1 / (1 - α)**2)
+α = N / M  # == 0.5 by choice of N = M // 2
+hit_theory = 0.5 * (1 + 1 / (1 - α))
+miss_theory = 0.5 * (1 + 1 / (1 - α) ** 2)
 
 # Fit an exponential distribution to the cluster lengths
 # <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.expon.html>
-loc, scale = expon.fit(a)
+loc, scale = expon.fit(clusters)
 λ = 1 / scale
 rv = expon(loc=loc, scale=scale)
-x = np.linspace(a.min(), a.max())
-bins = np.arange(a.max() + 1) + 0.5
+x = np.linspace(clusters.min(), clusters.max() + 1)
 
-assert np.isclose(a.mean(), loc + scale)  # definition of X ~ Exp(λ)
+assert np.isclose(clusters.mean(), loc + scale)  # definition of X ~ Exp(λ)
 
-fig = plt.figure(1, clear=True, constrained_layout=True)
-ax = fig.add_subplot()
-ax.hist(a, bins=bins, color='k', rwidth=0.9, density=True)
-ax.plot(x, rv.pdf(x), 'C3-', label=rf"${λ:.2f}e^{{{λ:.2f}(x - {loc:.0f})}}$")
+bins = np.arange(clusters.max() + 1) + 0.5
+
+# -----------------------------------------------------------------------------
+#        Plots
+# -----------------------------------------------------------------------------
+# ---------- Cost of Miss vs. N
+fig, ax = plt.subplots(num=1, clear=True)
+
+sns.pointplot(
+    data=df,
+    x='M',
+    y='miss',
+    native_scale=True,
+    ax=ax,
+)
+
+ax.axhline(hit_theory, ls='-.', c="tab:blue")
+ax.set(ylabel='cost of miss [# probes]', xscale='log')
+
+# ---------- Distribution of cluster lengths
+fig, ax = plt.subplots(num=2, clear=True)
+fig.set_size_inches((8, 3), forward=True)
+
+ax.hist(clusters, bins=bins, color='k', rwidth=0.9, density=True)
+ax.plot(x, rv.pdf(x), c='tab:red', label=rf"${λ:.2f}e^{{{λ:.2f}(x - {loc:.0f})}}$")
 
 ax.set(
     xticks=bins + 0.5,
     xlabel=rf"Cluster Length ($M=${M:,d}, $\alpha = {α:.1f}$)",
     ylabel='Frequency',
+    yscale='log',
 )
 ax.legend()
-ax.spines['top'].set_visible(False)
-ax.spines['right'].set_visible(False)
+ax.spines[['top', 'right']].set_visible(False)
 
 plt.show()
 
