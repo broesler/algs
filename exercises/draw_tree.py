@@ -693,7 +693,7 @@ class TreeArtist:
         #   * option to plot red links level with neighbors
         #   * add scaling parameters, size tree around font?
         LINK_COLOR = 'k'
-        RED = 'C3'
+        RED = 'tab:red'
         LINE_WIDTH = 2
         NULL_DIST = 0.3
 
@@ -801,7 +801,6 @@ if __name__ == '__main__':
     # -------------------------------------------------------------------------
     #         Plots
     # -------------------------------------------------------------------------
-    # TODO make nice single-figure layout
     layouts = {
         'knuth': 'Knuth (1971)',
         'wetherell_naive': 'Wetherell and Shannon (1979) (naïve)',
@@ -810,28 +809,34 @@ if __name__ == '__main__':
         'reingold': 'Reingold and Tilford (1981)',
     }
 
+    fig1 = plt.figure(1, clear=True)
+    fig1.set_size_inches((14, 8), forward=True)
+    figs = fig1.subfigures(nrows=2, ncols=3)
+
+    if PLOT_MIRROR:
+        from copy import deepcopy
+        st_r = deepcopy(st)
+        st_r.reverse()  # reverse the tree
+        assert st.keys() == list(reversed(st_r.keys()))
+
     for i, (layout, title) in enumerate(layouts.items()):
+        fig = figs.flat[i]
+        fig.suptitle(title)
         dt = TreeArtist(st)
 
         if not PLOT_MIRROR:
-            dt.draw(fignum=i + 1, layout=layout)
-            dt.ax.set_title(title)
-            dt.fig.tight_layout()
+            dt.draw(fig=fig, layout=layout)
         else:
             # Plot the tree and a mirror image to test
-            fig = plt.figure(i + 1, clear=True)
-            fig.suptitle(title)
-            gs = fig.add_gridspec(nrows=1, ncols=2)
-            ax = fig.add_subplot(gs[0])
+            axs = fig.subplots(nrows=1, ncols=2)
+            ax = axs[0]
             ax.set_title('Original')
             dt.draw(ax=ax, layout=layout)
             # Plot the mirror image
-            ax = fig.add_subplot(gs[1])
-            ax.set_title('Mirror')
-            st.reverse()  # reverse the BST orientation
-            dt = TreeArtist(st)
-            dt.draw(ax=ax, layout=layout)
-            gs.tight_layout(fig)
+            ax_r = axs[1]
+            ax_r.set_title('Mirror')
+            dt_r = TreeArtist(st_r)
+            dt_r.draw(ax=ax_r, layout=layout)
 
 
 # =============================================================================
