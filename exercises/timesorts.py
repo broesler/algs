@@ -7,12 +7,13 @@
 
 """Time the run of sorting algorithms."""
 
-import itertools
 import time
-from collections import defaultdict
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+import seaborn as sns
+from tqdm import tqdm
 
 from algs.sort import (
     bubble_sort,
@@ -22,13 +23,16 @@ from algs.sort import (
     mergesort,
     mergesort_BU,
     qsort,
+    # qsort0,
+    # qsort1,
+    # qsort2,
 )
 
 sort_funs = [bubble_sort, insertion_sort, mergesort, mergesort_BU, qsort, heap_sort]
 # sort_funs = [qsort0, qsort1, qsort2, qsort]
 
 # Define lengths of input
-Nmax = 4e3
+Nmax = 5e3
 vals = np.power(2, np.arange(np.log2(Nmax))).astype(np.int64)
 M = len(vals)
 
@@ -46,53 +50,55 @@ rng.shuffle(masters['binary'])
 Ntypes = len(masters)
 
 # Initialize dictionary
-runtimes = defaultdict(lambda: defaultdict(lambda: np.zeros([M, 2])))
+records = []
 
 # Time the sort functions
-for sort in sort_funs:
+pbar = tqdm(sort_funs)
+for sort in pbar:
     name = sort.__name__
-    print(f"-----{name}-----")
+    pbar.set_description(name)
     for kind in masters:
-        for i, N in enumerate(vals):
+        vbar = tqdm(vals, leave=False)
+        for N in vbar:
+            vbar.set_description(f'{kind} N={N}')
             A = masters[kind][:N]
-            start = time.time()
+            start = time.perf_counter_ns()
             S = sort(A)
-            stop = time.time()
+            stop = time.perf_counter_ns()
             assert is_sorted(S)
-            runtimes[name][kind][i, :] = (N, stop - start)
+            records.append(
+                {
+                    'sort': name,
+                    'kind': kind,
+                    'N': N,
+                    'runtime [s]': (stop - start) / 1e9,
+                }
+            )
 
+runtimes = pd.DataFrame(records).astype({'sort': 'category', 'kind': 'category'})
+runtimes['sort'] = runtimes['sort'].cat.rename_categories(lambda x: x.replace('_', ' '))
 
 # ------------------------------------------------------------------------------
 #        Plots!
 # ------------------------------------------------------------------------------
-fig = plt.figure(1, clear=True)
-ax = fig.add_subplot(111)
+fig, ax = plt.subplots(num=1, clear=True)
 
-# TODO rewrite with pandas and seaborn
-colors = plt.rcParams['axes.prop_cycle']()
-marker = itertools.cycle(('x', 'o', '^', 's', 'd')[:Ntypes])
+sns.lineplot(
+    data=runtimes,
+    x='N',
+    y='runtime [s]',
+    hue='sort',
+    style='kind',
+    markers=True,
+    dashes=False,
+    ax=ax,
+)
 
-for sort in sort_funs:
-    name = sort.__name__
-    color = next(colors)['color']
-    for kind in masters:
-        ax.plot(
-            runtimes[name][kind][:, 0],
-            runtimes[name][kind][:, 1],
-            c=color,
-            marker=next(marker),
-            ls='-',
-            label=f"{name.replace('_', ' ')}: {kind}",
-        )
-
-ax.set_xscale('log')
-ax.set_yscale('log')
-ax.grid(which='major', c='k')
-ax.grid(which='minor')
-
-ax.legend()
-ax.set_xlabel('$N$')
-ax.set_ylabel('runtime [s]')
+ax.grid(which='both')
+ax.set(
+    xscale='log',
+    yscale='log',
+)
 
 plt.show()
 
