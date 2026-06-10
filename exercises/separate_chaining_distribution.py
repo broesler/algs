@@ -26,51 +26,51 @@ a given α.
 
 import matplotlib.pyplot as plt
 import numpy as np
-from tqdm import tqdm
+from scipy.stats import poisson
 
 from algs.search.hash import SeparateChainingHashST
 
 rng = np.random.default_rng(seed=56)
 
 # Insert N random non-negative integers into a table of size N/100.
-Ns = [10**x for x in range(3, 7)]
-α = 100  # choose ratio
+N = int(1e5)
+α = 20
+M = N // α  # table size
 
-Ls = {}
-min_Ls = []
-max_Ls = []
+keys = rng.integers(10 * N, size=N)
+st = SeparateChainingHashST.fromkeys(keys, M=M, resize=False)
 
-for N in tqdm(Ns):
-    # TODO run T trials and compute avg length of longest list
-    M = N // α
-    keys = rng.integers(N * N, size=N)
-    st = SeparateChainingHashST.fromkeys(keys, M=M, resize=False)
-    counts = np.r_[st._list_lengths()]
-    Ls[N] = counts
-    min_Ls.append(counts.min())
-    max_Ls.append(counts.max())
+counts = np.r_[st._list_lengths()]
 
-min_Ls = np.r_[min_Ls]
-max_Ls = np.r_[max_Ls]
+# Poisson distribution with λ = α
+λ = counts.sum() / st.M  # effective α == number of unique keys / table size
+x = np.arange(counts.min() - 1, counts.max() + 1)
+pois_counts = poisson.pmf(x, λ)
 
-n = np.logspace(2, 7.1)
-avg_longest = np.log(n) / np.log(np.log(n))
+# -----------------------------------------------------------------------------
+#        Plot
+# -----------------------------------------------------------------------------
+fig, ax = plt.subplots(num=2, clear=True)
 
-fig = plt.figure(1, clear=True, constrained_layout=True)
-ax = fig.add_subplot()
-ax.plot(n, avg_longest)
-ax.scatter(Ns, max_Ls)
-ax.set(xlabel='N', ylabel='Longest List')
-
-fig = plt.figure(2, clear=True, constrained_layout=True)
-ax = fig.add_subplot()
 ax.hist(
     counts,
     bins=np.arange(counts.min() - 0.5, counts.max() + 1),
     density=True,
     rwidth=0.9,
+    alpha=0.5,
+    label='Data',
 )
-ax.set(xlabel='list length', ylabel='frequency')
+
+ax.plot(
+    x,
+    pois_counts,
+    marker="o",
+    c='tab:blue',
+    label=rf"Pois($\lambda = \alpha = {λ:.2f}$)",
+)
+
+ax.legend()
+ax.set(title='Distribution of List Lengths', xlabel='list length', ylabel='frequency')
 
 plt.show()
 
