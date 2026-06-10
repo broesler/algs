@@ -743,11 +743,7 @@ class LinearProbingHashST(HashTable):
             return [self.N]
 
         # Find first null slot so we can count wrap-around index as one cluster
-        lo = 0
-        for k in self._keys:
-            if k is None:
-                break
-            lo += 1
+        lo = self._keys.index(None)
 
         # Count the cluster lengths
         clusters = []
