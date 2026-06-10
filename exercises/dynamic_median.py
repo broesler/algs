@@ -67,23 +67,20 @@ class MedianPQ(Collection):
             return
 
         if self._key(k) < self._key(self._v):
-            # TODO abstract this shift operation to _shift_item(small, large)
-            self._small.enqueue(k)
-            if self._small.size > self._large.size:
-                # shift values to the right
-                self._large.enqueue(self._v)
-                self._v = self._small.dequeue()
+            self._shift_item(k, self._small, self._large)
         elif self._key(k) > self._key(self._v):
-            self._large.enqueue(k)
-            if self._large.size > self._small.size:
-                # shift values to the left
-                self._small.enqueue(self._v)
-                self._v = self._large.dequeue()
+            self._shift_item(k, self._large, self._small)
         # choose side with fewer items
         elif self._large.size < self._small.size:
             self._large.enqueue(k)
         else:
             self._small.enqueue(k)
+
+    def _shift_item(self, k, source, target):
+        source.enqueue(k)
+        if source.size > target.size:
+            target.enqueue(self._v)
+            self._v = source.dequeue()
 
     def dequeue(self):
         """Remove and return median item."""
@@ -115,7 +112,8 @@ class MedianPQ(Collection):
 
 
 if __name__ == '__main__':
-    # TODO move to proper unit testing suite for package
+    # Test the class
+
     class TestMedianPQ:
         """Test suite for `MedianPQ`."""
 
@@ -141,16 +139,24 @@ if __name__ == '__main__':
             else:
                 print(f"All {self.tests} tests passed!")
 
-    # m = MedianPQ(string.ascii_uppercase[:11])
-    # TODO test with, say, tuples as input to use key for sorting
     runner = TestMedianPQ()
 
+    # Test with integers
     m = MedianPQ(range(11))
 
     runner.should_be(m.is_empty, False)
     runner.should_be(len(m), 11)
     runner.should_be(m.peek(), 5)
     runner.should_be(list(m), [5, 4, 6, 3, 7, 2, 8, 1, 9, 0, 10])
+
+    # Test with characters
+    import string
+    m = MedianPQ(string.ascii_uppercase[:11])
+
+    runner.should_be(m.is_empty, False)
+    runner.should_be(len(m), 11)
+    runner.should_be(m.peek(), 'F')
+    runner.should_be(list(m), ['F', 'E', 'G', 'D', 'H', 'C', 'I', 'B', 'J', 'A', 'K'])
 
     runner.print_summary()
 
