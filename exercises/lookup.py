@@ -19,6 +19,7 @@ of ``ST`` objects (one for each field) with a test client that allows a user to
 specify the key and value fields in each query.
 """
 
+import csv
 from pathlib import Path
 
 from tqdm import tqdm
@@ -29,6 +30,8 @@ from algs.search import ST, HashST, MultiHashST, MultiST
 # TODO
 # * add `header=True` to parse header line, so that "key_col='Date'",
 #   "val_col='Low'", e.g., works.
+# * add `dtypes` to FullLookupCSV like ktype/vtype in LookupCSV
+
 
 class LookupCSV:
     """A symbol table dicionary client for reading CSV files."""
@@ -68,23 +71,31 @@ class LookupCSV:
         """
         self.ktype = ktype
         self.vtype = vtype
-        if multival:
-            self.st = MultiST()
-        else:
-            self.st = ST()
+        self.st = MultiST() if multival else ST()
+
         if header is None:
             header = 0
+
         # Build the dictionary from the file
         with Path(filename).open() as fp:
-            iters = fp.readlines()[header + 1 :]
-        if verbose:
-            iters = tqdm(iters)
-        for line in iters:
-            items = line.strip().split(delim)
-            k, v = items[key_col], items[val_col]
-            k = self.ktype(k)
-            v = self.vtype(v)
-            self.st[k] = v
+            reader = csv.reader(fp, delimiter=delim)
+
+            # Skip header lines for now
+            for _ in range(header + 1):
+                next(reader, None)
+
+            # Read entire file into memory for now
+            rows = list(reader)
+            if verbose:
+                rows = tqdm(rows)
+
+            for items in rows:
+                # Skip empty or bad lines
+                if not items or len(items) <= max(key_col, val_col):
+                    continue
+                k = items[key_col].strip()
+                v = items[val_col].strip()
+                self.st[self.ktype(k)] = self.vtype(v)
 
     def query(self, k):
         """Return the value associated with `k`."""
