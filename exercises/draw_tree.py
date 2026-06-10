@@ -15,7 +15,7 @@ See <https://llimllib.github.io/pymag-trees/> for drawing algorithms.
 import matplotlib.pyplot as plt
 from matplotlib import patches
 
-from algs.search import RedBlackBST
+from algs.search import RedBlackBST, ThreadedST
 
 
 class NodeArtist:
@@ -68,12 +68,13 @@ class TreeArtist:
         figure and axis handles to the plot.
     """
 
-    def __init__(self, st, layout='reingold'):
+    def __init__(self, st, layout='reingold', is_reversed=False):
         self.st = st  # pointer to the original BST
         self._root = NodeArtist(st._root)  # recursive structure!! Θ(N)
         self.fig = None
         self.ax = None
         self.layout = layout
+        self.is_reversed = is_reversed
         try:
             self.sew_threads()  # Θ(2N) forward/back through the ThreadedST
         except AttributeError:
@@ -105,9 +106,13 @@ class TreeArtist:
         """Search for the NodeArtist with key `k` in subtree rooted at `x`."""
         if x is None:
             raise KeyError(k)
-        if k < x.node.key:
+
+        go_left = k < x.node.key if not self.is_reversed else k > x.node.key
+        go_right = k > x.node.key if not self.is_reversed else k < x.node.key
+
+        if go_left:
             return self._get_node(k, x.left)
-        elif k > x.node.key:
+        elif go_right:
             return self._get_node(k, x.right)
         else:  # k == x.node.key:
             return x
@@ -121,14 +126,16 @@ class TreeArtist:
 
     def _next_threads(self):
         """Create thread links based on underlying BST references."""
-        x = self.get_node(self.st.min())
+        start_key = self.st.max() if self.is_reversed else self.st.min()
+        x = self.get_node(start_key)
         while x.node.next:
             x.next = self.get_node(x.node.next.key)
             x = x.next
 
     def _prev_threads(self):
         """Create thread links based on underlying BST references."""
-        x = self.get_node(self.st.max())
+        start_key = self.st.min() if self.is_reversed else self.st.max()
+        x = self.get_node(start_key)
         while x.node.prev:
             x.prev = self.get_node(x.node.prev.key)
             x = x.prev
@@ -787,13 +794,13 @@ if __name__ == '__main__':
     # st = BST.fromkeys(sorted(list('SEARCHEXAMPLE')))  # in-order
     # st = BST.fromkeys(list('AXCSERHPL'))             # worst-case alternating
     # st = BST.fromkeys(list('SEARCHEXAMPLE'))          # arbitrary
-    st = RedBlackBST.fromkeys(list('SEARCHEXAMPLEJ'))
+    # st = RedBlackBST.fromkeys(list('SEARCHEXAMPLEJ'))
     # st = BST.fromkeys(st.pre_order())  # test BST with shape of RedBlackBST
 
     # st = BST.fromkeys(list('SQRYXV'))
     # st = BST.fromkeys(list('SQRY'))
 
-    # st = ThreadedST.fromkeys(list('SEARCHEXAMPLE'))
+    st = ThreadedST.fromkeys(list('SEARCHEXAMPLE'))
 
     # Test with random tree
     # N = 30
@@ -818,7 +825,7 @@ if __name__ == '__main__':
     if PLOT_MIRROR:
         from copy import deepcopy
         st_r = deepcopy(st)
-        st_r.reverse()  # reverse the tree
+        st_r.reverse()
         assert st.keys() == list(reversed(st_r.keys()))
 
     for i, (layout, title) in enumerate(layouts.items()):
@@ -837,7 +844,7 @@ if __name__ == '__main__':
             # Plot the mirror image
             ax_r = axs[1]
             ax_r.set_title('Mirror')
-            dt_r = TreeArtist(st_r)
+            dt_r = TreeArtist(st_r, is_reversed=True)
             dt_r.draw(ax=ax_r, layout=layout)
 
 
