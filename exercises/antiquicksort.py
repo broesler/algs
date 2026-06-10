@@ -20,7 +20,6 @@ sys.setrecursionlimit(10_000)
 
 DATA_PATH = Path(__file__).parent.parent / 'data'
 
-# TODO separate data building from timing.
 files = [
     (DATA_PATH / 'antiquicksort10K.txt', 10_000),
     (DATA_PATH / 'antiquicksort20K.txt', 20_000),

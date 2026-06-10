@@ -38,28 +38,6 @@ filenames = [
     # DATA_PATH / 'leipzig1m.txt',  # 124M
 ]
 
-# TODO enumerate actual combinations allowed and code them
-# e.g. "resize" only applies to SeparateChainingHashST, "selforg" only applies
-# to ArrayST, etc.
-# In plotting, should be able to compare, say, SeparateChainingHashST with and
-# without resizing.
-
-# (SeparateChainingHashST, resize=False, LL=False)
-# (SeparateChainingHashST, resize=True, LL=False)
-# (SeparateChainingHashST, resize=False, LL=True)
-# (SeparateChainingHashST, resize=True, LL=True)
-# (ArrayST, append=False, selforg=False)
-# (ArrayST, append=True, selforg=False)
-# (ArrayST, append=False, selforg=True)
-# (ArrayST, append=True, selforg=True)
-
-# NOTE ins/app relies on a source code change, not a dynamic argument,
-# so maybe we should add that into ArrayST.
-
-# NOTE LL relies on a source code change to SeparateChainingHashST to use
-# ArrayST vs SequentialSearchST for the buckets. Default is SequentialSearchST,
-# since that is what the book uses, but we could add an option.
-
 # Options:
 #   * resize: resize the hash table when load factor exceeds M (M=4 for testing)
 #   * ins/app: insert(0, k) vs. append(k) to end of list (for ArrayST)
