@@ -114,6 +114,8 @@ class TreeArtist:
 
     def sew_threads(self):
         """Create thread links based on underlying BST references."""
+        if self._root is None or not hasattr(self._root.node, 'next'):
+            return
         self._next_threads()
         self._prev_threads()
 
@@ -774,7 +776,7 @@ class TreeArtist:
 if __name__ == '__main__':
     # import numpy as np
 
-    PLOT_MIRROR = False  # FIXME True fails on missing key 'X'?
+    PLOT_MIRROR = True
 
     # -------------------------------------------------------------------------
     #         Test Trees
