@@ -5,7 +5,19 @@
 #   Author: Bernie Roesler
 # =============================================================================
 
-"""A symbol table dicionary client for reading CSV files."""
+"""A symbol table dicionary client for reading CSV files.
+
+*See* Exercises:
+* 3.5.12: Modify ``LookupCSV`` to associate with each key all values
+that appear in a key-value pair with that key in the input (not just the most
+recent).
+* 3.5.13: Modify ``LookupCSV`` to make a program ``RangeLookupCSV``
+that takes two key values from the standard input and prints all key-value
+pairs in the file such that the key falls within the range specified.
+* 3.5.22: Fully-indexed CSV: Implement ``FullLookupCSV`` that builds and array
+of ``ST`` objects (one for each field) with a test client that allows a user to
+specify the key and value fields in each query.
+"""
 
 from pathlib import Path
 
@@ -15,9 +27,8 @@ from algs.basics import Bag
 from algs.search import ST, HashST, MultiHashST, MultiST
 
 # TODO
-# * add `header=True` to parse header line
-# * pass data types to use instead of strings
-
+# * add `header=True` to parse header line, so that "key_col='Date'",
+#   "val_col='Low'", e.g., works.
 
 class LookupCSV:
     """A symbol table dicionary client for reading CSV files."""
@@ -30,6 +41,8 @@ class LookupCSV:
         delim=',',
         header=None,
         multival=False,
+        ktype=str,
+        vtype=str,
         verbose=True,
     ):
         """
@@ -47,7 +60,14 @@ class LookupCSV:
             Initial lines to skip when reading the file.
         multival : bool, optional
             If True, store every value associated with the keys.
+        ktype, vtype : callable, optional
+            If given, coerce the key/value to an object of this type.
+            Otherwise, treat it as a string.
+        verbose : bool, optional
+            If True, print a progress bar as the lookup table is built.
         """
+        self.ktype = ktype
+        self.vtype = vtype
         if multival:
             self.st = MultiST()
         else:
@@ -56,21 +76,28 @@ class LookupCSV:
             header = 0
         # Build the dictionary from the file
         with Path(filename).open() as fp:
-            iters = fp.readlines()[header:]
+            iters = fp.readlines()[header + 1 :]
         if verbose:
             iters = tqdm(iters)
         for line in iters:
             items = line.strip().split(delim)
             k, v = items[key_col], items[val_col]
+            k = self.ktype(k)
+            v = self.vtype(v)
             self.st[k] = v
 
     def query(self, k):
         """Return the value associated with `k`."""
+        k = self.ktype(k)
         if k in self.st:
             return self.st[k]
 
+    # Exercise 3.5.13
     def query_range(self, lo, hi=None):
         """Return all of the values between `lo` and `hi`."""
+        lo = self.ktype(lo)
+        if hi is not None:
+            hi = self.ktype(hi)
         return self.st.values(lo, hi)
 
 
@@ -94,7 +121,7 @@ class LookupIndex:
             header = 0
         # Build the dictionary from the file
         with Path(filename).open() as fp:
-            for line in fp.readlines()[header:]:
+            for line in fp.readlines()[header + 1 :]:
                 items = line.strip().split(delim)
                 k = items[0]
                 for v in items[1:]:
@@ -188,6 +215,7 @@ class FullLookupCSV:
 
 if __name__ == "__main__":
     DATA_PATH = Path(__file__).parent.parent / 'data'
+
     filename = DATA_PATH / 'airports.csv'
     print(f"---{filename}---")
     st = LookupCSV(filename, header=1)
@@ -219,9 +247,6 @@ if __name__ == "__main__":
     st.print_query('Bacon, Kevin')
     st.print_query('Top Gun (1986)')
 
-    # assert st.st == invert(st.ts)
-    # assert st.ts == invert(st.st)
-
     # unique ranks and words with repeated frequencies and/or part of speech
     filename = DATA_PATH / 'bnc-wordfreq.csv'
     print(f"---{filename}---")
@@ -236,10 +261,20 @@ if __name__ == "__main__":
     # Return all words that are prepositions
     print(f"{q}: {st.query(q, key_col='PART OF SPEECH', val_col='WORD')}")
 
-    # unique dates with floats
+    # Exercise 3.5.13: query a range with unique dates with floats
     filename = DATA_PATH / 'DJIA.csv'
     print(f"---{filename}---")
-    st = LookupCSV(filename, key_col=0, val_col=3, verbose=True)
+    import datetime as dt
+
+    st = LookupCSV(
+        filename,
+        key_col=0,
+        val_col=3,
+        ktype=lambda x: dt.date.strptime(x, "%d-%b-%y"),
+        vtype=float,
+        verbose=True,
+    )
+
     lo = '29-Oct-29'
     hi = '11-Nov-29'
     print(f"{lo, hi}: {st.query_range(lo, hi)}")
