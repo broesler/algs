@@ -597,9 +597,11 @@ class BST(OrderedSymbolTable):
         q.enqueue(op(x) if op else x.key)
         return list(q)
 
+    # Web Exercise 3.2.6
     def reverse(self):
         """Reverse the BST recursively, akin to `list.reverse()`.
-        ..note: This method breaks most methods in the tree since the
+
+        ..note:: This method breaks most methods in the tree since the
           comparisons to left/right nodes are no longer true.
         """
         return self._reverse(self._root)
@@ -608,11 +610,10 @@ class BST(OrderedSymbolTable):
         """Reverse the BST recursively."""
         if x is None:
             return
+
         # Swap the children
-        # x.left, x.right = x.left, x.right  # NOTE this line FAILS!! why??
-        temp = x.left
-        x.left = x.right
-        x.right = temp
+        x.left, x.right = x.right, x.left
+
         # Do it for each subtree
         self._reverse(x.left)
         self._reverse(x.right)
