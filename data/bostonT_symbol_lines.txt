@@ -1,0 +1,11 @@
+Orange: END-OakGrove-Malden-Wellington-SullivanSquare-CommunityCollege-NorthStation-Haymarket-State-DowntownCrossing-Chinatown-NewEnglandMedicalCenter-BackBay/SouthEnd-MassachusettsAvenue-Ruggles-RoxburyCrossing-JacksonSquare-StonyBrook-GreenStreet-ForestHills
+Blue: END-Wonderland-RevereBeach-Beachmont-SuffolkDowns-OrientHeights-WoodIsland-Airport-Maverick-Aquarium-State-GovernmentCenter-Bowdoin
+Red: END-Alewife-Davis-Porter-Harvard-Central-Kendall-Charles/MGH-ParkStreet-DowntownCrossing-SouthStation-Broadway-Andrew-JFK/UMass
+Green: END-Lechmere-SciencePark-NorthStation-Haymarket-GovernmentCenter-ParkStreet-Boylston-Arlington-Copley
+GreenB: END-BostonCollege-GreycliffRoad-SouthStreet-ChestnutHillAvenue-ChiswickRoad-SutherlandRoad-MountHoodRoad-WashingtonStreet-SummitAvenue-WarrenStreet-AllstonStreet-GriggsStreet/LongwoodAvenue-HarvardAvenue-FordhamRoad-PackardsCorner-BabcockStreet-PleasantStreet-St.PaulStreetB-BostonUniversityWest-BostonUniversityCentral-BostonUniversityEast-BlandfordStreet-Kenmore-Hynes/ICA-Copley-Arlington
+GreenC: END-ClevelandCircle-EnglewoodAvenue-DeanRoad-TappanStreet-WashingtonSquare-FairbanksStreet-BrandonHall-WinchesterStreet/SummitAv.-CoolidgeCorner-St.PaulStreetC-KentStreet-HawesStreet-St.MarysStreet-Kenmore-Hynes/ICA-Copley-Arlington
+GreenD: END-Riverside-Woodland-Waban-Eliot-NewtonHighlands-NewtonCenter-ChestnutHill-Reservoir-Beaconsfield-BrooklineHills-BrooklineVillage-Longwood-Fenway-Kenmore-Hynes/ICA-Copley-Arlington
+GreenE: END-HeathStreet-BackOfTheHill-Riverway-MissionPark-FenwoodRoad-BrighamCircle-LongwoodMedicalArea-MuseumofFineArts-NortheasternUniversity-Symphony-Prudential-Copley-Arlington
+RedA: END-Ashmont-Shawmut-FieldsCorner-SavinHill-JFK/UMass-Andrew
+RedB: END-Braintree-QuincyAdams-QuincyCenter-Wollaston-NorthQuincy-JFK/UMass-Andrew
+Mattapan: END-Ashmont-CedarGrove-ButlerStreet-Milton-CentralAvenue-ValleyRoad-CapenStreet-Mattapan

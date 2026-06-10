@@ -2,7 +2,12 @@
 /dist/
 *.egg-info
 *.egg
-**/data
+# **/data
+# Data files > 25 MB
+data/largeUF.txt
+data/largeG.txt
+data/upc-items.csv
+data/leipzig1M.txt
 **/pkl
 *.cache
 *.coverage
