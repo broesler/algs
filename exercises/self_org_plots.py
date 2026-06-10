@@ -17,26 +17,28 @@ import seaborn.objects as so
 from self_org_driver import SelfOrganizingDriver
 
 SAVE_FIGS = False
+RANDINIT = False
+
 sns.reset_defaults()
 
 if SAVE_FIGS:
     plt.close('all')  # FacetGrid does not have a `clear` option.
     fig_dir = Path(__file__).parent / 'figures'
 
-tag = ''
-# tag = '_randinit'
-
-# TODO add `_randinit` to df, plots as well for comparison
-
 # Load the data
 PKL_DIR = Path(__file__).parent / 'pkl'
 
+tag = '_randinit' if RANDINIT else ''
+
 # Load the parquet files
-df_file = PKL_DIR / f"self_org_data{tag}.parquet"
+df_file = PKL_DIR / "self_org_data.parquet"
 df = pd.read_parquet(df_file)
 
-kf_file = PKL_DIR / f"self_org_keys{tag}.parquet"
+kf_file = PKL_DIR / "self_org_keys.parquet"
 kf = pd.read_parquet(kf_file)
+
+df = df[df['randinit'] == RANDINIT]
+kf = kf[kf['randinit'] == RANDINIT]
 
 tots = df.melt(
     id_vars=['dist', 'ST', 'N'],

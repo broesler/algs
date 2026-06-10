@@ -125,8 +125,8 @@ class SelfOrganizingDriver:
             The runtime of each `get` call performed. May be downsampled using
             the `samples` argument.
         """
-        if verbose:
-            print(f"Filling table with {N} keys...")
+        # if verbose:
+        #     print(f"Filling table with {N} keys...")
 
         keys = np.arange(1, N + 1)  # skip 0 for probability functions
 
@@ -153,12 +153,12 @@ class SelfOrganizingDriver:
         put_toc = time.perf_counter_ns()
         self.put_time = put_toc - put_tic
 
-        if verbose:
-            print('Performing 10N successful searches...')
+        # if verbose:
+        #     print('Performing 10N successful searches...')
         self.runtimes = np.empty(M)
 
         # Search for 10*N keys
-        iterator = tqdm(ks, total=M) if verbose else ks
+        iterator = tqdm(ks, total=M, leave=False) if verbose else ks
         get_tic = time.perf_counter_ns()
 
         for i, k in enumerate(iterator):
@@ -187,38 +187,54 @@ if __name__ == '__main__':
     N_s = 100  # number of search times to sample for statistics
 
     dists = ['p', 'zipf']
-    STs = [ArrayST, ArrayST, BinarySearchST]
-    ST_names = ['SST', 'SST_selforg', 'BinarySearchST']
-    selforgs = [False, True, False]
+    randinits = [True, False]
+    params = {
+        'SST': (ArrayST, False),
+        'SST_selforg': (ArrayST, True),
+        'BinarySearchST': (BinarySearchST, False),
+    }
 
     plot_N = 1000  # N for which to store the keys and indices for plotting
     data = []
     keys = []
 
+    total = len(Ns) * len(dists) * len(randinits) * len(params)
+    pbar = tqdm(total=total)
+
     for N in Ns:
         for d in dists:
-            for ST, ST_name, selforg in zip(STs, ST_names, selforgs):
-                print(f"{ST_name=}, {selforg=}, {d=}")
-                zipf = d == 'zipf'
-                driver = SelfOrganizingDriver(ST, zipf=zipf, selforg=selforg)
-                driver.run_test(N, samples=N_s, verbose=True)
-
-                # Store data
-                data.append(
-                    {
-                        'dist': d,
-                        'ST': ST_name,
-                        'N': N,
-                        'put': driver.put_time * 1e-9,
-                        'get': driver.get_time * 1e-9,
-                        'runtime': driver.runtimes * 1e-9,
-                    }
-                )
-
-                if N == plot_N:
-                    keys.append(
-                        {'dist': d, 'ST': ST_name, 'keys': list(driver.t.keys())}
+            for randinit in randinits:
+                for ST_name, (ST, selforg) in params.items():
+                    pbar.set_description(f"{ST_name=}, {selforg=}, {d=}, {randinit=}")
+                    zipf = d == 'zipf'
+                    driver = SelfOrganizingDriver(
+                        ST, zipf=zipf, selforg=selforg, randinit=randinit
                     )
+                    driver.run_test(N, samples=N_s, verbose=True)
+                    pbar.update(1)
+
+                    # Store data
+                    data.append(
+                        {
+                            'dist': d,
+                            'ST': ST_name,
+                            'N': N,
+                            'randinit': randinit,
+                            'put': driver.put_time * 1e-9,
+                            'get': driver.get_time * 1e-9,
+                            'runtime': driver.runtimes * 1e-9,
+                        }
+                    )
+
+                    if N == plot_N:
+                        keys.append(
+                            {
+                                'dist': d,
+                                'ST': ST_name,
+                                'randinit': randinit,
+                                'keys': list(driver.t.keys()),
+                            }
+                        )
 
     # Build the DataFrame and explode the runtimes so that each row is a single
     # search runtime, instead of an array.
