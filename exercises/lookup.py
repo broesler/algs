@@ -29,8 +29,8 @@ from algs.search import ST, HashST, MultiHashST, MultiST
 
 # TODO
 # * add `header=True` to parse header line, so that "key_col='Date'",
-#   "val_col='Low'", e.g., works.
-# * add `dtypes` to FullLookupCSV like ktype/vtype in LookupCSV
+#   "val_col='Low'", e.g., works for LookupCSV.
+# * add `dtypes` to FullLookupCSV like ktype/vtype in LookupCSV.
 
 
 class LookupCSV:
