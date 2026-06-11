@@ -9,7 +9,7 @@
 
 import matplotlib.pyplot as plt
 
-from algs.graph import DepthFirstPaths, EuclideanGraph, spanning_tree_dfs
+from algs.graph import DepthFirstSearch, EuclideanGraph, spanning_tree_dfs
 from algs.graph.random import full_grid_graph
 
 V = 25
@@ -21,7 +21,7 @@ G = full_grid_graph(V, random=True)
 T = EuclideanGraph(G=spanning_tree_dfs(G, 0), x=G.x, y=G.y)
 
 # Solve the maze
-dfs = DepthFirstPaths(T, START)
+dfs = DepthFirstSearch(T, START)
 assert dfs.has_path_to(END)
 P = dfs.path_to(END)
 

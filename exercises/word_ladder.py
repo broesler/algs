@@ -9,7 +9,7 @@
 
 from pathlib import Path
 
-from algs.graph import BreadthFirstPaths, Graph
+from algs.graph import BreadthFirstSearch, Graph
 from algs.search import IndexSet
 
 
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     a = 'white'
     b = 'house'
 
-    bfs = BreadthFirstPaths(G, words.index(a))
+    bfs = BreadthFirstSearch(G, words.index(a))
     if not bfs.has_path_to(words.index(b)):
         print('not connected.')
     else:

@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.lines import Line2D
 
-from algs.graph import BreadthFirstPaths, DepthFirstPaths_nr, EuclideanGraph
+from algs.graph import BreadthFirstSearch, DepthFirstPaths_nr, EuclideanGraph
 
 DATA_PATH = Path(__file__).parent.parent / 'data'
 
@@ -74,7 +74,7 @@ i = 3  # 10 for tinyG2
 dfs = DepthFirstPaths_nr(G, s)
 pd = dfs.path_to(i)
 
-bfs = BreadthFirstPaths(G, s)
+bfs = BreadthFirstSearch(G, s)
 pb = bfs.path_to(i)
 
 fig, ax = plt.subplots(num=1, clear=True, constrained_layout=True)

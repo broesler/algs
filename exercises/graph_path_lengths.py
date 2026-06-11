@@ -38,7 +38,7 @@ import pandas as pd
 import seaborn as sns
 from tqdm import tqdm
 
-from algs.graph import BreadthFirstPaths, CC_nr, DepthFirstPaths_nr, bipartite_colors
+from algs.graph import BreadthFirstSearch, CC_nr, DepthFirstPaths_nr, bipartite_colors
 from algs.graph.random import erdos_renyi, random_simple_graph  # noqa: F401
 
 FORCE_UPDATE = False
@@ -88,7 +88,7 @@ def simulate_graphs(V, Es, N, T, generate_graph=None):
             for _ in range(T):
                 s, t = rng.integers(V, size=2)
                 dfs = DepthFirstPaths_nr(G, s)
-                bfs = BreadthFirstPaths(G, s)
+                bfs = BreadthFirstSearch(G, s)
 
                 yield {
                     'E': E,

@@ -11,8 +11,9 @@ import pickle
 import re
 from pathlib import Path
 
-from algs.graph import BreadthFirstPaths, SymbolGraph
+from algs.graph import BreadthFirstSearch, SymbolGraph
 
+FORCE_UPDATE = True
 PKL_PATH = Path(__file__).parent / 'pkl'
 pkl_file = PKL_PATH / 'movies_SymbolGraph.pkl'
 
@@ -37,7 +38,7 @@ def degrees_of_separation(sg, source, sink, y=None):
                 if (THIS_YEAR - year) > y:
                     G._hide_vertex(v)
 
-    bfs = BreadthFirstPaths(G, s)
+    bfs = BreadthFirstSearch(G, s)
     if sink in sg:
         print(f"{source}->{sink}")
         t = sg.index(sink)
@@ -50,7 +51,7 @@ def degrees_of_separation(sg, source, sink, y=None):
         raise ValueError(f"{repr(sink)} not in graph!")
 
 
-if pkl_file.exists():
+if not FORCE_UPDATE and pkl_file.exists():
     print(f"Loading {pkl_file}...")
     with pkl_file.open('rb') as fp:
         sg = pickle.load(fp)

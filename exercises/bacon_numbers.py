@@ -13,7 +13,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-from algs.graph import BreadthFirstPaths
+from algs.graph import BreadthFirstSearch
 
 # NOTE: run `exercises/degrees_of_separation.py` to build the SymbolGraph pickle
 pkl_file = Path(__file__).parent / 'pkl' / 'movies_SymbolGraph.pkl'
@@ -23,7 +23,7 @@ with pkl_file.open('rb') as fp:
     sg = pickle.load(fp)
 
 q = 'Bacon, Kevin'
-bfs = BreadthFirstPaths(sg.G, sg.index(q))
+bfs = BreadthFirstSearch(sg.G, sg.index(q))
 
 # Actors are even indices
 actor_idx = sg.G.vertices()[::2]
