@@ -11,14 +11,14 @@ from pathlib import Path
 
 import pytest
 
+# TODO refactor into tests/test_graph/test_undirected.py,
+# tests/test_graph/test_directed.py, etc.
 from algs.graph.undirected import (
     CC,
     Biconnected,
     Bipartite,
     BreadthFirstPaths,
     CC_nr,
-    Cycle,
-    Cycle_nr,
     DepthFirstPaths,
     DepthFirstPaths_nr,
     DepthFirstPaths_nr_simple,
@@ -32,6 +32,9 @@ from algs.graph.undirected import (
     SymbolGraph,
     UFSearch,
     find_cycle_path,
+    has_cycle,
+    has_parallel_edges,
+    has_self_loop,
     parallel_edges,
     spanning_forest_bfs,
     spanning_forest_dfs,
@@ -429,23 +432,21 @@ class TestCC:
 
 
 @pytest.mark.parametrize('GT', [Graph, STGraph])
-@pytest.mark.parametrize('CycleT', [Cycle, Cycle_nr])
 class TestCycle:
-    def test_has_cycle(self, CycleT, tinyG, acyclicG):
-        cyc = CycleT(tinyG, 0)
-        assert cyc.has_cycle
-        cyc = CycleT(acyclicG, 0)
-        assert not cyc.has_cycle
+    @pytest.mark.parametrize('recursive', [True, False])
+    def test_has_cycle(self, recursive, tinyG, acyclicG):
+        assert has_cycle(tinyG, 0, recursive=recursive)
+        assert not has_cycle(acyclicG, 0, recursive=recursive)
 
-    def test_has_self_loop(self, CycleT, tinyG):
-        assert not CycleT.has_self_loop(tinyG)
+    def test_has_self_loop(self, tinyG):
+        assert not has_self_loop(tinyG)
         tinyG.add_edge(1, 1)
-        assert CycleT.has_self_loop(tinyG)
+        assert has_self_loop(tinyG)
 
-    def test_has_parallel_edges(self, CycleT, tinyG):
-        assert not CycleT.has_parallel_edges(tinyG)
+    def test_has_parallel_edges(self, tinyG):
+        assert not has_parallel_edges(tinyG)
         tinyG.add_edge(0, 1)
-        assert CycleT.has_parallel_edges(tinyG)
+        assert has_parallel_edges(tinyG)
 
 
 @pytest.mark.parametrize('GT', [Graph, SimpleGraph, STGraph])
