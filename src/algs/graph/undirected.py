@@ -12,7 +12,7 @@ See Sedgewick and Wayne, §4.1.
 """
 
 from abc import ABC, abstractmethod
-from collections import deque
+from collections import deque, namedtuple
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -565,8 +565,11 @@ class EuclideanGraph(Graph):
                 _vkws['fontcolor'] = c
 
         if self._TWO_COLOR:
-            bp = Bipartite(self)
-            self._node_colors = np.where(bp._color, 'C3', 'k')
+            bp = bipartite_colors(self)
+            if bp.colors is not None:
+                self._node_colors = np.where(bp.colors, 'tab:red', 'k')
+            else:
+                self._node_colors = np.full(self.V, 'k')
 
         # Set any user-defined parameters
         if vkws is not None:
@@ -1429,34 +1432,53 @@ class MinCyclePath(BreadthFirstPaths):
         return list(p)
 
 
-class Bipartite:
-    __doc__ = f"""Implements depth-first search to determine if a connected
-    graph is bipartite.
-    {GraphSearch.__doc__}"""
-    # See p 547
+BipartiteColors = namedtuple('BipartiteColors', ['colors', 'examined_count'])
 
-    def __init__(self, G, vertices=None):
-        if vertices is None:
-            vertices = G.vertices()
-        self.is_bipartite = True
-        self._marked = G.V * [False]
-        self._color = G.V * [False]
-        self._count = 0  # number of vertices examined before `is_bipartite`
-        for s in vertices:
-            self._dfs(G, s)
 
-    def _dfs(self, G, v):
+# See Algorithms, p 547
+def bipartite_colors(G):
+    """Return a list of the vertex colors in a graph, if it is bipartite.
+
+    Parameters
+    ----------
+    G : :class:`Graph`
+        The graph to analyze.
+
+    Returns
+    -------
+    list or None
+        A list of the vertex colors in the graph, if it is bipartite.
+        Otherwise, None.
+    """
+
+    def dfs(G, v, marked, colors):
         """Perform depth-first search recursively from vertex `v`."""
-        self._marked[v] = True
+        marked[v] = True
+
         for w in G.adj(v):
-            if not self._marked[w]:
-                self._color[w] = not self._color[v]
-                self._dfs(G, w)
-            elif self._color[w] == self._color[v]:
-                # Only update the first time
-                if self.is_bipartite:
-                    self._count = sum(self._marked)
-                self.is_bipartite = False
+            if not marked[w]:
+                colors[w] = not colors[v]
+                if not dfs(G, w, marked, colors):
+                    return False
+            elif colors[w] == colors[v]:
+                return False
+
+        return True
+
+    marked = G.V * [False]
+    colors = G.V * [False]
+    is_bipartite = False
+
+    for s in G.vertices():
+        if not marked[s]:
+            is_bipartite = dfs(G, s, marked, colors)
+
+            if not is_bipartite:
+                break
+
+    return BipartiteColors(
+        colors=colors if is_bipartite else None, examined_count=sum(marked)
+    )
 
 
 # Exercise 4.1.32

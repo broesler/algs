@@ -38,7 +38,7 @@ import pandas as pd
 import seaborn as sns
 from tqdm import tqdm
 
-from algs.graph import Bipartite, BreadthFirstPaths, CC_nr, DepthFirstPaths_nr
+from algs.graph import BreadthFirstPaths, CC_nr, DepthFirstPaths_nr, bipartite_colors
 from algs.graph.random import erdos_renyi, random_simple_graph  # noqa: F401
 
 FORCE_UPDATE = False
@@ -83,7 +83,7 @@ def simulate_graphs(V, Es, N, T, generate_graph=None):
         for _ in range(N):
             G = generate_graph(V, E)
             cc_count = CC_nr(G).count()
-            bp_count = Bipartite(G)._count
+            bp_count = bipartite_colors(G).examined_count
 
             for _ in range(T):
                 s, t = rng.integers(V, size=2)
