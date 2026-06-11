@@ -119,18 +119,18 @@ def directed_cycle(G):
     marked = G.V * [False]
     edge_to = G.V * [None]
     on_stack = G.V * [False]
-    cycle = []
 
     def dfs(G, v):
-        nonlocal cycle
+        """Perform DFS recursively from vertex `v`."""
         on_stack[v] = True
         marked[v] = True
+
         for w in G.adj(v):
-            if cycle:
-                return
-            elif not marked[w]:
+            if not marked[w]:
                 edge_to[w] = v
-                dfs(G, w)
+                cycle = dfs(G, w)
+                if cycle:
+                    return cycle
             elif on_stack[w]:
                 # Found a cycle, reconstruct it by backtracking up the stack
                 cycle = Stack()
@@ -140,16 +140,19 @@ def directed_cycle(G):
                     x = edge_to[x]
                 cycle.push(w)
                 cycle.push(v)
+                return cycle
+
         on_stack[v] = False
+        return None
 
     # Run DFS from each vertex
     for v in G.vertices():
         if not marked[v]:
-            dfs(G, v)
+            cycle = dfs(G, v)
         if cycle:
-            break
+            return list(cycle)
 
-    return list(cycle)
+    return []  # no cycle found
 
 
 DepthFirstOrder = namedtuple('DepthFirstOrder', ['pre', 'post', 'reverse_post'])
@@ -208,7 +211,9 @@ def topological_order(G):
         DAG.
     """
     # If the graph is a DAG, it has an order
-    if not directed_cycle(G):
+    if directed_cycle(G):
+        return []
+    else:
         dfs = depth_first_order(G)
         return list(dfs.reverse_post)
 
@@ -261,25 +266,25 @@ def eulerian_cycle(G):
     assert G.E > 0
     edge_to = G.V * [None]
     on_stack = G.V * [False]
-    cycle = []
 
     def non_isolated_vertex(G):
+        """Return the first found vertex that is not a sink."""
         for v in G.vertices():
             if G.outdegree(v) > 0:
                 return v
         raise ValueError('No vertices have outward edges!')
 
     def dfs(G, v):
-        nonlocal cycle
+        """Perform DFS recursively from vertex `v`."""
         on_stack[v] = True
         for w in G.adj(v):
-            if cycle:
-                return
-            elif outdegree[w] > 0:
+            if outdegree[w] > 0:
                 outdegree[v] -= 1
                 indegree[w] -= 1
                 edge_to[w] = v
-                dfs(G, w)
+                cycle = dfs(G, w)
+                if cycle:
+                    return cycle
             elif on_stack[w]:
                 outdegree[v] -= 1
                 indegree[w] -= 1
@@ -291,16 +296,10 @@ def eulerian_cycle(G):
                     x = edge_to[x]
                 cycle.push(w)
                 cycle.push(v)
-        on_stack[v] = False
+                return cycle
 
-    def certify(G):
-        nonlocal cycle
-        if (
-            cycle.size != G.E + 1
-            or any(x != 0 for x in indegree)
-            or any(x != 0 for x in outdegree)
-        ):
-            cycle = []
+        on_stack[v] = False
+        return None
 
     # If degrees are not equal, Eulerian path cannot exist
     d = Degrees(G)
@@ -317,12 +316,19 @@ def eulerian_cycle(G):
     outdegree = d._outdegree.copy()
 
     # Find the cycle
-    dfs(G, s)
+    cycle = dfs(G, s)
 
-    if cycle:
-        certify(G)
+    # Check if the cycle is valid
+    is_valid = (
+        cycle.size == G.E + 1
+        and all(x == 0 for x in indegree)
+        and all(x == 0 for x in outdegree)
+    )
 
-    return list(cycle)
+    if is_valid:
+        return list(cycle)
+    else:
+        return []
 
 
 # Exercise 4.2.24
