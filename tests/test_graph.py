@@ -19,8 +19,6 @@ from algs.graph.undirected import (
     CC_nr,
     Cycle,
     Cycle_nr,
-    CyclePath,
-    CyclePath_nr,
     DepthFirstPaths,
     DepthFirstPaths_nr,
     DepthFirstPaths_nr_simple,
@@ -33,6 +31,7 @@ from algs.graph.undirected import (
     STGraph,
     SymbolGraph,
     UFSearch,
+    find_cycle_path,
     parallel_edges,
     spanning_forest_bfs,
     spanning_forest_dfs,
@@ -451,10 +450,15 @@ class TestCycle:
 
 @pytest.mark.parametrize('GT', [Graph, SimpleGraph, STGraph])
 class TestCyclePath:
-    @pytest.mark.parametrize('CyclePathT', [CyclePath, CyclePath_nr])
-    def test_cycle_path_dfs(self, CyclePathT, tinyG):
-        cyc = CyclePathT(tinyG, 0)
-        assert cyc.cycle() == [3, 4, 5, 3]
+    @pytest.mark.parametrize('recursive', [True, False])
+    def test_cycle_path_dfs(self, recursive, tinyG):
+        cyc = find_cycle_path(tinyG, 0, recursive=recursive)
+        assert cyc == [3, 4, 5, 3]
+
+    @pytest.mark.parametrize('recursive', [True, False])
+    def test_no_cycle_path_dfs(self, recursive, acyclicG):
+        cyc = find_cycle_path(acyclicG, 0, recursive=recursive)
+        assert not cyc
 
     def test_cycle_path_bfs(self, tinyG):
         cyc = MinCyclePath(tinyG, 0)
