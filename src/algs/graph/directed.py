@@ -368,7 +368,6 @@ def hamiltonian_path(G):
     return order
 
 
-
 # -----------------------------------------------------------------------------
 #         Graph Properties
 # -----------------------------------------------------------------------------
@@ -514,6 +513,7 @@ if __name__ == "__main__":
     assert d.sinks() == [9]
 
     # Exercise 4.2.20: Eulerican cycle: Create a circular graph
+    print('----- Eulerican Cycle -----')
     edges = []
     N = 5
     Gcyc = Digraph(N)
@@ -547,8 +547,10 @@ if __name__ == "__main__":
     print(cc.get_components())
 
     # Exercise 4.2.24: Hamiltonian path
+    print('----- Hamiltonian Path -----')
     h = hamiltonian_path(Gno_cyc)
     assert h == list(range(N))
+    print(h)
 
     H = Digraph(N)
     j = N // 2
