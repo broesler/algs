@@ -119,7 +119,7 @@ def directed_cycle(G):
     marked = G.V * [False]
     edge_to = G.V * [None]
     on_stack = G.V * [False]
-    cycle = None
+    cycle = []
 
     def dfs(G, v):
         nonlocal cycle
@@ -149,7 +149,7 @@ def directed_cycle(G):
         if cycle:
             break
 
-    return cycle
+    return list(cycle)
 
 
 DepthFirstOrder = namedtuple('DepthFirstOrder', ['pre', 'post', 'reverse_post'])
@@ -189,7 +189,7 @@ def depth_first_order(G):
         if not marked[v]:
             dfs(G, v)
 
-    return DepthFirstOrder(pre, post, reverse_post)
+    return DepthFirstOrder(list(pre), list(post), list(reverse_post))
 
 
 # Algorithm 4.5
@@ -210,7 +210,7 @@ def topological_order(G):
     # If the graph is a DAG, it has an order
     if not directed_cycle(G):
         dfs = depth_first_order(G)
-        return dfs.reverse_post
+        return list(dfs.reverse_post)
 
 
 # Algorithm 4.6
@@ -425,7 +425,7 @@ if __name__ == "__main__":
     print(p.pre)
     print(p.post)
     print(p.reverse_post)
-    assert list(reversed(list(p.post))) == list(p.reverse_post)
+    assert list(reversed(p.post)) == p.reverse_post
 
     t = topological_order(G)
     assert not t
@@ -485,9 +485,8 @@ if __name__ == "__main__":
     assert t == orders.reverse_post
 
     assert check_topological(D, t)
-    order = list(t)
-    shuffle(order)
-    assert not check_topological(D, order)
+    shuffle(t)
+    assert not check_topological(D, t)
 
     cc = KosarajuSCC(D)
     print(cc.get_components())
