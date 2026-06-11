@@ -1090,6 +1090,7 @@ class GraphProperties:
             self.diameter()
         return [k for k, e in self._eccs.items() if e == self._dia]
 
+    # Exercise 4.1.18
     def girth(self):
         """Return the length of the shortest cycle in the graph.
         If there are no cycles, the girth is infinite.
@@ -1114,9 +1115,10 @@ class GraphProperties:
         if self._girth is not None:
             return self._girth
 
-        # G is guaranteed to be connected, so only need to check one vertex
         m = float('inf')  # set "minimum" to maximum
-        if not Cycle_nr(self.G, self.vertices[0]).has_cycle:
+
+        # G is guaranteed to be connected, so only need to check one vertex
+        if not has_cycle(self.G, self.vertices[0]):
             self._girth = m
             return m
 
@@ -1226,89 +1228,28 @@ class CC_nr(CC):
                 stack.pop()
 
 
-class Cycle:
-    __doc__ = f"""Implements depth-first search to find a cycle.
-    {GraphSearch.__doc__}"""
-    # See p 547
-
-    def __init__(self, G, s):
-        self.s = s
-        self.has_cycle = False
-        # Don't actually check for undirected graphs. See method note.
-        # if self.has_parallel_edges(G):
-        #     return
-        self._marked = G.V * [False]
-        self._dfs(G, s, s)
-
-    @staticmethod
-    def has_self_loop(G):
-        """Return True if the graph has a self-loop."""
-        for v in G.vertices():
-            for w in G.adj(v):
-                if v == w:
-                    return True
-        return False
-
-    @staticmethod
-    def has_parallel_edges(G):
-        """Return True if the graph has parallel edges."""
-        # Only return True if G.adj(v) has duplicates
-        for v in G.vertices():
-            adj = sorted(G.adj(v))
-            for i in range(len(adj) - 1):
-                if adj[i] == adj[i + 1]:
-                    return True
-        return False
-
-    def _dfs(self, G, v, u):
-        """Perform depth-first search recursively from vertex `v`.
-
-        .. note:: `u` is the previously-seen vertex. If one of the adjacent
-            vertices to `v` is marked, but is not the vertex from which we just
-            came, we have a cycle.
-        """
-        self._marked[v] = True
+def has_self_loop(G):
+    """Return True if the graph has a self-loop."""
+    for v in G.vertices():
         for w in G.adj(v):
-            if self.has_cycle:
-                return
-            if not self._marked[w]:
-                self._dfs(G, w, v)
-            elif w != u:
-                self.has_cycle = True
+            if v == w:
+                return True
+    return False
 
 
-class Cycle_nr(Cycle):
-    __doc__ = f"""Implements depth-first search to find a cycle.
-    {GraphSearch.__doc__}"""
-    # See p 547
-
-    def _dfs(self, G, v, u):
-        """Perform depth-first search non-recursively from vertex `v`.
-
-        .. note:: `u` is the previously-seen vertex. If one of the adjacent
-            vertices to `v` is marked, but is not the vertex from which we just
-            came, we have a cycle.
-        """
-        stack = Stack()
-        adj = [iter(G.adj(v)) for v in G.vertices()]
-        self._marked[v] = True
-        stack.push(v)
-        while not stack.is_empty:
-            v = stack.peek()
-            try:
-                w = next(adj[v])
-                if not self._marked[w]:
-                    self._marked[w] = True
-                    u = v
-                    stack.push(w)
-                elif w != u:
-                    self.has_cycle = True
-                    return
-            except StopIteration:
-                stack.pop()
+def has_parallel_edges(G):
+    """Return True if the graph has parallel edges."""
+    # Only return True if G.adj(v) has duplicates
+    for v in G.vertices():
+        # refactor to use set()
+        adj = sorted(G.adj(v))
+        for i in range(len(adj) - 1):
+            if adj[i] == adj[i + 1]:
+                return True
+    return False
 
 
-def _cycle_dfs(G, v, marked, edge_to, u=None):
+def _cycle_dfs(G, v, marked, edge_to, u=None, return_path=False):
     """Perform depth-first search recursively from vertex `v`.
 
     .. note:: `u` is the previously-seen vertex. If one of the adjacent
@@ -1323,10 +1264,13 @@ def _cycle_dfs(G, v, marked, edge_to, u=None):
     for w in G.adj(v):
         if not marked[w]:
             edge_to[w] = v
-            cycle = _cycle_dfs(G, w, marked, edge_to, v)
-            if cycle:
-                return cycle
+            result = _cycle_dfs(G, w, marked, edge_to, v, return_path)
+            if result:
+                return result
         elif w != u:
+            if not return_path:
+                return True  # cycle found, but don't need to return the path
+
             cycle = Stack()
             x = v
             while x != w:
@@ -1336,8 +1280,10 @@ def _cycle_dfs(G, v, marked, edge_to, u=None):
             cycle.push(v)
             return cycle
 
+    return None  # no cycle found
 
-def _cycle_dfs_nr(G, v, marked, edge_to):
+
+def _cycle_dfs_nr(G, v, marked, edge_to, return_path=False):
     """Perform depth-first search non-recursively from vertex `v`.
 
     .. note:: `u` is the previously-seen vertex. If one of the adjacent
@@ -1374,7 +1320,33 @@ def _cycle_dfs_nr(G, v, marked, edge_to):
     return None  # no cycle found
 
 
-def find_cycle_path(G, s, recursive=True):
+def has_cycle(G, s, recursive=False):
+    """Return True if there is a cycle in the graph that contains `s`.
+
+    Parameters
+    ----------
+    G : :class:`Graph`
+        The graph to analyze.
+    s : int
+        The source vertex from which to start the search.
+    recursive : bool
+        If True, use the recursive implementation. Otherwise, use the
+        non-recursive implementation. Both implementations return the same
+        cycle.
+
+    Returns
+    -------
+    bool
+        True if there is a cycle in the graph that contains `s`. False
+        otherwise.
+    """
+    marked = G.V * [False]
+    edge_to = G.V * [None]  # last vertex on known path to this one
+    engine = _cycle_dfs if recursive else _cycle_dfs_nr
+    return bool(engine(G, s, marked, edge_to, return_path=False))
+
+
+def find_cycle_path(G, s, recursive=False):
     """Find a cycle in the graph that contains `s`, if one exists.
 
     Parameters
@@ -1397,7 +1369,7 @@ def find_cycle_path(G, s, recursive=True):
     marked = G.V * [False]
     edge_to = G.V * [None]  # last vertex on known path to this one
     engine = _cycle_dfs if recursive else _cycle_dfs_nr
-    cycle = engine(G, s, marked, edge_to)
+    cycle = engine(G, s, marked, edge_to, return_path=True)
     return list(cycle) if cycle else []
 
 
