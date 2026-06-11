@@ -413,7 +413,20 @@ class Degrees:
 
 # Exercise 4.2.9
 def check_topological(G, order):
-    """Return True if `order` is a topological order of `G`."""
+    """Return True if `order` is a topological order of `G`.
+
+    Parameters
+    ----------
+    G : :class:`Digraph`
+        The graph for which to check the order.
+    order : iterable
+        A list of vertices in some order.
+
+    Returns
+    -------
+    result : bool
+        True if `order` is a topological order of `G`, False otherwise.
+    """
     if not topological_order(G):
         raise ValueError('G is not a DAG!')
     if sorted(order) != sorted(G.vertices()):
