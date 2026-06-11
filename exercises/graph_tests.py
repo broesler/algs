@@ -44,7 +44,6 @@ def load_graph(filename):
 
 
 # Load test file
-# TODO loop over all test files
 G = load_graph(DATA_PATH / 'tinyDG.txt')
 # G = load_graph(DATA_PATH / 'mediumDG.txt')
 

@@ -326,7 +326,7 @@ class IndirectPQ(Collection):
         return self.__getitem__(k)
 
 
-# Web Exercise 9
+# Web Exercise 3.4.9
 class BloomFilter:
     r"""Implements a hash table with only `add` and `exists` operations.
     Determines if an element is definitively *not* in the set, or *may* be in
@@ -368,9 +368,15 @@ class BloomFilter:
     so choosing *b = 8* gives ~ 2% false positive rate.
     """
 
-    # TODO allow client to set the false positive rate, then choose `b` and `M`
-    # based on (expected) N = len(keys)
     def __init__(self, keys=None, p=0.02):
+        """
+        Parameters
+        ----------
+        keys : iterable, optional
+            The list of keys to be put into the table.
+        p : float in (0, 1), optional
+            The false positive rate.
+        """
         keys = keys or []
         if len(keys) > 0:
             M = int(-len(keys) * np.log2(p) / np.log(2))  # optimal M given `p`

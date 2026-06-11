@@ -101,14 +101,6 @@ class Bag(Collection):
         """Add item to the bag."""
         self._items.append(item)
 
-    # TODO how to test equality when items cannot be sorted?
-    # i.e. a string and an int in the same Bag.
-    # def __eq__(self, other):
-    #     # When comparing Bags, order does not matter, so sort the items first.
-    #     if not isinstance(other, Bag):
-    #         raise NotImplemented
-    #     return sorted(self._items) == sorted(other._items)
-
 
 # Exercise 1.3.4
 class RandomBag(Bag):
@@ -393,10 +385,10 @@ class IndexPQ(Collection, MutableMapping):
     #   qp : the inverse of pq: `dict` with integer keys, but arbitrary values
     #     ** pq[qp[i]] == qp[pq[i]] == i
     #   items : a dictionary of given values, with pq values as the keys.
-    # TODO
+    # TODO for IndexPQ:
     #   * replace `dict` with `list` and proper resizing code.
-    #   * move this to its own package/file, implement additional tests for
-    #     initialization, timing tests to show log N behavior.
+    #   * implement additional tests for initialization, timing tests to show
+    #     log N behavior.
     #   * create pq of objects with attributes and test the key function
     #   * implement self.copy()
     #   * write setter functions for self.kind and self.key to reorganize the

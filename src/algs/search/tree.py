@@ -1457,7 +1457,7 @@ class ThreadedST_nr(BST_nr):
 
 
 # Ex 3.2.41 array representation
-# TODO implement full OrderedSymbolTable API.
+# TODO implement full OrderedSymbolTable API in ArrayBST
 class ArrayBST(SymbolTable):
     __doc__ = f"""Implements a binary search tree using parallel arrays.
                {SymbolTable.__doc__}

@@ -21,11 +21,6 @@ __all__ = [
 ]
 
 
-# TODO refactor ArrayST and BinarySearchST to use parallel "arrays" instead of
-# a list of Item objects to be true to the book implementations, as well as
-# more space efficient.
-
-
 # -----------------------------------------------------------------------------
 #         Define Abstract Base Classes
 # -----------------------------------------------------------------------------
@@ -600,8 +595,10 @@ class ArrayST(SymbolTable):
         return list(zip(self._keys, self._vals))
 
 
-# Ex 3.1.12(a) Implement BST as an array of key/val objects. The original book
-# implementation uses two parallel arrays for keys and values.
+# Ex 3.1.12(a) Implement BinarySearchST as an array of key/val objects. The
+# original book implementation uses two parallel arrays for keys and values.
+# The list of Item objects in Python is trivial and super slow, so keep
+# the parallel array version.
 class BinarySearchST(OrderedSymbolTable):
     __doc__ = f"""Implements an ordered-array with binary search symbol table.
               {OrderedSymbolTable.__doc__}"""

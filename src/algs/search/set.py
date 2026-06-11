@@ -234,7 +234,6 @@ class MultiHashSet(HashSet):
         {UnorderedSet.__doc__}
         """
 
-    # TODO keep an instance variable for O(1) lookup
     @property
     def _N(self):
         return sum(self._st.values())
@@ -584,7 +583,7 @@ class BoolMathSet(MathSet, HashSet):
         return self
 
 
-class MathMultiSet(MultiHashSet, MathSet):
+class MathMultiSet(MathSet, MultiHashSet):
     __doc__ = f"""Implements a mathematical multiset.
 
         .. note:: This implementation keeps the multiplicity of keys as the
