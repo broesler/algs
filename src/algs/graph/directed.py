@@ -10,6 +10,7 @@
 See Sedgewick and Wayne, §4.2.
 """
 
+from collections import namedtuple
 from pathlib import Path
 
 from algs.basics import Queue, Stack
@@ -151,28 +152,44 @@ def directed_cycle(G):
     return cycle
 
 
-class DepthFirstOrder:
+DepthFirstOrder = namedtuple('DepthFirstOrder', ['pre', 'post', 'reverse_post'])
+
+
+def depth_first_order(G):
     """Compute the pre-, post-, and reverse post-order traversals of the
     digraph.
+
+    Parameters
+    ----------
+    G : :class:`Digraph`
+        The graph for which to compute the orders.
+
+    Returns
+    -------
+    DepthFirstOrder : :class:`namedtuple`
+        A named tuple containing the pre-, post-, and reverse post-order
+        traversals of the graph.
     """
+    pre = Queue()
+    post = Queue()
+    reverse_post = Stack()
+    marked = G.V * [False]
 
-    def __init__(self, G):
-        self.pre = Queue()
-        self.post = Queue()
-        self.reverse_post = Stack()
-        self._marked = G.V * [False]
-        for v in G.vertices():
-            if not self._marked[v]:
-                self._dfs(G, v)
-
-    def _dfs(self, G, v):
-        self.pre.enqueue(v)
-        self._marked[v] = True
+    def dfs(G, v):
+        pre.enqueue(v)
+        marked[v] = True
         for w in G.adj(v):
-            if not self._marked[w]:
-                self._dfs(G, w)
-        self.post.enqueue(v)
-        self.reverse_post.push(v)
+            if not marked[w]:
+                dfs(G, w)
+        post.enqueue(v)
+        reverse_post.push(v)
+
+    # Run DFS from each vertex
+    for v in G.vertices():
+        if not marked[v]:
+            dfs(G, v)
+
+    return DepthFirstOrder(pre, post, reverse_post)
 
 
 # Algorithm 4.5
@@ -192,7 +209,7 @@ def topological_order(G):
     """
     # If the graph is a DAG, it has an order
     if not directed_cycle(G):
-        dfs = DepthFirstOrder(G)
+        dfs = depth_first_order(G)
         return dfs.reverse_post
 
 
@@ -201,7 +218,7 @@ class KosarajuSCC(CC):
     """Implements Kosaraju's algorithm for computing strong components."""
 
     def __init__(self, G):
-        order = DepthFirstOrder(G.reverse()).reverse_post
+        order = depth_first_order(G.reverse()).reverse_post
         super().__init__(G, vertices=order)
 
     def strongly_connected(self, v, w):
@@ -389,7 +406,7 @@ if __name__ == "__main__":
     print(cyc)
 
     print('----- Orders -----')
-    p = DepthFirstOrder(G)
+    p = depth_first_order(G)
     print(p.pre)
     print(p.post)
     print(p.reverse_post)
@@ -438,7 +455,7 @@ if __name__ == "__main__":
     print('----- DAGs -----')
     D = Digraph.fromfile(DATA_PATH / 'tinyDAG.txt')
     print(D)
-    orders = DepthFirstOrder(D)
+    orders = depth_first_order(D)
     print('   pre:', orders.pre)
     print('  post:', orders.post)
     print('r_post:', orders.reverse_post)
