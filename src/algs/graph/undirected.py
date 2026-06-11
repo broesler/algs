@@ -101,15 +101,38 @@ class UndirectedGraph(ABC):
         return f"<{self.__class__.__name__}: {self.__str__()}>"
 
 
-class GraphSearch(ABC):
-    # An abstract base class of graph searches.
+def _reconstruct_path(v, s, edge_to):
+    """Reconstruct the list of vertices on the path from `v` to `s` using the
+    `edge_to` array.
     """
-    Attributes
-    ----------
-    s : int
-        The index of the source vertex.
+    path = Stack()
+    x = v
+    while x != s:
+        path.push(x)
+        x = edge_to[x]
+    path.push(s)
+    return path
+
+
+_SEARCH_DOC = """
+Attributes
+----------
+s : int
+    The index of the source vertex.
+"""
+
+
+class GraphSearch(ABC):
+    """An abstract base class for implementing graph search algorithms.
+
+    This class should not be instantiated, because it does not actually do
+    anything. A subclass should call `super().__init__(G, s)` to initialize the
+    search structure, and then implement the search itself, which should
+    populate the `_marked` and `_edge_to` attributes. The `has_path_to` and
+    `path_to` methods will then work as expected.
     """
 
+    @abstractmethod
     def __init__(self, G, s=0):
         """
         Parameters
@@ -120,32 +143,23 @@ class GraphSearch(ABC):
             The index of the source vertex.
         """
         self.s = s
+        self._marked = G.V * [False]
+        self._edge_to = G.V * [None]  # last vertex on known path to this one
 
-    @abstractmethod
-    def marked(self, v):
-        """Return True if `v` is connected to `s`."""
-        pass
-
-    @abstractmethod
+    @property
     def count(self):
         """Return the number of vertices connected to `s`."""
-        pass
+        return sum(self._marked)
 
-
-class Paths(ABC):
-    # An abstract base class for finding paths through a graph.
-    __doc__ = GraphSearch.__doc__
-    __init__ = GraphSearch.__init__
-
-    @abstractmethod
     def has_path_to(self, v):
         """Return True if there is a path from `s` to `v`."""
-        pass
+        return self._marked[v]
 
-    @abstractmethod
     def path_to(self, v):
         """Return an iterable of the vertices on the path from `s` to `v`."""
-        pass
+        return (
+            _reconstruct_path(v, self.s, self._edge_to) if self.has_path_to(v) else None
+        )
 
 
 # -----------------------------------------------------------------------------
@@ -612,43 +626,13 @@ class TransportationGraph(EuclideanGraph):
 # -----------------------------------------------------------------------------
 #         Paths/Searches
 # -----------------------------------------------------------------------------
+# See: Algorithm 4.1 DepthFirstPaths (p 536) + DepthFirstSearch (p 531)
 class DepthFirstSearch(GraphSearch):
-    __doc__ = f"""Implements depth-first search.
-    {GraphSearch.__doc__}"""
-    # See p 531
-
-    def __init__(self, G, s):
-        super().__init__(G, s)
-        self._marked = G.V * [False]
-        self._count = 0
-        self._dfs(G, s)
-
-    def marked(self, v):
-        """Return True if `v` is connected to `s`."""
-        return self._marked[v]
-
-    def count(self):
-        """Return the number of vertices connected to `s`."""
-        return self._count
-
-    def _dfs(self, G, v):
-        """Perform depth-first search recursively from vertex `v`."""
-        self._marked[v] = True
-        self._count += 1
-        for w in G.adj(v):
-            if not self._marked[w]:
-                self._dfs(G, w)
-
-
-# Algorithm 4.1
-class DepthFirstPaths(Paths):
     __doc__ = f"""Implements depth-first search to return a path.
-    {Paths.__doc__}"""
+    {_SEARCH_DOC}"""
 
     def __init__(self, G, s):
         super().__init__(G, s)
-        self._marked = G.V * [False]
-        self._edge_to = G.V * [None]  # last vertex on known path to this one
         self._dfs(G, s)
 
     def _dfs(self, G, v):
@@ -659,26 +643,10 @@ class DepthFirstPaths(Paths):
                 self._edge_to[w] = v
                 self._dfs(G, w)
 
-    def has_path_to(self, v):
-        """Return True if there is a path from `s` to `v`."""
-        return self._marked[v]
 
-    def path_to(self, v):
-        """Return an iterable of the vertices on the path from `s` to `v`."""
-        if not self.has_path_to(v):
-            return None
-        path = Stack()
-        x = v
-        while x != self.s:
-            path.push(x)
-            x = self._edge_to[x]
-        path.push(self.s)
-        return path
-
-
-class STDepthFirstPaths(DepthFirstPaths):
+class STDepthFirstPaths(DepthFirstSearch):
     __doc__ = f"""Implements depth-first search to return a path in an STGraph.
-    {Paths.__doc__}"""
+    {_SEARCH_DOC}"""
 
     def __init__(self, G, s):
         self.s = s
@@ -697,13 +665,13 @@ class STDepthFirstPaths(DepthFirstPaths):
 
 
 # Web Exercise 28
-class DepthFirstPaths_nr(DepthFirstPaths):
+class DepthFirstPaths_nr(DepthFirstSearch):
     __doc__ = f"""Implements depth-first search non-recursively.
 
     .. note:: Extra memory includes a list of iterators over each adjacency
     list, plus the stack of vertices. Explores vertices in the same order as
     recursive DFS.
-    {GraphSearch.__doc__}"""
+    {_SEARCH_DOC}"""
 
     def _dfs(self, G, v):
         """Perform depth-first search from `v` with an explicit stack."""
@@ -724,13 +692,13 @@ class DepthFirstPaths_nr(DepthFirstPaths):
 
 
 # Web Exercise 28
-class DepthFirstPaths_nr_simple(DepthFirstPaths):
+class DepthFirstPaths_nr_simple(DepthFirstSearch):
     __doc__ = f"""Implements depth-first search non-recursively.
 
     .. note:: Extra memory is proportional to V + E, since each vertex may be
     pushed more than once. This implementation explores adjacent vertices in
     the opposite order of recursive DFS.
-    {GraphSearch.__doc__}"""
+    {_SEARCH_DOC}"""
 
     def _dfs(self, G, v):
         """Perform depth-first search from `v` with an explicit stack."""
@@ -746,29 +714,13 @@ class DepthFirstPaths_nr_simple(DepthFirstPaths):
                         stack.push(w)
 
 
-# NOTE this function is factored out for use in find_min_cycle.
-def _reconstruct_path(v, s, edge_to):
-    """Reconstruct the list of vertices on the path from `v` to `s` using the
-    `edge_to` array.
-    """
-    path = Stack()
-    x = v
-    while x != s:
-        path.push(x)
-        x = edge_to[x]
-    path.push(s)
-    return path
-
-
 # Algorithm 4.2
-class BreadthFirstPaths(Paths):
+class BreadthFirstSearch(GraphSearch):
     __doc__ = f"""Implements breadth-first search to find shortest paths.
-    {Paths.__doc__}"""
+    {_SEARCH_DOC}"""
 
     def __init__(self, G, s):
         super().__init__(G, s)
-        self._marked = G.V * [False]
-        self._edge_to = G.V * [None]  # last vertex on known path to this one
         self._dist_to = G.V * [None]  # Exercise 4.1.13
         self._bfs(G, s)
 
@@ -787,17 +739,6 @@ class BreadthFirstPaths(Paths):
                     self._dist_to[w] = self._dist_to[v] + 1
                     q.enqueue(w)
 
-    def has_path_to(self, v):
-        """Return True if there is a path from `s` to `v`."""
-        return self._marked[v]
-
-    def path_to(self, v):
-        """Return an iterable of the vertices on the path from `s` to `v`."""
-        # Same as DepthFirstPaths method
-        return (
-            _reconstruct_path(v, self.s, self._edge_to) if self.has_path_to(v) else None
-        )
-
     # Exercise 4.1.13
     def dist_to(self, v):
         """Return the distance from source to `v`. None if not connected."""
@@ -812,21 +753,18 @@ class UFSearch(GraphSearch):
         concerned with determining connectivity. The UF algorithm is also an
         *online* algorithm, as opposed to DFS which must preprocess the entire
         graph structure.
-    {GraphSearch.__doc__}"""
+    {_SEARCH_DOC}"""
     # See p 529
 
     def __init__(self, G, s):
-        super().__init__(G, s)
+        self.s = s
         self._uf = WeightedQuickUnionUF(G.V)
         for v in G.vertices():
             for w in G.adj(v):
                 if not self._uf.connected(v, w):
                     self._uf.union(v, w)
 
-    def marked(self, v):
-        """Return True if `v` is connected to `s`."""
-        return self._uf.connected(self.s, v)
-
+    @property
     def count(self):
         """Return the number of vertices connected to `s`.
 
@@ -837,39 +775,37 @@ class UFSearch(GraphSearch):
         # Return the size of the component to which the source belongs
         return self._uf._size[self._uf.find(self.s)]
 
+    def has_path_to(self, v):
+        """Return True if `v` is connected to `s`."""
+        return self._uf.connected(self.s, v)
+
+    def path_to(self, v):
+        """Not implemented since UF does not keep track of paths."""
+        raise NotImplementedError("UFSearch does not keep track of paths!")
+
 
 # Exercise 4.1.10
 class LeafDFS(GraphSearch):
     __doc__ = f"""Implements depth-first search to find a non-structural
     vertex, aka a leaf of a spanning tree rooted at the source.
-    {GraphSearch.__doc__}"""
+    {_SEARCH_DOC}"""
 
     def __init__(self, G, s):
         super().__init__(G, s)
-        self._marked = G.V * [False]
-        self._count = 0
         self._leaf = self._dfs(G, s)
 
-    def marked(self, v):
-        """Return True if `v` is connected to `s`."""
-        return self._marked[v]
-
-    def count(self):
-        """Return the number of vertices connected to `s`."""
-        return self._count
+    @property
+    def leaf(self):
+        """Return the leaf vertex found by the search."""
+        return self._leaf
 
     def _dfs(self, G, v):
         """Perform depth-first search recursively from vertex `v`."""
         self._marked[v] = True
-        self._count += 1
         for w in G.adj(v):
             if not self._marked[w]:
                 return self._dfs(G, w)
         return v  # return the leaf immediately when we find it
-
-    def leaf(self):
-        """Return the leaf vertex found by the search."""
-        return self._leaf
 
 
 # Web Exercise 33
@@ -955,15 +891,13 @@ def complement_graph(G):
 
 # See:
 # <https://stackoverflow.com/questions/24476027/shortest-path-in-a-complement-graph-algorithm>
-class ComplementBFS(Paths):
+class ComplementBFS(GraphSearch):
     __doc__ = f"""Implements breadth-first search to find shortest paths in the
     complement graph.
-    {Paths.__doc__}"""
+    {_SEARCH_DOC}"""
 
     def __init__(self, G, s):
         super().__init__(G, s)
-        self._marked = G.V * [False]
-        self._edge_to = G.V * [None]  # last vertex on known path to this one
         self._dist_to = G.V * [None]  # Exercise 4.1.13
         self._bfs(G, s)
 
@@ -992,23 +926,6 @@ class ComplementBFS(Paths):
                 q.enqueue(w)
             L1 = L2
             L2 = []
-
-    def has_path_to(self, v):
-        """Return True if there is a path from `s` to `v`."""
-        return self._marked[v]
-
-    def path_to(self, v):
-        """Return an iterable of the vertices on the path from `s` to `v`."""
-        # Same as DepthFirstPaths method
-        if not self.has_path_to(v):
-            return None
-        path = Stack()
-        x = v
-        while x != self.s:
-            path.push(x)
-            x = self._edge_to[x]
-        path.push(self.s)
-        return path
 
     # Exercise 4.1.13
     def dist_to(self, v):
@@ -1065,7 +982,7 @@ class GraphProperties:
 
     def _ecc(self, v):
         """Compute the shortest path from `v` to every other vertex."""
-        bfs = BreadthFirstPaths(self.G, v)
+        bfs = BreadthFirstSearch(self.G, v)
         return max([bfs.dist_to(w) for w in self.vertices])
 
     def _compute_missing_eccs(self):
@@ -1548,7 +1465,7 @@ def parallel_edges(G, s):
 class Biconnected:
     __doc__ = f"""Implements depth-first search to determine if a graph is
     edge-connected, aka biconnected.
-    {GraphSearch.__doc__}"""
+    {_SEARCH_DOC}"""
 
     def __init__(self, G):
         self.Nbridges = 0
@@ -1630,16 +1547,16 @@ def print_dfs(G, s, DFS=DepthFirstSearch):
     # See p 529
     search = DFS(G, s)
     for v in G.vertices():
-        if search.marked(v):
+        if search.has_path_to(v):
             print(f"{v} ", end='')
     print()
-    if search.count() != G.V:
+    if search.count != G.V:
         print('NOT ', end='')
     print('connected.')
     return search
 
 
-def print_paths(G, s, GS=DepthFirstPaths):
+def print_paths(G, s, GS=DepthFirstSearch):
     """Search the graph from vertex `s`, returning the paths."""
     # See p 535
     search = GS(G, s)
@@ -1698,7 +1615,7 @@ def degrees_of_separation(sg, source, sink):
     if source not in sg:
         raise ValueError(f"{repr(source)} not in graph!")
     s = sg.index(source)
-    bfs = BreadthFirstPaths(sg.G, s)
+    bfs = BreadthFirstSearch(sg.G, s)
     if sink in sg:
         print(f"{source}->{sink}")
         t = sg.index(sink)
@@ -1727,10 +1644,10 @@ if __name__ == "__main__":
     print_dfs(GC, 0)
 
     print('----- DFS Paths -----')
-    print_paths(GC, 0, GS=DepthFirstPaths)
+    print_paths(GC, 0, GS=DepthFirstSearch)
 
     print('----- BFS Paths -----')
-    print_paths(GC, 0, GS=BreadthFirstPaths)
+    print_paths(GC, 0, GS=BreadthFirstSearch)
 
     # Test connected components
     print('----- CC -----')
@@ -1778,7 +1695,7 @@ if __name__ == "__main__":
     print('minpath:', cm)
 
     print('complement', complement_graph(GC))
-    bfs_cx = BreadthFirstPaths(complement_graph(GC), 0)
+    bfs_cx = BreadthFirstSearch(complement_graph(GC), 0)
     bfs_c = ComplementBFS(GC, 0)
     print(bfs_cx.path_to(4))  # [0, 4]
     print(bfs_c.path_to(4))  # [0, 4]
