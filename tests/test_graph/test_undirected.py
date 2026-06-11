@@ -5,14 +5,12 @@
 #   Author: Bernie Roesler
 # =============================================================================
 
-"""Tests for graph algorithms."""
+"""Tests for undirected graph algorithms."""
 
 from pathlib import Path
 
 import pytest
 
-# TODO refactor into tests/test_graph/test_undirected.py,
-# tests/test_graph/test_directed.py, etc.
 from algs.graph.undirected import (
     CC,
     Biconnected,
@@ -91,7 +89,7 @@ EXPECT_BFS = {
 EXPECT_COMPS = [list(range(7)), [7, 8], [9, 10, 11, 12]]
 
 
-DATA_DIR = Path(__file__).resolve().parents[1] / 'data'
+DATA_DIR = Path(__file__).resolve().parents[2] / 'data'
 
 
 # NOTE paths are relative to where pytest is run from?
