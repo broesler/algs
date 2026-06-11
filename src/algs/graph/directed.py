@@ -176,20 +176,24 @@ class DepthFirstOrder:
 
 
 # Algorithm 4.5
-class Topological:
-    """Compute the topological ordering of a digraph."""
+def topological_order(G):
+    """Compute the topological ordering of a digraph.
 
-    def __init__(self, G):
-        self.order = None
-        # If the graph is a DAG, it has an order
-        if not directed_cycle(G):
-            dfs = DepthFirstOrder(G)
-            self.order = dfs.reverse_post
+    Parameters
+    ----------
+    G : :class:`Digraph`
+        The graph for which to compute the topological order.
 
-    @property
-    def is_DAG(self):
-        """Return True if the graph is a DAG."""
-        return self.order is not None
+    Returns
+    -------
+    order : list
+        A list of vertices in topological order. Empty if the graph is not a
+        DAG.
+    """
+    # If the graph is a DAG, it has an order
+    if not directed_cycle(G):
+        dfs = DepthFirstOrder(G)
+        return dfs.reverse_post
 
 
 # Algorithm 4.6
@@ -336,7 +340,7 @@ class Degrees:
 # Exercise 4.2.9
 def check_topological(G, order):
     """Return True if `order` is a topological order of `G`."""
-    if not Topological(G).is_DAG:
+    if not topological_order(G):
         raise ValueError('G is not a DAG!')
     if sorted(order) != sorted(G.vertices()):
         raise ValueError("order is not a permutation of G's vertices!")
@@ -391,13 +395,13 @@ if __name__ == "__main__":
     print(p.reverse_post)
     assert list(reversed(list(p.post))) == list(p.reverse_post)
 
-    t = Topological(G)
-    assert not t.is_DAG
+    t = topological_order(G)
+    assert not t
 
     sg = SymbolDigraph.fromfile(DATA_PATH / 'jobs.txt', delim='/')
-    t = Topological(sg.G)
-    assert t.is_DAG
-    print('\n'.join(sg.name(v) for v in t.order))
+    t = topological_order(sg.G)
+    assert t
+    print('\n'.join(sg.name(v) for v in t))
 
     cc = KosarajuSCC(G)
     assert cc.count() == 5
@@ -438,12 +442,12 @@ if __name__ == "__main__":
     print('   pre:', orders.pre)
     print('  post:', orders.post)
     print('r_post:', orders.reverse_post)
-    t = Topological(D)
-    print('  topo:', t.order)
-    assert t.order == orders.reverse_post
+    t = topological_order(D)
+    print('  topo:', t)
+    assert t == orders.reverse_post
 
-    assert check_topological(D, t.order)
-    order = list(t.order)
+    assert check_topological(D, t)
+    order = list(t)
     shuffle(order)
     assert not check_topological(D, order)
 
