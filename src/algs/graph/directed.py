@@ -325,6 +325,42 @@ def eulerian_cycle(G):
     return list(cycle)
 
 
+# Exercise 4.2.24
+def hamiltonian_path(G):
+    """Find a path in a DAG that visits each vertex exactly once.
+
+    This function computes a toplogical sort and then checks if there is an
+    edge between each consecutive pair of vertices in the toplogical order.
+
+    Parameters
+    ----------
+    G : :class:`Digraph`
+        A DAG.
+
+    Returns
+    -------
+    result : list
+        The Hamiltonian path. Empty if it does not exist.
+    """
+    assert G.V > 0
+    order = topological_order(G)
+
+    if not order:
+        raise ValueError("Input is not a DAG!")
+
+    if len(order) == 1:
+        return order
+
+    # Check if each consecutive pair of vertices in the topological order has
+    # an edge between them. If not, then there is no Hamiltonian path.
+    for i in range(len(order) - 1):
+        v = order[i]
+        w = order[i+1]
+        if not G.has_edge(v, w):
+            return []
+
+    return order
+
 
 
 # -----------------------------------------------------------------------------
@@ -490,6 +526,20 @@ if __name__ == "__main__":
 
     cc = KosarajuSCC(D)
     print(cc.get_components())
+
+    # Exercise 4.2.24: Hamiltonian path
+    h = hamiltonian_path(Gno_cyc)
+    assert h == list(range(N))
+
+    H = Digraph(N)
+    j = N // 2
+    for i in range(N - 1):
+        if i == j:
+            continue
+        H.add_edge(i, i + 1)
+    H.add_edge(j + 1, j)
+    h = hamiltonian_path(H)
+    assert not h
 
 # =============================================================================
 # =============================================================================
