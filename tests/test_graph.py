@@ -16,9 +16,8 @@ import pytest
 from algs.graph.undirected import (
     CC,
     Biconnected,
-    BreadthFirstPaths,
+    BreadthFirstSearch,
     CC_nr,
-    DepthFirstPaths,
     DepthFirstPaths_nr,
     DepthFirstPaths_nr_simple,
     DepthFirstSearch,
@@ -275,19 +274,19 @@ class TestSymbolGraph:
 class TestDFS:
     def test_dfs_CG(self, tinyCG, GraphSearch):
         dfs = GraphSearch(tinyCG, 0)
-        assert dfs.count() == tinyCG.V
-        assert all(dfs.marked(v) for v in tinyCG.vertices())
+        assert dfs.count == tinyCG.V
+        assert all(dfs.has_path_to(v) for v in tinyCG.vertices())
 
     def test_dfs_G(self, tinyG, GraphSearch):
         dfs = GraphSearch(tinyG, 0)
-        assert dfs.count() == 7
-        assert all(dfs.marked(v) for v in range(6))
+        assert dfs.count == 7
+        assert all(dfs.has_path_to(v) for v in range(6))
         dfs = GraphSearch(tinyG, 7)
-        assert dfs.count() == 2
-        assert all(dfs.marked(v) for v in [7, 8])
+        assert dfs.count == 2
+        assert all(dfs.has_path_to(v) for v in [7, 8])
         dfs = GraphSearch(tinyG, 9)
-        assert dfs.count() == 4
-        assert all(dfs.marked(v) for v in [9, 10, 11, 12])
+        assert dfs.count == 4
+        assert all(dfs.has_path_to(v) for v in [9, 10, 11, 12])
 
 
 @pytest.mark.parametrize('GT', [Graph, SimpleGraph, STGraph])
@@ -295,10 +294,10 @@ class TestPaths:
     @pytest.mark.parametrize(
         'GraphSearch',
         [
-            DepthFirstPaths,
+            DepthFirstSearch,
             DepthFirstPaths_nr,
             DepthFirstPaths_nr_simple,
-            BreadthFirstPaths,
+            BreadthFirstSearch,
         ],
     )
     class TestHasPath:
@@ -317,7 +316,7 @@ class TestPaths:
     @pytest.mark.parametrize(
         'DFS, EXPECT',
         [
-            (DepthFirstPaths, EXPECT_DFS),
+            (DepthFirstSearch, EXPECT_DFS),
             (DepthFirstPaths_nr, EXPECT_DFS),
             (DepthFirstPaths_nr_simple, EXPECT_DFS_S),
         ],
@@ -328,18 +327,18 @@ class TestPaths:
             assert list(dfs.path_to(v)) == EXPECT[v]
 
     def test_bfs_path_to(self, tinyCG):
-        bfs = BreadthFirstPaths(tinyCG, 0)
+        bfs = BreadthFirstSearch(tinyCG, 0)
         for v in tinyCG.vertices():
             assert list(bfs.path_to(v)) == EXPECT_BFS[v]
         assert [bfs.dist_to(v) for v in tinyCG.vertices()] == [0, 1, 1, 2, 2, 1]
 
     def test_leaf_CG(self, tinyCG):
         dfs = LeafDFS(tinyCG, 0)
-        assert dfs.leaf() == 1  # returns first leaft
+        assert dfs.leaf == 1  # returns first leaft
 
     def test_leaf_G(self, tinyG):
         dfs = LeafDFS(tinyG, 0)
-        assert dfs.leaf() == 3  # returns first leaft
+        assert dfs.leaf == 3  # returns first leaft
 
     def test_spanning_tree_dfs(self, tinyCG):
         EXPECT_ST = {0: [2], 1: [2], 2: [0, 1, 3], 3: [2, 5, 4], 4: [3], 5: [3]}
