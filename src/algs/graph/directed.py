@@ -331,7 +331,7 @@ def eulerian_cycle(G):
         return []
 
 
-# Exercise 4.2.24
+# Exercise 4.2.24, 4.2.25
 def hamiltonian_path(G):
     """Find a path in a DAG that visits each vertex exactly once.
 
