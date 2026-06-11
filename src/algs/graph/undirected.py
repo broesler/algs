@@ -1476,34 +1476,44 @@ class Bipartite:
 
 
 # Exercise 4.1.32
-class ParallelEdges:
-    __doc__ = f"""Implements breadth-first search to count parallel edges.
-    {Paths.__doc__}"""
+def parallel_edges(G, s):
+    """Count the parallel edges in the graph, starting from vertex `s`.
 
-    def __init__(self, G, s):
-        self.count = 0
-        self._marked = G.V * [False]
-        self._bfs(G, s)
-        self.count /= 2  # undirected edges counted 2x
+    Parameters
+    ----------
+    G : :class:`Graph`
+        The graph to analyze.
+    s : int
+        The source vertex from which to start the search.
 
-    def _bfs(self, G, s):
-        """Perform breadth-first search from source vertex `s`."""
-        q = Queue()
-        self._marked[s] = True
-        q.enqueue(s)
-        while not q.is_empty:
-            v = q.dequeue()
-            neighbs = G.V * [False]  # boolean array of (possible) neighbors
-            for w in G.adj(v):
-                # Same as using a hash table since we have integer vertices.
-                if neighbs[w]:
-                    self.count += 1
-                else:
-                    neighbs[w] = True
+    Returns
+    -------
+    int
+        The number of parallel edges in the graph.
+    """
+    count = 0
+    marked = G.V * [False]
 
-                if not self._marked[w]:
-                    self._marked[w] = True
-                    q.enqueue(w)
+    # Run BFS from `s`.
+    q = Queue()
+    marked[s] = True
+    q.enqueue(s)
+
+    while not q.is_empty:
+        v = q.dequeue()
+        neighbs = G.V * [False]  # boolean array of (possible) neighbors
+        for w in G.adj(v):
+            # Same as using a hash table since we have integer vertices.
+            if neighbs[w]:
+                count += 1
+            else:
+                neighbs[w] = True
+
+            if not marked[w]:
+                marked[w] = True
+                q.enqueue(w)
+
+    return count // 2  # undirected edges counted 2x
 
 
 # Exercise 4.1.36
