@@ -16,7 +16,6 @@ import pytest
 from algs.graph.undirected import (
     CC,
     Biconnected,
-    Bipartite,
     BreadthFirstPaths,
     CC_nr,
     DepthFirstPaths,
@@ -31,6 +30,7 @@ from algs.graph.undirected import (
     STGraph,
     SymbolGraph,
     UFSearch,
+    bipartite_colors,
     find_cycle_path,
     has_cycle,
     has_parallel_edges,
@@ -469,8 +469,8 @@ class TestCyclePath:
 @pytest.mark.parametrize('GT', [Graph, SimpleGraph, STGraph])
 class TestBipartite:
     def test_not_bipartite(self, tinyG):
-        b = Bipartite(tinyG, [0])
-        assert not b.is_bipartite
+        b = bipartite_colors(tinyG)
+        assert not b.colors
 
     def test_is_bipartite(self, tinyG):
         # Tweak tinyG to make it bipartite
@@ -483,8 +483,8 @@ class TestBipartite:
         tinyG._adj[4]._items.remove(3)
         tinyG._adj[9]._items.remove(12)
         tinyG._adj[12]._items.remove(9)
-        b = Bipartite(tinyG, [0])
-        assert b.is_bipartite
+        b = bipartite_colors(tinyG)
+        assert b.colors
 
 
 @pytest.mark.parametrize('GT', [Graph, SimpleGraph, STGraph])
