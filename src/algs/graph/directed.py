@@ -245,71 +245,86 @@ class TransitiveClosure:
 
 
 # Exercise 4.2.20
-class Euler:
-    """Find a cycle that visits each edge exactly once."""
+def eulerian_cycle(G):
+    """Find a cycle that visits each edge exactly once.
 
-    def __init__(self, G):
-        assert G.E > 0
-        self._edge_to = G.V * [None]
-        self._on_stack = G.V * [False]
-        self.cycle = None
-        # If degrees are not equal, Eulerian path cannot exist
-        d = Degrees(G)
-        for v in G.vertices():
-            if d.indegree(v) != d.outdegree(v):
-                return
-        # Start with any vertex that is not a sink
-        s = self._non_isolated_vertex(G)
-        # Copy counts of edges into/out of vertices to "mark" edges
-        self._indegree = d._indegree.copy()
-        self._outdegree = d._outdegree.copy()
-        # Find the cycle
-        self._dfs(G, s)
-        # Certify it
-        if self.has_cycle:
-            self._certify(G)
+    Parameters
+    ----------
+    G : :class:`Digraph`
+        The graph in which to search for the cycle.
 
-    @property
-    def has_cycle(self):
-        """Return True if an Eulerian cycle exists in the graph."""
-        return bool(self.cycle)
+    Returns
+    -------
+    cycle : list
+        A list of vertices in the cycle, in order. Empty if no such cycle exists.
+    """
+    assert G.E > 0
+    edge_to = G.V * [None]
+    on_stack = G.V * [False]
+    cycle = []
 
-    def _non_isolated_vertex(self, G):
+    def non_isolated_vertex(G):
         for v in G.vertices():
             if G.outdegree(v) > 0:
                 return v
         raise ValueError('No vertices have outward edges!')
 
-    def _dfs(self, G, v):
-        self._on_stack[v] = True
+    def dfs(G, v):
+        nonlocal cycle
+        on_stack[v] = True
         for w in G.adj(v):
-            if self.has_cycle:
+            if cycle:
                 return
-            elif self._outdegree[w] > 0:
-                self._outdegree[v] -= 1
-                self._indegree[w] -= 1
-                self._edge_to[w] = v
-                self._dfs(G, w)
-            elif self._on_stack[w]:
-                self._outdegree[v] -= 1
-                self._indegree[w] -= 1
+            elif outdegree[w] > 0:
+                outdegree[v] -= 1
+                indegree[w] -= 1
+                edge_to[w] = v
+                dfs(G, w)
+            elif on_stack[w]:
+                outdegree[v] -= 1
+                indegree[w] -= 1
                 # Found a cycle, backtrack up the stack
-                self.cycle = Stack()
+                cycle = Stack()
                 x = v
                 while x != w:
-                    self.cycle.push(x)
-                    x = self._edge_to[x]
-                self.cycle.push(w)
-                self.cycle.push(v)
-        self._on_stack[v] = False
+                    cycle.push(x)
+                    x = edge_to[x]
+                cycle.push(w)
+                cycle.push(v)
+        on_stack[v] = False
 
-    def _certify(self, G):
+    def certify(G):
+        nonlocal cycle
         if (
-            self.cycle.size != G.E + 1
-            or any(x != 0 for x in self._indegree)
-            or any(x != 0 for x in self._outdegree)
+            cycle.size != G.E + 1
+            or any(x != 0 for x in indegree)
+            or any(x != 0 for x in outdegree)
         ):
-            self.cycle = None
+            cycle = []
+
+    # If degrees are not equal, Eulerian path cannot exist
+    d = Degrees(G)
+
+    for v in G.vertices():
+        if d.indegree(v) != d.outdegree(v):
+            return []
+
+    # Start with any vertex that is not a sink
+    s = non_isolated_vertex(G)
+
+    # Copy counts of edges into/out of vertices to "mark" edges
+    indegree = d._indegree.copy()
+    outdegree = d._outdegree.copy()
+
+    # Find the cycle
+    dfs(G, s)
+
+    if cycle:
+        certify(G)
+
+    return list(cycle)
+
+
 
 
 # -----------------------------------------------------------------------------
@@ -443,14 +458,20 @@ if __name__ == "__main__":
     assert d.sources() == [5, 7, 9]
     assert d.sinks() == [9]
 
-    # Create a circular graph
+    # Exercise 4.2.20: Eulerican cycle: Create a circular graph
     edges = []
     N = 5
     Gcyc = Digraph(N)
     for i in range(N):
         Gcyc.add_edge(i, (i + 1) % N)
-    e = Euler(Gcyc)
-    print(e.cycle)
+    e = eulerian_cycle(Gcyc)
+    print(e)
+
+    Gno_cyc = Digraph(N)
+    for i in range(N - 1):
+        Gno_cyc.add_edge(i, i + 1)
+    e = eulerian_cycle(Gno_cyc)
+    assert not e
 
     print('----- DAGs -----')
     D = Digraph.fromfile(DATA_PATH / 'tinyDAG.txt')
