@@ -1308,85 +1308,97 @@ class Cycle_nr(Cycle):
                 stack.pop()
 
 
-class CyclePath(DepthFirstPaths):
-    __doc__ = f"""Implements depth-first search to find a cyclic path.
-    {GraphSearch.__doc__}"""
+def _cycle_dfs(G, v, marked, edge_to, u=None):
+    """Perform depth-first search recursively from vertex `v`.
 
-    def __init__(self, G, s):
-        self.s = s
-        self.has_cycle = False
-        self._path = None
-        self._marked = G.V * [False]
-        self._edge_to = G.V * [None]  # last vertex on known path to this one
-        self._cycle_head = None  # start vertex of the cycle
-        self._cycle_tail = None  # end vertex of the cycle
-        self._dfs(G, s, s)
+    .. note:: `u` is the previously-seen vertex. If one of the adjacent
+        vertices to `v` is marked, but is not the vertex from which we just
+        came, we have a cycle.
+    """
+    if u is None:
+        u = v  # set previous vertex to self for the first call
 
-    def _dfs(self, G, v, u):
-        """Perform depth-first search recursively from vertex `v`.
+    marked[v] = True
 
-        .. note:: `u` is the previously-seen vertex. If one of the adjacent
-            vertices to `v` is marked, but is not the vertex from which we just
-            came, we have a cycle.
-        """
-        self._marked[v] = True
-        for w in G.adj(v):
-            if self.has_cycle:
-                return
-            if not self._marked[w]:
-                self._edge_to[w] = v
-                self._dfs(G, w, v)
+    for w in G.adj(v):
+        if not marked[w]:
+            edge_to[w] = v
+            cycle = _cycle_dfs(G, w, marked, edge_to, v)
+            if cycle:
+                return cycle
+        elif w != u:
+            cycle = Stack()
+            x = v
+            while x != w:
+                cycle.push(x)
+                x = edge_to[x]
+            cycle.push(w)
+            cycle.push(v)
+            return cycle
+
+
+def _cycle_dfs_nr(G, v, marked, edge_to):
+    """Perform depth-first search non-recursively from vertex `v`.
+
+    .. note:: `u` is the previously-seen vertex. If one of the adjacent
+        vertices to `v` is marked, but is not the vertex from which we just
+        came, we have a cycle.
+    """
+    stack = Stack()
+    adj = [iter(G.adj(v)) for v in G.vertices()]
+    marked[v] = True
+    stack.push(v)
+
+    while not stack.is_empty:
+        v = stack.peek()
+        u = edge_to[v]  # previous vertex
+        try:
+            w = next(adj[v])
+            if not marked[w]:
+                edge_to[w] = v
+                u = v
+                marked[w] = True
+                stack.push(w)
             elif w != u:
-                self.has_cycle = True
-                self._path = Stack()
+                cycle = Stack()
                 x = v
                 while x != w:
-                    self._path.push(x)
-                    x = self._edge_to[x]
-                self._path.push(w)
-                self._path.push(v)
+                    cycle.push(x)
+                    x = edge_to[x]
+                cycle.push(w)
+                cycle.push(v)
+                return cycle
+        except StopIteration:
+            stack.pop()
 
-    def cycle(self):
-        """Return the path of the found cycle."""
-        return list(self._path)
+    return None  # no cycle found
 
 
-class CyclePath_nr(CyclePath):
-    __doc__ = f"""Implements depth-first search to find a cyclic path.
-    {GraphSearch.__doc__}"""
+def find_cycle_path(G, s, recursive=True):
+    """Find a cycle in the graph that contains `s`, if one exists.
 
-    def _dfs(self, G, v, u):
-        """Perform depth-first search non-recursively from vertex `v`.
+    Parameters
+    ----------
+    G : :class:`Graph`
+        The graph to analyze.
+    s : int
+        The source vertex from which to start the search.
+    recursive : bool
+        If True, use the recursive implementation. Otherwise, use the
+        non-recursive implementation. Both implementations return the same
+        cycle.
 
-        .. note:: `u` is the previously-seen vertex. If one of the adjacent
-            vertices to `v` is marked, but is not the vertex from which we just
-            came, we have a cycle.
-        """
-        stack = Stack()
-        adj = [iter(G.adj(v)) for v in G.vertices()]
-        self._marked[v] = True
-        stack.push(v)
-        while not stack.is_empty:
-            v = stack.peek()
-            try:
-                w = next(adj[v])
-                if not self._marked[w]:
-                    self._edge_to[w] = v
-                    u = v
-                    self._marked[w] = True
-                    stack.push(w)
-                elif w != u:
-                    self.has_cycle = True
-                    self._path = Stack()
-                    x = v
-                    while x != w:
-                        self._path.push(x)
-                        x = self._edge_to[x]
-                    self._path.push(w)
-                    self._path.push(v)
-                    return
-            except StopIteration:
-                stack.pop()
+    Returns
+    -------
+    list
+        A list of the vertices on the cycle, in order. If there is no cycle,
+        returns an empty list.
+    """
+    marked = G.V * [False]
+    edge_to = G.V * [None]  # last vertex on known path to this one
+    engine = _cycle_dfs if recursive else _cycle_dfs_nr
+    cycle = engine(G, s, marked, edge_to)
+    return list(cycle) if cycle else []
 
 
 class MinCyclePath(BreadthFirstPaths):
@@ -1741,10 +1753,13 @@ if __name__ == "__main__":
     assert gp.eccentricity(gp.center()[0]) == gp.radius()
 
     print('--- MinCyclePath ---')
-    cp = CyclePath(Gm, 0)
-    print('   path', cp.cycle())
+    cp = find_cycle_path(Gm, 0, recursive=True)
+    print('   path:', cp)
+    cp_nr = find_cycle_path(Gm, 0, recursive=False)
+    print('path nr:', cp_nr)
+    assert cp == cp_nr
     cm = MinCyclePath(Gm, 0)
-    print('minpath', cm.cycle())
+    print('minpath:', cm.cycle())
 
     print('complement', complement_graph(GC))
     bfs_cx = BreadthFirstPaths(complement_graph(GC), 0)
