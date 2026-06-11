@@ -81,7 +81,7 @@ class UndirectedGraph(ABC):
         """Return the degree of vertex `v`."""
         return len(self.adj(v))
 
-    # Exercise 4.1.4
+    # Exercise 4.1.4, 4.2.4
     def has_edge(self, v, w):
         """Return True if an edge from `v` to `w` exists."""
         return w in self.adj(v)
@@ -200,7 +200,7 @@ class Graph(UndirectedGraph):
         self._validate_vertex(v)
         self._adj[v] = Bag()  # remove all edges so we don't include in paths
 
-    # Exercise 4.1.3
+    # Exercise 4.1.3, 4.2.3
     def copy(self):
         """Make a deep copy of the graph structure."""
         g = self.__class__(self.V)
