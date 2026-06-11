@@ -102,42 +102,53 @@ class DirectedDFS:
                 self._dfs(G, w)
 
 
-class DirectedCycle:
-    """Implements depth-first search to find a directed cycle."""
+def directed_cycle(G):
+    """Find a directed cycle in a graph.
 
-    def __init__(self, G):
-        self._marked = G.V * [False]
-        self._edge_to = G.V * [None]
-        self._on_stack = G.V * [False]
-        self.cycle = None
-        for v in G.vertices():
-            if not self._marked[v]:
-                self._dfs(G, v)
+    Parameters
+    ----------
+    G : :class:`Digraph`
+        The graph in which to search for a cycle.
 
-    @property
-    def has_cycle(self):
-        """Return True if a directed cycle exists in the graph."""
-        return bool(self.cycle)
+    Returns
+    -------
+    cycle : list
+        A list of vertices in the cycle, in order. Empty if no cycle exists.
+    """
+    marked = G.V * [False]
+    edge_to = G.V * [None]
+    on_stack = G.V * [False]
+    cycle = None
 
-    def _dfs(self, G, v):
-        self._on_stack[v] = True
-        self._marked[v] = True
+    def dfs(G, v):
+        nonlocal cycle
+        on_stack[v] = True
+        marked[v] = True
         for w in G.adj(v):
-            if self.has_cycle:
+            if cycle:
                 return
-            elif not self._marked[w]:
-                self._edge_to[w] = v
-                self._dfs(G, w)
-            elif self._on_stack[w]:
-                # Found a cycle
-                self.cycle = Stack()
+            elif not marked[w]:
+                edge_to[w] = v
+                dfs(G, w)
+            elif on_stack[w]:
+                # Found a cycle, reconstruct it by backtracking up the stack
+                cycle = Stack()
                 x = v
                 while x != w:
-                    self.cycle.push(x)
-                    x = self._edge_to[x]
-                self.cycle.push(w)
-                self.cycle.push(v)
-        self._on_stack[v] = False
+                    cycle.push(x)
+                    x = edge_to[x]
+                cycle.push(w)
+                cycle.push(v)
+        on_stack[v] = False
+
+    # Run DFS from each vertex
+    for v in G.vertices():
+        if not marked[v]:
+            dfs(G, v)
+        if cycle:
+            break
+
+    return cycle
 
 
 class DepthFirstOrder:
@@ -171,8 +182,7 @@ class Topological:
     def __init__(self, G):
         self.order = None
         # If the graph is a DAG, it has an order
-        c = DirectedCycle(G)
-        if not c.has_cycle:
+        if not directed_cycle(G):
             dfs = DepthFirstOrder(G)
             self.order = dfs.reverse_post
 
@@ -370,9 +380,9 @@ if __name__ == "__main__":
     print_paths(G, 0, GS=BreadthFirstPaths)
 
     print('----- Cycle -----')
-    c = DirectedCycle(G)
-    assert c.has_cycle
-    print(c.cycle)
+    cyc = directed_cycle(G)
+    assert cyc
+    print(cyc)
 
     print('----- Orders -----')
     p = DepthFirstOrder(G)
