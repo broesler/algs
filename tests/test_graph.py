@@ -25,13 +25,13 @@ from algs.graph.undirected import (
     Graph,
     GraphProperties,
     LeafDFS,
-    MinCyclePath,
     SimpleGraph,
     STGraph,
     SymbolGraph,
     UFSearch,
     bipartite_colors,
     find_cycle_path,
+    find_min_cycle,
     has_cycle,
     has_parallel_edges,
     has_self_loop,
@@ -461,9 +461,9 @@ class TestCyclePath:
         cyc = find_cycle_path(acyclicG, 0, recursive=recursive)
         assert not cyc
 
-    def test_cycle_path_bfs(self, tinyG):
-        cyc = MinCyclePath(tinyG, 0)
-        assert cyc.cycle() == [4, 6, 0, 5, 4]
+    def test_cycle_path_bfs(self, tinyG, acyclicG):
+        assert find_min_cycle(tinyG, 0) == [4, 6, 0, 5, 4]
+        assert find_min_cycle(acyclicG, 0) == []
 
 
 @pytest.mark.parametrize('GT', [Graph, SimpleGraph, STGraph])
