@@ -746,6 +746,20 @@ class DepthFirstPaths_nr_simple(DepthFirstPaths):
                         stack.push(w)
 
 
+# NOTE this function is factored out for use in find_min_cycle.
+def _reconstruct_path(v, s, edge_to):
+    """Reconstruct the list of vertices on the path from `v` to `s` using the
+    `edge_to` array.
+    """
+    path = Stack()
+    x = v
+    while x != s:
+        path.push(x)
+        x = edge_to[x]
+    path.push(s)
+    return path
+
+
 # Algorithm 4.2
 class BreadthFirstPaths(Paths):
     __doc__ = f"""Implements breadth-first search to find shortest paths.
@@ -780,15 +794,9 @@ class BreadthFirstPaths(Paths):
     def path_to(self, v):
         """Return an iterable of the vertices on the path from `s` to `v`."""
         # Same as DepthFirstPaths method
-        if not self.has_path_to(v):
-            return None
-        path = Stack()
-        x = v
-        while x != self.s:
-            path.push(x)
-            x = self._edge_to[x]
-        path.push(self.s)
-        return path
+        return (
+            _reconstruct_path(v, self.s, self._edge_to) if self.has_path_to(v) else None
+        )
 
     # Exercise 4.1.13
     def dist_to(self, v):
@@ -1108,9 +1116,9 @@ class GraphProperties:
         >>> cc = CC(G).get_components()
         >>> print(cc[0])
         [0, 2, 3, 5, 6, 10]
-        >>> list(MinCyclePath(G,  0).cycle())
+        >>> list(find_min_cycle(G,  0))
         [2, 0, 6, 2]
-        >>> list(MinCyclePath(G, 10).cycle())
+        >>> list(find_min_cycle(G, 10))
         [2, 3, 10, 5, 2]
 
         Lengths are not equal! The minimum path in that group is 3.
@@ -1127,8 +1135,8 @@ class GraphProperties:
 
         # Compute the shortest cycle: O(V(V + E))
         for v in tqdm(self.vertices, disable=not self._VERBOSE):
-            bfs = MinCyclePath(self.G, v)
-            m = min(m, bfs.cycle_length)
+            min_cycle = find_min_cycle(self.G, v)
+            m = min(m, (len(min_cycle) - 1) if min_cycle else float('inf'))
             if m == 3:
                 break  # no possible shorter cycle
 
@@ -1376,60 +1384,74 @@ def find_cycle_path(G, s, recursive=False):
     return list(cycle) if cycle else []
 
 
-class MinCyclePath(BreadthFirstPaths):
-    __doc__ = f"""Implements breadth-first search to find a minimum cycle.
-    {GraphSearch.__doc__}"""
+def find_min_cycle(G, s):
+    """Find the minimum cycle in the graph that contains `s`, if one exists.
 
-    def __init__(self, G, s):
-        self.s = s
-        self.has_cycle = False
-        self.cycle_length = float('inf')
-        self._marked = G.V * [False]
-        self._edge_to = G.V * [None]
-        self._dist_to = G.V * [None]
-        self._cycle_head = None  # start vertex of the cycle
-        self._cycle_tail = None  # end vertex of the cycle
-        # Run the search
-        self._bfs(G, s)
+    Parameters
+    ----------
+    G : :class:`Graph`
+        The graph to analyze.
+    s : int
+        The source vertex from which to start the search.
 
-    def _bfs(self, G, v):
-        """Perform breadth-first search from vertex `v`."""
-        q = Queue()
-        self._marked[v] = True
-        self._dist_to[v] = 0
-        q.enqueue(v)
-        while not q.is_empty:
-            v = q.dequeue()
-            for w in G.adj(v):
-                if w == self._edge_to[v]:
-                    continue
-                if not self._marked[w]:
-                    self._edge_to[w] = v
-                    self._marked[w] = True
-                    self._dist_to[w] = self._dist_to[v] + 1
-                    q.enqueue(w)
-                else:
-                    self.has_cycle = True
-                    d = self._dist_to[v] + self._dist_to[w] + 1
-                    if d < self.cycle_length:
-                        self._cycle_head = w
-                        self._cycle_tail = v
-                        self.cycle_length = d
+    Returns
+    -------
+    list
+        A list of the vertices on the minimum cycle, in order. If there is no
+        cycle, returns an empty list.
+    """
+    cycle_length = float('inf')
 
-    def cycle(self):
-        """Return the path of the found cycle."""
-        # BFS gives two paths: one each from the source to the head and tail.
-        # Merge the paths to head and tail to remove all common ancestors
-        # except the last that completes the cycle.
-        p = deque(self.path_to(self._cycle_tail))
-        q = deque(self.path_to(self._cycle_head))
-        while len(p) > 2 and len(q) > 2 and p[0] == q[0] and p[1] == q[1]:
-            p.popleft()
-            q.popleft()
-        p.popleft()  # remove one of the dulicates
-        p.extendleft(q)  # merge
-        p.append(p[0])  # complete the loop
-        return list(p)
+    marked = G.V * [False]
+    edge_to = G.V * [None]
+    dist_to = G.V * [None]
+
+    cycle_head = None  # start vertex of the cycle
+    cycle_tail = None  # end vertex of the cycle
+
+    # Run BFS from `s`.
+    q = Queue()
+    marked[s] = True
+    dist_to[s] = 0
+    q.enqueue(s)
+
+    while not q.is_empty:
+        v = q.dequeue()
+        for w in G.adj(v):
+            # Skip backtracking edge to parent
+            if w == edge_to[v]:
+                continue
+
+            if not marked[w]:
+                edge_to[w] = v
+                marked[w] = True
+                dist_to[w] = dist_to[v] + 1
+                q.enqueue(w)
+            else:
+                d = dist_to[v] + dist_to[w] + 1
+                if d < cycle_length:
+                    cycle_head = w
+                    cycle_tail = v
+                    cycle_length = d
+
+    if cycle_length == float('inf'):
+        return []  # no cycle found
+
+    # BFS gives two paths: one each from the source to the head and tail.
+    # Merge the paths to head and tail to remove all common ancestors
+    # except the last that completes the cycle.
+    p = deque(_reconstruct_path(cycle_tail, s, edge_to))
+    q = deque(_reconstruct_path(cycle_head, s, edge_to))
+
+    while len(p) > 2 and len(q) > 2 and p[0] == q[0] and p[1] == q[1]:
+        p.popleft()
+        q.popleft()
+
+    p.popleft()  # remove one of the dulicates
+    p.extendleft(q)  # merge
+    p.append(p[0])  # complete the loop
+
+    return list(p)
 
 
 BipartiteColors = namedtuple('BipartiteColors', ['colors', 'examined_count'])
@@ -1746,14 +1768,14 @@ if __name__ == "__main__":
     print('    girth:', gp.girth())
     assert gp.eccentricity(gp.center()[0]) == gp.radius()
 
-    print('--- MinCyclePath ---')
+    print('--- Cycle Paths ---')
     cp = find_cycle_path(Gm, 0, recursive=True)
     print('   path:', cp)
     cp_nr = find_cycle_path(Gm, 0, recursive=False)
     print('path nr:', cp_nr)
     assert cp == cp_nr
-    cm = MinCyclePath(Gm, 0)
-    print('minpath:', cm.cycle())
+    cm = find_min_cycle(Gm, 0)
+    print('minpath:', cm)
 
     print('complement', complement_graph(GC))
     bfs_cx = BreadthFirstPaths(complement_graph(GC), 0)
