@@ -29,11 +29,11 @@ from algs.graph.undirected import (
     GraphProperties,
     LeafDFS,
     MinCyclePath,
-    ParallelEdges,
     SimpleGraph,
     STGraph,
     SymbolGraph,
     UFSearch,
+    parallel_edges,
     spanning_forest_bfs,
     spanning_forest_dfs,
     spanning_tree_bfs,
@@ -233,27 +233,27 @@ class TestNonSimple:
 
     def test_parallel_edges(self, GT):
         G = GT.fromfile(DATA_DIR / 'tinyG.txt', parallel=True)
-        p = ParallelEdges(G, 0)
+        p = parallel_edges(G, 0)
         assert G.degree(0) == 4
         assert G.degree(1) == 1
-        assert p.count == 0
+        assert p == 0
         G.add_edge(0, 1)
-        p = ParallelEdges(G, 0)
+        p = parallel_edges(G, 0)
         assert G.degree(0) == 5
         assert G.degree(1) == 2
-        assert p.count == 1
+        assert p == 1
 
     def test_no_parallel_edges(self, GT):
         G = GT.fromfile(DATA_DIR / 'tinyG.txt', parallel=False)
-        p = ParallelEdges(G, 0)
+        p = parallel_edges(G, 0)
         assert G.degree(0) == 4
         assert G.degree(1) == 1
-        assert p.count == 0
+        assert p == 0
         G.add_edge(0, 1)
-        p = ParallelEdges(G, 0)
+        p = parallel_edges(G, 0)
         assert G.degree(0) == 4
         assert G.degree(1) == 1
-        assert p.count == 0
+        assert p == 0
 
 
 # TODO test STGraph with 'routes.txt'
