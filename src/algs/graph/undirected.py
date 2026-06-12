@@ -155,12 +155,18 @@ def _reconstruct_path(v, s, edge_to):
     """Reconstruct the list of vertices on the path from `v` to `s` using the
     `edge_to` array.
     """
+    sources = {s} if isinstance(s, int) else set(s)
     path = Stack()
     x = v
-    while x != s:
+
+    while x not in sources:
         path.push(x)
         x = edge_to[x]
-    path.push(s)
+
+        if x is None:
+            return None  # no path exists
+
+    path.push(x)
     return path
 
 
@@ -172,6 +178,7 @@ s : int
 """
 
 
+# TODO refactor the docstring like in BaseGraph.
 class GraphSearch(ABC):
     """An abstract base class for implementing graph search algorithms.
 
@@ -180,19 +187,21 @@ class GraphSearch(ABC):
     search structure, and then implement the search itself, which should
     populate the `_marked` and `_edge_to` attributes. The `has_path_to` and
     `path_to` methods will then work as expected.
+
+    Parameters
+    ----------
+    G : :obj:`Graph`
+        The graph over which to search.
+    source : int or iterable of int, optional
+        The index or indices of the source vertices.
     """
 
     @abstractmethod
-    def __init__(self, G, s=0):
-        """
-        Parameters
-        ----------
-        G : :obj:`Graph`
-            The graph over which to search.
-        s : int, optional
-            The index of the source vertex.
-        """
-        self.s = s
+    def __init__(self, G, source=0):
+        if isinstance(source, int):
+            self.sources = [source]
+        else:
+            self.sources = list(source)
         self._marked = G.V * [False]
         self._edge_to = G.V * [None]  # last vertex on known path to this one
 
@@ -207,9 +216,10 @@ class GraphSearch(ABC):
 
     def path_to(self, v):
         """Return an iterable of the vertices on the path from `s` to `v`."""
-        return (
-            _reconstruct_path(v, self.s, self._edge_to) if self.has_path_to(v) else None
-        )
+        if not self.has_path_to(v):
+            return None
+
+        return _reconstruct_path(v, self.sources, self._edge_to)
 
 
 # -----------------------------------------------------------------------------
