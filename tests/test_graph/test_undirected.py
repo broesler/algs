@@ -33,8 +33,6 @@ from algs.graph.undirected import (
     STGraph,
     SymbolGraph,
     bipartite_colors,
-    has_parallel_edges,
-    has_self_loop,
     parallel_edges,
     spanning_forest_bfs,
     spanning_forest_dfs,
@@ -439,14 +437,14 @@ class TestCycle:
         assert not has_cycle(acyclicG, 0, recursive=recursive)
 
     def test_has_self_loop(self, tinyG):
-        assert not has_self_loop(tinyG)
+        assert not tinyG.has_self_loop()
         tinyG.add_edge(1, 1)
-        assert has_self_loop(tinyG)
+        assert tinyG.has_self_loop()
 
     def test_has_parallel_edges(self, tinyG):
-        assert not has_parallel_edges(tinyG)
+        assert not tinyG.has_parallel_edges()
         tinyG.add_edge(0, 1)
-        assert has_parallel_edges(tinyG)
+        assert tinyG.has_parallel_edges()
 
 
 @pytest.mark.parametrize('GT', [Graph, SimpleGraph, STGraph])
