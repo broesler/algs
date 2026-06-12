@@ -119,6 +119,25 @@ class BaseGraph(ABC):
         """Return True if an edge from `v` to `w` exists."""
         return w in self.adj(v)
 
+    def has_parallel_edges(self):
+        """Return True if the graph has parallel edges."""
+        # Only return True if self._adj[v] has duplicates
+        for v in self.vertices():
+            seen = set()
+            for w in self._adj[v]:
+                if w in seen:
+                    return True
+                seen.add(w)
+        return False
+
+    def has_self_loop(self):
+        """Return True if the graph has a self-loop."""
+        for v in self.vertices():
+            for w in self._adj[v]:
+                if v == w:
+                    return True
+        return False
+
     def vertices(self):
         """Return an iterable over the vertices."""
         return range(self._V)

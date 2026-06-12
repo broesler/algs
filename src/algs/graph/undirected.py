@@ -695,28 +695,6 @@ class CC_nr(CC):
                 stack.pop()
 
 
-# TODO move these functions into BaseGraph methods.
-def has_self_loop(G):
-    """Return True if the graph has a self-loop."""
-    for v in G.vertices():
-        for w in G.adj(v):
-            if v == w:
-                return True
-    return False
-
-
-def has_parallel_edges(G):
-    """Return True if the graph has parallel edges."""
-    # Only return True if G.adj(v) has duplicates
-    for v in G.vertices():
-        # refactor to use set()
-        adj = sorted(G.adj(v))
-        for i in range(len(adj) - 1):
-            if adj[i] == adj[i + 1]:
-                return True
-    return False
-
-
 BipartiteColors = namedtuple('BipartiteColors', ['colors', 'examined_count'])
 
 
