@@ -29,15 +29,38 @@ from algs.search import HashST, MultiHashSet
 #         Abstract Base Classes
 # -----------------------------------------------------------------------------
 class BaseGraph(ABC):
-    # An abstract base class implementing the Graph API. See p 522.
-    """
+    _RAW_TEMPLATE = """{descr}
+
+    Parameters
+    ----------
+    {v_descr}
+    edges : iterable of 2-tuples
+        An iterable of tuples of vertices representing edges.
+    parallel : bool, optional
+        If True, allow parallel edges.
+    self_loops : bool, optional
+        If True, allow self-loops.
+
     Attributes
     ----------
     V : int
-        number of vertices
+        The number of vertices in the graph.
     E : int
-        number of edges
+        The number of edges in the graph.
     """
+
+    _DOC_TEMPLATE = _RAW_TEMPLATE.format(
+        descr="{descr}",
+        v_descr="""V : int
+        The number of vertices in the graph.""",
+    )
+
+    __doc__ = _DOC_TEMPLATE.format(
+        descr="""An abstract base class implementing the Graph API.
+
+        *See*: Sedgewick and Wayne, *Algorithms*, 4ed, p 522.
+        """
+    )
 
     def __init__(self, V=0, edges=None, parallel=True, self_loops=True):
         self._V = V
@@ -72,12 +95,10 @@ class BaseGraph(ABC):
 
     @property
     def V(self):
-        """Return the number of vertices."""
         return self._V
 
     @property
     def E(self):
-        """Return the number of edges."""
         return self._E
 
     @classmethod
@@ -195,9 +216,12 @@ class GraphSearch(ABC):
 #         Graphs
 # -----------------------------------------------------------------------------
 class Graph(BaseGraph):
-    __doc__ = f"""Implements a graph using an array of adjacency lists.
-    {BaseGraph.__doc__}"""
-    # See p 526
+    __doc__ = BaseGraph._DOC_TEMPLATE.format(
+        descr="""Implements a graph using an array of adjacency lists.
+
+        *See*: Sedgewick and Wayne, *Algorithms*, 4ed, p 526.
+        """
+    )
 
     def add_edge(self, v, w):
         """Add an edge from `v` to `w`."""
@@ -229,19 +253,24 @@ class Graph(BaseGraph):
 
 
 class SimpleGraph(Graph):
-    __doc__ = f"""Implements a graph using an array of adjacency lists, with no
-    self-loops or parallel edges allowed.
-    {BaseGraph.__doc__}"""
+    __doc__ = BaseGraph._DOC_TEMPLATE.format(
+        descr="""Implements a graph using an array of adjacency lists, with no
+        self-loops or parallel edges allowed.
+        """
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs, self_loops=False, parallel=False)
 
 
 class STGraph(BaseGraph):
-    __doc__ = f"""Implements a graph using a symbol table of adjacency lists.
-    {BaseGraph.__doc__}"""
     # See p 557 and
     # <https://introcs.cs.princeton.edu/java/45graph/Graph.java.html>
+    __doc__ = BaseGraph._RAW_TEMPLATE.format(
+        descr="Implements a graph using a symbol table of adjacency lists.",
+        v_descr="""V : int or iterable
+        Number of vertices, or an iterable of vertex labels (*e.g.* strings).""",
+    )
 
     def _create_adjacency_structure(self, V):
         """Create the underlying adjacency structure for the graph. This is
@@ -348,9 +377,10 @@ class STGraph(BaseGraph):
 
 
 class SymbolGraph:
-    """Implements a symbol graph."""
+    """A symbol graph.
 
-    # See p 552
+    *See*: Sedgewick and Wayne, *Algorithms*, 4ed, p 552.
+    """
 
     def __init__(self, keys=None, edges=None, kind=Graph):
         self._st = HashST()  # map : str -> int
@@ -450,9 +480,10 @@ class SymbolGraph:
 
 # Exercise 4.1.37
 class EuclideanGraph(Graph):
-    __doc__ = f"""Implements an undirected graph whose vertices are points in
-    the plane with coordinates.
-    {BaseGraph.__doc__}"""
+    __doc__ = BaseGraph._DOC_TEMPLATE.format(
+        descr="""An undirected graph whose vertices are points in the plane
+        with coordinates.""",
+    )
 
     def __init__(self, G=None, x=None, y=None, two_color=False, *args, **kwargs):
         if G is None:
@@ -616,10 +647,11 @@ class EuclideanGraph(Graph):
 
 
 class TransportationGraph(EuclideanGraph):
-    __doc__ = f"""Implements an undirected graph whose vertices are points in
-    the plane with coordinates. Also include a symbol table of paths denoting
-    the "routes" in the transportation system.
-    {BaseGraph.__doc__}"""
+    __doc__ = BaseGraph._DOC_TEMPLATE.format(
+        descr="""An undirected graph whose vertices are points in the plane
+        with coordinates. Also include a symbol table of paths denoting the
+        "routes" in the transportation system."""
+    )
 
     def __init__(self, *args, routes=None, **kwargs):
         super().__init__(*args, **kwargs)
