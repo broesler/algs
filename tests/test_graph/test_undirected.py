@@ -11,25 +11,28 @@ from pathlib import Path
 
 import pytest
 
-from algs.graph.undirected import (
-    CC,
-    Biconnected,
+# TODO split into test_undirected.py and test_search.py
+from algs.graph.search import (
     BreadthFirstSearch,
-    CC_nr,
     DepthFirstPaths_nr,
     DepthFirstPaths_nr_simple,
     DepthFirstSearch,
-    Graph,
-    GraphProperties,
     LeafDFS,
-    SimpleGraph,
-    STGraph,
-    SymbolGraph,
     UFSearch,
-    bipartite_colors,
     find_cycle_path,
     find_min_cycle,
     has_cycle,
+)
+from algs.graph.undirected import (
+    CC,
+    Biconnected,
+    CC_nr,
+    Graph,
+    GraphProperties,
+    SimpleGraph,
+    STGraph,
+    SymbolGraph,
+    bipartite_colors,
     has_parallel_edges,
     has_self_loop,
     parallel_edges,
