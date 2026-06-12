@@ -110,10 +110,6 @@ class BaseGraph(ABC):
         self._validate_vertex(v)
         return self._adj[v]
 
-    def degree(self, v):
-        """Return the degree of vertex `v`."""
-        return len(self.adj(v))
-
     # Exercise 4.1.4, 4.2.4
     def has_edge(self, v, w):
         """Return True if an edge from `v` to `w` exists."""
@@ -137,6 +133,15 @@ class BaseGraph(ABC):
                 if v == w:
                     return True
         return False
+
+    def num_self_loops(self):
+        """Return the number of self-loops in the graph."""
+        s = 0
+        for v in self.vertices():
+            for w in self._adj[v]:
+                if v == w:
+                    s += 1
+        return s
 
     def vertices(self):
         """Return an iterable over the vertices."""

@@ -30,27 +30,6 @@ from algs.graph.undirected import (
 # -----------------------------------------------------------------------------
 # Define some functions for use with graphs that would be too cumbersome to
 # maintain in the basic API. See p 523.
-# TODO move these into appropriate classes as methods
-def max_degree(G, v):
-    """Return the maximum degree all vertices in the graph."""
-    return max([G.degree(v) for v in G.vertices()])
-
-
-def avg_degree(G):
-    """Compute the theoretical average degree of the graph."""
-    return 2 * G.E / G.V
-
-
-def self_loops(G):
-    """Return the number of self-loops in the graph."""
-    s = 0
-    for v in G.vertices():
-        for w in G.adj(v):
-            if v == w:
-                s += 1
-    return s // 2  # each edge counted twice
-
-
 def print_dfs(G, s, DFS=DepthFirstSearch):
     """Search the graph from vertex `s`."""
     # See p 529

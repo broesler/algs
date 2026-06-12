@@ -11,6 +11,7 @@ Implementations of undirected graph representations and associated algorithms.
 See Sedgewick and Wayne, §4.1.
 """
 
+from abc import ABC
 from collections import namedtuple
 from pathlib import Path
 
@@ -29,7 +30,30 @@ from algs.graph.search import (
 from algs.search import HashST, MultiHashSet
 
 
-class Graph(BaseGraph):
+class UndirectedGraph(BaseGraph, ABC):
+    # TODO docstring for these attributes
+
+    def degree(self, v):
+        """Return the degree of vertex `v`."""
+        self._validate_vertex(v)
+        return len(self._adj[v])
+
+    @property
+    def max_degree(self):
+        """Return the maximum degree all vertices in the graph."""
+        return max([self.degree(v) for v in self.vertices()])
+
+    @property
+    def avg_degree(self):
+        """Compute the theoretical average degree of the graph."""
+        return 2 * self._E / self._V
+
+    def num_self_loops(self):
+        """Return the number of self-loops in the graph."""
+        return super().num_self_loops() // 2  # each edge counted twice
+
+
+class Graph(UndirectedGraph):
     __doc__ = BaseGraph._DOC_TEMPLATE.format(
         descr="""Implements a graph using an array of adjacency lists.
 
@@ -77,7 +101,7 @@ class SimpleGraph(Graph):
         super().__init__(*args, **kwargs, self_loops=False, parallel=False)
 
 
-class STGraph(BaseGraph):
+class STGraph(UndirectedGraph):
     # See p 557 and
     # <https://introcs.cs.princeton.edu/java/45graph/Graph.java.html>
     __doc__ = BaseGraph._RAW_TEMPLATE.format(
