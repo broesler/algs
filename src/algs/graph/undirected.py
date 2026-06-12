@@ -28,7 +28,7 @@ from algs.search import HashST, MultiHashSet
 # -----------------------------------------------------------------------------
 #         Abstract Base Classes
 # -----------------------------------------------------------------------------
-class UndirectedGraph(ABC):
+class BaseGraph(ABC):
     # An abstract base class implementing the Graph API. See p 522.
     """
     Attributes
@@ -39,20 +39,46 @@ class UndirectedGraph(ABC):
         number of edges
     """
 
-    def __init__(self, V=0, edges=None):
-        if V < 0:
-            raise ValueError(f"Number of vertices {V=} must be > 0!")
-        self.V = V
-        self.E = 0
+    def __init__(self, V=0, edges=None, parallel=True, self_loops=True):
+        self._V = V
+        self._E = 0
+        self._parallel = bool(parallel)
+        self._self_loops = bool(self_loops)
+        self._adj = self._create_adjacency_structure(V)
+
         if edges is None:
             edges = []
+
         try:
             for v, w in edges:
                 self.add_edge(v, w)
         except ValueError:
             raise ValueError(
-                f"{self.__class__.__name__} expects an iterable of tuples."
+                f"{self.__class__.__name__} expects `edges`"
+                "to be an iterable of tuples."
             )
+
+    def _create_adjacency_structure(self, V):
+        """Create the underlying adjacency structure for the graph. This is
+        a factory method that should be overridden by subclasses.
+        """
+        if not isinstance(V, int):
+            raise ValueError(f"Number of vertices must be an integer! Got {type(V)=}.")
+
+        if V < 0:
+            raise ValueError(f"Number of vertices {V=} must be > 0!")
+
+        return [Bag() for _ in range(V)]
+
+    @property
+    def V(self):
+        """Return the number of vertices."""
+        return self._V
+
+    @property
+    def E(self):
+        """Return the number of edges."""
+        return self._E
 
     @classmethod
     def fromfile(cls, filename, verbose=False, **kwargs):
@@ -72,10 +98,10 @@ class UndirectedGraph(ABC):
         """Add an edge from `v` to `w`."""
         pass
 
-    @abstractmethod
     def adj(self, v):
         """Return an iterable of vertices adjacent to `v`."""
-        pass
+        self._validate_vertex(v)
+        return self._adj[v]
 
     def degree(self, v):
         """Return the degree of vertex `v`."""
@@ -86,13 +112,16 @@ class UndirectedGraph(ABC):
         """Return True if an edge from `v` to `w` exists."""
         return w in self.adj(v)
 
-    @abstractmethod
     def vertices(self):
         """Return an iterable over the vertices."""
-        pass
+        return range(self._V)
+
+    def _validate_vertex(self, v):
+        if not (0 <= v < self.V):
+            raise IndexError(f"Vertex index {v=} must be between 0 and {self._V=}!")
 
     def __str__(self):
-        s = f"{self.V} vertices, {self.E} edges\n"
+        s = f"{self._V} vertices, {self._E} edges\n"
         for v in self.vertices():
             s += f"{v}: " + ' '.join(str(w) for w in self.adj(v)) + '\n'
         return s.strip()
@@ -165,46 +194,20 @@ class GraphSearch(ABC):
 # -----------------------------------------------------------------------------
 #         Graphs
 # -----------------------------------------------------------------------------
-class Graph(UndirectedGraph):
+class Graph(BaseGraph):
     __doc__ = f"""Implements a graph using an array of adjacency lists.
-    {UndirectedGraph.__doc__}"""
+    {BaseGraph.__doc__}"""
     # See p 526
-
-    def __init__(self, V=0, edges=None, parallel=True, self_loops=True):
-        self._PARALLEL = bool(parallel)
-        self._SELF_LOOPS = bool(self_loops)
-        self._adj = [Bag() for _ in range(V)]
-        super().__init__(V=V, edges=edges)
-
-    __init__.__doc__ = f"""{UndirectedGraph.__init__.__doc__}
-    parallel : bool, optional
-        If True, allow parallel edges.
-    self_loops : bool, optional
-        If True, allow self-loops.
-    """
-
-    def _validate_vertex(self, v):
-        if not (0 <= v < self.V):
-            raise IndexError(f"Vertex index {v=} must be between 0 and {self.V=}!")
-
-    def vertices(self):
-        """Return an iterable over the vertices."""
-        return range(self.V)
-
-    def adj(self, v):
-        """Return an iterable of vertices adjacent to `v`."""
-        self._validate_vertex(v)
-        return self._adj[v]
 
     def add_edge(self, v, w):
         """Add an edge from `v` to `w`."""
         self._validate_vertex(v)
         self._validate_vertex(w)
         # Exercise 4.1.5
-        if not self._SELF_LOOPS and v == w:
+        if not self._self_loops and v == w:
             raise ValueError(f"{v} == {w}! No self-loops allowed.")
-        if self._PARALLEL or not self.has_edge(v, w):
-            self.E += 1
+        if self._parallel or not self.has_edge(v, w):
+            self._E += 1
             self._adj[v].add(w)
             self._adj[w].add(v)
 
@@ -217,9 +220,9 @@ class Graph(UndirectedGraph):
     # Exercise 4.1.3, 4.2.3
     def copy(self):
         """Make a deep copy of the graph structure."""
-        g = self.__class__(self.V)
-        g.E = self.E
-        for v in range(self.V):
+        g = self.__class__(self._V)
+        g._E = self._E
+        for v in range(self._V):
             for w in self._adj[v]:
                 g._adj[v].add(w)
         return g
@@ -228,33 +231,43 @@ class Graph(UndirectedGraph):
 class SimpleGraph(Graph):
     __doc__ = f"""Implements a graph using an array of adjacency lists, with no
     self-loops or parallel edges allowed.
-    {UndirectedGraph.__doc__}"""
+    {BaseGraph.__doc__}"""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs, self_loops=False, parallel=False)
 
 
-class STGraph(UndirectedGraph):
+class STGraph(BaseGraph):
     __doc__ = f"""Implements a graph using a symbol table of adjacency lists.
-    {UndirectedGraph.__doc__}"""
+    {BaseGraph.__doc__}"""
     # See p 557 and
     # <https://introcs.cs.princeton.edu/java/45graph/Graph.java.html>
 
-    def __init__(self, V=None, edges=None, parallel=True, self_loops=True):
-        self._PARALLEL = bool(parallel)
-        self._SELF_LOOPS = bool(self_loops)
+    def _create_adjacency_structure(self, V):
+        """Create the underlying adjacency structure for the graph. This is
+        a factory method that should be overridden by subclasses.
+        """
         self._adj = HashST()
-        self.V = 0
-        if V is not None:
+        self._V = 0
+
+        if V is None:
+            return self._adj
+
+        if isinstance(V, int):
+            if V < 0:
+                raise ValueError(f"Number of vertices {V=} must be > 0!")
+
+            # If V is an integer, number the vertices accordingly
+            for v in range(V):
+                self.add_vertex(v)
+        else:
             try:
-                # iterate over V itself
                 for v in V:
                     self.add_vertex(v)
             except TypeError:
-                # If V is an integer, number the vertices accordingly
-                for v in range(V):
-                    self.add_vertex(v)
-        super().__init__(V=self.V, edges=edges)
+                raise ValueError(f"Vertices must be an iterable! Got {type(V)=}.")
+
+        return self._adj
 
     @classmethod
     def fromadjfile(cls, filename, *args, delim=' ', verbose=False, **kwargs):
@@ -285,11 +298,6 @@ class STGraph(UndirectedGraph):
                     g.add_edge(v, w)
         return g
 
-    __init__.__doc__ = f"""{UndirectedGraph.__init__.__doc__}
-    self_loops : bool, optional
-        If True, allow self-loops.
-    """
-
     def _validate_vertex(self, v):
         if not self.has_vertex(v):
             raise IndexError(f"Vertex {v=} does not exist!")
@@ -302,16 +310,11 @@ class STGraph(UndirectedGraph):
         """Return an iterable over the vertices."""
         return self._adj.keys()
 
-    def adj(self, v):
-        """Return an iterable of vertices adjacent to `v`."""
-        self._validate_vertex(v)
-        return self._adj[v]
-
     def add_vertex(self, v):
         """Add a vertex to the graph."""
         if not self.has_vertex(v):
             self._adj[v] = Bag()
-            self.V += 1
+            self._V += 1
 
     def add_edge(self, v, w):
         """Add an edge from `v` to `w`."""
@@ -320,10 +323,10 @@ class STGraph(UndirectedGraph):
         if w not in self._adj:
             self.add_vertex(w)
         # Exercise 4.1.5
-        if not self._SELF_LOOPS and v == w:
+        if not self._self_loops and v == w:
             raise ValueError(f"{v} == {w}! No self-loops allowed.")
-        if self._PARALLEL or not self.has_edge(v, w):
-            self.E += 1
+        if self._parallel or not self.has_edge(v, w):
+            self._E += 1
             self._adj[v].add(w)
             self._adj[w].add(v)
 
@@ -449,25 +452,25 @@ class SymbolGraph:
 class EuclideanGraph(Graph):
     __doc__ = f"""Implements an undirected graph whose vertices are points in
     the plane with coordinates.
-    {UndirectedGraph.__doc__}"""
+    {BaseGraph.__doc__}"""
 
     def __init__(self, G=None, x=None, y=None, two_color=False, *args, **kwargs):
         if G is None:
             super().__init__(*args, **kwargs)
         else:
             G = G.copy()
-            self.V = G.V
-            self.E = G.E
+            self._V = G.V
+            self._E = G.E
             self._adj = G._adj
-            self._PARALLEL = G._PARALLEL
-            self._SELF_LOOPS = G._SELF_LOOPS
+            self._parallel = G._parallel
+            self._self_loops = G._self_loops
         # Initialize coordinates
         if x is None:
-            x = np.zeros(self.V)
+            x = np.zeros(self._V)
         if y is None:
-            y = np.zeros(self.V)
-        if len(x) != self.V or len(y) != self.V:
-            raise ValueError(f"Coordinates must have dimension {self.V=}")
+            y = np.zeros(self._V)
+        if len(x) != self._V or len(y) != self._V:
+            raise ValueError(f"Coordinates must have dimension {self._V=}")
         self.x = np.r_[x]
         self.y = np.r_[y]
         self._TWO_COLOR = bool(two_color)
@@ -583,7 +586,7 @@ class EuclideanGraph(Graph):
             if bp.colors is not None:
                 self._node_colors = np.where(bp.colors, 'tab:red', 'k')
             else:
-                self._node_colors = np.full(self.V, 'k')
+                self._node_colors = np.full(self._V, 'k')
 
         # Set any user-defined parameters
         if vkws is not None:
@@ -616,7 +619,7 @@ class TransportationGraph(EuclideanGraph):
     __doc__ = f"""Implements an undirected graph whose vertices are points in
     the plane with coordinates. Also include a symbol table of paths denoting
     the "routes" in the transportation system.
-    {UndirectedGraph.__doc__}"""
+    {BaseGraph.__doc__}"""
 
     def __init__(self, *args, routes=None, **kwargs):
         super().__init__(*args, **kwargs)
