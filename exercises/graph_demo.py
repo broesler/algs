@@ -55,13 +55,8 @@ def print_dfs(G, s, DFS=DepthFirstSearch):
     """Search the graph from vertex `s`."""
     # See p 529
     search = DFS(G, s)
-    for v in G.vertices():
-        if search.has_path_to(v):
-            print(f"{v} ", end='')
-    print()
-    if search.count != G.V:
-        print('NOT ', end='')
-    print('connected.')
+    print(" ".join(str(v) for v in G.vertices() if search.has_path_to(v)))
+    print(f"{'NOT ' if search.count != G.V else ''}connected.")
     return search
 
 
@@ -69,15 +64,15 @@ def print_paths(G, s, GS=DepthFirstSearch):
     """Search the graph from vertex `s`, returning the paths."""
     # See p 535
     search = GS(G, s)
+    lines = []
     for v in G.vertices():
-        print(f"{s:2d}->{v:2d}: ", end='')
+        prefix = f"{s:2d}->{v:2d}: "
         if search.has_path_to(v):
-            for x in search.path_to(v):
-                if x == s:
-                    print(x, end='')
-                else:
-                    print(f"-{x}", end='')
-        print()
+            path_str = "-".join(str(x) for x in search.path_to(v))
+            lines.append(f"{prefix}{path_str}")
+        else:
+            lines.append(f"{prefix}not connected")
+    print("\n".join(lines))
 
 
 def print_components(G, vertices=None):
@@ -102,20 +97,15 @@ def print_components(G, vertices=None):
     M = cc.count()
     print(f"{M} components")
     components = cc.get_components()
-    for i in range(M):
-        print(f"{i}: ", end='')
-        for v in components[i]:
-            print(f"{v} ", end='')
-        print()
+    lines = [f"{i}: {' '.join(str(v) for v in c)}" for i, c in enumerate(components)]
+    print("\n".join(lines))
     return components
 
 
 def print_adj(sg, s):
     """Print the adjacency list of the source."""
     # See p 550
-    print(s)
-    for w in sg.adj(s):
-        print(' ', w)
+    print(f"{s}: {' '.join(w for w in sg.adj(s))}")
 
 
 def degrees_of_separation(sg, source, sink):
@@ -129,8 +119,7 @@ def degrees_of_separation(sg, source, sink):
         print(f"{source}->{sink}")
         t = sg.index(sink)
         if bfs.has_path_to(t):
-            for v in bfs.path_to(t):
-                print(' ', sg.name(v))
+            print('\n'.join(sg.name(v) for v in bfs.path_to(t)))
         else:
             print('Not connected.')
     else:
