@@ -11,8 +11,7 @@ Implementations of undirected graph representations and associated algorithms.
 See Sedgewick and Wayne, §4.1.
 """
 
-from abc import ABC, abstractmethod
-from collections import deque, namedtuple
+from collections import namedtuple
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -20,211 +19,16 @@ import numpy as np
 from matplotlib import patches
 from tqdm import tqdm
 
-from algs import WeightedQuickUnionUF
 from algs.basics import Bag, Queue, Stack
+from algs.graph.base import BaseGraph
+from algs.graph.search import (
+    BreadthFirstSearch,
+    find_min_cycle,
+    has_cycle,
+)
 from algs.search import HashST, MultiHashSet
 
 
-# -----------------------------------------------------------------------------
-#         Abstract Base Classes
-# -----------------------------------------------------------------------------
-class BaseGraph(ABC):
-    _RAW_TEMPLATE = """{descr}
-
-    Parameters
-    ----------
-    {v_descr}
-    edges : iterable of 2-tuples
-        An iterable of tuples of vertices representing edges.
-    parallel : bool, optional
-        If True, allow parallel edges.
-    self_loops : bool, optional
-        If True, allow self-loops.
-
-    Attributes
-    ----------
-    V : int
-        The number of vertices in the graph.
-    E : int
-        The number of edges in the graph.
-    """
-
-    _DOC_TEMPLATE = _RAW_TEMPLATE.format(
-        descr="{descr}",
-        v_descr="""V : int
-        The number of vertices in the graph.""",
-    )
-
-    __doc__ = _DOC_TEMPLATE.format(
-        descr="""An abstract base class implementing the Graph API.
-
-        *See*: Sedgewick and Wayne, *Algorithms*, 4ed, p 522.
-        """
-    )
-
-    def __init__(self, V=0, edges=None, parallel=True, self_loops=True):
-        self._V = V
-        self._E = 0
-        self._parallel = bool(parallel)
-        self._self_loops = bool(self_loops)
-        self._adj = self._create_adjacency_structure(V)
-
-        if edges is None:
-            edges = []
-
-        try:
-            for v, w in edges:
-                self.add_edge(v, w)
-        except ValueError:
-            raise ValueError(
-                f"{self.__class__.__name__} expects `edges`"
-                "to be an iterable of tuples."
-            )
-
-    def _create_adjacency_structure(self, V):
-        """Create the underlying adjacency structure for the graph. This is
-        a factory method that should be overridden by subclasses.
-        """
-        if not isinstance(V, int):
-            raise ValueError(f"Number of vertices must be an integer! Got {type(V)=}.")
-
-        if V < 0:
-            raise ValueError(f"Number of vertices {V=} must be > 0!")
-
-        return [Bag() for _ in range(V)]
-
-    @property
-    def V(self):
-        return self._V
-
-    @property
-    def E(self):
-        return self._E
-
-    @classmethod
-    def fromfile(cls, filename, verbose=False, **kwargs):
-        """Construct the graph structure from a file."""
-        with Path(filename).open() as fp:
-            V = int(fp.readline())
-            E = int(fp.readline())
-            G = cls(V=V, **kwargs)
-            for line in tqdm(fp.readlines(), disable=not verbose):
-                v, w = line.strip().split()
-                G.add_edge(int(v), int(w))
-            assert E == G.E
-            return G
-
-    @abstractmethod
-    def add_edge(self, v, w):
-        """Add an edge from `v` to `w`."""
-        pass
-
-    def adj(self, v):
-        """Return an iterable of vertices adjacent to `v`."""
-        self._validate_vertex(v)
-        return self._adj[v]
-
-    def degree(self, v):
-        """Return the degree of vertex `v`."""
-        return len(self.adj(v))
-
-    # Exercise 4.1.4, 4.2.4
-    def has_edge(self, v, w):
-        """Return True if an edge from `v` to `w` exists."""
-        return w in self.adj(v)
-
-    def vertices(self):
-        """Return an iterable over the vertices."""
-        return range(self._V)
-
-    def _validate_vertex(self, v):
-        if not (0 <= v < self.V):
-            raise IndexError(f"Vertex index {v=} must be between 0 and {self._V=}!")
-
-    def __str__(self):
-        s = f"{self._V} vertices, {self._E} edges\n"
-        for v in self.vertices():
-            s += f"{v}: " + ' '.join(str(w) for w in self.adj(v)) + '\n'
-        return s.strip()
-
-    def __repr__(self):
-        return f"<{self.__class__.__name__}: {self.__str__()}>"
-
-
-def _reconstruct_path(v, s, edge_to):
-    """Reconstruct the list of vertices on the path from `v` to `s` using the
-    `edge_to` array.
-    """
-    sources = {s} if isinstance(s, int) else set(s)
-    path = Stack()
-    x = v
-
-    while x not in sources:
-        path.push(x)
-        x = edge_to[x]
-
-        if x is None:
-            return None  # no path exists
-
-    path.push(x)
-    return path
-
-
-_SEARCH_DOC = """
-Attributes
-----------
-s : int
-    The index of the source vertex.
-"""
-
-
-# TODO refactor the docstring like in BaseGraph.
-class GraphSearch(ABC):
-    """An abstract base class for implementing graph search algorithms.
-
-    This class should not be instantiated, because it does not actually do
-    anything. A subclass should call `super().__init__(G, s)` to initialize the
-    search structure, and then implement the search itself, which should
-    populate the `_marked` and `_edge_to` attributes. The `has_path_to` and
-    `path_to` methods will then work as expected.
-
-    Parameters
-    ----------
-    G : :obj:`Graph`
-        The graph over which to search.
-    source : int or iterable of int, optional
-        The index or indices of the source vertices.
-    """
-
-    @abstractmethod
-    def __init__(self, G, source=0):
-        if isinstance(source, int):
-            self.sources = [source]
-        else:
-            self.sources = list(source)
-        self._marked = G.V * [False]
-        self._edge_to = G.V * [None]  # last vertex on known path to this one
-
-    @property
-    def count(self):
-        """Return the number of vertices connected to `s`."""
-        return sum(self._marked)
-
-    def has_path_to(self, v):
-        """Return True if there is a path from `s` to `v`."""
-        return self._marked[v]
-
-    def path_to(self, v):
-        """Return an iterable of the vertices on the path from `s` to `v`."""
-        if not self.has_path_to(v):
-            return None
-
-        return _reconstruct_path(v, self.sources, self._edge_to)
-
-
-# -----------------------------------------------------------------------------
-#         Graphs
-# -----------------------------------------------------------------------------
 class Graph(BaseGraph):
     __doc__ = BaseGraph._DOC_TEMPLATE.format(
         descr="""Implements a graph using an array of adjacency lists.
@@ -669,316 +473,6 @@ class TransportationGraph(EuclideanGraph):
 
 
 # -----------------------------------------------------------------------------
-#         Paths/Searches
-# -----------------------------------------------------------------------------
-# See: Algorithm 4.1 DepthFirstPaths (p 536) + DepthFirstSearch (p 531)
-class DepthFirstSearch(GraphSearch):
-    __doc__ = f"""Implements depth-first search to return a path.
-    {_SEARCH_DOC}"""
-
-    def __init__(self, G, s):
-        super().__init__(G, s)
-        self._dfs(G, s)
-
-    def _dfs(self, G, v):
-        """Perform depth-first search recursively from vertex `v`."""
-        self._marked[v] = True
-        for w in G.adj(v):
-            if not self._marked[w]:
-                self._edge_to[w] = v
-                self._dfs(G, w)
-
-
-class STDepthFirstPaths(DepthFirstSearch):
-    __doc__ = f"""Implements depth-first search to return a path in an STGraph.
-    {_SEARCH_DOC}"""
-
-    def __init__(self, G, s):
-        self.s = s
-        self._marked = dict.fromkeys(G.vertices(), False)
-        self._edge_to = dict.fromkeys(G.vertices())
-        self.leaf = self._dfs(G, s)
-
-    def _dfs(self, G, v):
-        """Perform depth-first search recursively from vertex `v`."""
-        self._marked[v] = True
-        for w in G.adj(v):
-            if not self._marked[w]:
-                self._edge_to[w] = v
-                return self._dfs(G, w)
-        return v  # last seen vertex
-
-
-# Web Exercise 28
-class DepthFirstPaths_nr(DepthFirstSearch):
-    __doc__ = f"""Implements depth-first search non-recursively.
-
-    .. note:: Extra memory includes a list of iterators over each adjacency
-    list, plus the stack of vertices. Explores vertices in the same order as
-    recursive DFS.
-    {_SEARCH_DOC}"""
-
-    def _dfs(self, G, v):
-        """Perform depth-first search from `v` with an explicit stack."""
-        stack = Stack()
-        adj = [iter(G.adj(v)) for v in G.vertices()]
-        self._marked[v] = True
-        stack.push(v)
-        while not stack.is_empty:
-            v = stack.peek()
-            try:
-                w = next(adj[v])
-                if not self._marked[w]:
-                    self._marked[w] = True
-                    self._edge_to[w] = v
-                    stack.push(w)
-            except StopIteration:
-                stack.pop()
-
-
-# Web Exercise 28
-class DepthFirstPaths_nr_simple(DepthFirstSearch):
-    __doc__ = f"""Implements depth-first search non-recursively.
-
-    .. note:: Extra memory is proportional to V + E, since each vertex may be
-    pushed more than once. This implementation explores adjacent vertices in
-    the opposite order of recursive DFS.
-    {_SEARCH_DOC}"""
-
-    def _dfs(self, G, v):
-        """Perform depth-first search from `v` with an explicit stack."""
-        stack = Stack()
-        stack.push(v)
-        while not stack.is_empty:
-            v = stack.pop()
-            if not self._marked[v]:
-                self._marked[v] = True
-                for w in G.adj(v):
-                    if not self._marked[w]:
-                        self._edge_to[w] = v
-                        stack.push(w)
-
-
-# Algorithm 4.2
-class BreadthFirstSearch(GraphSearch):
-    __doc__ = f"""Implements breadth-first search to find shortest paths.
-    {_SEARCH_DOC}"""
-
-    def __init__(self, G, s):
-        super().__init__(G, s)
-        self._dist_to = G.V * [None]  # Exercise 4.1.13
-        self._bfs(G, s)
-
-    def _bfs(self, G, v):
-        """Perform breadth-first search from vertex `v`."""
-        q = Queue()
-        self._marked[v] = True
-        self._dist_to[v] = 0
-        q.enqueue(v)
-        while not q.is_empty:
-            v = q.dequeue()
-            for w in G.adj(v):
-                if not self._marked[w]:
-                    self._edge_to[w] = v
-                    self._marked[w] = True
-                    self._dist_to[w] = self._dist_to[v] + 1
-                    q.enqueue(w)
-
-    # Exercise 4.1.13
-    def dist_to(self, v):
-        """Return the distance from source to `v`. None if not connected."""
-        return self._dist_to[v]
-
-
-# Exercise 4.1.8
-class UFSearch(GraphSearch):
-    __doc__ = f"""Implements the graph search API using Union-Find.
-
-    .. note:: This implementation is simple and efficient if we are only
-        concerned with determining connectivity. The UF algorithm is also an
-        *online* algorithm, as opposed to DFS which must preprocess the entire
-        graph structure.
-    {_SEARCH_DOC}"""
-    # See p 529
-
-    def __init__(self, G, s):
-        self.s = s
-        self._uf = WeightedQuickUnionUF(G.V)
-        for v in G.vertices():
-            for w in G.adj(v):
-                if not self._uf.connected(v, w):
-                    self._uf.union(v, w)
-
-    @property
-    def count(self):
-        """Return the number of vertices connected to `s`.
-
-        .. note::
-           This value is not the same as the size of the component, since `s`
-           may not be connected to all vertices in the component.
-        """
-        # Return the size of the component to which the source belongs
-        return self._uf._size[self._uf.find(self.s)]
-
-    def has_path_to(self, v):
-        """Return True if `v` is connected to `s`."""
-        return self._uf.connected(self.s, v)
-
-    def path_to(self, v):
-        """Not implemented since UF does not keep track of paths."""
-        raise NotImplementedError("UFSearch does not keep track of paths!")
-
-
-# Exercise 4.1.10
-class LeafDFS(GraphSearch):
-    __doc__ = f"""Implements depth-first search to find a non-structural
-    vertex, aka a leaf of a spanning tree rooted at the source.
-    {_SEARCH_DOC}"""
-
-    def __init__(self, G, s):
-        super().__init__(G, s)
-        self._leaf = self._dfs(G, s)
-
-    @property
-    def leaf(self):
-        """Return the leaf vertex found by the search."""
-        return self._leaf
-
-    def _dfs(self, G, v):
-        """Perform depth-first search recursively from vertex `v`."""
-        self._marked[v] = True
-        for w in G.adj(v):
-            if not self._marked[w]:
-                return self._dfs(G, w)
-        return v  # return the leaf immediately when we find it
-
-
-# Web Exercise 33
-def spanning_tree_dfs(G, s):
-    """Return a Graph that is a spanning tree of `G`, rooted at `s`."""
-
-    # Define the search to add edges to `T` as we traverse them.
-    def _dfs(G, v):
-        """Perform depth-first search from `v` with an explicit stack."""
-        stack = Stack()
-        adj = [iter(G.adj(v)) for v in G.vertices()]
-        _marked[v] = True
-        stack.push(v)
-        while not stack.is_empty:
-            v = stack.peek()
-            try:
-                w = next(adj[v])
-                if not _marked[w]:
-                    _marked[w] = True
-                    T.add_edge(v, w)
-                    stack.push(w)
-            except StopIteration:
-                stack.pop()
-
-    # Define the tree with the same vertices as G
-    T = Graph(G.V)
-    _marked = G.V * [False]
-    _dfs(G, s)
-    return T
-
-
-def spanning_tree_bfs(G, s):
-    """Return a Graph that is a spanning tree of `G`, rooted at `s`."""
-
-    # Define the search to add edges to `T` as we traverse them.
-    def _bfs(G, v):
-        """Perform breadth-first search from vertex `v`."""
-        q = Queue()
-        _marked[v] = True
-        q.enqueue(v)
-        while not q.is_empty:
-            v = q.dequeue()
-            for w in G.adj(v):
-                if not _marked[w]:
-                    _marked[w] = True
-                    T.add_edge(v, w)
-                    q.enqueue(w)
-
-    # Define the tree with the same vertices as G
-    T = Graph(G.V)
-    _marked = G.V * [False]
-    _bfs(G, s)
-    return T
-
-
-def spanning_forest_dfs(G):
-    """Return a list of spanning trees for each connected component."""
-    comps = CC(G).get_components()
-    trees = []
-    for c in comps:
-        trees.append(spanning_tree_dfs(G, c[0]))
-    return trees
-
-
-def spanning_forest_bfs(G):
-    """Return a list of spanning trees for each connected component."""
-    comps = CC(G).get_components()
-    trees = []
-    for c in comps:
-        trees.append(spanning_tree_bfs(G, c[0]))
-    return trees
-
-
-# Web Exercise 31
-def complement_graph(G):
-    """Return a Graph that has an edge v-w iff v-w is not in `G`."""
-    Gc = Graph(G.V)
-    vs = set(range(G.V))
-    for v in range(G.V):
-        Gc._adj[v] = Bag(vs - set([v] + list(G.adj(v))))
-    return Gc
-
-
-# See:
-# <https://stackoverflow.com/questions/24476027/shortest-path-in-a-complement-graph-algorithm>
-class ComplementBFS(GraphSearch):
-    __doc__ = f"""Implements breadth-first search to find shortest paths in the
-    complement graph.
-    {_SEARCH_DOC}"""
-
-    def __init__(self, G, s):
-        super().__init__(G, s)
-        self._dist_to = G.V * [None]  # Exercise 4.1.13
-        self._bfs(G, s)
-
-    def _bfs(self, G, v):
-        """Perform breadth-first search from vertex `v`."""
-        q = Queue()
-        self._marked[v] = True
-        self._dist_to[v] = 0
-        q.enqueue(v)
-        # NOTE should use a multi-set for fast deletion
-        # L1 == all nodes *not* adjacent to v in G (i.e. *adjacent* in G')
-        L1 = list(range(G.V))
-        L1.remove(v)
-        # L2 == all unmarked nodes *adjacent* to v in G
-        L2 = []
-        while not q.is_empty:
-            v = q.dequeue()
-            for w in G.adj(v):
-                if not self._marked[w]:
-                    L1.remove(w)
-                    L2.append(w)
-            for w in L1:
-                self._edge_to[w] = v
-                self._marked[w] = True
-                self._dist_to[w] = self._dist_to[v] + 1
-                q.enqueue(w)
-            L1 = L2
-            L2 = []
-
-    # Exercise 4.1.13
-    def dist_to(self, v):
-        """Return the distance from source to `v`. None if not connected."""
-        return self._dist_to[v]
-
-
-# -----------------------------------------------------------------------------
 #         Graph Properties
 # -----------------------------------------------------------------------------
 # Exercise 4.1.16
@@ -1201,6 +695,7 @@ class CC_nr(CC):
                 stack.pop()
 
 
+# TODO move these functions into BaseGraph methods.
 def has_self_loop(G):
     """Return True if the graph has a self-loop."""
     for v in G.vertices():
@@ -1220,200 +715,6 @@ def has_parallel_edges(G):
             if adj[i] == adj[i + 1]:
                 return True
     return False
-
-
-def _cycle_dfs(G, v, marked, edge_to, u=None, return_path=False):
-    """Perform depth-first search recursively from vertex `v`.
-
-    .. note:: `u` is the previously-seen vertex. If one of the adjacent
-        vertices to `v` is marked, but is not the vertex from which we just
-        came, we have a cycle.
-    """
-    if u is None:
-        u = v  # set previous vertex to self for the first call
-
-    marked[v] = True
-
-    for w in G.adj(v):
-        if not marked[w]:
-            edge_to[w] = v
-            result = _cycle_dfs(G, w, marked, edge_to, v, return_path)
-            if result:
-                return result
-        elif w != u:
-            if not return_path:
-                return True  # cycle found, but don't need to return the path
-
-            cycle = Stack()
-            x = v
-            while x != w:
-                cycle.push(x)
-                x = edge_to[x]
-            cycle.push(w)
-            cycle.push(v)
-            return cycle
-
-    return None  # no cycle found
-
-
-def _cycle_dfs_nr(G, v, marked, edge_to, return_path=False):
-    """Perform depth-first search non-recursively from vertex `v`.
-
-    .. note:: `u` is the previously-seen vertex. If one of the adjacent
-        vertices to `v` is marked, but is not the vertex from which we just
-        came, we have a cycle.
-    """
-    stack = Stack()
-    adj = [iter(G.adj(v)) for v in G.vertices()]
-    marked[v] = True
-    stack.push(v)
-
-    while not stack.is_empty:
-        v = stack.peek()
-        u = edge_to[v]  # previous vertex
-        try:
-            w = next(adj[v])
-            if not marked[w]:
-                edge_to[w] = v
-                u = v
-                marked[w] = True
-                stack.push(w)
-            elif w != u:
-                cycle = Stack()
-                x = v
-                while x != w:
-                    cycle.push(x)
-                    x = edge_to[x]
-                cycle.push(w)
-                cycle.push(v)
-                return cycle
-        except StopIteration:
-            stack.pop()
-
-    return None  # no cycle found
-
-
-def has_cycle(G, s, recursive=False):
-    """Return True if there is a cycle in the graph that contains `s`.
-
-    Parameters
-    ----------
-    G : :class:`Graph`
-        The graph to analyze.
-    s : int
-        The source vertex from which to start the search.
-    recursive : bool
-        If True, use the recursive implementation. Otherwise, use the
-        non-recursive implementation. Both implementations return the same
-        cycle.
-
-    Returns
-    -------
-    bool
-        True if there is a cycle in the graph that contains `s`. False
-        otherwise.
-    """
-    marked = G.V * [False]
-    edge_to = G.V * [None]  # last vertex on known path to this one
-    engine = _cycle_dfs if recursive else _cycle_dfs_nr
-    return bool(engine(G, s, marked, edge_to, return_path=False))
-
-
-def find_cycle_path(G, s, recursive=False):
-    """Find a cycle in the graph that contains `s`, if one exists.
-
-    Parameters
-    ----------
-    G : :class:`Graph`
-        The graph to analyze.
-    s : int
-        The source vertex from which to start the search.
-    recursive : bool
-        If True, use the recursive implementation. Otherwise, use the
-        non-recursive implementation. Both implementations return the same
-        cycle.
-
-    Returns
-    -------
-    list
-        A list of the vertices on the cycle, in order. If there is no cycle,
-        returns an empty list.
-    """
-    marked = G.V * [False]
-    edge_to = G.V * [None]  # last vertex on known path to this one
-    engine = _cycle_dfs if recursive else _cycle_dfs_nr
-    cycle = engine(G, s, marked, edge_to, return_path=True)
-    return list(cycle) if cycle else []
-
-
-def find_min_cycle(G, s):
-    """Find the minimum cycle in the graph that contains `s`, if one exists.
-
-    Parameters
-    ----------
-    G : :class:`Graph`
-        The graph to analyze.
-    s : int
-        The source vertex from which to start the search.
-
-    Returns
-    -------
-    list
-        A list of the vertices on the minimum cycle, in order. If there is no
-        cycle, returns an empty list.
-    """
-    cycle_length = float('inf')
-
-    marked = G.V * [False]
-    edge_to = G.V * [None]
-    dist_to = G.V * [None]
-
-    cycle_head = None  # start vertex of the cycle
-    cycle_tail = None  # end vertex of the cycle
-
-    # Run BFS from `s`.
-    q = Queue()
-    marked[s] = True
-    dist_to[s] = 0
-    q.enqueue(s)
-
-    while not q.is_empty:
-        v = q.dequeue()
-        for w in G.adj(v):
-            # Skip backtracking edge to parent
-            if w == edge_to[v]:
-                continue
-
-            if not marked[w]:
-                edge_to[w] = v
-                marked[w] = True
-                dist_to[w] = dist_to[v] + 1
-                q.enqueue(w)
-            else:
-                d = dist_to[v] + dist_to[w] + 1
-                if d < cycle_length:
-                    cycle_head = w
-                    cycle_tail = v
-                    cycle_length = d
-
-    if cycle_length == float('inf'):
-        return []  # no cycle found
-
-    # BFS gives two paths: one each from the source to the head and tail.
-    # Merge the paths to head and tail to remove all common ancestors
-    # except the last that completes the cycle.
-    p = deque(_reconstruct_path(cycle_tail, s, edge_to))
-    q = deque(_reconstruct_path(cycle_head, s, edge_to))
-
-    while len(p) > 2 and len(q) > 2 and p[0] == q[0] and p[1] == q[1]:
-        p.popleft()
-        q.popleft()
-
-    p.popleft()  # remove one of the dulicates
-    p.extendleft(q)  # merge
-    p.append(p[0])  # complete the loop
-
-    return list(p)
 
 
 BipartiteColors = namedtuple('BipartiteColors', ['colors', 'examined_count'])
@@ -1508,9 +809,17 @@ def parallel_edges(G, s):
 
 # Exercise 4.1.36
 class Biconnected:
-    __doc__ = f"""Implements depth-first search to determine if a graph is
+    """Depth-first search to determine if a graph is
     edge-connected, aka biconnected.
-    {_SEARCH_DOC}"""
+
+    Attributes
+    ----------
+    Nbridges : int
+        The number of bridges in the graph. A bridge is an edge whose removal
+        disconnects the graph. A graph is edge-connected if it has no bridges.
+    is_edge_connected : bool
+        True if the graph is edge-connected, False otherwise.
+    """
 
     def __init__(self, G):
         self.Nbridges = 0
@@ -1562,190 +871,86 @@ class Biconnected:
         return self._art[v]
 
 
-# -----------------------------------------------------------------------------
-#         Client Functions
-# -----------------------------------------------------------------------------
-# Define some functions for use with graphs that would be too cumbersome to
-# maintain in the basic API. See p 523.
-def max_degree(G, v):
-    """Return the maximum degree all vertices in the graph."""
-    return max([G.degree(v) for v in G.vertices()])
+# Web Exercise 31
+def complement_graph(G):
+    """Return a Graph that has an edge v-w iff v-w is not in `G`."""
+    Gc = Graph(G.V)
+    vs = set(range(G.V))
+    for v in range(G.V):
+        Gc._adj[v] = Bag(vs - set([v] + list(G.adj(v))))
+    return Gc
 
 
-def avg_degree(G):
-    """Compute the theoretical average degree of the graph."""
-    return 2 * G.E / G.V
+# Web Exercise 33
+def spanning_tree_dfs(G, s):
+    """Return a Graph that is a spanning tree of `G`, rooted at `s`."""
+
+    # Define the search to add edges to `T` as we traverse them.
+    def _dfs(G, v):
+        """Perform depth-first search from `v` with an explicit stack."""
+        stack = Stack()
+        adj = [iter(G.adj(v)) for v in G.vertices()]
+        _marked[v] = True
+        stack.push(v)
+        while not stack.is_empty:
+            v = stack.peek()
+            try:
+                w = next(adj[v])
+                if not _marked[w]:
+                    _marked[w] = True
+                    T.add_edge(v, w)
+                    stack.push(w)
+            except StopIteration:
+                stack.pop()
+
+    # Define the tree with the same vertices as G
+    T = Graph(G.V)
+    _marked = G.V * [False]
+    _dfs(G, s)
+    return T
 
 
-def self_loops(G):
-    """Return the number of self-loops in the graph."""
-    s = 0
-    for v in G.vertices():
-        for w in G.adj(v):
-            if v == w:
-                s += 1
-    return s // 2  # each edge counted twice
+def spanning_tree_bfs(G, s):
+    """Return a Graph that is a spanning tree of `G`, rooted at `s`."""
+
+    # Define the search to add edges to `T` as we traverse them.
+    def _bfs(G, v):
+        """Perform breadth-first search from vertex `v`."""
+        q = Queue()
+        _marked[v] = True
+        q.enqueue(v)
+        while not q.is_empty:
+            v = q.dequeue()
+            for w in G.adj(v):
+                if not _marked[w]:
+                    _marked[w] = True
+                    T.add_edge(v, w)
+                    q.enqueue(w)
+
+    # Define the tree with the same vertices as G
+    T = Graph(G.V)
+    _marked = G.V * [False]
+    _bfs(G, s)
+    return T
 
 
-def print_dfs(G, s, DFS=DepthFirstSearch):
-    """Search the graph from vertex `s`."""
-    # See p 529
-    search = DFS(G, s)
-    for v in G.vertices():
-        if search.has_path_to(v):
-            print(f"{v} ", end='')
-    print()
-    if search.count != G.V:
-        print('NOT ', end='')
-    print('connected.')
-    return search
+def spanning_forest_dfs(G):
+    """Return a list of spanning trees for each connected component."""
+    comps = CC(G).get_components()
+    trees = []
+    for c in comps:
+        trees.append(spanning_tree_dfs(G, c[0]))
+    return trees
 
 
-def print_paths(G, s, GS=DepthFirstSearch):
-    """Search the graph from vertex `s`, returning the paths."""
-    # See p 535
-    search = GS(G, s)
-    for v in G.vertices():
-        print(f"{s:2d}->{v:2d}: ", end='')
-        if search.has_path_to(v):
-            for x in search.path_to(v):
-                if x == s:
-                    print(x, end='')
-                else:
-                    print(f"-{x}", end='')
-        print()
+def spanning_forest_bfs(G):
+    """Return a list of spanning trees for each connected component."""
+    comps = CC(G).get_components()
+    trees = []
+    for c in comps:
+        trees.append(spanning_tree_bfs(G, c[0]))
+    return trees
 
-
-def print_components(G, vertices=None):
-    """Compute the connected components in the graph.
-
-    Parameters
-    ----------
-    G : :obj:`Graph`
-        The graph to analyze.
-    vertices : iterable, optional
-        An iterable of the vertices to consider. If not given, all vertices
-        in `G` will be used.
-
-    Returns
-    -------
-    components : list of lists
-        List of lists of the vertices in each connected component.
-    """
-    # See p 543
-    vertices = vertices or G.vertices()
-    cc = CC(G, vertices)
-    M = cc.count()
-    print(f"{M} components")
-    components = cc.get_components()
-    for i in range(M):
-        print(f"{i}: ", end='')
-        for v in components[i]:
-            print(f"{v} ", end='')
-        print()
-    return components
-
-
-def print_adj(sg, s):
-    """Print the adjacency list of the source."""
-    # See p 550
-    print(s)
-    for w in sg.adj(s):
-        print(' ', w)
-
-
-def degrees_of_separation(sg, source, sink):
-    """Return the shortest path from source to sink in a symbol graph."""
-    # See p 555
-    if source not in sg:
-        raise ValueError(f"{repr(source)} not in graph!")
-    s = sg.index(source)
-    bfs = BreadthFirstSearch(sg.G, s)
-    if sink in sg:
-        print(f"{source}->{sink}")
-        t = sg.index(sink)
-        if bfs.has_path_to(t):
-            for v in bfs.path_to(t):
-                print(' ', sg.name(v))
-        else:
-            print('Not connected.')
-    else:
-        raise ValueError(f"{repr(sink)} not in graph!")
-
-
-if __name__ == "__main__":
-    DATA_PATH = Path(__file__).parents[3] / 'data'
-    G = Graph.fromfile(DATA_PATH / 'tinyG.txt')
-    G2 = Graph.fromfile(DATA_PATH / 'tinyG2.txt')
-
-    print('----- DFS -----')
-    print_dfs(G, 0)
-    print_dfs(G, 9)
-
-    # Test paths
-    print('----- Connected Graph -----')
-    GC = Graph.fromfile(DATA_PATH / 'tinyCG.txt')
-    print(GC)
-    print_dfs(GC, 0)
-
-    print('----- DFS Paths -----')
-    print_paths(GC, 0, GS=DepthFirstSearch)
-
-    print('----- BFS Paths -----')
-    print_paths(GC, 0, GS=BreadthFirstSearch)
-
-    # Test connected components
-    print('----- CC -----')
-    comps = print_components(G2)
-    comps20 = print_components(G2, vertices=comps[0])
-
-    # Test connected components
-    print('----- SymbolGraph -----')
-    sg = SymbolGraph.fromfile(DATA_PATH / 'routes.txt')
-    print('--- adjacency lists ---')
-    print_adj(sg, 'JFK')
-    print_adj(sg, 'LAX')
-    print('--- shortest paths ---')
-    degrees_of_separation(sg, 'JFK', 'LAS')
-    degrees_of_separation(sg, 'JFK', 'DFW')
-
-    sg = SymbolGraph.fromfile(DATA_PATH / 'movies.txt', delim='/')
-    print('--- adjacency lists ---')
-    print_adj(sg, 'Top Gun (1986)')
-    print('--- shortest paths ---')
-    degrees_of_separation(sg, 'Animal House (1978)', 'Titanic (1997)')
-    degrees_of_separation(sg, 'Bacon, Kevin', 'Cruise, Tom')
-
-    print('----- Graph Properties of mediumG -----')
-    Gm = Graph.fromfile(DATA_PATH / 'mediumG.txt')
-    # NOTE maximum recursion depth reached in largeG!
-    # gc = Graph.fromfile(DATA_PATH / 'largeG.txt', verbose=True)
-
-    gp = GraphProperties(Gm)
-    print('        ϵ:', gp.eccentricity(0))
-    print(' diameter:', gp.diameter())
-    print('   radius:', gp.radius())
-    print('   center:', gp.center())
-    print('periphery:', gp.periphery())
-    print('    girth:', gp.girth())
-    assert gp.eccentricity(gp.center()[0]) == gp.radius()
-
-    print('--- Cycle Paths ---')
-    cp = find_cycle_path(Gm, 0, recursive=True)
-    print('   path:', cp)
-    cp_nr = find_cycle_path(Gm, 0, recursive=False)
-    print('path nr:', cp_nr)
-    assert cp == cp_nr
-    cm = find_min_cycle(Gm, 0)
-    print('minpath:', cm)
-
-    print('complement', complement_graph(GC))
-    bfs_cx = BreadthFirstSearch(complement_graph(GC), 0)
-    bfs_c = ComplementBFS(GC, 0)
-    print(bfs_cx.path_to(4))  # [0, 4]
-    print(bfs_c.path_to(4))  # [0, 4]
-    print(bfs_cx.path_to(2))  # [0, 4, 5, 2]
-    print(bfs_c.path_to(2))  # [0, 4, 5, 2]
 
 # =============================================================================
 # =============================================================================
