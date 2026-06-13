@@ -33,7 +33,6 @@ from algs.graph.undirected import (
     STGraph,
     SymbolGraph,
     bipartite_colors,
-    parallel_edges,
     spanning_forest_bfs,
     spanning_forest_dfs,
     spanning_tree_bfs,
@@ -221,6 +220,7 @@ class TestSimple:
         assert tinyG.degree(0) == 4
         assert tinyG.degree(1) == 1
 
+
 @pytest.mark.parametrize('GT', [Graph, STGraph])
 class TestNonSimple:
     def test_self_loop(self, GT):
@@ -235,27 +235,23 @@ class TestNonSimple:
 
     def test_parallel_edges(self, GT):
         G = GT.fromfile(DATA_DIR / 'tinyG.txt', parallel=True)
-        p = parallel_edges(G, 0)
         assert G.degree(0) == 4
         assert G.degree(1) == 1
-        assert p == 0
+        assert G.num_parallel_edges == 0
         G.add_edge(0, 1)
-        p = parallel_edges(G, 0)
         assert G.degree(0) == 5
         assert G.degree(1) == 2
-        assert p == 1
+        assert G.num_parallel_edges == 1
 
     def test_no_parallel_edges(self, GT):
         G = GT.fromfile(DATA_DIR / 'tinyG.txt', parallel=False)
-        p = parallel_edges(G, 0)
         assert G.degree(0) == 4
         assert G.degree(1) == 1
-        assert p == 0
+        assert G.num_parallel_edges == 0
         G.add_edge(0, 1)
-        p = parallel_edges(G, 0)
         assert G.degree(0) == 4
         assert G.degree(1) == 1
-        assert p == 0
+        assert G.num_parallel_edges == 0
 
 
 # TODO test STGraph with 'routes.txt'
@@ -439,9 +435,9 @@ class TestCycle:
         assert not has_cycle(acyclicG, 0, recursive=recursive)
 
     def test_has_self_loop(self, tinyG):
-        assert not tinyG.has_self_loop()
+        assert not tinyG.has_self_loop
         tinyG.add_edge(1, 1)
-        assert tinyG.has_self_loop()
+        assert tinyG.has_self_loop
 
     def test_num_self_loops(self, tinyG):
         assert tinyG.num_self_loops == 0
@@ -451,9 +447,13 @@ class TestCycle:
         assert tinyG.num_self_loops == 3
 
     def test_has_parallel_edges(self, tinyG):
-        assert not tinyG.has_parallel_edges()
+        assert not tinyG.has_parallel_edges
         tinyG.add_edge(0, 1)
-        assert tinyG.has_parallel_edges()
+        assert tinyG.has_parallel_edges
+        assert tinyG.num_parallel_edges == 1
+        tinyG.add_edge(0, 2)
+        assert tinyG.has_parallel_edges
+        assert tinyG.num_parallel_edges == 2
 
 
 @pytest.mark.parametrize('GT', [Graph, SimpleGraph, STGraph])
