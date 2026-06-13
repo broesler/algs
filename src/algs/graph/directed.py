@@ -11,7 +11,6 @@ See Sedgewick and Wayne, §4.2.
 """
 
 from collections import namedtuple
-from pathlib import Path
 
 from algs.basics import Queue, Stack
 from algs.graph.search import DepthFirstSearch
@@ -403,128 +402,6 @@ def check_topological(G, order):
                 return False
     return True
 
-
-# TODO move to tests/test_digraph.py
-# -----------------------------------------------------------------------------
-#         Tests
-# -----------------------------------------------------------------------------
-if __name__ == "__main__":
-    from random import shuffle
-
-    from algs.graph.undirected import BreadthFirstPaths, DepthFirstPaths, print_paths
-
-    DATA_PATH = Path(__file__).parents[3] / 'data'
-
-    print('----- Digraph -----')
-    G = Digraph.fromfile(DATA_PATH / 'tinyDG.txt')
-    print(G)
-    print('----- Reverse -----')
-    R = G.reverse()
-    print(R)
-
-    print('----- DepthFirstSearch -----')
-    dfs = DepthFirstSearch(G, 2)
-    print(' '.join(f"{v} " for v in G.vertices() if dfs.marked(v)))
-    dfs = DepthFirstSearch(G, [1, 2, 6])
-    print(' '.join(f"{v} " for v in G.vertices() if dfs.marked(v)))
-
-    print('----- DFS Paths -----')
-    print_paths(G, 0, GS=DepthFirstPaths)
-    print('----- BFS Paths -----')
-    print_paths(G, 0, GS=BreadthFirstPaths)
-
-    print('----- Cycle -----')
-    cyc = directed_cycle(G)
-    assert cyc
-    print(cyc)
-
-    print('----- Orders -----')
-    p = depth_first_order(G)
-    print(p.pre)
-    print(p.post)
-    print(p.reverse_post)
-    assert list(reversed(p.post)) == p.reverse_post
-
-    t = topological_order(G)
-    assert not t
-
-    sg = SymbolDigraph.fromfile(DATA_PATH / 'jobs.txt', delim='/')
-    t = topological_order(sg.G)
-    assert t
-    print('\n'.join(sg.name(v) for v in t))
-
-    cc = KosarajuSCC(G)
-    assert cc.count() == 5
-    print(cc.get_components())
-
-    # Web Exercise 17
-    Gm = Digraph.fromfile(DATA_PATH / 'mediumDG.txt')
-    cc = KosarajuSCC(Gm)
-    assert cc.count() == 10
-
-    d = Degrees(G)
-    assert d._indegree == [2, 1, 2, 2, 3, 2, 1, 1, 1, 3, 1, 1, 2]
-    assert d._outdegree == [2, 0, 2, 2, 2, 1, 3, 2, 2, 2, 1, 2, 1]
-    assert d.sources() == []
-    assert d.sinks() == [1]
-
-    G2 = Digraph.fromfile(DATA_PATH / 'tinyDG2.txt')
-    print(G2)
-    d = Degrees(G2)
-    assert d._indegree == [1, 2, 2, 2, 1, 0, 2, 0, 2, 0, 2, 2]
-    assert d._outdegree == [1, 1, 2, 2, 1, 2, 1, 2, 2, 0, 1, 1]
-    assert d.sources() == [5, 7, 9]
-    assert d.sinks() == [9]
-
-    # Exercise 4.2.20: Eulerican cycle: Create a circular graph
-    print('----- Eulerican Cycle -----')
-    edges = []
-    N = 5
-    Gcyc = Digraph(N)
-    for i in range(N):
-        Gcyc.add_edge(i, (i + 1) % N)
-    e = eulerian_cycle(Gcyc)
-    print(e)
-
-    Gno_cyc = Digraph(N)
-    for i in range(N - 1):
-        Gno_cyc.add_edge(i, i + 1)
-    e = eulerian_cycle(Gno_cyc)
-    assert not e
-
-    print('----- DAGs -----')
-    D = Digraph.fromfile(DATA_PATH / 'tinyDAG.txt')
-    print(D)
-    orders = depth_first_order(D)
-    print('   pre:', orders.pre)
-    print('  post:', orders.post)
-    print('r_post:', orders.reverse_post)
-    t = topological_order(D)
-    print('  topo:', t)
-    assert t == orders.reverse_post
-
-    assert check_topological(D, t)
-    shuffle(t)
-    assert not check_topological(D, t)
-
-    cc = KosarajuSCC(D)
-    print(cc.get_components())
-
-    # Exercise 4.2.24: Hamiltonian path
-    print('----- Hamiltonian Path -----')
-    h = hamiltonian_path(Gno_cyc)
-    assert h == list(range(N))
-    print(h)
-
-    H = Digraph(N)
-    j = N // 2
-    for i in range(N - 1):
-        if i == j:
-            continue
-        H.add_edge(i, i + 1)
-    H.add_edge(j + 1, j)
-    h = hamiltonian_path(H)
-    assert not h
 
 # =============================================================================
 # =============================================================================
