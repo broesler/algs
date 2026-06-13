@@ -70,7 +70,7 @@ class GraphSearch(ABC):
 
     @property
     def count(self):
-        """Return the number of vertices connected to `s`."""
+        """The number of vertices connected to `s`."""
         return sum(self._marked)
 
     def has_path_to(self, v):
@@ -85,8 +85,6 @@ class GraphSearch(ABC):
         return _reconstruct_path(v, self.sources, self._edge_to)
 
 
-# TODO refactor to algs/graph/search.py? These algorithms apply to both
-# directed and undirected graphs!
 # -----------------------------------------------------------------------------
 #         Paths/Searches
 # -----------------------------------------------------------------------------
@@ -230,7 +228,7 @@ class UFSearch(GraphSearch):
 
     @property
     def count(self):
-        """Return the number of vertices connected to `s`.
+        """The number of vertices connected to `s`.
 
         .. note::
            This value is not the same as the size of the component, since `s`
@@ -260,7 +258,7 @@ class LeafDFS(GraphSearch):
 
     @property
     def leaf(self):
-        """Return the leaf vertex found by the search."""
+        """The leaf vertex found by the search."""
         return self._leaf
 
     def _dfs(self, G, v):
@@ -389,6 +387,9 @@ def _cycle_dfs_nr(G, v, marked, edge_to, return_path=False):
 
 def has_cycle(G, s, recursive=False):
     """Return True if there is a cycle in the graph that contains `s`.
+
+    .. note:: This function assumes that `G` has no self-loops or parallel
+        edges, but does not check this condition.
 
     Parameters
     ----------

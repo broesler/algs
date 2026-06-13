@@ -27,13 +27,6 @@ class BaseGraph(ABC):
         If True, allow parallel edges.
     self_loops : bool, optional
         If True, allow self-loops.
-
-    Attributes
-    ----------
-    V : int
-        The number of vertices in the graph.
-    E : int
-        The number of edges in the graph.
     """
 
     _DOC_TEMPLATE = _RAW_TEMPLATE.format(
@@ -81,10 +74,12 @@ class BaseGraph(ABC):
 
     @property
     def V(self):
+        """The number of vertices in the graph."""
         return self._V
 
     @property
     def E(self):
+        """The number of edges in the graph."""
         return self._E
 
     @classmethod
@@ -136,7 +131,7 @@ class BaseGraph(ABC):
 
     @property
     def num_self_loops(self):
-        """Return the number of self-loops in the graph."""
+        """The number of self-loops in the graph."""
         return sum(v == w for v in self.vertices() for w in self._adj[v])
 
     def vertices(self):

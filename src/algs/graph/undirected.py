@@ -31,8 +31,6 @@ from algs.search import HashST, MultiHashSet
 
 
 class UndirectedGraph(BaseGraph, ABC):
-    # TODO docstring for these attributes
-
     def degree(self, v):
         """Return the degree of vertex `v`."""
         self._validate_vertex(v)
@@ -40,23 +38,23 @@ class UndirectedGraph(BaseGraph, ABC):
 
     @property
     def max_degree(self):
-        """Return the maximum degree all vertices in the graph."""
+        """The maximum degree all vertices in the graph."""
         return max([self.degree(v) for v in self.vertices()])
 
     @property
     def avg_degree(self):
-        """Compute the theoretical average degree of the graph."""
+        """The average degree of the vertices in the graph."""
         return 2 * self._E / self._V
 
     @property
     def num_self_loops(self):
-        """Return the number of self-loops in the graph."""
+        """The number of self-loops in the graph."""
         return super().num_self_loops // 2  # each edge counted twice
 
 
 class Graph(UndirectedGraph):
     __doc__ = BaseGraph._DOC_TEMPLATE.format(
-        descr="""Implements a graph using an array of adjacency lists.
+        descr="""An undirected graph represented as an array of adjacency lists.
 
         *See*: Sedgewick and Wayne, *Algorithms*, 4ed, p 526.
         """
@@ -279,7 +277,7 @@ class SymbolGraph:
 
     @property
     def V(self):
-        """Return the number of vertices."""
+        """The number of vertices in the graph."""
         return self.G.V
 
     def __contains__(self, k):
@@ -680,7 +678,7 @@ class CC:
 
     @property
     def is_connected(self):
-        """Return True if the graph is connected."""
+        """True if every vertex is reachable from every other vertex."""
         return self._count == 1
 
     def get_components(self):
@@ -836,7 +834,7 @@ class Biconnected:
 
     @property
     def is_edge_connected(self):
-        """Return True if the graph is edge-connected."""
+        """True if the graph is edge-connected."""
         return self.Nbridges == 0
 
     def _dfs(self, G, v, u):
