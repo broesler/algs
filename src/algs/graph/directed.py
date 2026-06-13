@@ -13,8 +13,9 @@ See Sedgewick and Wayne, §4.2.
 from collections import namedtuple
 
 from algs.basics import Queue, Stack
+from algs.graph.base import BaseGraph
 from algs.graph.search import DepthFirstSearch
-from algs.graph.undirected import CC, BaseGraph, SymbolGraph
+from algs.graph.undirected import CC, SymbolGraph
 
 
 # -----------------------------------------------------------------------------
