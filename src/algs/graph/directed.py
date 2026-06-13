@@ -50,6 +50,24 @@ class Digraph(BaseGraph):
         """Return the number of edges from `v`."""
         return self.adj(v).size
 
+    # Exercise 4.2.7
+    @property
+    def sources(self):
+        """Return a list of vertices with indegree 0."""
+        return [v for v in self.vertices() if self._indegree[v] == 0]
+
+    @property
+    def sinks(self):
+        """Return a list of vertices with outdegree 0."""
+        return [v for v in self.vertices() if self.outdegree(v) == 0]
+
+    @property
+    def is_map(self):
+        """Return True if `G` is a map from the set of integers [0, V-1] onto
+        itself.
+        """
+        return self._self_loops and all(self.outdegree(v) == 1 for v in self.vertices())
+
     def reverse(self):
         """Return the reverse of this digraph."""
         R = self.__class__(self._V)
@@ -269,18 +287,16 @@ def eulerian_cycle(G):
         return None
 
     # If degrees are not equal, Eulerian path cannot exist
-    d = Degrees(G)
-
     for v in G.vertices():
-        if d.indegree(v) != d.outdegree(v):
+        if G.indegree(v) != G.outdegree(v):
             return []
 
     # Start with any vertex that is not a sink
     s = non_isolated_vertex(G)
 
     # Copy counts of edges into/out of vertices to "mark" edges
-    indegree = d._indegree.copy()
-    outdegree = d._outdegree.copy()
+    indegree = G._indegree.copy()
+    outdegree = [G.outdegree(v) for v in G.vertices()]  # TODO?
 
     # Find the cycle
     cycle = dfs(G, s)
@@ -330,48 +346,6 @@ def hamiltonian_path(G):
             return []
 
     return order
-
-
-# -----------------------------------------------------------------------------
-#         Graph Properties
-# -----------------------------------------------------------------------------
-# Exercise 4.2.7
-class Degrees:
-    """Compute the in- and outdegrees of each vertex."""
-
-    def __init__(self, G):
-        self._indegree = G.V * [0]
-        self._outdegree = G.V * [0]
-        for v in G.vertices():
-            adj = G.adj(v)
-            self._outdegree[v] = len(adj)
-            for w in adj:
-                self._indegree[w] += 1
-        self._sources = [v for v in G.vertices() if self._indegree[v] == 0]
-        self._sinks = [v for v in G.vertices() if self._outdegree[v] == 0]
-
-    def indegree(self, v):
-        """Return the number of edges pointing to `v`."""
-        return self._indegree[v]
-
-    def outdegree(self, v):
-        """Return the number of edges pointing from `v`."""
-        return self._outdegree[v]
-
-    def sources(self):
-        """Return a list of vertices with indegree 0."""
-        return self._sources
-
-    def sinks(self):
-        """Return a list of vertices with outdegree 0."""
-        return self._sinks
-
-    @property
-    def is_map(self):
-        """Return True if `G` is a map from the set of integers [0, V-1] onto
-        itself.
-        """
-        return self._self_loops and all(x == 1 for x in self._outdegree)
 
 
 # Exercise 4.2.9
