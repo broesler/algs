@@ -40,6 +40,12 @@ print(' '.join(f"{v} " for v in G.vertices() if dfs.has_path_to(v)))
 dfs = DepthFirstSearch(G, [1, 2, 6])
 print(' '.join(f"{v} " for v in G.vertices() if dfs.has_path_to(v)))
 
+print('----- BreadthFirstSearch -----')
+bfs = BreadthFirstSearch(G, 2)
+print(' '.join(f"{v} " for v in G.vertices() if bfs.has_path_to(v)))
+bfs = BreadthFirstSearch(G, [1, 2, 6])
+print(' '.join(f"{v} " for v in G.vertices() if bfs.has_path_to(v)))
+
 print('----- DFS Paths -----')
 print_paths(G, 0, GS=DepthFirstSearch)
 print('----- BFS Paths -----')
