@@ -134,14 +134,10 @@ class BaseGraph(ABC):
                     return True
         return False
 
+    @property
     def num_self_loops(self):
         """Return the number of self-loops in the graph."""
-        s = 0
-        for v in self.vertices():
-            for w in self._adj[v]:
-                if v == w:
-                    s += 1
-        return s
+        return sum(v == w for v in self.vertices() for w in self._adj[v])
 
     def vertices(self):
         """Return an iterable over the vertices."""

@@ -48,9 +48,10 @@ class UndirectedGraph(BaseGraph, ABC):
         """Compute the theoretical average degree of the graph."""
         return 2 * self._E / self._V
 
+    @property
     def num_self_loops(self):
         """Return the number of self-loops in the graph."""
-        return super().num_self_loops() // 2  # each edge counted twice
+        return super().num_self_loops // 2  # each edge counted twice
 
 
 class Graph(UndirectedGraph):
