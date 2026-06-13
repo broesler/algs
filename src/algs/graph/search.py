@@ -191,14 +191,17 @@ class BreadthFirstSearch(GraphSearch):
     def __init__(self, G, s):
         super().__init__(G, s)
         self._dist_to = G.V * [None]  # Exercise 4.1.13
-        self._bfs(G, s)
+        self._bfs(G)
 
-    def _bfs(self, G, v):
+    def _bfs(self, G):
         """Perform breadth-first search from vertex `v`."""
         q = Queue()
-        self._marked[v] = True
-        self._dist_to[v] = 0
-        q.enqueue(v)
+
+        for s in self._sources:
+            self._marked[s] = True
+            self._dist_to[s] = 0
+            q.enqueue(s)
+
         while not q.is_empty:
             v = q.dequeue()
             for w in G.adj(v):
