@@ -33,23 +33,8 @@ def _reconstruct_path(v, s, edge_to):
     return path
 
 
-_SEARCH_DOC = """
-Attributes
-----------
-s : int
-    The index of the source vertex.
-"""
-
-
-# TODO refactor the docstring like in BaseGraph.
 class GraphSearch(ABC):
-    """An abstract base class for implementing graph search algorithms.
-
-    This class should not be instantiated, because it does not actually do
-    anything. A subclass should call `super().__init__(G, s)` to initialize the
-    search structure, and then implement the search itself, which should
-    populate the `_marked` and `_edge_to` attributes. The `has_path_to` and
-    `path_to` methods will then work as expected.
+    _DOC_TEMPLATE = """{descr}
 
     Parameters
     ----------
@@ -59,14 +44,29 @@ class GraphSearch(ABC):
         The index or indices of the source vertices.
     """
 
+    __doc__ = _DOC_TEMPLATE.format(
+        descr="""An abstract base class for implementing graph search algorithms.
+
+        This class should not be instantiated, because it does not actually do
+        anything. A subclass should call `super().__init__(G, s)` to initialize
+        the search structure, and then implement the search itself, which
+        should populate the `_marked` and `_edge_to` attributes. The
+        `has_path_to` and `path_to` methods will then work as expected."""
+    )
+
     @abstractmethod
     def __init__(self, G, source=0):
         if isinstance(source, int):
-            self.sources = [source]
+            self._sources = [source]
         else:
-            self.sources = list(source)
+            self._sources = list(source)
         self._marked = G.V * [False]
         self._edge_to = G.V * [None]  # last vertex on known path to this one
+
+    @property
+    def sources(self):
+        """The source vertex or vertices from which the search was performed."""
+        return self._sources
 
     @property
     def count(self):
@@ -82,7 +82,7 @@ class GraphSearch(ABC):
         if not self.has_path_to(v):
             return None
 
-        return _reconstruct_path(v, self.sources, self._edge_to)
+        return _reconstruct_path(v, self._sources, self._edge_to)
 
 
 # -----------------------------------------------------------------------------
@@ -90,8 +90,9 @@ class GraphSearch(ABC):
 # -----------------------------------------------------------------------------
 # See: Algorithm 4.1 DepthFirstPaths (p 536) + DepthFirstSearch (p 531)
 class DepthFirstSearch(GraphSearch):
-    __doc__ = f"""Implements depth-first search to return a path.
-    {_SEARCH_DOC}"""
+    __doc__ = GraphSearch._DOC_TEMPLATE.format(
+        descr="Depth-first search to return a path."
+    )
 
     def __init__(self, G, s):
         super().__init__(G, s)
@@ -107,8 +108,9 @@ class DepthFirstSearch(GraphSearch):
 
 
 class STDepthFirstPaths(DepthFirstSearch):
-    __doc__ = f"""Implements depth-first search to return a path in an STGraph.
-    {_SEARCH_DOC}"""
+    __doc__ = GraphSearch._DOC_TEMPLATE.format(
+        descr="Depth-first search to return a path in an STGraph."
+    )
 
     def __init__(self, G, s):
         self.s = s
@@ -128,12 +130,13 @@ class STDepthFirstPaths(DepthFirstSearch):
 
 # Web Exercise 28
 class DepthFirstPaths_nr(DepthFirstSearch):
-    __doc__ = f"""Implements depth-first search non-recursively.
+    __doc__ = GraphSearch._DOC_TEMPLATE.format(
+        descr="""Non-recursive depth-first search.
 
-    .. note:: Extra memory includes a list of iterators over each adjacency
-    list, plus the stack of vertices. Explores vertices in the same order as
-    recursive DFS.
-    {_SEARCH_DOC}"""
+        .. note:: Extra memory includes a list of iterators over each adjacency
+        list, plus the stack of vertices. Explores vertices in the same order as
+        recursive DFS."""
+    )
 
     def _dfs(self, G, v):
         """Perform depth-first search from `v` with an explicit stack."""
@@ -155,12 +158,13 @@ class DepthFirstPaths_nr(DepthFirstSearch):
 
 # Web Exercise 28
 class DepthFirstPaths_nr_simple(DepthFirstSearch):
-    __doc__ = f"""Implements depth-first search non-recursively.
+    __doc__ = GraphSearch._DOC_TEMPLATE.format(
+        descr="""Non-recursive depth-first search.
 
-    .. note:: Extra memory is proportional to V + E, since each vertex may be
-    pushed more than once. This implementation explores adjacent vertices in
-    the opposite order of recursive DFS.
-    {_SEARCH_DOC}"""
+        .. note:: Extra memory is proportional to V + E, since each vertex may be
+        pushed more than once. This implementation explores adjacent vertices in
+        the opposite order of recursive DFS."""
+    )
 
     def _dfs(self, G, v):
         """Perform depth-first search from `v` with an explicit stack."""
@@ -178,8 +182,9 @@ class DepthFirstPaths_nr_simple(DepthFirstSearch):
 
 # Algorithm 4.2
 class BreadthFirstSearch(GraphSearch):
-    __doc__ = f"""Implements breadth-first search to find shortest paths.
-    {_SEARCH_DOC}"""
+    __doc__ = GraphSearch._DOC_TEMPLATE.format(
+        descr="Breadth-first search to find shortest paths."
+    )
 
     def __init__(self, G, s):
         super().__init__(G, s)
@@ -209,13 +214,14 @@ class BreadthFirstSearch(GraphSearch):
 
 # Exercise 4.1.8
 class UFSearch(GraphSearch):
-    __doc__ = f"""Implements the graph search API using Union-Find.
+    __doc__ = GraphSearch._DOC_TEMPLATE.format(
+        descr="""Graph search API using Union-Find.
 
-    .. note:: This implementation is simple and efficient if we are only
-        concerned with determining connectivity. The UF algorithm is also an
-        *online* algorithm, as opposed to DFS which must preprocess the entire
-        graph structure.
-    {_SEARCH_DOC}"""
+        .. note:: This implementation is simple and efficient if we are only
+            concerned with determining connectivity. The UF algorithm is also an
+            *online* algorithm, as opposed to DFS which must preprocess the entire
+            graph structure."""
+    )
     # See p 529
 
     def __init__(self, G, s):
@@ -248,9 +254,10 @@ class UFSearch(GraphSearch):
 
 # Exercise 4.1.10
 class LeafDFS(GraphSearch):
-    __doc__ = f"""Implements depth-first search to find a non-structural
-    vertex, aka a leaf of a spanning tree rooted at the source.
-    {_SEARCH_DOC}"""
+    __doc__ = GraphSearch._DOC_TEMPLATE.format(
+        descr="""Depth-first search to find a non-structural
+        vertex, aka a leaf of a spanning tree rooted at the source."""
+    )
 
     def __init__(self, G, s):
         super().__init__(G, s)
@@ -273,9 +280,10 @@ class LeafDFS(GraphSearch):
 # See:
 # <https://stackoverflow.com/questions/24476027/shortest-path-in-a-complement-graph-algorithm>
 class ComplementBFS(GraphSearch):
-    __doc__ = f"""Implements breadth-first search to find shortest paths in the
-    complement graph.
-    {_SEARCH_DOC}"""
+    __doc__ = GraphSearch._DOC_TEMPLATE.format(
+        descr="""Breadth-first search to find shortest paths in the
+        complement graph."""
+    )
 
     def __init__(self, G, s):
         super().__init__(G, s)
