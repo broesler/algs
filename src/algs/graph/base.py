@@ -110,6 +110,7 @@ class BaseGraph(ABC):
         """Return True if an edge from `v` to `w` exists."""
         return w in self.adj(v)
 
+    @property
     def has_parallel_edges(self):
         """Return True if the graph has parallel edges."""
         # Only return True if self._adj[v] has duplicates
@@ -121,6 +122,21 @@ class BaseGraph(ABC):
                 seen.add(w)
         return False
 
+    # Exercise 4.1.32
+    @property
+    def num_parallel_edges(self):
+        """The number of parallel edges in the graph."""
+        count = 0
+        for v in self.vertices():
+            seen = set()
+            for w in self._adj[v]:
+                if w in seen:
+                    count += 1
+                else:
+                    seen.add(w)
+        return count
+
+    @property
     def has_self_loop(self):
         """Return True if the graph has a self-loop."""
         for v in self.vertices():

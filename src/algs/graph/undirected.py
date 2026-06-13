@@ -46,6 +46,12 @@ class UndirectedGraph(BaseGraph, ABC):
         """The average degree of the vertices in the graph."""
         return 2 * self._E / self._V
 
+    # Exercise 4.1.32
+    @property
+    def num_parallel_edges(self):
+        """The number of parallel edges in the graph."""
+        return super().num_parallel_edges // 2  # each edge counted twice
+
     @property
     def num_self_loops(self):
         """The number of self-loops in the graph."""
@@ -765,47 +771,6 @@ def bipartite_colors(G):
     return BipartiteColors(
         colors=colors if is_bipartite else None, examined_count=sum(marked)
     )
-
-
-# Exercise 4.1.32
-def parallel_edges(G, s):
-    """Count the parallel edges in the graph, starting from vertex `s`.
-
-    Parameters
-    ----------
-    G : :class:`Graph`
-        The graph to analyze.
-    s : int
-        The source vertex from which to start the search.
-
-    Returns
-    -------
-    int
-        The number of parallel edges in the graph.
-    """
-    count = 0
-    marked = G.V * [False]
-
-    # Run BFS from `s`.
-    q = Queue()
-    marked[s] = True
-    q.enqueue(s)
-
-    while not q.is_empty:
-        v = q.dequeue()
-        neighbs = G.V * [False]  # boolean array of (possible) neighbors
-        for w in G.adj(v):
-            # Same as using a hash table since we have integer vertices.
-            if neighbs[w]:
-                count += 1
-            else:
-                neighbs[w] = True
-
-            if not marked[w]:
-                marked[w] = True
-                q.enqueue(w)
-
-    return count // 2  # undirected edges counted 2x
 
 
 # Exercise 4.1.36
