@@ -189,6 +189,8 @@ class TestTinyG:
         EXPECT_DEGREES = (4, 1, 1, 2, 3, 3, 2, 1, 1, 3, 1, 2, 2)
         for v in tinyG.vertices():
             assert tinyG.degree(v) == EXPECT_DEGREES[v]
+        assert tinyG.max_degree == max(EXPECT_DEGREES)
+        assert tinyG.avg_degree == sum(EXPECT_DEGREES) / len(EXPECT_DEGREES)
 
     def test_validate_vertex(self, tinyG):
         with pytest.raises(IndexError):
@@ -209,6 +211,7 @@ class TestSimple:
     def test_self_loop(self, tinyG):
         with pytest.raises(ValueError):
             tinyG.add_edge(0, 0)
+        assert tinyG.num_self_loops == 0
 
     def test_parallel_edges(self, tinyG):
         assert tinyG.degree(0) == 4
@@ -217,7 +220,6 @@ class TestSimple:
         # No changes
         assert tinyG.degree(0) == 4
         assert tinyG.degree(1) == 1
-
 
 @pytest.mark.parametrize('GT', [Graph, STGraph])
 class TestNonSimple:
@@ -440,6 +442,13 @@ class TestCycle:
         assert not tinyG.has_self_loop()
         tinyG.add_edge(1, 1)
         assert tinyG.has_self_loop()
+
+    def test_num_self_loops(self, tinyG):
+        assert tinyG.num_self_loops == 0
+        tinyG.add_edge(1, 1)
+        tinyG.add_edge(1, 1)
+        tinyG.add_edge(9, 9)
+        assert tinyG.num_self_loops == 3
 
     def test_has_parallel_edges(self, tinyG):
         assert not tinyG.has_parallel_edges()
