@@ -186,7 +186,7 @@ def topological_order(G):
 
 # Algorithm 4.6
 class KosarajuSCC(CC):
-    """Implements Kosaraju's algorithm for computing strong components."""
+    """Kosaraju's algorithm for computing strong components."""
 
     def __init__(self, G):
         order = depth_first_order(G.reverse()).reverse_post
@@ -198,7 +198,7 @@ class KosarajuSCC(CC):
 
 
 class TransitiveClosure:
-    """Computes the transitive closure of a digraph.
+    """The transitive closure of a digraph.
 
     .. note:: This algorithm uses O(V²) space and O(V(V+E)) time!
         Each DFS uses O(V) space, and takes O(V+E) time, and we repeat the
@@ -324,7 +324,7 @@ def hamiltonian_path(G):
     # an edge between them. If not, then there is no Hamiltonian path.
     for i in range(len(order) - 1):
         v = order[i]
-        w = order[i+1]
+        w = order[i + 1]
         if not G.has_edge(v, w):
             return []
 
