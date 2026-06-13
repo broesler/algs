@@ -96,7 +96,9 @@ class DepthFirstSearch(GraphSearch):
 
     def __init__(self, G, s):
         super().__init__(G, s)
-        self._dfs(G, s)
+        for v in self._sources:
+            if not self._marked[v]:
+                self._dfs(G, v)
 
     def _dfs(self, G, v):
         """Perform depth-first search recursively from vertex `v`."""

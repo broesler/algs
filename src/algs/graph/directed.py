@@ -14,43 +14,31 @@ from collections import namedtuple
 from pathlib import Path
 
 from algs.basics import Queue, Stack
-from algs.graph.undirected import CC, Graph, SymbolGraph, UndirectedGraph
-
-
-# -----------------------------------------------------------------------------
-#         Abstract Base Classes
-# -----------------------------------------------------------------------------
-class DirectedGraph(UndirectedGraph):
-    # Extends the UndirectedGraph ABC.
-    def reverse(self):
-        """Return the reverse of this digraph."""
-        R = self.__class__(self.V)
-        for v in self.vertices():
-            for w in self.adj(v):
-                R.add_edge(w, v)
-        return R
+from algs.graph.search import DepthFirstSearch
+from algs.graph.undirected import CC, BaseGraph, SymbolGraph
 
 
 # -----------------------------------------------------------------------------
 #         Graphs
 # -----------------------------------------------------------------------------
-class Digraph(DirectedGraph, Graph):
-    __doc__ = f"""Implements a digraph using an array of adjacency lists.
-    {UndirectedGraph.__doc__}"""
+class Digraph(BaseGraph):
+    __doc__ = BaseGraph._DOC_TEMPLATE.format(
+        descr="Implements a digraph using an array of adjacency lists."
+    )
 
-    def __init__(self, V, *args, **kwargs):
+    def __init__(self, V=0, edges=None, parallel=True, self_loops=True):
         self._indegree = V * [0]
-        super().__init__(V, *args, **kwargs)
+        super().__init__(V=V, edges=edges, parallel=parallel, self_loops=self_loops)
 
     def add_edge(self, v, w):
         """Add a directed edge from `v` to `w`."""
         self._validate_vertex(v)
         self._validate_vertex(w)
         # Exercise 4.2.5 no self-loops
-        if not self._SELF_LOOPS and v == w:
+        if not self._self_loops and v == w:
             raise ValueError(f"{v} == {w}! No self-loops allowed.")
-        if self._PARALLEL or not self.has_edge(v, w):
-            self.E += 1
+        if self._parallel or not self.has_edge(v, w):
+            self._E += 1
             self._adj[v].add(w)  # direction matters! Only change from Graph
             self._indegree[w] += 1
 
@@ -62,6 +50,14 @@ class Digraph(DirectedGraph, Graph):
         """Return the number of edges from `v`."""
         return self.adj(v).size
 
+    def reverse(self):
+        """Return the reverse of this digraph."""
+        R = self.__class__(self._V)
+        for v in self.vertices():
+            for w in self.adj(v):
+                R.add_edge(w, v)
+        return R
+
 
 class SymbolDigraph(SymbolGraph):
     def __init__(self, *args, **kwargs):
@@ -71,36 +67,7 @@ class SymbolDigraph(SymbolGraph):
 # -----------------------------------------------------------------------------
 #         Paths/Searches
 # -----------------------------------------------------------------------------
-# Algorithm 4.4
-class DirectedDFS:
-    """Implements depth-first search in a digraph."""
-
-    def __init__(self, G, sources):
-        """
-        Parameters
-        ----------
-        G : :obj:`Digraph`
-            The graph over which to search.
-        sources : int or iterable
-            A single source index, or an iterable of indices from which to
-            begin the search.
-        """
-        self._marked = G.V * [False]
-        try:
-            for s in sources:
-                self._dfs(G, s)
-        except TypeError:
-            self._dfs(G, sources)
-
-    def marked(self, v):
-        """Return True if a vertex has been visited."""
-        return self._marked[v]
-
-    def _dfs(self, G, v):
-        self._marked[v] = True
-        for w in G.adj(v):
-            if not self._marked[w]:
-                self._dfs(G, w)
+# Algorithm 4.4: DirectedDFS == DepthFirstSearch!
 
 
 def directed_cycle(G):
@@ -242,7 +209,7 @@ class TransitiveClosure:
     def __init__(self, G):
         self._all = G.V * [None]
         for v in G.vertices():
-            self._all[v] = DirectedDFS(G, v)
+            self._all[v] = DepthFirstSearch(G, v)
 
     def reachable(self, v, w):
         """Return True if `w` is reachable from `v`."""
@@ -325,10 +292,7 @@ def eulerian_cycle(G):
         and all(x == 0 for x in outdegree)
     )
 
-    if is_valid:
-        return list(cycle)
-    else:
-        return []
+    return list(cycle) if is_valid else []
 
 
 # Exercise 4.2.24, 4.2.25
@@ -407,7 +371,7 @@ class Degrees:
         """Return True if `G` is a map from the set of integers [0, V-1] onto
         itself.
         """
-        return G._SELF_LOOPS and all(x == 1 for x in self._outdegree)
+        return self._self_loops and all(x == 1 for x in self._outdegree)
 
 
 # Exercise 4.2.9
@@ -458,10 +422,10 @@ if __name__ == "__main__":
     R = G.reverse()
     print(R)
 
-    print('----- DirectedDFS -----')
-    dfs = DirectedDFS(G, 2)
+    print('----- DepthFirstSearch -----')
+    dfs = DepthFirstSearch(G, 2)
     print(' '.join(f"{v} " for v in G.vertices() if dfs.marked(v)))
-    dfs = DirectedDFS(G, [1, 2, 6])
+    dfs = DepthFirstSearch(G, [1, 2, 6])
     print(' '.join(f"{v} " for v in G.vertices() if dfs.marked(v)))
 
     print('----- DFS Paths -----')
