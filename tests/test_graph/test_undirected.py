@@ -17,7 +17,6 @@ from algs.graph.search import (
     DepthFirstPaths_nr,
     DepthFirstPaths_nr_simple,
     DepthFirstSearch,
-    LeafDFS,
     UFSearch,
     find_cycle_path,
     find_min_cycle,
@@ -330,12 +329,12 @@ class TestPaths:
         assert [bfs.dist_to(v) for v in tinyCG.vertices()] == [0, 1, 1, 2, 2, 1]
 
     def test_leaf_CG(self, tinyCG):
-        dfs = LeafDFS(tinyCG, 0)
-        assert dfs.leaf == 1  # returns first leaft
+        assert DepthFirstSearch(tinyCG, 0).leaf == 1
 
     def test_leaf_G(self, tinyG):
-        dfs = LeafDFS(tinyG, 0)
-        assert dfs.leaf == 3  # returns first leaft
+        assert DepthFirstSearch(tinyG, 0).leaf == 3
+        assert DepthFirstSearch(tinyG, 6).leaf == 2
+        assert DepthFirstSearch(tinyG, 7).leaf == 8
 
     def test_spanning_tree_dfs(self, tinyCG):
         EXPECT_ST = {0: [2], 1: [2], 2: [0, 1, 3], 3: [2, 5, 4], 4: [3], 5: [3]}
