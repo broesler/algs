@@ -55,13 +55,20 @@ class GraphSearch(ABC):
     )
 
     @abstractmethod
-    def __init__(self, G, source=0):
-        if isinstance(source, int):
+    def __init__(self, G, source=None):
+        if source is None:
+            self._sources = list(G.vertices())
+        if isinstance(source, (int, str)):
             self._sources = [source]
         else:
             self._sources = list(source)
-        self._marked = G.V * [False]
-        self._edge_to = G.V * [None]  # last vertex on known path to this one
+
+        if hasattr(G._adj, "keys"):  # dict-based graph
+            self._marked = dict.fromkeys(G.vertices(), False)
+            self._edge_to = dict.fromkeys(G.vertices())
+        else:
+            self._marked = G.V * [False]
+            self._edge_to = G.V * [None]  # last vertex on known path to this one
 
     @property
     def sources(self):
@@ -71,6 +78,8 @@ class GraphSearch(ABC):
     @property
     def count(self):
         """The number of vertices connected to `s`."""
+        if isinstance(self._marked, dict):
+            return sum(self._marked.values())
         return sum(self._marked)
 
     def has_path_to(self, v):
@@ -96,6 +105,7 @@ class DepthFirstSearch(GraphSearch):
 
     def __init__(self, G, s):
         super().__init__(G, s)
+        self._leaf = None  # Exercise 4.1.10
         for v in self._sources:
             if not self._marked[v]:
                 self._dfs(G, v)
@@ -103,32 +113,23 @@ class DepthFirstSearch(GraphSearch):
     def _dfs(self, G, v):
         """Perform depth-first search recursively from vertex `v`."""
         self._marked[v] = True
+
         for w in G.adj(v):
             if not self._marked[w]:
                 self._edge_to[w] = v
                 self._dfs(G, w)
 
+        if self._leaf is None:
+            self._leaf = v  # last seen vertex
 
-class STDepthFirstPaths(DepthFirstSearch):
-    __doc__ = GraphSearch._DOC_TEMPLATE.format(
-        descr="Depth-first search to return a path in an STGraph."
-    )
+    # Exercise 4.1.10
+    @property
+    def leaf(self):
+        """The last vertex found by the search."""
+        return self._leaf
 
-    def __init__(self, G, s):
-        self.s = s
-        self._marked = dict.fromkeys(G.vertices(), False)
-        self._edge_to = dict.fromkeys(G.vertices())
-        self.leaf = self._dfs(G, s)
 
-    def _dfs(self, G, v):
-        """Perform depth-first search recursively from vertex `v`."""
-        self._marked[v] = True
-        for w in G.adj(v):
-            if not self._marked[w]:
-                self._edge_to[w] = v
-                return self._dfs(G, w)
-        return v  # last seen vertex
-
+# TODO rename "Paths" to "Search".
 
 # Web Exercise 28
 class DepthFirstPaths_nr(DepthFirstSearch):
@@ -255,31 +256,6 @@ class UFSearch(GraphSearch):
     def path_to(self, v):
         """Not implemented since UF does not keep track of paths."""
         raise NotImplementedError("UFSearch does not keep track of paths!")
-
-
-# Exercise 4.1.10
-class LeafDFS(GraphSearch):
-    __doc__ = GraphSearch._DOC_TEMPLATE.format(
-        descr="""Depth-first search to find a non-structural
-        vertex, aka a leaf of a spanning tree rooted at the source."""
-    )
-
-    def __init__(self, G, s):
-        super().__init__(G, s)
-        self._leaf = self._dfs(G, s)
-
-    @property
-    def leaf(self):
-        """The leaf vertex found by the search."""
-        return self._leaf
-
-    def _dfs(self, G, v):
-        """Perform depth-first search recursively from vertex `v`."""
-        self._marked[v] = True
-        for w in G.adj(v):
-            if not self._marked[w]:
-                return self._dfs(G, w)
-        return v  # return the leaf immediately when we find it
 
 
 # See:
