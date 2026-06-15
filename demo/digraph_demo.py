@@ -69,7 +69,7 @@ assert not t
 sg = SymbolDigraph.fromfile(DATA_PATH / 'jobs.txt', delim='/')
 t = topological_order(sg.G)
 assert t
-print('\n'.join(sg.name(v) for v in t))
+print('\n'.join(sg.name_of(v) for v in t))
 
 cc = KosarajuSCC(G)
 assert cc.count() == 5

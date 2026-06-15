@@ -39,7 +39,7 @@ else:
 # -----------------------------------------------------------------------------
 #         Process
 # -----------------------------------------------------------------------------
-G = sg.G
+G = sg.graph
 
 # Compute connected components
 cc = CC_nr(G)
@@ -87,8 +87,8 @@ print(f"--- Properties of Component {i} ---")
 print('eccentricity:', gp.eccentricity(comp[0]))
 print('    diameter:', gp.diameter())
 print('      radius:', gp.radius())
-print('      center:', [sg.name(v) for v in c[:3]])
-print('   periphery:', [sg.name(v) for v in p[:3]])
+print('      center:', [sg.name_of(v) for v in c[:3]])
+print('   periphery:', [sg.name_of(v) for v in p[:3]])
 print('       girth:', gp.girth())
 
 # Store expensive properties computations

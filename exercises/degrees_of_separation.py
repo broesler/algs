@@ -30,10 +30,10 @@ def degrees_of_separation(sg, source, sink, y=None):
 
     # Exercise 4.1.25: Filter by recency
     if y is not None:
-        G = sg.G.copy()
+        G = sg.graph.copy()
         # movies are odd vertices
         for v in list(G.vertices()):
-            if m := pat.search(sg.name(v)):
+            if m := pat.search(sg.name_of(v)):
                 year = int(m.group(1))
                 if (THIS_YEAR - year) > y:
                     G._hide_vertex(v)
@@ -44,7 +44,7 @@ def degrees_of_separation(sg, source, sink, y=None):
         t = sg.index(sink)
         if bfs.has_path_to(t):
             for v in bfs.path_to(t):
-                print(' ', sg.name(v))
+                print(' ', sg.name_of(v))
         else:
             print('Not connected.')
     else:

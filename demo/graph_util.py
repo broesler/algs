@@ -74,13 +74,13 @@ def degrees_of_separation(sg, source, sink):
     # See p 555
     if source not in sg:
         raise ValueError(f"{repr(source)} not in graph!")
-    s = sg.index(source)
-    bfs = BreadthFirstSearch(sg.G, s)
+    s = sg.index_of(source)
+    bfs = BreadthFirstSearch(sg.graph, s)
     if sink in sg:
         print(f"{source}->{sink}")
-        t = sg.index(sink)
+        t = sg.index_of(sink)
         if bfs.has_path_to(t):
-            print('\n'.join(sg.name(v) for v in bfs.path_to(t)))
+            print('\n'.join(sg.name_of(v) for v in bfs.path_to(t)))
         else:
             print('Not connected.')
     else:

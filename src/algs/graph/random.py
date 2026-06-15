@@ -340,7 +340,7 @@ def transport_graph(filename, key_file=None, loc_file=None):
                     words = line.strip().split(',')
                     name = words[0]
                     lat, lon = float(words[1]), float(words[2])
-                    sg.G.set_coordinates(sg.index(name), lon, lat)
+                    sg.G.set_coordinates(sg.index_of(name), lon, lat)
         out = sg
     return out
 
