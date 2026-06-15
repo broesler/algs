@@ -134,8 +134,8 @@ def directed_cycle(G):
     for v in G.vertices():
         if not marked[v]:
             cycle = dfs(G, v)
-        if cycle:
-            return list(cycle)
+            if cycle:
+                return list(cycle)
 
     return []  # no cycle found
 
