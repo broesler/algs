@@ -7,9 +7,6 @@
 
 """Functions to generate random graphs."""
 
-from pathlib import Path
-
-import matplotlib.pyplot as plt
 import numpy as np
 
 from algs.adt import Interval1D
@@ -20,7 +17,6 @@ from algs.graph.undirected import (
 )
 from algs.unionfind import full_grid, random_grid
 
-DATA_PATH = Path(__file__).resolve().parents[3] / 'data'
 π = np.pi
 rng = np.random.default_rng(seed=19900416)
 
@@ -266,37 +262,6 @@ def random_interval_graph(V, d):
 
     return SymbolGraph(intervals, edges)
 
-
-# TODO move these to demo/random_graph_demo.py
-# -----------------------------------------------------------------------------
-#         Tests
-# -----------------------------------------------------------------------------
-if __name__ == "__main__":
-    # Define the parameters
-    V, E = 10, 9
-
-    # Random graphs
-    G = erdos_renyi(V, E)
-    print(G)
-
-    Gs = random_simple_graph(V, E)
-    print(Gs)
-
-    sgi = random_interval_graph(V=5, d=0.1)
-
-    # Plots
-    Ge = random_euclidean_graph(V, d=0.5)
-    Gb = random_euclidean_graph(V, connected=True)
-    fig, ax = plt.subplots(num=1, clear=True, constrained_layout=True)
-    Ge.draw(ax=ax, label_nodes=True)
-    Gb.draw(ax=ax, label_nodes=True, c='tab:blue')
-    plt.show()
-
-    Gg = random_grid_graph(V, R=20, dist_edges=True)
-    fig, ax = plt.subplots(num=2, clear=True, constrained_layout=True)
-    Gg.draw(ax=ax)
-
-    plt.show()
 
 # =============================================================================
 # =============================================================================
