@@ -246,7 +246,7 @@ class SymbolGraph:
         self._G = None
         if keys is not None:
             for i, k in enumerate(keys):
-                self._st[i] = k
+                self._st[k] = i
             self._keys = keys
             self._G = self._GraphClass(V=len(keys), edges=edges, **kwargs)
 
