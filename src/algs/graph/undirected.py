@@ -225,7 +225,7 @@ class SymbolGraph:
     *See*: Sedgewick and Wayne, *Algorithms*, 4ed, p 552.
     """
 
-    def __init__(self, keys=None, edges=None, kind=Graph):
+    def __init__(self, keys=None, edges=None, kind=Graph, **kwargs):
         self._st = HashST()  # map : str -> int
         self._keys = None  # map : int -> str
         self._GraphClass = kind
@@ -234,7 +234,7 @@ class SymbolGraph:
             for i, k in enumerate(keys):
                 self._st[i] = k
             self._keys = keys
-            self._G = self._GraphClass(V=len(keys), edges=edges)
+            self._G = self._GraphClass(V=len(keys), edges=edges, **kwargs)
 
     @classmethod
     def fromfile(cls, filename, *args, delim=' ', verbose=False, **kwargs):
