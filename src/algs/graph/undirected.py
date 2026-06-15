@@ -295,30 +295,30 @@ class SymbolGraph:
         """Return True if `k` is a vertex."""
         return k in self._st
 
-    def index(self, k):
+    def index_of(self, k):
         """Return the index associated with `k`."""
         return self._st[k]
 
-    def name(self, v):
-        """Return the name associated with vertex index `v`."""
-        return self._keys[v]
+    def name_of(self, i):
+        """Return the name associated with vertex index `i`."""
+        return self._keys[i]
 
     # Implement Graph methods with names as arguments
     def vertices(self):
         """Return an iterable over the vertices."""
-        return [self.name(v) for v in self._G.vertices()]
+        return [self.name_of(v) for v in self._G.vertices()]
 
     def adj(self, v):
         """Return an iterable of vertices adjacent to `v`."""
-        return [self.name(w) for w in self._G.adj(self.index(v))]
+        return [self.name_of(w) for w in self._G.adj(self.index_of(v))]
 
     def has_edge(self, v, w):
         """Return True if an edge from `v` to `w` exists."""
-        return self._G.has_edge(self.index(v), self.index(w))
+        return self._G.has_edge(self.index_of(v), self.index_of(w))
 
     def add_edge(self, v, w):
         """Add an edge from `v` to `w`."""
-        return self._G.add_edge(self.index(v), self.index(w))
+        return self._G.add_edge(self.index_of(v), self.index_of(w))
 
 
 # Exercise 4.1.37
