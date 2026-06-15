@@ -67,7 +67,7 @@ t = topological_order(G)
 assert not t
 
 sg = SymbolDigraph.fromfile(DATA_PATH / 'jobs.txt', delim='/')
-t = topological_order(sg.G)
+t = topological_order(sg.graph)
 assert t
 print('\n'.join(sg.name_of(v) for v in t))
 

@@ -231,7 +231,7 @@ class TransitiveClosure:
 
     def reachable(self, v, w):
         """Return True if `w` is reachable from `v`."""
-        return self._all[v].marked(w)
+        return self._all[v].has_path_to(w)
 
 
 # Exercise 4.2.20
