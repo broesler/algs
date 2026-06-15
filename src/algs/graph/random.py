@@ -242,7 +242,7 @@ def random_DQgraph(V, E):
     df = df.iloc[rows]
     # Build a symbol graph using the names of the restaurants
     sg = SymbolGraph(keys=df['name'])
-    sg.G = EuclideanGraph(random_simple_graph(V, E), x=df['lat'], y=df['lon'])
+    sg._G = EuclideanGraph(random_simple_graph(V, E), x=df['lat'], y=df['lon'])
     return sg
 
 
@@ -306,45 +306,65 @@ def transport_graph(filename, key_file=None, loc_file=None):
     """
     edges = []
     routes = {}  # named (ordered) list of vertices in the system
+
     with Path(filename).open() as fp:
-        for line in fp.readlines():
-            words = line.strip().split(':')
-            path = [int(w) for w in words[1].split('-')]
-            routes[words[0]] = path[1:]  # FIXME HACK skip 0
+        for line in fp:
+            if not line.strip():
+                continue
+
+            name, path_str = line.split(':')
+            path = [int(w) for w in path_str.strip().split('-')]
+            routes[name.strip()] = path[1:]  # FIXME HACK skip 0
+
             for i in range(len(path) - 1):
                 edges.append((path[i], path[i + 1]))
-    V = 1 + max(max(edges))
-    TG = TransportationGraph(SimpleGraph(V=V, edges=edges), routes=routes)
-    out = TG
 
-    if key_file is not None:
-        keys = {}
-        ids = {}
-        with Path(key_file).open() as fp:
-            for line in fp.readlines():
-                words = line.strip().split()
-                idn = int(words[0])
-                name = words[1]
-                keys[idn] = name
-                ids[name] = idn
-        # Build a symbol graph
-        sg = SymbolGraph()
-        sg._keys = keys
-        sg._st = ids
-        sg.G = TG
+    V = 1 + max(max(v, w) for v, w in edges)
+    base_graph = SimpleGraph(V=V, edges=edges)
+    TG = TransportationGraph(base_graph, routes=routes)
 
-        if loc_file is not None:
-            # Read in coordinates mapping
-            with Path(loc_file).open() as fp:
-                for line in fp.readlines()[1:]:
-                    words = line.strip().split(',')
-                    name = words[0]
-                    lat, lon = float(words[1]), float(words[2])
-                    sg.G.set_coordinates(sg.index_of(name), lon, lat)
-        out = sg
-    return out
+    if key_file is None:
+        return TG
+
+    keys = V * [""]
+    ids = {}
+
+    with Path(key_file).open() as fp:
+        for line in fp:
+            words = line.strip().split()
+            if not words:
+                continue
+
+            idn = int(words[0])
+            name = words[1]
+
+            keys[idn] = name
+            ids[name] = idn
+
+    # Build a symbol graph
+    sg = SymbolGraph()
+    sg._keys = keys
+    sg._st = ids
+    sg._G = TG
+
+    if loc_file is not None:
+        # Read in coordinates mapping
+        with Path(loc_file).open() as fp:
+            next(fp)  # skip header
+            for line in fp:
+                words = line.strip().split(',')
+                if not words:
+                    continue
+
+                name = words[0]
+                lat, lon = float(words[1]), float(words[2])
+
+                sg.graph.set_coordinates(sg.index_of(name), lon, lat)
+
+    return sg
 
 
+# TODO move these to demo/random_graph_demo.py
 # -----------------------------------------------------------------------------
 #         Tests
 # -----------------------------------------------------------------------------
@@ -359,7 +379,7 @@ if __name__ == "__main__":
     Gs = random_simple_graph(V, E)
     print(Gs)
 
-    sgi = random_interval_graph(V=5, d=0.1)
+    # sgi = random_interval_graph(V=5, d=0.1)  # FIXME KeyError: 1
 
     # Plots
     Ge = random_euclidean_graph(V, d=0.5)
@@ -375,7 +395,7 @@ if __name__ == "__main__":
 
     sg = random_DQgraph(V=500, E=500)
     fig, ax = plt.subplots(num=3, clear=True, constrained_layout=True)
-    sg.G.draw(ax=ax, vkws={'s': 10, 'alpha': 0.4}, ekws={'lw': 1, 'alpha': 0.2})
+    sg.graph.draw(ax=ax, vkws={'s': 10, 'alpha': 0.4}, ekws={'lw': 1, 'alpha': 0.2})
 
     # ---------- Plot the Boston T ----------
     # TODO
@@ -389,25 +409,28 @@ if __name__ == "__main__":
     )
 
     fig, ax = plt.subplots(num=4, clear=True, constrained_layout=True)
-    tg.G.draw(ax=ax, vkws={'s': 10, 'alpha': 0.4}, ekws={'lw': 1, 'alpha': 0.2})
+    tg.graph.draw(ax=ax, vkws={'s': 10, 'alpha': 0.4}, ekws={'lw': 1, 'alpha': 0.2})
 
     # Plot the routes
     def line_colors(name):
-        """Return a color for a given line name."""
+        """Return a color for a given line name.
+
+        Allows lines like "GreenB" -> "Green".
+        """
         colors = {
-            'Blue': 'C0',
-            'Orange': 'C1',
-            'Green': 'C2',
-            'Red': 'C3',
+            'Blue': 'tab:blue',
+            'Orange': 'tab:orange',
+            'Green': 'tab:green',
+            'Red': 'tab:red',
             'Silver': '#CCC',
-            'Mattapan': 'C3',
+            'Mattapan': 'tab:red',
         }
         for k, v in colors.items():
             if k in name:
                 return v
 
-    for name, route in tg.G.routes.items():
-        tg.G.draw(
+    for name, route in tg.graph.routes.items():
+        tg.graph.draw(
             p=route,
             ax=ax,
             c=line_colors(name),
