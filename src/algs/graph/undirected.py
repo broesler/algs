@@ -244,11 +244,21 @@ class SymbolGraph:
         self._keys = None  # map : int -> str
         self._GraphClass = kind
         self._G = None
-        if keys is not None:
+        if keys is None:
+            self._G = self._GraphClass(V=0, edges=None, **kwargs)
+        else:
+            # Build the symbol table
             for i, k in enumerate(keys):
                 self._st[k] = i
+
             self._keys = keys
-            self._G = self._GraphClass(V=len(keys), edges=edges, **kwargs)
+
+            # Underlying graph takes integer indices only
+            int_edges = None
+            if edges is not None:
+                int_edges = ((self._st[v], self._st[w]) for v, w in edges)
+
+            self._G = self._GraphClass(V=len(keys), edges=int_edges, **kwargs)
 
     @classmethod
     def fromfile(cls, filename, *args, delim=' ', verbose=False, **kwargs):
