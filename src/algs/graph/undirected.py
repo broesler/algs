@@ -293,7 +293,7 @@ class SymbolGraph:
 
     def __contains__(self, k):
         """Return True if `k` is a vertex."""
-        return self._st.contains(k)
+        return k in self._st
 
     def index(self, k):
         """Return the index associated with `k`."""
@@ -302,11 +302,6 @@ class SymbolGraph:
     def name(self, v):
         """Return the name associated with vertex index `v`."""
         return self._keys[v]
-
-    # aliases
-    def contains(self, k):
-        """Return True if `k` is a vertex."""
-        return self.__contains__(k)
 
     # Implement Graph methods with names as arguments
     def vertices(self):
