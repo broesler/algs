@@ -154,6 +154,16 @@ class BaseGraph(ABC):
         """Return an iterable over the vertices."""
         return range(self._V)
 
+    # Exercise 4.1.3, 4.2.3
+    def copy(self):
+        """Make a deep copy of the graph structure."""
+        g = self.__class__(self._V)
+        g._E = self._E
+        for v in range(self._V):
+            for w in self._adj[v]:
+                g._adj[v].add(w)
+        return g
+
     def _validate_vertex(self, v):
         if not (0 <= v < self.V):
             raise IndexError(f"Vertex index {v=} must be between 0 and {self._V=}!")
