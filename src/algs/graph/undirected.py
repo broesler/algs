@@ -229,12 +229,12 @@ class SymbolGraph:
         self._st = HashST()  # map : str -> int
         self._keys = None  # map : int -> str
         self._GraphClass = kind
-        self.G = None
+        self._G = None
         if keys is not None:
             for i, k in enumerate(keys):
                 self._st[i] = k
             self._keys = keys
-            self.G = self._GraphClass(V=len(keys), edges=edges)
+            self._G = self._GraphClass(V=len(keys), edges=edges)
 
     @classmethod
     def fromfile(cls, filename, *args, delim=' ', verbose=False, **kwargs):
@@ -271,20 +271,25 @@ class SymbolGraph:
             sg._keys[sg._st[name]] = name
 
         # Second pass to build the graph
-        sg.G = sg._GraphClass(V)
+        sg._G = sg._GraphClass(V)
         with Path(filename).open() as fp:
             for line in fp.readlines():
                 words = line.strip().split(delim)
                 v = sg._st[words[0]]
                 for w in words[1:]:
-                    sg.G.add_edge(v, sg._st[w])
+                    sg._G.add_edge(v, sg._st[w])
 
         return sg
 
     @property
+    def graph(self):
+        """The underlying graph structure."""
+        return self._G
+
+    @property
     def V(self):
         """The number of vertices in the graph."""
-        return self.G.V
+        return self._G.V
 
     def __contains__(self, k):
         """Return True if `k` is a vertex."""
@@ -306,19 +311,19 @@ class SymbolGraph:
     # Implement Graph methods with names as arguments
     def vertices(self):
         """Return an iterable over the vertices."""
-        return [self.name(v) for v in self.G.vertices()]
+        return [self.name(v) for v in self._G.vertices()]
 
     def adj(self, v):
         """Return an iterable of vertices adjacent to `v`."""
-        return [self.name(w) for w in self.G.adj(self.index(v))]
+        return [self.name(w) for w in self._G.adj(self.index(v))]
 
     def has_edge(self, v, w):
         """Return True if an edge from `v` to `w` exists."""
-        return self.G.has_edge(self.index(v), self.index(w))
+        return self._G.has_edge(self.index(v), self.index(w))
 
     def add_edge(self, v, w):
         """Add an edge from `v` to `w`."""
-        return self.G.add_edge(self.index(v), self.index(w))
+        return self._G.add_edge(self.index(v), self.index(w))
 
 
 # Exercise 4.1.37
