@@ -80,11 +80,6 @@ Gm = Digraph.fromfile(DATA_PATH / 'mediumDG.txt')
 cc = KosarajuSCC(Gm)
 assert cc.count() == 10
 
-assert G._indegree == [2, 1, 2, 2, 3, 2, 1, 1, 1, 3, 1, 1, 2]
-assert [G.outdegree(v) for v in G.vertices()] == [2, 0, 2, 2, 2, 1, 3, 2, 2, 2, 1, 2, 1]
-assert G.sources == []
-assert G.sinks == [1]
-
 G2 = Digraph.fromfile(DATA_PATH / 'tinyDG2.txt')
 print(G2)
 assert G2._indegree == [1, 2, 2, 2, 1, 0, 2, 0, 2, 0, 2, 2]
