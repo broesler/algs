@@ -12,14 +12,14 @@ from pathlib import Path
 
 from algs.graph import CC_nr, GraphProperties, SymbolGraph
 
-FORCE_UPDATE = True
+FORCE_UPDATE = False
 
 DATA_PATH = Path(__file__).parent.parent / 'data'
 PKL_PATH = Path(__file__).parent / 'pkl'
 
-# datafile = DATA_PATH / 'movies-hero.txt'  # small (~ 10 s)
-datafile = DATA_PATH / 'movies-top-grossing.txt'  # medium (~ 2 min)
-# datafile = DATA_PATH / 'movies.txt'               # large
+# datafile = DATA_PATH / 'movies-hero.txt'        # small (< 1 s)
+datafile = DATA_PATH / 'movies-top-grossing.txt'  # medium (~ 30 s)
+# datafile = DATA_PATH / 'movies.txt'             # large (~ 2 hrs)
 
 pkl_file = PKL_PATH / f"{datafile.stem}.pkl"
 gp_file = PKL_PATH / f"{datafile.stem}_gp.pkl"
@@ -29,7 +29,6 @@ gp_file = PKL_PATH / f"{datafile.stem}_gp.pkl"
 # -----------------------------------------------------------------------------
 if FORCE_UPDATE or not pkl_file.exists():
     sg = SymbolGraph.fromfile(datafile, delim='/', verbose=True)
-    # sg = STGraph.fromadjfile(datafile, delim='/', verbose=True)
     with pkl_file.open('wb') as fp:
         pickle.dump(sg, fp)
 else:
@@ -60,7 +59,7 @@ print(f"{max(sizes):,d} vertices in the largest component ({max_c}).")
 # Test if a name is in a component
 q = 'Bacon, Kevin'
 print(f"{q} is ", end='')
-if sg.index(q) not in components[max_c]:
+if sg.index_of(q) not in components[max_c]:
     print('not ', end='')
 print('in the largest component.')
 

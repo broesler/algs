@@ -7,26 +7,21 @@
 
 """Exercise 4.1.23: Print a histogram of Kevin Bacon numbers."""
 
-import pickle
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-from algs.graph import BreadthFirstSearch
+from algs.graph import BreadthFirstSearch, SymbolGraph
 
-# NOTE: run `exercises/degrees_of_separation.py` to build the SymbolGraph pickle
-pkl_file = Path(__file__).parent / 'pkl' / 'movies_SymbolGraph.pkl'
-print(f"Loading {pkl_file}...")
-
-with pkl_file.open('rb') as fp:
-    sg = pickle.load(fp)
+data_file = Path(__file__).parent.parent / 'data' / 'movies.txt'
+sg = SymbolGraph.fromfile(data_file, delim='/')
 
 q = 'Bacon, Kevin'
-bfs = BreadthFirstSearch(sg.G, sg.index(q))
+bfs = BreadthFirstSearch(sg.graph, sg.index_of(q))
 
 # Actors are even indices
-actor_idx = sg.G.vertices()[::2]
+actor_idx = sg.graph.vertices()[::2]
 dists = np.r_[[bfs.dist_to(v) for v in actor_idx]].astype(float)
 dists = np.nan_to_num(dists, nan=-2)
 dists /= 2  # only distance between actors
@@ -34,7 +29,7 @@ bins = np.arange(-1.5, np.max(dists) + 1.5)
 
 nonames = []
 for i in np.argwhere(dists == -1).ravel():
-    nonames.append(sg.name(i))
+    nonames.append(sg.name_of(i))
 print(f"{len(nonames)} actors not connected!")
 
 fig = plt.figure(1, clear=True, constrained_layout=True)
