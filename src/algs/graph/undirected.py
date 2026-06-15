@@ -223,6 +223,20 @@ class SymbolGraph:
     """A symbol graph.
 
     *See*: Sedgewick and Wayne, *Algorithms*, 4ed, p 552.
+
+    Parameters
+    ----------
+    keys : iterable, optional
+        An iterable of vertex labels (*e.g.* strings). If not given, vertices
+        will be numbered from 0 to V-1.
+    edges : iterable of pairs, optional
+        An iterable of pairs of vertex labels denoting edges. If not given, the
+        graph will be initialized with no edges.
+    kind : type, optional
+        The type of graph to use for the underlying graph structure.
+    **kwargs : keyword arguments
+        Additional keyword arguments to be passed to the underlying graph
+        constructor.
     """
 
     def __init__(self, keys=None, edges=None, kind=Graph, **kwargs):
