@@ -29,7 +29,6 @@ from algs.graph.undirected import (
     Graph,
     GraphProperties,
     SimpleGraph,
-    STGraph,
     SymbolGraph,
     bipartite_colors,
     spanning_forest_bfs,
@@ -141,7 +140,7 @@ def gp(GT, nonogon):
 # -----------------------------------------------------------------------------
 #         Tests
 # -----------------------------------------------------------------------------
-@pytest.mark.parametrize('GT', [Graph, SimpleGraph, STGraph])
+@pytest.mark.parametrize('GT', [Graph, SimpleGraph])
 class TestTinyG:
     def test_constructor(self, GT):
         V = 13
@@ -220,7 +219,7 @@ class TestSimple:
         assert tinyG.degree(1) == 1
 
 
-@pytest.mark.parametrize('GT', [Graph, STGraph])
+@pytest.mark.parametrize('GT', [Graph])
 class TestNonSimple:
     def test_self_loop(self, GT):
         G = GT.fromfile(DATA_DIR / 'tinyG.txt', self_loops=True)
@@ -253,9 +252,6 @@ class TestNonSimple:
         assert G.num_parallel_edges == 0
 
 
-# TODO test STGraph with 'routes.txt'
-
-
 # TODO expect_edges
 # Test has_edge, add_edge, index, name, contains
 class TestSymbolGraph:
@@ -264,8 +260,7 @@ class TestSymbolGraph:
         assert sg.adj('JFK') == EXPECT
 
 
-# NOTE STGraph tests pass, but only because vertices are a range of integers
-@pytest.mark.parametrize('GT', [Graph, SimpleGraph, STGraph])
+@pytest.mark.parametrize('GT', [Graph, SimpleGraph])
 @pytest.mark.parametrize('GraphSearch', [DepthFirstSearch, UFSearch])
 class TestDFS:
     def test_dfs_CG(self, tinyCG, GraphSearch):
@@ -285,7 +280,7 @@ class TestDFS:
         assert all(dfs.has_path_to(v) for v in [9, 10, 11, 12])
 
 
-@pytest.mark.parametrize('GT', [Graph, SimpleGraph, STGraph])
+@pytest.mark.parametrize('GT', [Graph, SimpleGraph])
 class TestPaths:
     @pytest.mark.parametrize(
         'GraphSearch',
@@ -389,7 +384,7 @@ class TestPaths:
                 assert list(T.adj(v)) == expect[v]
 
 
-@pytest.mark.parametrize('GT', [Graph, SimpleGraph, STGraph])
+@pytest.mark.parametrize('GT', [Graph, SimpleGraph])
 @pytest.mark.parametrize('ConComps', [CC, CC_nr])
 class TestCC:
     def test_is_connected(self, ConComps, tinyG, tinyCG):
@@ -426,7 +421,7 @@ class TestCC:
             assert comps[i] == comp
 
 
-@pytest.mark.parametrize('GT', [Graph, STGraph])
+@pytest.mark.parametrize('GT', [Graph])
 class TestCycle:
     @pytest.mark.parametrize('recursive', [True, False])
     def test_has_cycle(self, recursive, tinyG, acyclicG):
@@ -455,7 +450,7 @@ class TestCycle:
         assert tinyG.num_parallel_edges == 2
 
 
-@pytest.mark.parametrize('GT', [Graph, SimpleGraph, STGraph])
+@pytest.mark.parametrize('GT', [Graph, SimpleGraph])
 class TestCyclePath:
     @pytest.mark.parametrize('recursive', [True, False])
     def test_cycle_path_dfs(self, recursive, tinyG):
@@ -472,7 +467,7 @@ class TestCyclePath:
         assert find_min_cycle(acyclicG, 0) == []
 
 
-@pytest.mark.parametrize('GT', [Graph, SimpleGraph, STGraph])
+@pytest.mark.parametrize('GT', [Graph, SimpleGraph])
 class TestBipartite:
     def test_not_bipartite(self, tinyG):
         b = bipartite_colors(tinyG)
@@ -493,7 +488,7 @@ class TestBipartite:
         assert b.colors
 
 
-@pytest.mark.parametrize('GT', [Graph, SimpleGraph, STGraph])
+@pytest.mark.parametrize('GT', [Graph, SimpleGraph])
 class TestBiconnected:
     def test_not_biconnected(self, tinyG):
         b = Biconnected(tinyG)
@@ -509,7 +504,7 @@ class TestBiconnected:
 
 
 # TODO test unconnected graph
-@pytest.mark.parametrize('GT', [Graph, SimpleGraph, STGraph])
+@pytest.mark.parametrize('GT', [Graph, SimpleGraph])
 class TestGraphProperties:
     def test_eccentricity(self, gp):
         assert gp.eccentricity(0) == 4
