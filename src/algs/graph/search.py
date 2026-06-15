@@ -129,10 +129,8 @@ class DepthFirstSearch(GraphSearch):
         return self._leaf
 
 
-# TODO rename "Paths" to "Search".
-
 # Web Exercise 28
-class DepthFirstPaths_nr(DepthFirstSearch):
+class DepthFirstSearch_nr(DepthFirstSearch):
     __doc__ = GraphSearch._DOC_TEMPLATE.format(
         descr="""Non-recursive depth-first search.
 
@@ -156,11 +154,13 @@ class DepthFirstPaths_nr(DepthFirstSearch):
                     self._edge_to[w] = v
                     stack.push(w)
             except StopIteration:
-                stack.pop()
+                leaf = stack.pop()
+                if self._leaf is None:
+                    self._leaf = leaf  # last seen vertex
 
 
 # Web Exercise 28
-class DepthFirstPaths_nr_simple(DepthFirstSearch):
+class DepthFirstSearch_nr_simple(DepthFirstSearch):
     __doc__ = GraphSearch._DOC_TEMPLATE.format(
         descr="""Non-recursive depth-first search.
 
