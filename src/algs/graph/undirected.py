@@ -11,7 +11,6 @@ Implementations of undirected graph representations and associated algorithms.
 See Sedgewick and Wayne, §4.1.
 """
 
-from abc import ABC
 from collections import namedtuple
 from pathlib import Path
 
@@ -30,7 +29,32 @@ from algs.graph.search import (
 from algs.search import HashST, MultiHashSet
 
 
-class UndirectedGraph(BaseGraph, ABC):
+class Graph(BaseGraph):
+    __doc__ = BaseGraph._DOC_TEMPLATE.format(
+        descr="""An undirected graph represented as an array of adjacency lists.
+
+        *See*: Sedgewick and Wayne, *Algorithms*, 4ed, p 526.
+        """
+    )
+
+    def add_edge(self, v, w):
+        """Add an edge from `v` to `w`."""
+        self._validate_vertex(v)
+        self._validate_vertex(w)
+        # Exercise 4.1.5
+        if not self._self_loops and v == w:
+            raise ValueError(f"{v} == {w}! No self-loops allowed.")
+        if self._parallel or not self.has_edge(v, w):
+            self._E += 1
+            self._adj[v].add(w)
+            self._adj[w].add(v)
+
+    # Exercise 4.1.25
+    def _hide_vertex(self, v):
+        """Hide the vertex from the graph."""
+        self._validate_vertex(v)
+        self._adj[v] = Bag()  # remove all edges so we don't include in paths
+
     def degree(self, v):
         """Return the degree of vertex `v`."""
         self._validate_vertex(v)
@@ -56,33 +80,6 @@ class UndirectedGraph(BaseGraph, ABC):
     def num_self_loops(self):
         """The number of self-loops in the graph."""
         return super().num_self_loops // 2  # each edge counted twice
-
-
-class Graph(UndirectedGraph):
-    __doc__ = BaseGraph._DOC_TEMPLATE.format(
-        descr="""An undirected graph represented as an array of adjacency lists.
-
-        *See*: Sedgewick and Wayne, *Algorithms*, 4ed, p 526.
-        """
-    )
-
-    def add_edge(self, v, w):
-        """Add an edge from `v` to `w`."""
-        self._validate_vertex(v)
-        self._validate_vertex(w)
-        # Exercise 4.1.5
-        if not self._self_loops and v == w:
-            raise ValueError(f"{v} == {w}! No self-loops allowed.")
-        if self._parallel or not self.has_edge(v, w):
-            self._E += 1
-            self._adj[v].add(w)
-            self._adj[w].add(v)
-
-    # Exercise 4.1.25
-    def _hide_vertex(self, v):
-        """Hide the vertex from the graph."""
-        self._validate_vertex(v)
-        self._adj[v] = Bag()  # remove all edges so we don't include in paths
 
     # Exercise 4.1.3, 4.2.3
     def copy(self):
