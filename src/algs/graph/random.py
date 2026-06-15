@@ -11,7 +11,6 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 
 from algs.adt import Interval1D
 from algs.graph.undirected import (
@@ -231,19 +230,6 @@ def random_grid_graph(V, R=0, dist_edges=False):
     return EuclideanGraph(V=Vsq, edges=edges, x=x, y=y)
 
 
-# Exercise 4.1.44
-def random_DQgraph(V, E):
-    """Create a random graph from Dairy Queen locations in the U.S."""
-    df = pd.read_csv(DATA_PATH / 'dairyqueen.csv', header=None)
-    df.columns = ['lat', 'lon', 'name', 'address']
-    rows = rng.integers(df.shape[0], size=V)
-    df = df.iloc[rows]
-    # Build a symbol graph using the names of the restaurants
-    sg = SymbolGraph(keys=df['name'])
-    sg._G = EuclideanGraph(random_simple_graph(V, E), x=df['lat'], y=df['lon'])
-    return sg
-
-
 # Exercise 4.1.45
 def random_interval_graph(V, d):
     """Define a graph consisting of `V` intervals of length `d` on the unit
@@ -309,10 +295,6 @@ if __name__ == "__main__":
     Gg = random_grid_graph(V, R=20, dist_edges=True)
     fig, ax = plt.subplots(num=2, clear=True, constrained_layout=True)
     Gg.draw(ax=ax)
-
-    sg = random_DQgraph(V=500, E=500)
-    fig, ax = plt.subplots(num=3, clear=True, constrained_layout=True)
-    sg.graph.draw(ax=ax, vkws={'s': 10, 'alpha': 0.4}, ekws={'lw': 1, 'alpha': 0.2})
 
     plt.show()
 
