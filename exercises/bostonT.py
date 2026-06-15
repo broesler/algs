@@ -8,12 +8,14 @@
 """Create data files for the Boston T transportation graph."""
 
 import warnings
+from collections import defaultdict
 from pathlib import Path
 
 import yaml
 from yaml import Loader
 
-from algs.graph.undirected import STDepthFirstPaths, STGraph
+from algs.graph.search import DepthFirstSearch
+from algs.graph.undirected import SymbolGraph
 from algs.search import ST
 
 DATA_PATH = Path(__file__).parent.parent / 'data'
@@ -23,9 +25,25 @@ DATA_PATH = Path(__file__).parent.parent / 'data'
 
 def _parse_bostonmetro(fname):
     """Parse the 'bostonmetro.txt' file."""
-    names = {}   # map: id -> name
-    ids = {}     # map: name -> id
-    tlines = {}  # Graph for each line
+    names = {0: "END"}  # map: id -> name
+    ids = {"END": 0}  # map: name -> id
+    raw_edges = defaultdict(list)  # map: line -> list of (in, out) edges
+
+    # Error corrections
+    # NOTE len(names) == 125 because
+    #   (38, 'St.PaulStreet') --> 'StPaulStreetB'
+    #   (61, 'St.PaulStreet') --> 'StPaulStreetC'
+    # both exist in names.
+    # if station_id == 38:
+    #     station_name += 'B'
+    # elif station_id == 61:
+    #     station_name += 'C'
+
+    corrections = {
+        'ChesnutHill': 'ChestnutHill',
+        'BrightonAvenue': 'PackardsCorner',
+        "St.Mary'sStreet": "St.MarysStreet",
+    }
 
     with fname.open() as fp:
         for line in fp.readlines()[1:]:
@@ -35,54 +53,49 @@ def _parse_bostonmetro(fname):
             station_id = int(words[0])
             station_name = words[1]
 
-            # Error corrections
-            # NOTE len(names) == 125 because
-            #   (38, 'St.PaulStreet') --> 'StPaulStreetB'
-            #   (61, 'St.PaulStreet') --> 'StPaulStreetC'
-            # both exist in names.
-            # if station_id == 38:
-            #     station_name += 'B'
-            # elif station_id == 61:
-            #     station_name += 'C'
-
-            if station_name == 'ChesnutHill':
-                station_name = 'ChestnutHill'
-
-            if station_name == 'BrightonAvenue':
-                station_name = 'PackardsCorner'
-
-            if station_name == "St.Mary'sStreet":
-                station_name = "St.MarysStreet"
+            # Corrections
+            station_name = corrections.get(station_name, station_name)
 
             names[station_id] = station_name
             ids[station_name] = station_id
 
-            # Iterate over possibly multiple in/outbound lines
+            # Iterate over possibly multiple in/outbound lines, in groups of
+            # (line_name, outbound, inbound)
             ws = iter(words[2:])
 
-            try:
-                while True:
-                    line_name = next(ws)
-                    outbound = int(next(ws))
-                    inbound = int(next(ws))
-                    if line_name not in tlines:
-                        tlines[line_name] = STGraph(self_loops=False)
-                    tlines[line_name].add_edge(inbound, station_id)
-                    tlines[line_name].add_edge(station_id, outbound)
-            except StopIteration:
-                continue
+            for line_name, outbound, inbound in zip(ws, ws, ws):
+                # Store raw integer connections for now
+                raw_edges[line_name].append((int(inbound), station_id))
+                raw_edges[line_name].append((station_id, int(outbound)))
 
-    # Special end-of-line marker
-    names[0] = 'END'
-    ids['END'] = 0
-    assert len(ids) == len(names)
+    assert len(ids) == len(names), "Mismatch between station names and ids."
+
+    # Construct the graphs for each line
+    tlines = {}
+
+    for line_name, edges in raw_edges.items():
+        # Deduplicate edges, preserving order
+        edge_tuples = [tuple(sorted((names[v], names[w]))) for v, w in edges]
+        unique_edges = list(dict.fromkeys(edge_tuples))
+
+        # Get unique station names, preserving order, and add "END" at the beginning
+        flat_stations = (station for edge in unique_edges for station in edge)
+        line_keys = list(dict.fromkeys(["END", *flat_stations]))
+
+        # Create the graph
+        tlines[line_name] = SymbolGraph(
+            keys=line_keys,
+            edges=unique_edges,
+            parallel=False,
+            self_loops=False,
+        )
 
     return names, ids, tlines
 
 
 def _path_from(G, s):
     """Perform DFS to find the entire path from source to end of line."""
-    dfs = STDepthFirstPaths(G, s)
+    dfs = DepthFirstSearch(G, s)
     return dfs.path_to(dfs.leaf)
 
 
@@ -95,15 +108,18 @@ def _write_bostonT_ids(fname, station_ids):
     print('done.')
 
 
-def _write_bostonT_paths(fname, tlines, names=None):
+def _write_bostonT_paths(fname, tlines, ids=None):
     """Write formatted output file of the paths on each line."""
     print(f"Writing to {fname}... ", end='')
     with fname.open('w') as fp:
-        for line, G in tlines.items():
-            if names is None:
-                path = [str(v) for v in _path_from(G, 0)]
+        for line, sg in tlines.items():
+            local_path = _path_from(sg.graph, 0)
+            if ids is None:
+                # Use the station names
+                path = [sg.name_of(v) for v in local_path]
             else:
-                path = [str(names[v]) for v in _path_from(G, 0)]
+                # Use the station ids
+                path = [str(ids[sg.name_of(v)]) for v in local_path]
             fp.write(f"{line}: {'-'.join(path)}\n")
     print('done.')
 
@@ -198,11 +214,11 @@ def _reformat_bostonT_files(fname=None, force_update=False):
 
     pathfile = DATA_PATH / 'bostonT_lines.txt'
     if force_update or not pathfile.exists():
-        _write_bostonT_paths(pathfile, tlines)
+        _write_bostonT_paths(pathfile, tlines, ids)
 
     pathfile = DATA_PATH / 'bostonT_symbol_lines.txt'
     if force_update or not pathfile.exists():
-        _write_bostonT_paths(pathfile, tlines, names)
+        _write_bostonT_paths(pathfile, tlines)
 
 
 def _parse_mbta_yaml(fname=None):
