@@ -15,6 +15,8 @@ from algs.graph.directed import (
     check_topological,
     depth_first_order,
     directed_cycle,
+    eulerian_cycle,
+    hamiltonian_path,
     topological_order,
 )
 
@@ -265,6 +267,39 @@ class TestTopologicalOrder:
         assert check_topological(tinyDAG, t)
         t[0], t[1] = t[1], t[0]  # swap two vertices
         assert not check_topological(tinyDAG, t)
+
+
+class TestEulerianCycle:
+    def test_cycle(self, loop_graph):
+        G = loop_graph
+        cycle = eulerian_cycle(G)
+        assert cycle == [4, 0, 1, 2, 3, 4]
+        for i in range(len(cycle) - 1):
+            assert G.has_edge(cycle[i], cycle[i + 1])
+
+    def test_no_cycle(self, line_graph):
+        G = line_graph
+        assert not eulerian_cycle(G)
+
+
+class TestHamiltonianPath:
+    def test_has_path(self, line_graph):
+        G = line_graph
+        h = hamiltonian_path(G)
+        assert h is not None
+        assert h == list(range(G.V))
+        for i in range(len(h) - 1):
+            assert G.has_edge(h[i], h[i + 1])
+
+    def test_no_path(self, tinyDAG):
+        assert not hamiltonian_path(tinyDAG)
+
+    @pytest.mark.parametrize('graph_name', ['loop_graph', 'tinyDG'])
+    def test_not_dag(self, graph_name, request):
+        G = request.getfixturevalue(graph_name)
+        with pytest.raises(ValueError, match="not a DAG"):
+            assert not hamiltonian_path(G)
+
 
 
 # =============================================================================
