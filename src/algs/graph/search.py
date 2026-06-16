@@ -56,17 +56,13 @@ class GraphSearch(ABC):
     def __init__(self, G, source=None):
         if source is None:
             self._sources = list(G.vertices())
-        if isinstance(source, (int, str)):
+        elif isinstance(source, int):
             self._sources = [source]
         else:
             self._sources = list(source)
 
-        if hasattr(G._adj, "keys"):  # dict-based graph
-            self._marked = dict.fromkeys(G.vertices(), False)
-            self._edge_to = dict.fromkeys(G.vertices())
-        else:
-            self._marked = G.V * [False]
-            self._edge_to = G.V * [None]  # last vertex on known path to this one
+        self._marked = G.V * [False]
+        self._edge_to = G.V * [None]  # last vertex on known path to this one
 
     @property
     def sources(self):
@@ -76,8 +72,6 @@ class GraphSearch(ABC):
     @property
     def count(self):
         """The number of vertices connected to `s`."""
-        if isinstance(self._marked, dict):
-            return sum(self._marked.values())
         return sum(self._marked)
 
     def has_path_to(self, v):
