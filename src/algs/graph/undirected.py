@@ -576,6 +576,7 @@ class CC:
         """Return the component identifier for vertex `v` in `[0, count-1]`."""
         return self._id[v]
 
+    @property
     def count(self):
         """Return the number of connected components."""
         return self._count
@@ -585,11 +586,21 @@ class CC:
         """True if every vertex is reachable from every other vertex."""
         return self._count == 1
 
-    def get_components(self):
+    def get_components(self, sort=True):
         """Return a list of lists of vertices in each component."""
         components = [[] for _ in range(self._count)]
+
         for v in self._vs:
             components[self._id[v]].append(v)
+
+        if sort:
+            # Sort each component
+            for c in components:
+                c.sort()
+
+            # Sort the overall list
+            components.sort()
+
         return components
 
 
