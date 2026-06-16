@@ -153,6 +153,35 @@ class TestTinyDG:
         expect_sinks = [1]
         assert tinyDG.sinks == expect_sinks
 
+    def test_is_map(self, tinyDG):
+        assert not tinyDG.is_map
+
+    def test_reverse(self, tinyDG):
+        H = tinyDG.reverse()
+        for v in tinyDG.vertices():
+            for w in tinyDG.adj(v):
+                assert v in H.adj(w)
+
+
+# Exercise 4.2.7
+class TestIsMap:
+    def test_loop_graph(self):
+        # Loop graph is a map
+        V = 5
+        G = Digraph(V)
+        for i in range(V):
+            G.add_edge(i, (i + 1) % V)
+        assert G.is_map
+
+    def test_line_graph(self):
+        # Line graph is not a map
+        V = 5
+        G = Digraph(V)
+        for i in range(V - 1):
+            G.add_edge(i, i + 1)
+        assert not G.is_map
+        G.add_edge(V - 1, V - 1)  # add self-loop
+        assert G.is_map
 
 # =============================================================================
 # =============================================================================
