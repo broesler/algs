@@ -21,7 +21,6 @@ from algs.graph.search import (
 )
 from algs.graph.undirected import Graph, SimpleGraph
 
-# Expected values for tinyCG
 EXPECT_DFS = {
     0: [0],
     1: [0, 2, 1],
@@ -31,6 +30,7 @@ EXPECT_DFS = {
     5: [0, 2, 3, 5],
 }
 
+# Expected values for tinyCG
 EXPECT_DFS_S = {
     0: [0],
     1: [0, 5, 3, 2, 1],
@@ -40,26 +40,17 @@ EXPECT_DFS_S = {
     5: [0, 5],
 }
 
-EXPECT_BFS = {
-    0: [0],
-    1: [0, 1],
-    2: [0, 2],
-    3: [0, 2, 3],
-    4: [0, 2, 4],
-    5: [0, 5],
-}
-
 
 @pytest.fixture
-def acyclicG(GraphType):
+def acyclicG(graph_type):
     V = 5
-    G = GraphType(V)
+    G = graph_type(V)
     for i in range(V - 1):
         G.add_edge(i, i + 1)
     return G
 
 
-@pytest.mark.parametrize('GraphType', [Graph, SimpleGraph])
+@pytest.mark.parametrize('graph_type', [Graph, SimpleGraph])
 @pytest.mark.parametrize('GraphSearch', [DepthFirstSearch, UFSearch])
 class TestDFS:
     def test_dfs_CG(self, tinyCG, GraphSearch):
@@ -79,14 +70,14 @@ class TestDFS:
         assert all(dfs.has_path_to(v) for v in [9, 10, 11, 12])
 
 
-@pytest.mark.parametrize('GraphType', [Graph, SimpleGraph])
+@pytest.mark.parametrize('graph_type', [Graph, SimpleGraph])
 @pytest.mark.parametrize('recursive', [True, False])
 def test_has_cycle(tinyG, acyclicG, recursive):
     assert has_cycle(tinyG, 0, recursive=recursive)
     assert not has_cycle(acyclicG, 0, recursive=recursive)
 
 
-@pytest.mark.parametrize('GraphType', [Graph, SimpleGraph])
+@pytest.mark.parametrize('graph_type', [Graph, SimpleGraph])
 class TestPaths:
     @pytest.mark.parametrize(
         'GraphSearch',
@@ -111,23 +102,36 @@ class TestPaths:
                 assert not dfs.has_path_to(v)
 
     @pytest.mark.parametrize(
-        'DFS, EXPECT',
+        'search_class, expected_paths',
         [
             (DepthFirstSearch, EXPECT_DFS),
             (DepthFirstSearch_nr, EXPECT_DFS),
             (DepthFirstSearch_nr_simple, EXPECT_DFS_S),
         ],
     )
-    def test_dfs_path_to(self, tinyCG, DFS, EXPECT):
-        dfs = DFS(tinyCG, 0)
-        for v in tinyCG.vertices():
-            assert list(dfs.path_to(v)) == EXPECT[v]
+    def test_dfs_path_to(self, tinyCG, search_class, expected_paths):
+        dfs = search_class(tinyCG, 0)
+        actual_paths = {v: list(dfs.path_to(v)) for v in tinyCG.vertices()}
+        assert actual_paths == expected_paths
 
     def test_bfs_path_to(self, tinyCG):
+        expect_paths = {
+            0: [0],
+            1: [0, 1],
+            2: [0, 2],
+            3: [0, 2, 3],
+            4: [0, 2, 4],
+            5: [0, 5],
+        }
         bfs = BreadthFirstSearch(tinyCG, 0)
-        for v in tinyCG.vertices():
-            assert list(bfs.path_to(v)) == EXPECT_BFS[v]
-        assert [bfs.dist_to(v) for v in tinyCG.vertices()] == [0, 1, 1, 2, 2, 1]
+        actual_paths = {v: list(bfs.path_to(v)) for v in tinyCG.vertices()}
+        assert actual_paths == expect_paths
+
+    def test_bfs_dist_to(self, tinyCG):
+        bfs = BreadthFirstSearch(tinyCG, 0)
+        expect_dist_to = [0, 1, 1, 2, 2, 1]
+        actual_dist_to = [bfs.dist_to(v) for v in tinyCG.vertices()]
+        assert actual_dist_to == expect_dist_to
 
     @pytest.mark.parametrize('GraphSearch', [DepthFirstSearch, DepthFirstSearch_nr])
     def test_leaf_CG(self, GraphSearch, tinyCG):
@@ -140,7 +144,7 @@ class TestPaths:
         assert GraphSearch(tinyG, 7).leaf == 8
 
 
-@pytest.mark.parametrize('GraphType', [Graph, SimpleGraph])
+@pytest.mark.parametrize('graph_type', [Graph, SimpleGraph])
 class TestCyclePath:
     @pytest.mark.parametrize('recursive', [True, False])
     def test_cycle_path_dfs(self, recursive, tinyG):

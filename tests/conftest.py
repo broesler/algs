@@ -1,23 +1,20 @@
 #!/usr/bin/env python3
 # =============================================================================
 #     File: conftest.py
-#  Created: 2026-06-15 15:16
+#  Created: 2026-06-15 19:22
 #   Author: Bernie Roesler
 # =============================================================================
 
-"""Fixtures for graph tests."""
+"""Fixtures for all algorithms tests."""
+
+from pathlib import Path
 
 import pytest
 
 
 @pytest.fixture
-def tinyCG(graph_type, data_dir):
-    return graph_type.fromfile(data_dir / 'tinyCG.txt')
-
-
-@pytest.fixture
-def tinyG(graph_type, data_dir):
-    return graph_type.fromfile(data_dir / 'tinyG.txt')
+def data_dir():
+    return Path(__file__).parents[1] / 'data'
 
 
 # =============================================================================

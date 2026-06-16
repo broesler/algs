@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 # =============================================================================
-#     File: test_graph.py
+#     File: test_undirected.py
 #  Created: 2022-06-30 16:06
 #   Author: Bernie Roesler
 # =============================================================================
 
 """Tests for undirected graph algorithms."""
-
-from pathlib import Path
 
 import pytest
 
@@ -26,83 +24,82 @@ from algs.graph.undirected import (
     spanning_tree_dfs,
 )
 
+
 # -----------------------------------------------------------------------------
 #         Fixtures
 # -----------------------------------------------------------------------------
-EXPECT_EDGES = (
-    (5, 3),
-    (9, 11),
-    (7, 8),
-    (0, 6),
-    (9, 10),
-    (11, 12),
-    (0, 2),
-    (5, 4),
-    (6, 4),
-    (9, 12),
-    (0, 1),
-    (4, 3),
-    (0, 5),
-)
-
-EXPECT_COMPS = [list(range(7)), [7, 8], [9, 10, 11, 12]]
-
-DATA_DIR = Path(__file__).parents[2] / 'data'
+@pytest.fixture
+def sg(data_dir):
+    return SymbolGraph.fromfile(data_dir / 'routes.txt')
 
 
 @pytest.fixture
-def sg():
-    return SymbolGraph.fromfile(DATA_DIR / 'routes.txt')
-
-
-@pytest.fixture
-def cc(ConComps, tinyG, GraphType):
+def cc(ConComps, tinyG, graph_type):
     return ConComps(tinyG)
 
 
 # TODO come up with more interesting graph for GraphProperties that has
 # different values for eccentricities, diameter, radius, etc.
 @pytest.fixture
-def nonogon(GraphType):
+def nonogon(graph_type):
     V = 9
-    G = GraphType(V)
+    G = graph_type(V)
     for i in range(V):
         G.add_edge(i, (i + 1) % V)
     return G
 
 
 @pytest.fixture
-def gp(GraphType, nonogon):
+def gp(graph_type, nonogon):
     return GraphProperties(nonogon)
 
 
 # -----------------------------------------------------------------------------
 #         Tests
 # -----------------------------------------------------------------------------
-@pytest.mark.parametrize('GraphType', [Graph, SimpleGraph])
+@pytest.mark.parametrize('graph_type', [Graph, SimpleGraph])
 class TestTinyG:
-    def test_constructor(self, GraphType):
+    @pytest.fixture(scope='class')
+    @staticmethod
+    def expect_tinyG_edges():
+        return (
+            (5, 3),
+            (9, 11),
+            (7, 8),
+            (0, 6),
+            (9, 10),
+            (11, 12),
+            (0, 2),
+            (5, 4),
+            (6, 4),
+            (9, 12),
+            (0, 1),
+            (4, 3),
+            (0, 5),
+        )
+
+    def test_constructor(self, graph_type, expect_tinyG_edges):
         V = 13
-        G = GraphType(V)
+        G = graph_type(V)
         assert list(G.vertices()) == list(range(G.V))
-        for v, w in EXPECT_EDGES:
+        for v, w in expect_tinyG_edges:
             G.add_edge(v, w)
             assert G.has_edge(v, w)
             assert G.has_edge(w, v)
         assert not G.has_edge(0, 7)
         assert G.E == 13
 
-    def test_fromfile(self, tinyG):
+    def test_fromfile(self, tinyG, expect_tinyG_edges):
         assert tinyG.V == 13
         assert tinyG.E == 13
-        for v, w in EXPECT_EDGES:
+        for v, w in expect_tinyG_edges:
             assert tinyG.has_edge(v, w)
             assert tinyG.has_edge(w, v)
         assert not tinyG.has_edge(0, 7)
         assert list(tinyG.vertices()) == list(range(tinyG.V))
 
     def test_adj(self, tinyG):
-        EXPECT_ADJ = {
+        expect_adj = {
             0: [6, 2, 1, 5],
             1: [0],
             2: [0],
@@ -119,14 +116,16 @@ class TestTinyG:
         }
 
         for v in tinyG.vertices():
-            assert list(tinyG.adj(v)) == EXPECT_ADJ[v]
+            assert list(tinyG.adj(v)) == expect_adj[v]
 
     def test_degrees(self, tinyG):
-        EXPECT_DEGREES = (4, 1, 1, 2, 3, 3, 2, 1, 1, 3, 1, 2, 2)
+        expect_degrees = (4, 1, 1, 2, 3, 3, 2, 1, 1, 3, 1, 2, 2)
         for v in tinyG.vertices():
-            assert tinyG.degree(v) == EXPECT_DEGREES[v]
-        assert tinyG.max_degree == max(EXPECT_DEGREES)
-        assert tinyG.avg_degree == sum(EXPECT_DEGREES) / len(EXPECT_DEGREES)
+            assert tinyG.degree(v) == expect_degrees[v]
+        assert tinyG.max_degree == max(expect_degrees)
+        assert tinyG.avg_degree == pytest.approx(
+            sum(expect_degrees) / len(expect_degrees)
+        )
 
     def test_validate_vertex(self, tinyG):
         with pytest.raises(IndexError):
@@ -142,7 +141,7 @@ class TestTinyG:
 
 
 # Simple graph does not allow parallel edges or self-loops
-@pytest.mark.parametrize('GraphType', [SimpleGraph])
+@pytest.mark.parametrize('graph_type', [SimpleGraph])
 class TestSimple:
     def test_self_loop(self, tinyG):
         with pytest.raises(ValueError):
@@ -158,37 +157,50 @@ class TestSimple:
         assert tinyG.degree(1) == 1
 
 
-@pytest.mark.parametrize('GraphType', [Graph])
 class TestNonSimple:
-    def test_self_loop(self, GraphType):
-        G = GraphType.fromfile(DATA_DIR / 'tinyG.txt', self_loops=True)
-        G.add_edge(0, 0)
-        assert G.has_edge(0, 0)
+    @pytest.fixture
+    @staticmethod
+    def make_tinyG(data_dir):
+        def _make_tinyG(**kwargs):
+            return Graph.fromfile(data_dir / 'tinyG.txt', **kwargs)
 
-    def test_no_self_loop(self, GraphType):
-        G = GraphType.fromfile(DATA_DIR / 'tinyG.txt', self_loops=False)
+        return _make_tinyG
+
+    def test_no_self_loops(self, make_tinyG):
+        G = make_tinyG(self_loops=False)
+        assert not G.has_self_loop
         with pytest.raises(ValueError):
             G.add_edge(0, 0)
 
-    def test_parallel_edges(self, GraphType):
-        G = GraphType.fromfile(DATA_DIR / 'tinyG.txt', parallel=True)
-        assert G.degree(0) == 4
-        assert G.degree(1) == 1
-        assert G.num_parallel_edges == 0
-        G.add_edge(0, 1)
-        assert G.degree(0) == 5
-        assert G.degree(1) == 2
-        assert G.num_parallel_edges == 1
+    def test_self_loops(self, make_tinyG):
+        G = make_tinyG(self_loops=True)
+        assert not G.has_self_loop
+        assert G.num_self_loops == 0
+        G.add_edge(1, 1)
+        assert G.has_self_loop
+        assert G.num_self_loops == 1
+        G.add_edge(1, 1)
+        G.add_edge(1, 1)
+        G.add_edge(9, 9)
+        assert G.num_self_loops == 4
 
-    def test_no_parallel_edges(self, GraphType):
-        G = GraphType.fromfile(DATA_DIR / 'tinyG.txt', parallel=False)
-        assert G.degree(0) == 4
-        assert G.degree(1) == 1
+    def test_no_parallel_edges(self, make_tinyG):
+        G = make_tinyG(parallel=False)
+        assert not G.has_parallel_edges
         assert G.num_parallel_edges == 0
         G.add_edge(0, 1)
-        assert G.degree(0) == 4
-        assert G.degree(1) == 1
+        assert not G.has_parallel_edges
         assert G.num_parallel_edges == 0
+
+    def test_parallel_edges(self, make_tinyG):
+        G = make_tinyG(parallel=True)
+        assert not G.has_parallel_edges
+        G.add_edge(0, 1)
+        assert G.has_parallel_edges
+        assert G.num_parallel_edges == 1
+        G.add_edge(0, 2)
+        assert G.has_parallel_edges
+        assert G.num_parallel_edges == 2
 
 
 # TODO expect_edges
@@ -199,28 +211,28 @@ class TestSymbolGraph:
         assert sg.adj('JFK') == EXPECT
 
 
-@pytest.mark.parametrize('GraphType', [Graph, SimpleGraph])
+@pytest.mark.parametrize('graph_type', [Graph, SimpleGraph])
 class TestSpanningTrees:
     def test_spanning_tree_dfs(self, tinyCG):
-        EXPECT_ST = {0: [2], 1: [2], 2: [0, 1, 3], 3: [2, 5, 4], 4: [3], 5: [3]}
+        expect_st = {0: [2], 1: [2], 2: [0, 1, 3], 3: [2, 5, 4], 4: [3], 5: [3]}
         T = spanning_tree_dfs(tinyCG, 0)
         assert T.V == tinyCG.V
         assert T.E == tinyCG.V - 1  # minimum edges in connected graph
         assert list(T.vertices()) == list(tinyCG.vertices())
         for v in T.vertices():
-            assert list(T.adj(v)) == EXPECT_ST[v]
+            assert list(T.adj(v)) == expect_st[v]
 
     def test_spanning_tree_bfs(self, tinyCG):
-        EXPECT_ST = {0: [2, 1, 5], 1: [0], 2: [0, 3, 4], 3: [2], 4: [2], 5: [0]}
+        expect_st = {0: [2, 1, 5], 1: [0], 2: [0, 3, 4], 3: [2], 4: [2], 5: [0]}
         T = spanning_tree_bfs(tinyCG, 0)
         assert T.V == tinyCG.V
         assert T.E == tinyCG.V - 1  # minimum edges in connected graph
         assert list(T.vertices()) == list(tinyCG.vertices())
         for v in T.vertices():
-            assert list(T.adj(v)) == EXPECT_ST[v]
+            assert list(T.adj(v)) == expect_st[v]
 
     def test_spanning_forest_dfs(self, tinyG):
-        EXPECT_ST_0 = {
+        expect_st_0 = {
             0: [6, 2, 1],
             1: [0],
             2: [0],
@@ -229,15 +241,15 @@ class TestSpanningTrees:
             5: [4, 3],
             6: [0, 4],
         }
-        EXPECT_ST_1 = {7: [8], 8: [7]}
-        EXPECT_ST_2 = {9: [11, 10], 10: [9], 11: [9, 12], 12: [11]}
+        expect_st_1 = {7: [8], 8: [7]}
+        expect_st_2 = {9: [11, 10], 10: [9], 11: [9, 12], 12: [11]}
         Ts = spanning_forest_dfs(tinyG)
-        for T, expect in zip(Ts, [EXPECT_ST_0, EXPECT_ST_1, EXPECT_ST_2]):
+        for T, expect in zip(Ts, [expect_st_0, expect_st_1, expect_st_2]):
             for v in expect:
                 assert list(T.adj(v)) == expect[v]
 
     def test_spanning_forest_bfs(self, tinyG):
-        EXPECT_ST_0 = {
+        expect_st_0 = {
             0: [6, 2, 1, 5],
             1: [0],
             2: [0],
@@ -246,17 +258,22 @@ class TestSpanningTrees:
             5: [0, 3],
             6: [0, 4],
         }
-        EXPECT_ST_1 = {7: [8], 8: [7]}
-        EXPECT_ST_2 = {9: [11, 10, 12], 10: [9], 11: [9], 12: [9]}
+        expect_st_1 = {7: [8], 8: [7]}
+        expect_st_2 = {9: [11, 10, 12], 10: [9], 11: [9], 12: [9]}
         Ts = spanning_forest_bfs(tinyG)
-        for T, expect in zip(Ts, [EXPECT_ST_0, EXPECT_ST_1, EXPECT_ST_2]):
+        for T, expect in zip(Ts, [expect_st_0, expect_st_1, expect_st_2]):
             for v in expect:
                 assert list(T.adj(v)) == expect[v]
 
 
-@pytest.mark.parametrize('GraphType', [Graph, SimpleGraph])
+@pytest.mark.parametrize('graph_type', [Graph, SimpleGraph])
 @pytest.mark.parametrize('ConComps', [CC, CC_nr])
 class TestCC:
+    @pytest.fixture(scope='class')
+    @staticmethod
+    def expect_comps():
+        return [list(range(7)), [7, 8], [9, 10, 11, 12]]
+
     def test_is_connected(self, ConComps, tinyG, tinyCG):
         cc = ConComps(tinyG)
         assert not cc.is_connected
@@ -267,55 +284,31 @@ class TestCC:
         cc = ConComps(tinyG)
         assert cc.count() == 3
 
-    def test_connected(self, cc):
-        for comp in EXPECT_COMPS:
+    def test_connected(self, cc, expect_comps):
+        for comp in expect_comps:
             for i in range(len(comp)):
                 for j in range(i, len(comp)):
                     assert cc.connected(comp[i], comp[j])
 
-    def test_id(self, cc):
-        for i, comp in enumerate(EXPECT_COMPS):
+    def test_id(self, cc, expect_comps):
+        for i, comp in enumerate(expect_comps):
             for c in comp:
                 assert cc.id(c) == i
 
-    def test_get_components(self, cc):
+    def test_get_components(self, cc, expect_comps):
         comps = cc.get_components()
-        for i, comp in enumerate(EXPECT_COMPS):
+        for i, comp in enumerate(expect_comps):
             assert comps[i] == comp
 
-    def test_cc_vs(self, ConComps, tinyG):
+    def test_cc_vs(self, ConComps, tinyG, expect_comps):
         cc = ConComps(tinyG, vertices=range(9))
         comps = cc.get_components()
         assert cc.count() == 2
-        for i, comp in enumerate(EXPECT_COMPS[:2]):
+        for i, comp in enumerate(expect_comps[:2]):
             assert comps[i] == comp
 
 
-@pytest.mark.parametrize('GraphType', [Graph])
-class TestCycle:
-    def test_has_self_loop(self, tinyG):
-        assert not tinyG.has_self_loop
-        tinyG.add_edge(1, 1)
-        assert tinyG.has_self_loop
-
-    def test_num_self_loops(self, tinyG):
-        assert tinyG.num_self_loops == 0
-        tinyG.add_edge(1, 1)
-        tinyG.add_edge(1, 1)
-        tinyG.add_edge(9, 9)
-        assert tinyG.num_self_loops == 3
-
-    def test_has_parallel_edges(self, tinyG):
-        assert not tinyG.has_parallel_edges
-        tinyG.add_edge(0, 1)
-        assert tinyG.has_parallel_edges
-        assert tinyG.num_parallel_edges == 1
-        tinyG.add_edge(0, 2)
-        assert tinyG.has_parallel_edges
-        assert tinyG.num_parallel_edges == 2
-
-
-@pytest.mark.parametrize('GraphType', [Graph, SimpleGraph])
+@pytest.mark.parametrize('graph_type', [Graph, SimpleGraph])
 class TestBipartite:
     def test_not_bipartite(self, tinyG):
         b = bipartite_colors(tinyG)
@@ -336,7 +329,7 @@ class TestBipartite:
         assert b.colors
 
 
-@pytest.mark.parametrize('GraphType', [Graph, SimpleGraph])
+@pytest.mark.parametrize('graph_type', [Graph, SimpleGraph])
 class TestBiconnected:
     def test_not_biconnected(self, tinyG):
         b = Biconnected(tinyG)
@@ -352,7 +345,7 @@ class TestBiconnected:
 
 
 # TODO test unconnected graph
-@pytest.mark.parametrize('GraphType', [Graph, SimpleGraph])
+@pytest.mark.parametrize('graph_type', [Graph, SimpleGraph])
 class TestGraphProperties:
     def test_eccentricity(self, gp):
         assert gp.eccentricity(0) == 4
@@ -372,17 +365,17 @@ class TestGraphProperties:
     def test_girth(self, gp):
         assert gp.girth() == 9
 
-    def test_inf_girth(self, GraphType):
-        G = GraphType(2, [(0, 1)])
+    def test_inf_girth(self, graph_type):
+        G = graph_type(2, [(0, 1)])
         assert GraphProperties(G).girth() == float('inf')
 
-    def test_girths(self, GraphType):
+    def test_girths(self, graph_type):
         # Generate a simple cycle graph
         for N in range(3, 10):
             edges = []
             for i in range(N):
                 edges.append((i, (i + 1) % N))
-            Gcyc = GraphType(N, edges)
+            Gcyc = graph_type(N, edges)
             assert GraphProperties(Gcyc).girth() == N
 
 
