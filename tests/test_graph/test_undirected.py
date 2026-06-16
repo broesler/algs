@@ -74,6 +74,7 @@ def gp(graph_type, nonogon):
     return GraphProperties(nonogon)
 
 
+# Expected values for DFS paths in tinyCG
 EXPECT_DFS = {
     0: [0],
     1: [0, 2, 1],
@@ -83,7 +84,7 @@ EXPECT_DFS = {
     5: [0, 2, 3, 5],
 }
 
-# Expected values for tinyCG
+# Expected values for tinyCG with DepthFirstSearch_nr_simple
 EXPECT_DFS_S = {
     0: [0],
     1: [0, 5, 3, 2, 1],
@@ -256,8 +257,8 @@ class TestNonSimple:
 # Test has_edge, add_edge, index, name, contains
 class TestSymbolGraph:
     def test_adj(self, sg):
-        EXPECT = ['MCO', 'ATL', 'ORD']
-        assert sg.adj('JFK') == EXPECT
+        expect = ['MCO', 'ATL', 'ORD']
+        assert sg.adj('JFK') == expect
 
 
 @pytest.mark.parametrize('graph_type', [Graph, SimpleGraph])
