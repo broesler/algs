@@ -12,6 +12,7 @@ import pytest
 from algs.graph.directed import (
     Digraph,
     KosarajuSCC,
+    TransitiveClosure,
     check_topological,
     depth_first_order,
     directed_cycle,
@@ -269,6 +270,25 @@ class TestTopologicalOrder:
         assert not check_topological(tinyDAG, t)
 
 
+class TestTransitiveClosure:
+    def test_loop_graph(self, loop_graph):
+        G = loop_graph
+        tc = TransitiveClosure(G)
+        for v in G.vertices():
+            for w in G.vertices():
+                assert tc.reachable(v, w)
+
+    def test_line_graph(self, line_graph):
+        G = line_graph
+        tc = TransitiveClosure(G)
+        for v in G.vertices():
+            for w in G.vertices():
+                if v <= w:
+                    assert tc.reachable(v, w)
+                else:
+                    assert not tc.reachable(v, w)
+
+
 class TestEulerianCycle:
     def test_cycle(self, loop_graph):
         G = loop_graph
@@ -299,7 +319,6 @@ class TestHamiltonianPath:
         G = request.getfixturevalue(graph_name)
         with pytest.raises(ValueError, match="not a DAG"):
             assert not hamiltonian_path(G)
-
 
 
 # =============================================================================
