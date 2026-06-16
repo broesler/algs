@@ -20,6 +20,13 @@ from algs.graph.directed import (
     hamiltonian_path,
     topological_order,
 )
+from algs.graph.search import (
+    BreadthFirstSearch,
+    DepthFirstSearch,
+    DepthFirstSearch_nr,
+    DepthFirstSearch_nr_simple,
+)
+from algs.graph.undirected import UFSearch
 
 
 @pytest.fixture
@@ -319,6 +326,134 @@ class TestHamiltonianPath:
         G = request.getfixturevalue(graph_name)
         with pytest.raises(ValueError, match="not a DAG"):
             assert not hamiltonian_path(G)
+
+
+# -----------------------------------------------------------------------------
+#         Test Search
+# -----------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    'search_class',
+    [
+        DepthFirstSearch,
+        DepthFirstSearch_nr,
+        DepthFirstSearch_nr_simple,
+        BreadthFirstSearch,
+    ],
+)
+class TestSearch:
+    def test_single_source(self, tinyDG, search_class):
+        # vertices > 6 not reachable from 0
+        dfs = search_class(tinyDG, 0)
+        assert dfs.sources == [0]
+        assert dfs.count == 6
+        assert all(dfs.has_path_to(v) for v in range(6))
+        assert all(not dfs.has_path_to(v) for v in range(6, tinyDG.V))
+        # vertex 7 connected to everything
+        dfs = search_class(tinyDG, 7)
+        assert dfs.sources == [7]
+        assert dfs.count == tinyDG.V
+        assert all(dfs.has_path_to(v) for v in tinyDG.vertices())
+        # vertex 9 connected to everything except 6, 7, 8
+        dfs = search_class(tinyDG, 9)
+        assert dfs.sources == [9]
+        assert dfs.count == 10
+        not_connected = {6, 7, 8}
+        assert all(dfs.has_path_to(v) for v in set(tinyDG.vertices()) - not_connected)
+        assert all(not dfs.has_path_to(v) for v in not_connected)
+
+    def test_multiple_sources(self, tinyDG, search_class):
+        # vertices 6, 9 connected to everything except 7, 8
+        dfs = search_class(tinyDG, [6, 9])
+        assert dfs.sources == [6, 9]
+        assert dfs.count == 11
+        assert all(dfs.has_path_to(v) for v in set(tinyDG.vertices()) - {7, 8})
+
+
+def test_ufsearch(tinyDG):
+    with pytest.raises(ValueError, match="undirected graph"):
+        UFSearch(tinyDG, 0)
+
+
+# ----- DFS Paths -----
+# TODO test multiple sources: DepthFirstSearch(tinyDG, [0, 6])
+# Paths starting at 0 -> k
+EXPECT_DFS_0 = {
+    0: [0],
+    1: [0, 1],
+    2: [0, 5, 4, 3, 2],
+    3: [0, 5, 4, 3],
+    4: [0, 5, 4],
+    5: [0, 5],
+    6: None,
+    7: None,
+    8: None,
+    9: None,
+    10: None,
+    11: None,
+    12: None,
+}
+
+
+class TestPaths:
+    @pytest.mark.parametrize(
+        'search_class, expected_paths',
+        [
+            (DepthFirstSearch, EXPECT_DFS_0),
+            (DepthFirstSearch_nr, EXPECT_DFS_0),
+            # (DepthFirstSearch_nr_simple, EXPECT_DFS_S_0),  # TODO
+        ],
+    )
+    def test_dfs_path_to(self, tinyDG, search_class, expected_paths):
+        dfs = search_class(tinyDG, 0)
+        actual_paths = {
+            v: list(dfs.path_to(v)) if dfs.has_path_to(v) else None
+            for v in tinyDG.vertices()
+        }
+        assert actual_paths == expected_paths
+
+    def test_bfs_path_to(self, tinyDG):
+        # TODO test multiple sources: BreadthFirstSearch(tinyDG, [0, 6])
+        expect_paths = {
+            0: [0],
+            1: [0, 1],
+            2: [0, 5, 4, 2],
+            3: [0, 5, 4, 3],
+            4: [0, 5, 4],
+            5: [0, 5],
+            6: None,
+            7: None,
+            8: None,
+            9: None,
+            10: None,
+            11: None,
+            12: None,
+        }
+        bfs = BreadthFirstSearch(tinyDG, 0)
+        actual_paths = {
+            v: list(bfs.path_to(v)) if bfs.has_path_to(v) else None
+            for v in tinyDG.vertices()
+        }
+        assert actual_paths == expect_paths
+
+    def test_bfs_dist_to(self, tinyDG):
+        # TODO test multiple sources: BreadthFirstSearch(tinyDG, [0, 6])
+        bfs = BreadthFirstSearch(tinyDG, 0)
+        expect_dist_to = [0, 1, 3, 3, 2, 1] + 7 * [None]
+        actual_dist_to = [bfs.dist_to(v) for v in tinyDG.vertices()]
+        assert actual_dist_to == expect_dist_to
+
+
+@pytest.mark.parametrize('search_class', [DepthFirstSearch, DepthFirstSearch_nr])
+class TestLeaf:
+    def test_leaf_DG(self, search_class, tinyDG):
+        assert search_class(tinyDG, 0).leaf == 2
+        assert search_class(tinyDG, 1).leaf == 1  # dead-end!
+
+    def test_leaf_DAG(self, search_class, tinyDAG):
+        assert search_class(tinyDAG, 0).leaf == 4
+        assert search_class(tinyDAG, 1).leaf == 1  # dead-end!
+        assert search_class(tinyDAG, 6).leaf == 12
+        assert search_class(tinyDAG, 7).leaf == 12
 
 
 # =============================================================================
