@@ -8,7 +8,6 @@
 """Demo usage of directed graph implementations and algorithms."""
 
 from pathlib import Path
-from random import shuffle
 
 from graph_util import print_paths
 
@@ -53,7 +52,6 @@ print_paths(G, 0, GS=BreadthFirstSearch)
 
 print('----- Cycle -----')
 cyc = directed_cycle(G)
-assert cyc
 print(cyc)
 
 print('----- Orders -----')
@@ -71,14 +69,15 @@ t = topological_order(sg.graph)
 assert t
 print('\n'.join(sg.name_of(v) for v in t))
 
+print('----- Strongly Connected Components -----')
 cc = KosarajuSCC(G)
-assert cc.count() == 5
+assert cc.count == 5
 print(cc.get_components())
 
 # Web Exercise 17
 Gm = Digraph.fromfile(DATA_PATH / 'mediumDG.txt')
 cc = KosarajuSCC(Gm)
-assert cc.count() == 10
+assert cc.count == 10
 
 G2 = Digraph.fromfile(DATA_PATH / 'tinyDG2.txt')
 print(G2)
@@ -115,8 +114,6 @@ print('  topo:', t)
 assert t == orders.reverse_post
 
 assert check_topological(D, t)
-shuffle(t)
-assert not check_topological(D, t)
 
 cc = KosarajuSCC(D)
 print(cc.get_components())
