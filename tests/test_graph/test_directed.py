@@ -40,7 +40,7 @@ def tinyDAG(data_dir):
 
 
 @pytest.fixture
-def loop_graph():
+def cycle_graph():
     V = 5
     G = Digraph(V)
     for i in range(V):
@@ -203,10 +203,12 @@ class TestTinyDG:
                 assert v in H.adj(w)
 
 
+# TODO test SymbolDigraph
+
 # Exercise 4.2.7
 class TestIsMap:
-    def test_loop_graph(self, loop_graph):
-        G = loop_graph
+    def test_cycle_graph(self, cycle_graph):
+        G = cycle_graph
         assert G.is_map
 
     def test_line_graph(self, line_graph):
@@ -278,8 +280,8 @@ class TestTopologicalOrder:
 
 
 class TestTransitiveClosure:
-    def test_loop_graph(self, loop_graph):
-        G = loop_graph
+    def test_cycle_graph(self, cycle_graph):
+        G = cycle_graph
         tc = TransitiveClosure(G)
         for v in G.vertices():
             for w in G.vertices():
@@ -297,8 +299,8 @@ class TestTransitiveClosure:
 
 
 class TestEulerianCycle:
-    def test_cycle(self, loop_graph):
-        G = loop_graph
+    def test_cycle(self, cycle_graph):
+        G = cycle_graph
         cycle = eulerian_cycle(G)
         assert cycle == [4, 0, 1, 2, 3, 4]
         for i in range(len(cycle) - 1):
@@ -321,7 +323,7 @@ class TestHamiltonianPath:
     def test_no_path(self, tinyDAG):
         assert not hamiltonian_path(tinyDAG)
 
-    @pytest.mark.parametrize('graph_name', ['loop_graph', 'tinyDG'])
+    @pytest.mark.parametrize('graph_name', ['cycle_graph', 'tinyDG'])
     def test_not_dag(self, graph_name, request):
         G = request.getfixturevalue(graph_name)
         with pytest.raises(ValueError, match="not a DAG"):
