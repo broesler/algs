@@ -969,32 +969,37 @@ class UFSearch(GraphSearch):
     )
     # See p 529
 
-    # TODO update to support multiple sources.
-    def __init__(self, G, s):
+    def __init__(self, G, source):
         if not isinstance(G, Graph):
             raise ValueError("UFSearch only works for undirected graphs!")
 
-        self.s = s
+        super().__init__(G, source)  # populate self._sources
+
         self._uf = WeightedQuickUnionUF(G.V)
         for v in G.vertices():
             for w in G.adj(v):
                 if not self._uf.connected(v, w):
                     self._uf.union(v, w)
 
+        # Cache the roots for each source for O(1) access
+        self._source_roots = {self._uf.find(s) for s in self._sources}
+
     @property
     def count(self):
-        """The number of vertices connected to `s`.
+        """The number of vertices connected to the sources.
 
         .. note::
-           This value is not the same as the size of the component, since `s`
-           may not be connected to all vertices in the component.
+           This value is not the same as the size of the component, since the
+           sources may not be connected to all vertices in their respective
+           components.
         """
         # Return the size of the component to which the source belongs
-        return self._uf._size[self._uf.find(self.s)]
+        # return self._uf._size[self._uf.find(self.s)]  # single source
+        return sum(self._uf._size[root] for root in self._source_roots)
 
     def has_path_to(self, v):
         """Return True if `v` is connected to `s`."""
-        return self._uf.connected(self.s, v)
+        return self._uf.find(v) in self._source_roots
 
     def path_to(self, v):
         """Not implemented since UF does not keep track of paths."""
