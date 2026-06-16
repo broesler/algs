@@ -12,8 +12,10 @@ import pytest
 from algs.graph.directed import (
     Digraph,
     KosarajuSCC,
+    check_topological,
     depth_first_order,
     directed_cycle,
+    topological_order,
 )
 
 
@@ -242,6 +244,28 @@ def test_depth_first_order(tinyDG):
     assert orders.pre == expect_pre
     assert orders.post == expect_post
     assert orders.reverse_post == expect_reverse_post
+
+
+class TestTopologicalOrder:
+    def test_cyclic(self, tinyDG):
+        assert directed_cycle(tinyDG)
+        t = topological_order(tinyDG)
+        assert not t
+
+    def test_acyclic(self, tinyDAG):
+        assert not directed_cycle(tinyDAG)
+        t = topological_order(tinyDAG)
+        expect_t = [8, 7, 2, 3, 0, 6, 9, 10, 11, 12, 1, 5, 4]
+        assert t == expect_t
+        p = depth_first_order(tinyDAG)
+        assert t == p.reverse_post
+
+    def test_check_topological(self, tinyDAG):
+        t = topological_order(tinyDAG)
+        assert check_topological(tinyDAG, t)
+        t[0], t[1] = t[1], t[0]  # swap two vertices
+        assert not check_topological(tinyDAG, t)
+
 
 # =============================================================================
 # =============================================================================
