@@ -56,11 +56,13 @@ class Digraph(BaseGraph):
         """Return a list of vertices with indegree 0."""
         return [v for v in self.vertices() if self._indegree[v] == 0]
 
+    # Exercise 4.2.7
     @property
     def sinks(self):
         """Return a list of vertices with outdegree 0."""
         return [v for v in self.vertices() if self.outdegree(v) == 0]
 
+    # Exercise 4.2.7
     @property
     def is_map(self):
         """Return True if `G` is a map from the set of integers [0, V-1] onto
@@ -296,7 +298,7 @@ def eulerian_cycle(G):
 
     # Copy counts of edges into/out of vertices to "mark" edges
     indegree = G._indegree.copy()
-    outdegree = [G.outdegree(v) for v in G.vertices()]  # TODO?
+    outdegree = [G.outdegree(v) for v in G.vertices()]
 
     # Find the cycle
     cycle = dfs(G, s)
