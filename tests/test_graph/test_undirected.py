@@ -331,7 +331,7 @@ class TestCC:
 
     def test_count(self, ConComps, tinyG):
         cc = ConComps(tinyG)
-        assert cc.count() == 3
+        assert cc.count == 3
 
     def test_connected(self, cc, expect_comps):
         for comp in expect_comps:
@@ -352,7 +352,7 @@ class TestCC:
     def test_cc_vs(self, ConComps, tinyG, expect_comps):
         cc = ConComps(tinyG, vertices=range(9))
         comps = cc.get_components()
-        assert cc.count() == 2
+        assert cc.count == 2
         for i, comp in enumerate(expect_comps[:2]):
             assert comps[i] == comp
 
