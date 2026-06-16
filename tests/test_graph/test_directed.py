@@ -27,6 +27,24 @@ def tinyDAG(data_dir):
     return Digraph.fromfile(data_dir / 'tinyDAG.txt')
 
 
+@pytest.fixture
+def loop_graph():
+    V = 5
+    G = Digraph(V)
+    for i in range(V):
+        G.add_edge(i, (i + 1) % V)
+    return G
+
+
+@pytest.fixture
+def line_graph():
+    V = 5
+    G = Digraph(V)
+    for i in range(V - 1):
+        G.add_edge(i, i + 1)
+    return G
+
+
 class TestNonSimple:
     @pytest.fixture
     @staticmethod
@@ -175,20 +193,13 @@ class TestTinyDG:
 
 # Exercise 4.2.7
 class TestIsMap:
-    def test_loop_graph(self):
-        # Loop graph is a map
-        V = 5
-        G = Digraph(V)
-        for i in range(V):
-            G.add_edge(i, (i + 1) % V)
+    def test_loop_graph(self, loop_graph):
+        G = loop_graph
         assert G.is_map
 
-    def test_line_graph(self):
-        # Line graph is not a map
-        V = 5
-        G = Digraph(V)
-        for i in range(V - 1):
-            G.add_edge(i, i + 1)
+    def test_line_graph(self, line_graph):
+        G = line_graph
+        V = G.V
         assert not G.is_map
         G.add_edge(V - 1, V - 1)  # add self-loop
         assert G.is_map
