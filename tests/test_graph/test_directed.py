@@ -9,12 +9,22 @@
 
 import pytest
 
-from algs.graph.directed import Digraph
+from algs.graph.directed import (
+    Digraph,
+    KosarajuSCC,
+    depth_first_order,
+    directed_cycle,
+)
 
 
 @pytest.fixture
 def tinyDG(data_dir):
     return Digraph.fromfile(data_dir / 'tinyDG.txt')
+
+
+@pytest.fixture
+def tinyDAG(data_dir):
+    return Digraph.fromfile(data_dir / 'tinyDAG.txt')
 
 
 class TestNonSimple:
@@ -182,6 +192,45 @@ class TestIsMap:
         assert not G.is_map
         G.add_edge(V - 1, V - 1)  # add self-loop
         assert G.is_map
+
+
+class TestDirectedCycle:
+    def test_cycle(self, tinyDG):
+        cycle = directed_cycle(tinyDG)
+        assert cycle == [3, 5, 4, 3]
+        for i in range(len(cycle) - 1):
+            assert tinyDG.has_edge(cycle[i], cycle[i + 1])
+
+    def test_acyclic(self, tinyDAG):
+        assert not directed_cycle(tinyDAG)
+
+
+class TestStronglyConnectedComponents:
+    def test_tinyDG(self, tinyDG):
+        scc = KosarajuSCC(tinyDG)
+        assert scc.count == 5
+        expect_components = [[0, 2, 3, 4, 5], [1], [6], [7, 8], [9, 10, 11, 12]]
+        assert scc.get_components(sort=True) == expect_components
+
+    def test_tinyDAG(self, tinyDAG):
+        scc = KosarajuSCC(tinyDAG)
+        V = tinyDAG.V
+        # each vertex is its own component
+        assert scc.count == V
+        expect_components = [[x] for x in range(V)]
+        # No guarantee on order of components, so sort them first
+        assert scc.get_components(sort=True) == expect_components
+
+
+def test_depth_first_order(tinyDG):
+    expect_pre = [0, 5, 4, 3, 2, 1, 6, 9, 11, 12, 10, 7, 8]
+    expect_post = [2, 3, 4, 5, 1, 0, 12, 11, 10, 9, 6, 8, 7]
+    expect_reverse_post = [7, 8, 6, 9, 10, 11, 12, 0, 1, 5, 4, 3, 2]
+    assert list(reversed(expect_post)) == expect_reverse_post
+    orders = depth_first_order(tinyDG)
+    assert orders.pre == expect_pre
+    assert orders.post == expect_post
+    assert orders.reverse_post == expect_reverse_post
 
 # =============================================================================
 # =============================================================================
