@@ -14,10 +14,6 @@ from algs.graph.search import (
     DepthFirstSearch,
     DepthFirstSearch_nr,
     DepthFirstSearch_nr_simple,
-    UFSearch,
-    find_cycle_path,
-    find_min_cycle,
-    has_cycle,
 )
 from algs.graph.undirected import (
     CC,
@@ -27,7 +23,11 @@ from algs.graph.undirected import (
     GraphProperties,
     SimpleGraph,
     SymbolGraph,
+    UFSearch,
     bipartite_colors,
+    find_cycle_path,
+    find_min_cycle,
+    has_cycle,
     spanning_forest_bfs,
     spanning_forest_dfs,
     spanning_tree_bfs,
