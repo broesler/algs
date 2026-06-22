@@ -76,7 +76,7 @@ def gp(graph_type, nonogon):
 
 # TODO test multiple sources for DFS
 # Expected values for DFS paths in tinyCG
-EXPECT_DFS = {
+EXPECT_DFS_0 = {
     0: [0],
     1: [0, 2, 1],
     2: [0, 2],
@@ -86,7 +86,7 @@ EXPECT_DFS = {
 }
 
 # Expected values for tinyCG with DepthFirstSearch_nr_simple
-EXPECT_DFS_S = {
+EXPECT_DFS_S_0 = {
     0: [0],
     1: [0, 5, 3, 2, 1],
     2: [0, 5, 3, 2],
@@ -487,9 +487,9 @@ class TestPaths:
     @pytest.mark.parametrize(
         'search_class, expected_paths',
         [
-            (DepthFirstSearch, EXPECT_DFS),
-            (DepthFirstSearch_nr, EXPECT_DFS),
-            (DepthFirstSearch_nr_simple, EXPECT_DFS_S),
+            (DepthFirstSearch, EXPECT_DFS_0),
+            (DepthFirstSearch_nr, EXPECT_DFS_0),
+            (DepthFirstSearch_nr_simple, EXPECT_DFS_S_0),
         ],
     )
     def test_dfs_path_to(self, tinyCG, search_class, expected_paths):
