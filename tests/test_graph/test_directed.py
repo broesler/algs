@@ -377,7 +377,6 @@ def test_ufsearch(tinyDG):
 
 
 # ----- DFS Paths -----
-# TODO test multiple sources: DepthFirstSearch(tinyDG, [0, 6])
 # Paths starting at 0 -> k
 EXPECT_DFS_0 = {
     0: [0],
@@ -395,6 +394,23 @@ EXPECT_DFS_0 = {
     12: None,
 }
 
+# Paths starting at 0 -> k or 6 -> k
+EXPECT_DFS_06 = {
+    0: [0],
+    1: [0, 1],
+    2: [0, 5, 4, 3, 2],
+    3: [0, 5, 4, 3],
+    4: [0, 5, 4],
+    5: [0, 5],
+    6: [6],
+    7: None,
+    8: None,
+    9: [6, 9],
+    10: [6, 9, 10],
+    11: [6, 9, 11],
+    12: [6, 9, 11, 12],
+}
+
 
 class TestPaths:
     @pytest.mark.parametrize(
@@ -405,7 +421,7 @@ class TestPaths:
             # (DepthFirstSearch_nr_simple, EXPECT_DFS_S_0),  # TODO
         ],
     )
-    def test_dfs_path_to(self, tinyDG, search_class, expected_paths):
+    def test_dfs_path_to_single(self, tinyDG, search_class, expected_paths):
         dfs = search_class(tinyDG, 0)
         actual_paths = {
             v: list(dfs.path_to(v)) if dfs.has_path_to(v) else None
@@ -413,8 +429,23 @@ class TestPaths:
         }
         assert actual_paths == expected_paths
 
+    @pytest.mark.parametrize(
+        'search_class, expected_paths',
+        [
+            (DepthFirstSearch, EXPECT_DFS_06),
+            (DepthFirstSearch_nr, EXPECT_DFS_06),
+            # (DepthFirstSearch_nr_simple, EXPECT_DFS_S_06),  # TODO
+        ],
+    )
+    def test_dfs_path_to_multiple(self, tinyDG, search_class, expected_paths):
+        dfs = search_class(tinyDG, [0, 6])
+        actual_paths = {
+            v: list(dfs.path_to(v)) if dfs.has_path_to(v) else None
+            for v in tinyDG.vertices()
+        }
+        assert actual_paths == expected_paths
+
     def test_bfs_path_to(self, tinyDG):
-        # TODO test multiple sources: BreadthFirstSearch(tinyDG, [0, 6])
         expect_paths = {
             0: [0],
             1: [0, 1],
@@ -438,7 +469,6 @@ class TestPaths:
         assert actual_paths == expect_paths
 
     def test_bfs_dist_to(self, tinyDG):
-        # TODO test multiple sources: BreadthFirstSearch(tinyDG, [0, 6])
         bfs = BreadthFirstSearch(tinyDG, 0)
         expect_dist_to = [0, 1, 3, 3, 2, 1] + 7 * [None]
         actual_dist_to = [bfs.dist_to(v) for v in tinyDG.vertices()]
