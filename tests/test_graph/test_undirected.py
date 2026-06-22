@@ -74,8 +74,8 @@ def gp(graph_type, nonogon):
     return GraphProperties(nonogon)
 
 
-# TODO test multiple sources for DFS
-# Expected values for DFS paths in tinyCG
+# Expected values for DFS paths in tinyCG, starting from 0.
+# {k : 0 ~> k}
 EXPECT_DFS_0 = {
     0: [0],
     1: [0, 2, 1],
@@ -85,7 +85,11 @@ EXPECT_DFS_0 = {
     5: [0, 2, 3, 5],
 }
 
-# Expected values for tinyCG with DepthFirstSearch_nr_simple
+# Expected values for DFS paths in tinyCG, starting from 0, then 3.
+EXPECT_DFS_03 = {0: [0], 1: [0, 2, 1], 2: [0, 2], 3: [3], 4: [3, 4], 5: [3, 5]}
+
+# Expected values for tinyCG with DepthFirstSearch_nr_simple, starting from 0.
+# {k : 0 ~> k}
 EXPECT_DFS_S_0 = {
     0: [0],
     1: [0, 5, 3, 2, 1],
@@ -432,7 +436,6 @@ class TestGraphProperties:
 # -----------------------------------------------------------------------------
 #         Test Search
 # -----------------------------------------------------------------------------
-# TODO test DFS on multiple-source input.
 @pytest.mark.parametrize('graph_type', [Graph, SimpleGraph])
 @pytest.mark.parametrize('graph_search', [DepthFirstSearch, UFSearch])
 class TestDFS:
@@ -492,8 +495,21 @@ class TestPaths:
             (DepthFirstSearch_nr_simple, EXPECT_DFS_S_0),
         ],
     )
-    def test_dfs_path_to(self, tinyCG, search_class, expected_paths):
+    def test_dfs_path_to_single(self, tinyCG, search_class, expected_paths):
         dfs = search_class(tinyCG, 0)
+        actual_paths = {v: list(dfs.path_to(v)) for v in tinyCG.vertices()}
+        assert actual_paths == expected_paths
+
+    @pytest.mark.parametrize(
+        'search_class, expected_paths',
+        [
+            (DepthFirstSearch, EXPECT_DFS_03),
+            (DepthFirstSearch_nr, EXPECT_DFS_03),
+            # (DepthFirstSearch_nr_simple, EXPECT_DFS_S_0), # TODO
+        ],
+    )
+    def test_dfs_path_to_multiple(self, tinyCG, search_class, expected_paths):
+        dfs = search_class(tinyCG, [0, 3])
         actual_paths = {v: list(dfs.path_to(v)) for v in tinyCG.vertices()}
         assert actual_paths == expected_paths
 
