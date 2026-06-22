@@ -74,6 +74,7 @@ def gp(graph_type, nonogon):
     return GraphProperties(nonogon)
 
 
+# TODO test multiple sources for DFS
 # Expected values for DFS paths in tinyCG
 EXPECT_DFS = {
     0: [0],
@@ -253,8 +254,7 @@ class TestNonSimple:
         assert G.num_parallel_edges == 2
 
 
-# TODO expect_edges
-# Test has_edge, add_edge, index, name, contains
+# TODO test has_edge, add_edge, index, name, contains
 class TestSymbolGraph:
     def test_adj(self, sg):
         expect = ['MCO', 'ATL', 'ORD']
@@ -432,22 +432,23 @@ class TestGraphProperties:
 # -----------------------------------------------------------------------------
 #         Test Search
 # -----------------------------------------------------------------------------
+# TODO test DFS on multiple-source input.
 @pytest.mark.parametrize('graph_type', [Graph, SimpleGraph])
-@pytest.mark.parametrize('GraphSearch', [DepthFirstSearch, UFSearch])
+@pytest.mark.parametrize('graph_search', [DepthFirstSearch, UFSearch])
 class TestDFS:
-    def test_dfs_CG(self, tinyCG, GraphSearch):
-        dfs = GraphSearch(tinyCG, 0)
+    def test_dfs_CG(self, tinyCG, graph_search):
+        dfs = graph_search(tinyCG, 0)
         assert dfs.count == tinyCG.V
         assert all(dfs.has_path_to(v) for v in tinyCG.vertices())
 
-    def test_dfs_G(self, tinyG, GraphSearch):
-        dfs = GraphSearch(tinyG, 0)
+    def test_dfs_G(self, tinyG, graph_search):
+        dfs = graph_search(tinyG, 0)
         assert dfs.count == 7
         assert all(dfs.has_path_to(v) for v in range(6))
-        dfs = GraphSearch(tinyG, 7)
+        dfs = graph_search(tinyG, 7)
         assert dfs.count == 2
         assert all(dfs.has_path_to(v) for v in [7, 8])
-        dfs = GraphSearch(tinyG, 9)
+        dfs = graph_search(tinyG, 9)
         assert dfs.count == 4
         assert all(dfs.has_path_to(v) for v in [9, 10, 11, 12])
 
@@ -462,7 +463,7 @@ def test_has_cycle(tinyG, acyclicG, recursive):
 @pytest.mark.parametrize('graph_type', [Graph, SimpleGraph])
 class TestPaths:
     @pytest.mark.parametrize(
-        'GraphSearch',
+        'graph_search',
         [
             DepthFirstSearch,
             DepthFirstSearch_nr,
@@ -471,13 +472,13 @@ class TestPaths:
         ],
     )
     class TestHasPath:
-        def test_has_path_to(self, tinyCG, GraphSearch):
-            dfs = GraphSearch(tinyCG, 0)
+        def test_has_path_to(self, tinyCG, graph_search):
+            dfs = graph_search(tinyCG, 0)
             for v in tinyCG.vertices():
                 assert dfs.has_path_to(v)
 
-        def test_no_path_to(self, tinyG, GraphSearch):
-            dfs = GraphSearch(tinyG, 0)
+        def test_no_path_to(self, tinyG, graph_search):
+            dfs = graph_search(tinyG, 0)
             for v in range(7):
                 assert dfs.has_path_to(v)
             for v in range(7, tinyG.V):
@@ -515,15 +516,15 @@ class TestPaths:
         actual_dist_to = [bfs.dist_to(v) for v in tinyCG.vertices()]
         assert actual_dist_to == expect_dist_to
 
-    @pytest.mark.parametrize('GraphSearch', [DepthFirstSearch, DepthFirstSearch_nr])
-    def test_leaf_CG(self, GraphSearch, tinyCG):
-        assert GraphSearch(tinyCG, 0).leaf == 1
+    @pytest.mark.parametrize('graph_search', [DepthFirstSearch, DepthFirstSearch_nr])
+    def test_leaf_CG(self, graph_search, tinyCG):
+        assert graph_search(tinyCG, 0).leaf == 1
 
-    @pytest.mark.parametrize('GraphSearch', [DepthFirstSearch, DepthFirstSearch_nr])
-    def test_leaf_G(self, GraphSearch, tinyG):
-        assert GraphSearch(tinyG, 0).leaf == 3
-        assert GraphSearch(tinyG, 6).leaf == 2
-        assert GraphSearch(tinyG, 7).leaf == 8
+    @pytest.mark.parametrize('graph_search', [DepthFirstSearch, DepthFirstSearch_nr])
+    def test_leaf_G(self, graph_search, tinyG):
+        assert graph_search(tinyG, 0).leaf == 3
+        assert graph_search(tinyG, 6).leaf == 2
+        assert graph_search(tinyG, 7).leaf == 8
 
 
 @pytest.mark.parametrize('graph_type', [Graph, SimpleGraph])
