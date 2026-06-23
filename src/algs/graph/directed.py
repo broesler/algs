@@ -428,5 +428,60 @@ def vertex_height(G, source=None):
     return height
 
 
+def get_ancestors(G, v):
+    """Find the list of all ancestors of a vertex `v` in a graph."""
+    # NOTE this method is Θ(2 V + E) because we go through the vertices again.
+    # We could write a custom DFS that builds the list as it goes, but this way
+    # is cleaner code.
+    # Ancestors are all vertices that are reachable in the reverse graph
+    dfs = DepthFirstSearch(G.reverse(), v)
+    return [x for x in G.vertices() if dfs.has_path_to(x)]
+
+
+class LowestCommonAncestor:
+    """Find the lowest common ancestor of two vertices in a DAG.
+
+    Parameters
+    ----------
+    G : :class:`Digraph`
+        A DAG.
+    s : int, optional
+        The source vertex from which to compute the lowest common ancestor. If
+        None, the first vertex in the topological order of `G` is used as the
+        source.
+    """
+
+    def __init__(self, G, s=None):
+        self._G = G
+        self._s = s
+        self._height = vertex_height(G, s)
+
+    def __call__(self, v, w):
+        """Return the lowest common ancestor of `v` and `w`.
+
+        Parameters
+        ----------
+        v, w : int
+            The vertices for which to find the lowest common ancestor.
+
+        Returns
+        -------
+        int or None
+            The lowest common ancestor of `v` and `w`, or None if no common
+            ancestor exists.
+        """
+        if self._height[v] == -inf or self._height[w] == -inf:
+            raise ValueError(f"One or both vertices {v}, {w} are not reachable!")
+
+        ancestors_v = set(get_ancestors(self._G, v))
+        ancestors_w = set(get_ancestors(self._G, w))
+        common_ancestors = ancestors_v & ancestors_w
+
+        if len(common_ancestors) == 0:
+            return None
+
+        return max(common_ancestors, key=lambda x: self._height[x])
+
+
 # =============================================================================
 # =============================================================================
