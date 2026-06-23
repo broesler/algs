@@ -14,6 +14,7 @@ import pytest
 from algs.graph.directed import (
     Digraph,
     KosarajuSCC,
+    LowestCommonAncestor,
     TransitiveClosure,
     check_topological,
     depth_first_order,
@@ -512,6 +513,18 @@ class TestHeight:
         expect_h = [-inf, -inf, -inf, 0, 2, 1, -inf, -inf, -inf, 0, 1, 1, 2]
         assert h == expect_h
 
+
+class TestLCA:
+    def test_non_dag(self, tinyDG):
+        with pytest.raises(ValueError, match="not a DAG"):
+            LowestCommonAncestor(tinyDG)
+
+    def test_dag(self, tinyDAG):
+        lca = LowestCommonAncestor(tinyDAG)
+        assert lca(0, 3) == 2
+        assert lca(4, 12) == 6
+        assert lca(8, 8) == 8
+        assert lca(0, 8) is None
 
 
 # =============================================================================
