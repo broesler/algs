@@ -15,7 +15,7 @@ from math import inf
 
 from algs.basics import Queue, Stack
 from algs.graph.base import BaseGraph
-from algs.graph.search import DepthFirstSearch
+from algs.graph.search import BreadthFirstSearch, DepthFirstSearch
 from algs.graph.undirected import CC, SymbolGraph
 
 
@@ -481,6 +481,61 @@ class LowestCommonAncestor:
             return None
 
         return max(common_ancestors, key=lambda x: self._height[x])
+
+
+# Exercise 4.2.22
+ShortestAncestralPath = namedtuple(
+    'ShortestAncestralPath', ['ancestor', 'path_from_v', 'path_from_w']
+)
+
+
+def shortest_ancestral_path(G, v, w):
+    """Find the shortest ancestral path between two vertices in a DAG.
+
+    Parameters
+    ----------
+    G : :class:`Digraph`
+        A DAG.
+    v, w : int
+        The vertices for which to find the shortest ancestral path.
+
+    Returns
+    -------
+    result : :class:`namedtuple` or None
+        None if no common ancestor exists. Otherwise, a named tuple containing
+        the following attributes:
+
+        ancestor : int or None
+            The common ancestor of `v` and `w` that is on the shortest
+            ancestral path. None if no such ancestor exists.
+        path_from_v, path_from_w : lists
+            The paths from `v` or `w` to the common ancestor. None if no such
+            path exists.
+        length : int
+            The length of the shortest ancestral path between `v` and `w`. -1
+            if no such path exists.
+    """
+    if directed_cycle(G):
+        raise ValueError("G is not a DAG!")
+
+    G_R = G.reverse()
+    targets = (v, w)
+
+    bfs = {x: BreadthFirstSearch(G_R, x) for x in targets}
+    ancestors = {u: {x for x in G.vertices() if bfs[u].has_path_to(x)} for u in targets}
+    common_ancestors = ancestors[v] & ancestors[w]
+
+    if len(common_ancestors) == 0:
+        return None
+
+    shortest_x = min(
+        common_ancestors, key=lambda x: bfs[v].dist_to(x) + bfs[w].dist_to(x)
+    )
+    path_from = {u: list(bfs[u].path_to(shortest_x)) for u in targets}
+
+    return ShortestAncestralPath(
+        ancestor=shortest_x, path_from_v=path_from[v], path_from_w=path_from[w]
+    )
 
 
 # =============================================================================
