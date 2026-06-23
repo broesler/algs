@@ -7,6 +7,8 @@
 
 """Tests for directed graph algorithms."""
 
+from math import inf
+
 import pytest
 
 from algs.graph.directed import (
@@ -19,6 +21,7 @@ from algs.graph.directed import (
     eulerian_cycle,
     hamiltonian_path,
     topological_order,
+    vertex_height,
 )
 from algs.graph.search import (
     BreadthFirstSearch,
@@ -204,6 +207,7 @@ class TestTinyDG:
 
 
 # TODO test SymbolDigraph
+
 
 # Exercise 4.2.7
 class TestIsMap:
@@ -486,6 +490,22 @@ class TestLeaf:
         assert search_class(tinyDAG, 1).leaf == 1  # dead-end!
         assert search_class(tinyDAG, 6).leaf == 12
         assert search_class(tinyDAG, 7).leaf == 12
+
+
+class TestHeight:
+    def test_non_dag(self, tinyDG):
+        with pytest.raises(ValueError, match="not a DAG"):
+            vertex_height(tinyDG)
+
+    def test_dag(self, tinyDAG):
+        h = vertex_height(tinyDAG)
+        expect_h = [1, 2, 0, 1, 3, 2, 2, 1, 0, 3, 4, 4, 5]
+        assert h == expect_h
+
+    def test_dag_s(self, tinyDAG):
+        h = vertex_height(tinyDAG, s=2)
+        expect_h = [1, 2, 0, 1, 3, 2, 2, -inf, -inf, 3, 4, 4, 5]
+        assert h == expect_h
 
 
 # =============================================================================
