@@ -193,13 +193,13 @@ def topological_order(G):
 
     Returns
     -------
-    order : list
-        A list of vertices in topological order. Empty if the graph is not a
+    order : list or None
+        A list of vertices in topological order. None if the graph is not a
         DAG.
     """
     # If the graph is a DAG, it has an order
     if directed_cycle(G):
-        return []
+        return None
     else:
         dfs = depth_first_order(G)
         return list(dfs.reverse_post)
