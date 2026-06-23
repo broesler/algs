@@ -21,6 +21,7 @@ from algs.graph.directed import (
     directed_cycle,
     eulerian_cycle,
     hamiltonian_path,
+    shortest_ancestral_path,
     topological_order,
     vertex_height,
 )
@@ -493,6 +494,7 @@ class TestLeaf:
         assert search_class(tinyDAG, 7).leaf == 12
 
 
+# Exercise 4.2.21
 class TestHeight:
     def test_non_dag(self, tinyDG):
         with pytest.raises(ValueError, match="not a DAG"):
@@ -514,6 +516,7 @@ class TestHeight:
         assert h == expect_h
 
 
+# Exercise 4.2.21
 class TestLCA:
     def test_non_dag(self, tinyDG):
         with pytest.raises(ValueError, match="not a DAG"):
@@ -525,6 +528,28 @@ class TestLCA:
         assert lca(4, 12) == 6
         assert lca(8, 8) == 8
         assert lca(0, 8) is None
+
+
+# Exercise 4.2.22
+class TestShortestAncestralPath:
+    def test_non_dag(self, tinyDG):
+        with pytest.raises(ValueError, match="not a DAG"):
+            shortest_ancestral_path(tinyDG, 0, 3)
+
+    def test_dag(self, tinyDAG):
+        assert shortest_ancestral_path(tinyDAG, 2, 8) is None
+        sap = shortest_ancestral_path(tinyDAG, 7, 8)
+        assert sap.ancestor == 8
+        assert sap.path_from_v == [7, 8]
+        assert sap.path_from_w == [8]
+        sap = shortest_ancestral_path(tinyDAG, 3, 5)
+        assert sap.ancestor == 3
+        assert sap.path_from_v == [3]
+        assert sap.path_from_w == [5, 3]
+        sap = shortest_ancestral_path(tinyDAG, 4, 12)
+        assert sap.ancestor == 6
+        assert sap.path_from_v == [4, 6]
+        assert sap.path_from_w == [12, 9, 6]
 
 
 # =============================================================================
