@@ -382,7 +382,7 @@ def check_topological(G, order):
 
 
 # Exercise 4.2.21: Lowest Common Ancestor
-def vertex_height(G, s=None):
+def vertex_height(G, source=None):
     """Compute the height of each vertex in a DAG.
 
     The *height* of a vertex is defined as the length of the longest path from
@@ -392,9 +392,10 @@ def vertex_height(G, s=None):
     ----------
     G : :class:`Digraph`
         A DAG.
-    s : int, optional
-        The source vertex from which to compute the heights. If None, the first
-        vertex in the topological order of `G` is used as the source.
+    source : int or list of int, optional
+        The source vertex or vertices from which to compute the heights. If
+        None, the first vertex in the topological order of `G` is used as the
+        source.
 
     Returns
     -------
@@ -406,15 +407,16 @@ def vertex_height(G, s=None):
     if order is None:
         raise ValueError("G is not a DAG!")
 
-    if s is None:
+    if source is None:
         height = G.V * [0]
     else:
-        # Only compute heights for vertices reachable from `s`
-        idx = order.index(s)
-        order = order[idx:]
-
         height = G.V * [-inf]
-        height[s] = 0
+
+        if isinstance(source, int):
+            source = [source]
+
+        for s in list(source):
+            height[s] = 0
 
     for v in order:
         if height[v] == float(-inf):
