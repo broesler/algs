@@ -502,10 +502,16 @@ class TestHeight:
         expect_h = [1, 2, 0, 1, 3, 2, 2, 1, 0, 3, 4, 4, 5]
         assert h == expect_h
 
-    def test_dag_s(self, tinyDAG):
-        h = vertex_height(tinyDAG, s=2)
+    def test_dag_single(self, tinyDAG):
+        h = vertex_height(tinyDAG, source=2)
         expect_h = [1, 2, 0, 1, 3, 2, 2, -inf, -inf, 3, 4, 4, 5]
         assert h == expect_h
+
+    def test_dag_multiple(self, tinyDAG):
+        h = vertex_height(tinyDAG, source=[3, 9])
+        expect_h = [-inf, -inf, -inf, 0, 2, 1, -inf, -inf, -inf, 0, 1, 1, 2]
+        assert h == expect_h
+
 
 
 # =============================================================================
