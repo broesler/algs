@@ -751,9 +751,12 @@ class Biconnected:
 def complement_graph(G):
     """Return a Graph that has an edge v-w iff v-w is not in `G`."""
     Gc = Graph(G.V)
-    vs = set(range(G.V))
     for v in range(G.V):
-        Gc._adj[v] = Bag(vs - set([v] + list(G.adj(v))))
+        adj_v = set(G.adj(v))
+        # avoid self-loops (v, v) and parallel edges (v, w) + (w, v)
+        for w in range(v + 1, G.V):
+            if w not in adj_v:
+                Gc.add_edge(v, w)
     return Gc
 
 
