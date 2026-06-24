@@ -538,5 +538,54 @@ def shortest_ancestral_path(G, v, w):
     )
 
 
+# Exercise 4.2.23
+def strong_component(G, v):
+    """Return the strong component containing vertex `v` in a digraph.
+
+    Parameters
+    ----------
+    G : :class:`Digraph`
+        A digraph.
+    v : int
+        The vertex for which to find the strong component.
+
+    Returns
+    -------
+    component : list
+        A list of vertices in the strong component containing `v`.
+    """
+    dfs = DepthFirstSearch(G, v)
+    forward_reachable = {x for x in G.vertices() if dfs.has_path_to(x)}
+    dfs_r = DepthFirstSearch(G.reverse(), v)
+    backward_reachable = {x for x in G.vertices() if dfs_r.has_path_to(x)}
+    return list(forward_reachable & backward_reachable)
+
+
+def quadratic_strong_components(G):
+    """Find the strongly connected components of `G` in quadratic time.
+
+    Parameters
+    ----------
+    G : :class:`Digraph`
+        A digraph.
+
+    Returns
+    -------
+    components : list of lists
+        A list of strongly connected components, each of which is a list of
+        vertices.
+    """
+    sccs = []
+    marked = G.V * [False]
+
+    for v in G.vertices():
+        if not marked[v]:
+            component = strong_component(G, v)  # O(V + E)
+            for w in component:
+                marked[w] = True
+            sccs.append(component)
+
+    return sccs
+
 # =============================================================================
 # =============================================================================
