@@ -11,6 +11,7 @@ import pytest
 
 from algs.graph.search import (
     BreadthFirstSearch,
+    ComplementBFS,
     DepthFirstSearch,
     DepthFirstSearch_nr,
     DepthFirstSearch_nr_simple,
@@ -25,6 +26,7 @@ from algs.graph.undirected import (
     SymbolGraph,
     UFSearch,
     bipartite_colors,
+    complement_graph,
     find_cycle_path,
     find_min_cycle,
     has_cycle,
@@ -558,6 +560,31 @@ class TestCyclePath:
     def test_cycle_path_bfs(self, tinyG, acyclicG):
         assert find_min_cycle(tinyG, 0) == [4, 6, 0, 5, 4]
         assert find_min_cycle(acyclicG, 0) == []
+
+
+@pytest.mark.parametrize('graph_type', [Graph, SimpleGraph])
+class TestComplementGraph:
+    def test_complement_graph(self, tinyG):
+        G = tinyG
+        Gc = complement_graph(G)
+        V, E = G.V, G.E
+        assert Gc.V == G.V
+        expected_edges = V * (V - 1) // 2 - E  # total possible edges - G.V
+        assert Gc.E == expected_edges
+        for v in G.vertices():
+            for w in G.vertices():
+                if v != w:
+                    assert Gc.has_edge(v, w) != G.has_edge(v, w)
+
+    def test_complement_bfs(self, tinyG):
+        G = tinyG
+        Gc = complement_graph(G)
+        bfs_c = BreadthFirstSearch(Gc, 0)
+        c_bfs = ComplementBFS(G, 0)
+        for v in G.vertices():
+            assert bfs_c.has_path_to(v) == c_bfs.has_path_to(v)
+            if bfs_c.has_path_to(v):
+                assert list(bfs_c.path_to(v)) == list(c_bfs.path_to(v))
 
 
 # =============================================================================
