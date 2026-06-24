@@ -21,7 +21,9 @@ from algs.graph.directed import (
     directed_cycle,
     eulerian_cycle,
     hamiltonian_path,
+    quadratic_strong_components,
     shortest_ancestral_path,
+    strong_component,
     topological_order,
     vertex_height,
 )
@@ -550,6 +552,26 @@ class TestShortestAncestralPath:
         assert sap.ancestor == 6
         assert sap.path_from_v == [4, 6]
         assert sap.path_from_w == [12, 9, 6]
+
+
+# Exercise 4.2.23
+class TestStrongComponent:
+    def test_strong_component(self, tinyDG):
+        G = tinyDG
+        scc = KosarajuSCC(G).get_components()
+        for cc in scc:
+            for v in cc:
+                assert sorted(strong_component(G, v)) == sorted(cc)
+
+    @staticmethod
+    def _sort_components(components):
+        return sorted([sorted(cc) for cc in components])
+
+    def test_strong_components(self, tinyDG):
+        G = tinyDG
+        ksccs = KosarajuSCC(G).get_components()
+        sccs = quadratic_strong_components(G)
+        assert self._sort_components(ksccs) == self._sort_components(sccs)
 
 
 # =============================================================================
