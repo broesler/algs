@@ -55,7 +55,7 @@ def print_components(G, vertices=None):
     # See p 543
     vertices = vertices or G.vertices()
     cc = CC(G, vertices)
-    M = cc.count()
+    M = cc.count
     print(f"{M} components")
     components = cc.get_components()
     lines = [f"{i}: {' '.join(str(v) for v in c)}" for i, c in enumerate(components)]

@@ -21,14 +21,14 @@ from algs.graph.search import (
     BreadthFirstSearch,
     ComplementBFS,
     DepthFirstSearch,
-    find_cycle_path,
-    find_min_cycle,
 )
 from algs.graph.undirected import (
     Graph,
     GraphProperties,
     SymbolGraph,
     complement_graph,
+    find_cycle_path,
+    find_min_cycle,
 )
 
 # -----------------------------------------------------------------------------
@@ -99,13 +99,14 @@ assert cp == cp_nr
 cm = find_min_cycle(Gm, 0)
 print('minpath:', cm)
 
-print('complement', complement_graph(GC))
-bfs_cx = BreadthFirstSearch(complement_graph(GC), 0)
-bfs_c = ComplementBFS(GC, 0)
-print(bfs_cx.path_to(4))  # [0, 4]
+GCp = complement_graph(GC)
+print('complement', GCp)
+bfs_c = BreadthFirstSearch(GCp, 0)
+c_bfs = ComplementBFS(GC, 0)
 print(bfs_c.path_to(4))  # [0, 4]
-print(bfs_cx.path_to(2))  # [0, 4, 5, 2]
+print(c_bfs.path_to(4))  # [0, 4]
 print(bfs_c.path_to(2))  # [0, 4, 5, 2]
+print(c_bfs.path_to(2))  # [0, 4, 5, 2]
 
 # =============================================================================
 # =============================================================================
